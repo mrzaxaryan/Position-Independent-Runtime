@@ -1,0 +1,294 @@
+{
+    "version": 4,
+    "enableConfigurationSquiggles": true,
+    "env": {
+        "windowsIncludePath": [
+            "${workspaceFolder}/include",
+            "${workspaceFolder}/include/runtime",
+            "${workspaceFolder}/include/runtime/platform",
+            "${workspaceFolder}/include/runtime/platform/primitives",
+            "${workspaceFolder}/include/runtime/platform/windows",
+            "${workspaceFolder}/include/tests"
+        ],
+        "windowsSourcePath": [
+            "${workspaceFolder}/src",
+            "${workspaceFolder}/src/runtime",
+            "${workspaceFolder}/src/runtime/console",
+            "${workspaceFolder}/src/runtime/console/windows",
+            "${workspaceFolder}/src/runtime/platform",
+            "${workspaceFolder}/src/runtime/platform/windows"
+        ],
+        "linuxIncludePath": [
+            "${workspaceFolder}/include",
+            "${workspaceFolder}/include/runtime",
+            "${workspaceFolder}/include/runtime/platform",
+            "${workspaceFolder}/include/runtime/platform/primitives",
+            "${workspaceFolder}/include/runtime/platform/linux",
+            "${workspaceFolder}/include/tests"
+        ],
+        "linuxSourcePath": [
+            "${workspaceFolder}/src",
+            "${workspaceFolder}/src/runtime",
+            "${workspaceFolder}/src/runtime/console",
+            "${workspaceFolder}/src/runtime/console/linux",
+            "${workspaceFolder}/src/runtime/platform",
+            "${workspaceFolder}/src/runtime/platform/linux"
+        ],
+        "uefiIncludePath": [
+            "${workspaceFolder}/include",
+            "${workspaceFolder}/include/runtime",
+            "${workspaceFolder}/include/runtime/platform",
+            "${workspaceFolder}/include/runtime/platform/primitives",
+            "${workspaceFolder}/include/runtime/platform/uefi",
+            "${workspaceFolder}/include/tests"
+        ],
+        "uefiSourcePath": [
+            "${workspaceFolder}/src",
+            "${workspaceFolder}/src/runtime",
+            "${workspaceFolder}/src/runtime/console",
+            "${workspaceFolder}/src/runtime/console/uefi",
+            "${workspaceFolder}/src/runtime/platform",
+            "${workspaceFolder}/src/runtime/platform/uefi"
+        ]
+    },
+    "configurations": [
+        {
+            "name": "i386-pc-windows-gnu",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "windows-clang-x86",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_I386",
+                "PLATFORM_WINDOWS",
+                "PLATFORM_WINDOWS_I386"
+            ],
+            "includePath": [
+                "${windowsIncludePath}",
+                "${windowsSourcePath}"
+            ],
+            "browse": {
+                "path": [
+                    "${windowsIncludePath}",
+                    "${windowsSourcePath}"
+                ]
+            }
+        },
+        {
+            "name": "x86_64-pc-windows-gnu",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "windows-clang-x64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_X86_64",
+                "PLATFORM_WINDOWS",
+                "PLATFORM_WINDOWS_X86_64"
+            ],
+            "includePath": [
+                "${windowsIncludePath}",
+                "${windowsSourcePath}"
+            ],
+            "browse": {
+                "path": [
+                    "${windowsIncludePath}",
+                    "${windowsSourcePath}"
+                ]
+            }
+        },
+        {
+            "name": "arm7a-pc-windows-gnu",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "windows-clang-arm",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "defines": [
+                "ARCHITECTURE_ARMV7A",
+                "PLATFORM_WINDOWS",
+                "PLATFORM_WINDOWS_ARMV7A"
+            ],
+            "includePath": [
+                "${workspaceFolder}/src",
+                "${workspaceFolder}/src/**",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/include/**"
+            ]
+        },
+        {
+            "name": "aarch64-pc-windows-gnu",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "windows-clang-arm64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_AARCH64",
+                "PLATFORM_WINDOWS",
+                "PLATFORM_WINDOWS_AARCH64"
+            ],
+            "includePath": [
+                "${windowsIncludePath}",
+                "${windowsSourcePath}"
+            ],
+            "browse": {
+                "path": [
+                    "${windowsIncludePath}",
+                    "${windowsSourcePath}"
+                ]
+            }
+        },
+        {
+            "name": "i386-pc-linux-gnu",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "linux-clang-x86",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_I386",
+                "PLATFORM_LINUX",
+                "PLATFORM_LINUX_I386"
+            ],
+            "includePath": [
+                "${linuxIncludePath}",
+                "${linuxSourcePath}"
+            ],
+            "browse": {
+                "path": [
+                    "${linuxIncludePath}",
+                    "${linuxSourcePath}"
+                ]
+            }
+        },
+        {
+            "name": "x86_64-pc-linux-gnu",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "linux-clang-x64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_X86_64",
+                "PLATFORM_LINUX",
+                "PLATFORM_LINUX_X86_64"
+            ],
+            "includePath": [
+                "${linuxIncludePath}",
+                "${linuxSourcePath}"
+            ],
+            "browse": {
+                "path": [
+                    "${linuxIncludePath}",
+                    "${linuxSourcePath}"
+                ]
+            }
+        },
+        {
+            "name": "armv7a-unknown-linux-gnueabi",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "linux-clang-arm",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_ARMV7A",
+                "PLATFORM_LINUX",
+                "PLATFORM_LINUX_ARMV7A"
+            ],
+            "includePath": [
+                "${linuxIncludePath}",
+                "${linuxSourcePath}"
+            ],
+            "browse": {
+                "path": [
+                    "${linuxIncludePath}",
+                    "${linuxSourcePath}"
+                ]
+            }
+        },
+        {
+            "name": "aarch64-pc-linux-gnu",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "linux-clang-arm64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_AARCH64",
+                "PLATFORM_LINUX",
+                "PLATFORM_LINUX_AARCH64"
+            ],
+            "includePath": [
+                "${linuxIncludePath}",
+                "${linuxSourcePath}"
+            ],
+            "browse": {
+                "path": [
+                    "${linuxIncludePath}",
+                    "${linuxSourcePath}"
+                ]
+            }
+        },
+        {
+            "name": "i386-unknown-uefi",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "windows-clang-x86",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_I386",
+                "PLATFORM_UEFI",
+                "PLATFORM_UEFI_I386"
+            ],
+            "includePath": [
+                "${uefiIncludePath}",
+                "${uefiSourcePath}"
+            ],
+            "browse": {
+                "path": [
+                    "${uefiIncludePath}",
+                    "${uefiSourcePath}"
+                ]
+            }
+        },
+        {
+            "name": "x86_64-unknown-uefi",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "windows-clang-x64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_X86_64",
+                "PLATFORM_UEFI",
+                "PLATFORM_UEFI_X86_64"
+            ],
+            "includePath": [
+                "${uefiIncludePath}",
+                "${uefiSourcePath}"
+            ],
+            "browse": {
+                "path": [
+                    "${uefiIncludePath}",
+                    "${uefiSourcePath}"
+                ]
+            }
+        },
+        {
+            "name": "aarch64-unknown-uefi",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "windows-clang-arm64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_AARCH64",
+                "PLATFORM_UEFI",
+                "PLATFORM_UEFI_AARCH64"
+            ],
+            "includePath": [
+                "${uefiIncludePath}",
+                "${uefiSourcePath}"
+            ],
+            "browse": {
+                "path": [
+                    "${uefiIncludePath}",
+                    "${uefiSourcePath}"
+                ]
+            }
+        }
+    ]
+}

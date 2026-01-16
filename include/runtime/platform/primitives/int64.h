@@ -1,0 +1,364 @@
+#pragma once
+
+#include "uint64.h"
+
+#define MAXINT64 (INT64((UINT32)0x7FFFFFFF, (UINT32)0xFFFFFFFF))
+
+/**
+ * INT64 - Position-independent 64-bit signed integer class
+ *
+ * Prevents compiler from using native 64-bit types that could generate
+ * .rdata section references. All operations are implemented manually
+ * using the UINT64 class for unsigned operations and handling sign properly.
+ */
+class INT64
+{
+private:
+    UINT32 low;   // Lower 32 bits
+    INT32 high;   // Upper 32 bits (signed for proper sign extension)
+
+public:
+    // Default constructor
+    constexpr INT64() noexcept : low(0), high(0) {}
+
+    // Copy constructor (default is fine, but explicit to avoid warnings)
+    constexpr INT64(const INT64 &) noexcept = default;
+
+    // Constructor from 32-bit values
+    constexpr INT64(INT32 h, UINT32 l) noexcept : low(l), high(h) {}
+
+    // Constructor from single 32-bit value
+    constexpr INT64(INT32 val) noexcept : low((UINT32)val), high(val < 0 ? -1 : 0) {}
+
+    // Constructor from UINT32
+    constexpr explicit INT64(UINT32 val) noexcept : low(val), high(0) {}
+
+    // Constructor from native signed long long (for compatibility)
+    constexpr INT64(signed long long val) noexcept
+        : low((UINT32)(val & 0xFFFFFFFFLL)),
+          high((INT32)((val >> 32) & 0xFFFFFFFFLL))
+    {
+    }
+
+    // Get low 32 bits
+    constexpr UINT32 Low() const noexcept { return low; }
+
+    // Get high 32 bits
+    constexpr INT32 High() const noexcept { return high; }
+
+    // Conversion to signed long long
+    constexpr operator signed long long() const noexcept
+    {
+        return ((signed long long)high << 32) | (signed long long)low;
+    }
+
+    // Conversion to UINT64
+    constexpr operator UINT64() const noexcept
+    {
+        return UINT64((UINT32)high, low);
+    }
+
+    // Assignment operators
+    constexpr INT64 &operator=(const INT64 &other) noexcept
+    {
+        low = other.low;
+        high = other.high;
+        return *this;
+    }
+
+    constexpr INT64 &operator=(INT32 val) noexcept
+    {
+        low = (UINT32)val;
+        high = val < 0 ? -1 : 0;
+        return *this;
+    }
+
+    // Comparison operators
+    constexpr bool operator==(const INT64 &other) const noexcept
+    {
+        return (low == other.low) && (high == other.high);
+    }
+
+    constexpr bool operator!=(const INT64 &other) const noexcept
+    {
+        return !(*this == other);
+    }
+
+    constexpr bool operator<(const INT64 &other) const noexcept
+    {
+        if (high != other.high)
+            return high < other.high;
+        return low < other.low;
+    }
+
+    constexpr bool operator<(INT32 val) const noexcept
+    {
+        return *this < INT64(val);
+    }
+
+    constexpr bool operator<=(const INT64 &other) const noexcept
+    {
+        return (*this < other) || (*this == other);
+    }
+
+    constexpr bool operator<=(INT32 val) const noexcept
+    {
+        return *this <= INT64(val);
+    }
+
+    constexpr bool operator>(const INT64 &other) const noexcept
+    {
+        return !(*this <= other);
+    }
+
+    constexpr bool operator>(INT32 val) const noexcept
+    {
+        return *this > INT64(val);
+    }
+
+    constexpr bool operator>=(const INT64 &other) const noexcept
+    {
+        return !(*this < other);
+    }
+
+    constexpr bool operator>=(INT32 val) const noexcept
+    {
+        return *this >= INT64(val);
+    }
+
+    constexpr bool operator==(INT32 val) const noexcept
+    {
+        return *this == INT64(val);
+    }
+
+    constexpr bool operator!=(INT32 val) const noexcept
+    {
+        return *this != INT64(val);
+    }
+
+    // Arithmetic operators
+    constexpr INT64 operator+(const INT64 &other) const noexcept
+    {
+        UINT32 newLow = low + other.low;
+        UINT32 carry = (newLow < low) ? 1 : 0;
+        INT32 newHigh = high + other.high + (INT32)carry;
+        return INT64(newHigh, newLow);
+    }
+
+    constexpr INT64 operator-(const INT64 &other) const noexcept
+    {
+        UINT32 newLow = low - other.low;
+        UINT32 borrow = (low < other.low) ? 1 : 0;
+        INT32 newHigh = high - other.high - (INT32)borrow;
+        return INT64(newHigh, newLow);
+    }
+
+    constexpr INT64 operator-() const noexcept // Unary minus
+    {
+        return INT64(0, 0) - *this;
+    }
+
+    constexpr INT64 operator*(const INT64 &other) const noexcept
+    {
+        // Convert to unsigned for multiplication, then cast back
+        UINT64 a = UINT64((UINT32)high, low);
+        UINT64 b = UINT64((UINT32)other.high, other.low);
+        UINT64 result = a * b;
+
+        return INT64((INT32)result.High(), result.Low());
+    }
+
+    constexpr INT64 operator/(const INT64 &other) const noexcept
+    {
+        if (other.high == 0 && other.low == 0)
+            return INT64(0, 0); // Division by zero
+
+        // Handle signs
+        bool negResult = (high < 0) != (other.high < 0);
+
+        // Get absolute values
+        INT64 absThis = (high < 0) ? -(*this) : *this;
+        INT64 absOther = (other.high < 0) ? -other : other;
+
+        // Convert to unsigned and divide
+        UINT64 dividend = UINT64((UINT32)absThis.high, absThis.low);
+        UINT64 divisor = UINT64((UINT32)absOther.high, absOther.low);
+        UINT64 quotient = dividend / divisor;
+
+        INT64 result = INT64((INT32)quotient.High(), quotient.Low());
+        return negResult ? -result : result;
+    }
+
+    constexpr INT64 operator%(const INT64 &other) const noexcept
+    {
+        if (other.high == 0 && other.low == 0)
+            return INT64(0, 0);
+
+        INT64 quotient = *this / other;
+        return *this - (quotient * other);
+    }
+
+    constexpr INT64 operator%(INT32 val) const noexcept
+    {
+        return *this % INT64(val);
+    }
+
+    constexpr INT64 operator+(INT32 val) const noexcept
+    {
+        return *this + INT64(val);
+    }
+
+    constexpr INT64 operator-(INT32 val) const noexcept
+    {
+        return *this - INT64(val);
+    }
+
+    constexpr INT64 operator*(INT32 val) const noexcept
+    {
+        return *this * INT64(val);
+    }
+
+    constexpr INT64 operator/(INT32 val) const noexcept
+    {
+        return *this / INT64(val);
+    }
+
+    // Bitwise operators
+    constexpr INT64 operator&(const INT64 &other) const noexcept
+    {
+        return INT64(high & other.high, low & other.low);
+    }
+
+    constexpr INT64 operator|(const INT64 &other) const noexcept
+    {
+        return INT64(high | other.high, low | other.low);
+    }
+
+    constexpr INT64 operator^(const INT64 &other) const noexcept
+    {
+        return INT64(high ^ other.high, low ^ other.low);
+    }
+
+    constexpr INT64 operator~() const noexcept
+    {
+        return INT64(~high, ~low);
+    }
+
+    constexpr INT64 operator<<(int shift) const noexcept
+    {
+        if (shift < 0 || shift >= 64)
+            return INT64(0, 0);
+        if (shift == 0)
+            return *this;
+        if (shift >= 32)
+            return INT64((INT32)(low << (shift - 32)), 0);
+
+        return INT64((high << shift) | (INT32)(low >> (32 - shift)), low << shift);
+    }
+
+    constexpr INT64 operator>>(int shift) const noexcept
+    {
+        if (shift < 0)
+            return *this;
+        if (shift >= 64)
+            return INT64(high < 0 ? -1 : 0, high < 0 ? 0xFFFFFFFF : 0);
+        if (shift == 0)
+            return *this;
+        if (shift >= 32)
+            return INT64(high < 0 ? -1 : 0, (UINT32)(high >> (shift - 32)));
+
+        return INT64(high >> shift, (low >> shift) | ((UINT32)high << (32 - shift)));
+    }
+
+    // Compound assignment operators
+    constexpr INT64 &operator+=(const INT64 &other) noexcept
+    {
+        *this = *this + other;
+        return *this;
+    }
+
+    constexpr INT64 &operator-=(const INT64 &other) noexcept
+    {
+        *this = *this - other;
+        return *this;
+    }
+
+    constexpr INT64 &operator*=(const INT64 &other) noexcept
+    {
+        *this = *this * other;
+        return *this;
+    }
+
+    constexpr INT64 &operator/=(const INT64 &other) noexcept
+    {
+        *this = *this / other;
+        return *this;
+    }
+
+    constexpr INT64 &operator%=(const INT64 &other) noexcept
+    {
+        *this = *this % other;
+        return *this;
+    }
+
+    constexpr INT64 &operator&=(const INT64 &other) noexcept
+    {
+        *this = *this & other;
+        return *this;
+    }
+
+    constexpr INT64 &operator|=(const INT64 &other) noexcept
+    {
+        *this = *this | other;
+        return *this;
+    }
+
+    constexpr INT64 &operator^=(const INT64 &other) noexcept
+    {
+        *this = *this ^ other;
+        return *this;
+    }
+
+    constexpr INT64 &operator<<=(int shift) noexcept
+    {
+        *this = *this << shift;
+        return *this;
+    }
+
+    constexpr INT64 &operator>>=(int shift) noexcept
+    {
+        *this = *this >> shift;
+        return *this;
+    }
+
+    // Increment/Decrement
+    constexpr INT64 &operator++() noexcept // Prefix
+    {
+        *this = *this + INT64(1LL);
+        return *this;
+    }
+
+    constexpr INT64 operator++(int) noexcept // Postfix
+    {
+        INT64 temp = *this;
+        ++(*this);
+        return temp;
+    }
+
+    constexpr INT64 &operator--() noexcept // Prefix
+    {
+        *this = *this - INT64(1LL);
+        return *this;
+    }
+
+    constexpr INT64 operator--(int) noexcept // Postfix
+    {
+        INT64 temp = *this;
+        --(*this);
+        return temp;
+    }
+};
+
+// Pointer types
+typedef INT64 *PINT64;
+typedef INT64 **PPINT64;

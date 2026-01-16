@@ -1,0 +1,252 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "i386-pc-windows-gnu-pic",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "C:/Windows/SysWOW64/WindowsPowerShell/v1.0/powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/loader.ps1",
+                "${workspaceFolder}/build/windows/i386/release/output.bin"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "i386-pc-windows-gnu-release"
+        },
+        {
+            "name": "x86_64-pc-windows-gnu-pic",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "cmd.exe",
+            "args": [
+                "/Q",
+                "/C",
+                "start",
+                "/B",
+                "/MACHINE",
+                "amd64",
+                "/WAIT",
+                "powershell.exe",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/loader.ps1",
+                "${workspaceFolder}/build/windows/x86_64/release/output.bin"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "x86_64-pc-windows-gnu-release"
+        },
+        {
+            "name": "aarch64-pc-windows-gnu-pic",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "cmd.exe",
+            "args": [
+                "/Q",
+                "/C",
+                "start",
+                "/B",
+                "/MACHINE",
+                "arm64",
+                "/WAIT",
+                "powershell.exe",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/loader.ps1",
+                "${workspaceFolder}/build/windows/aarch64/release/output.bin"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "aarch64-pc-windows-gnu-release"
+        },
+        {
+            "name": "i386-pc-windows-gnu-debug",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/windows/i386/debug/output.exe",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "i386-pc-windows-gnu-debug",
+        },
+        {
+            "name": "x86_64-pc-windows-gnu-debug",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/windows/x86_64/debug/output.exe",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "x86_64-pc-windows-gnu-debug"
+        },
+        {
+            "name": "armv7a-pc-windows-gnu-debug",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/windows/armv7a/debug/output.exe",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "armv7a-pc-windows-gnu-debug"
+        },
+        {
+            "name": "aarch64-pc-windows-gnu-debug",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/windows/aarch64/debug/output.exe",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "aarch64-pc-windows-gnu-debug"
+        },
+        {
+            "name": "i386-unknown-linux-gnu-debug (WSL)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/linux/i386/debug/output.elf",
+            "cwd": "${workspaceFolder}",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "i386-unknown-linux-gnu-debug"
+        },
+        {
+            "name": "x86_64-unknown-linux-gnu-debug (WSL)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/linux/x86_64/debug/output.elf",
+            "cwd": "${workspaceFolder}",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "x86_64-unknown-linux-gnu-debug"
+        },
+        {
+            "name": "armv7a-unknown-linux-gnueabi-debug (WSL)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/linux/armv7a/debug/output.elf",
+            "cwd": "${workspaceFolder}",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "armv7a-unknown-linux-gnueabi-debug"
+        },
+        {
+            "name": "aarch64-unknown-linux-gnu-debug (WSL)",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/linux/aarch64/debug/output.elf",
+            "cwd": "${workspaceFolder}",
+            "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "aarch64-unknown-linux-gnu-debug"
+        },
+        {
+            "name": "i386-unknown-uefi-debug (QEMU)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/run-uefi-qemu.ps1",
+                "i386",
+                "debug"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "i386-unknown-uefi-debug"
+        },
+        {
+            "name": "x86_64-unknown-uefi-debug (QEMU)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/run-uefi-qemu.ps1",
+                "x86_64",
+                "debug"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "x86_64-unknown-uefi-debug"
+        },
+        {
+            "name": "aarch64-unknown-uefi-debug (QEMU)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/run-uefi-qemu.ps1",
+                "aarch64",
+                "debug"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "aarch64-unknown-uefi-debug"
+        },
+        {
+            "name": "i386-unknown-uefi-release (QEMU)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/run-uefi-qemu.ps1",
+                "i386",
+                "release"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "i386-unknown-uefi-release"
+        },
+        {
+            "name": "x86_64-unknown-uefi-release (QEMU)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/run-uefi-qemu.ps1",
+                "x86_64",
+                "release"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "x86_64-unknown-uefi-release"
+        },
+        {
+            "name": "aarch64-unknown-uefi-release (QEMU)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/run-uefi-qemu.ps1",
+                "aarch64",
+                "release"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "preLaunchTask": "aarch64-unknown-uefi-release"
+        }
+    ]
+}

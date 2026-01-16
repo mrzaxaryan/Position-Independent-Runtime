@@ -1,0 +1,18 @@
+{
+    // Force Clang as default compiler for cpptools
+    "C_Cpp.default.compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+    "C_Cpp.default.cStandard": "c17",
+    "C_Cpp.default.cppStandard": "c++17",
+    "C_Cpp.configurationWarnings": "enabled",
+    "C_Cpp.errorSquiggles": "enabled",
+    "C_Cpp.formatting": "clangFormat",
+    "files.associations": {
+        "console.h": "c",
+        "string.h": "c",
+        "environment.h": "c",
+        "peb.h": "c",
+        "pe.h": "c",
+        "math.h": "c",
+        "primitives.h": "c"
+    },
+}
