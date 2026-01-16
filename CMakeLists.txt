@@ -108,7 +108,6 @@ if(PLATFORM_LC STREQUAL "windows")
     set(INCLUDE_PATHS
         ${CMAKE_SOURCE_DIR}/include/
         ${CMAKE_SOURCE_DIR}/include/runtime/platform/
-        ${CMAKE_SOURCE_DIR}/include/runtime/platform/primitives/
         ${CMAKE_SOURCE_DIR}/include/runtime/platform/windows/
         ${CMAKE_SOURCE_DIR}/include/runtime/
         ${CMAKE_SOURCE_DIR}/include/tests/
@@ -186,7 +185,6 @@ elseif(PLATFORM_LC STREQUAL "linux")
     set(INCLUDE_PATHS
         ${CMAKE_SOURCE_DIR}/include/
         ${CMAKE_SOURCE_DIR}/include/runtime/platform/
-        ${CMAKE_SOURCE_DIR}/include/runtime/platform/primitives/
         ${CMAKE_SOURCE_DIR}/include/runtime/
         ${CMAKE_SOURCE_DIR}/include/tests/
     )
@@ -243,7 +241,6 @@ elseif(PLATFORM_LC STREQUAL "uefi")
     set(INCLUDE_PATHS
         ${CMAKE_SOURCE_DIR}/include/
         ${CMAKE_SOURCE_DIR}/include/runtime/platform/
-        ${CMAKE_SOURCE_DIR}/include/runtime/platform/primitives/
         ${CMAKE_SOURCE_DIR}/include/runtime/platform/uefi/
         ${CMAKE_SOURCE_DIR}/include/runtime/
         ${CMAKE_SOURCE_DIR}/include/tests/
