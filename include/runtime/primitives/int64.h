@@ -101,42 +101,59 @@ public:
 
     constexpr bool operator<=(const INT64 &other) const noexcept
     {
-        return (*this < other) || (*this == other);
+        if (high != other.high)
+            return high < other.high;
+        return low <= other.low;
     }
 
     constexpr bool operator<=(INT32 val) const noexcept
     {
-        return *this <= INT64(val);
+        INT32 valHigh = val < 0 ? -1 : 0;
+        if (high != valHigh)
+            return high < valHigh;
+        return low <= (UINT32)val;
     }
 
     constexpr bool operator>(const INT64 &other) const noexcept
     {
-        return !(*this <= other);
+        if (high != other.high)
+            return high > other.high;
+        return low > other.low;
     }
 
     constexpr bool operator>(INT32 val) const noexcept
     {
-        return *this > INT64(val);
+        INT32 valHigh = val < 0 ? -1 : 0;
+        if (high != valHigh)
+            return high > valHigh;
+        return low > (UINT32)val;
     }
 
     constexpr bool operator>=(const INT64 &other) const noexcept
     {
-        return !(*this < other);
+        if (high != other.high)
+            return high > other.high;
+        return low >= other.low;
     }
 
     constexpr bool operator>=(INT32 val) const noexcept
     {
-        return *this >= INT64(val);
+        INT32 valHigh = val < 0 ? -1 : 0;
+        if (high != valHigh)
+            return high > valHigh;
+        return low >= (UINT32)val;
     }
 
     constexpr bool operator==(INT32 val) const noexcept
     {
-        return *this == INT64(val);
+        INT32 valHigh = val < 0 ? -1 : 0;
+        return (high == valHigh) && (low == (UINT32)val);
     }
 
     constexpr bool operator!=(INT32 val) const noexcept
     {
-        return *this != INT64(val);
+        INT32 valHigh = val < 0 ? -1 : 0;
+        return (high != valHigh) || (low != (UINT32)val);
     }
 
     // Arithmetic operators
@@ -276,13 +293,19 @@ public:
     // Compound assignment operators
     constexpr INT64 &operator+=(const INT64 &other) noexcept
     {
-        *this = *this + other;
+        UINT32 newLow = low + other.low;
+        UINT32 carry = (newLow < low) ? 1 : 0;
+        low = newLow;
+        high = high + other.high + (INT32)carry;
         return *this;
     }
 
     constexpr INT64 &operator-=(const INT64 &other) noexcept
     {
-        *this = *this - other;
+        UINT32 newLow = low - other.low;
+        UINT32 borrow = (low < other.low) ? 1 : 0;
+        low = newLow;
+        high = high - other.high - (INT32)borrow;
         return *this;
     }
 
@@ -306,38 +329,82 @@ public:
 
     constexpr INT64 &operator&=(const INT64 &other) noexcept
     {
-        *this = *this & other;
+        high &= other.high;
+        low &= other.low;
         return *this;
     }
 
     constexpr INT64 &operator|=(const INT64 &other) noexcept
     {
-        *this = *this | other;
+        high |= other.high;
+        low |= other.low;
         return *this;
     }
 
     constexpr INT64 &operator^=(const INT64 &other) noexcept
     {
-        *this = *this ^ other;
+        high ^= other.high;
+        low ^= other.low;
         return *this;
     }
 
     constexpr INT64 &operator<<=(int shift) noexcept
     {
-        *this = *this << shift;
+        if (shift < 0 || shift >= 64)
+        {
+            high = 0;
+            low = 0;
+        }
+        else if (shift == 0)
+        {
+            // Nothing to do
+        }
+        else if (shift >= 32)
+        {
+            high = (INT32)(low << (shift - 32));
+            low = 0;
+        }
+        else
+        {
+            high = (high << shift) | (INT32)(low >> (32 - shift));
+            low = low << shift;
+        }
         return *this;
     }
 
     constexpr INT64 &operator>>=(int shift) noexcept
     {
-        *this = *this >> shift;
+        if (shift < 0)
+        {
+            // Nothing to do
+        }
+        else if (shift >= 64)
+        {
+            high = high < 0 ? -1 : 0;
+            low = high < 0 ? 0xFFFFFFFF : 0;
+        }
+        else if (shift == 0)
+        {
+            // Nothing to do
+        }
+        else if (shift >= 32)
+        {
+            low = (UINT32)(high >> (shift - 32));
+            high = high < 0 ? -1 : 0;
+        }
+        else
+        {
+            low = (low >> shift) | ((UINT32)high << (32 - shift));
+            high = high >> shift;
+        }
         return *this;
     }
 
     // Increment/Decrement
     constexpr INT64 &operator++() noexcept // Prefix
     {
-        *this = *this + INT64(1LL);
+        if (++low == 0) // If low wrapped to 0, increment high
+            ++high;
         return *this;
     }
 
@@ -350,7 +417,8 @@ public:
 
     constexpr INT64 &operator--() noexcept // Prefix
     {
-        *this = *this - INT64(1LL);
+        if (low-- == 0) // If low was 0 before decrement, borrow from high
+            --high;
         return *this;
     }
 
