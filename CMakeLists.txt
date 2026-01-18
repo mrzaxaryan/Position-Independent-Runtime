@@ -16,177 +16,198 @@ endif()
 
 project(cpp-pic LANGUAGES CXX)
 
-# Configuration options
+# =============================================================================
+# Configuration Options
+# =============================================================================
 set(ARCHITECTURE "x86_64" CACHE STRING "Target architecture: i386, x86_64, armv7a, aarch64")
-set(PLATFORM "windows" CACHE STRING "Target platform: windows")
+set(PLATFORM "windows" CACHE STRING "Target platform (windows only, parameter kept for compatibility)")
 set(BUILD_TYPE "release" CACHE STRING "Build type: debug, release")
 
 # Normalize inputs to lowercase (except BUILD_TYPE keeps original case for output dir)
 string(TOLOWER "${ARCHITECTURE}" ARCHITECTURE_LC)
-string(TOLOWER "${PLATFORM}" PLATFORM_LC)
 string(TOLOWER "${BUILD_TYPE}" BUILD_TYPE_LC)
-# Preserve original BUILD_TYPE case for output directory (DEBUG vs release)
-set(BUILD_TYPE_DIR "${BUILD_TYPE}")
+set(BUILD_TYPE_DIR "${BUILD_TYPE}")  # Preserve case for output directory
 
 # Validate inputs
 set(VALID_ARCHITECTURES "i386" "x86_64" "armv7a" "aarch64")
-set(VALID_PLATFORMS "windows")
 set(VALID_BUILD_TYPES "debug" "release")
 
 if(NOT ARCHITECTURE_LC IN_LIST VALID_ARCHITECTURES)
     message(FATAL_ERROR "Invalid ARCHITECTURE: ${ARCHITECTURE}. Must be one of: ${VALID_ARCHITECTURES}")
 endif()
-if(NOT PLATFORM_LC IN_LIST VALID_PLATFORMS)
-    message(FATAL_ERROR "Invalid PLATFORM: ${PLATFORM}. Must be one of: ${VALID_PLATFORMS}")
-endif()
 if(NOT BUILD_TYPE_LC IN_LIST VALID_BUILD_TYPES)
     message(FATAL_ERROR "Invalid BUILD_TYPE: ${BUILD_TYPE}. Must be one of: ${VALID_BUILD_TYPES}")
 endif()
 
-# Set output directory - hierarchical structure: build/platform/arch/buildtype/
-# Artifacts go to root, CMake files go to cmake/ subdirectory
-# This must be defined early so it can be used in linker flags
-set(BUILD_ROOT "${CMAKE_SOURCE_DIR}/build/${PLATFORM_LC}/${ARCHITECTURE_LC}/${BUILD_TYPE_LC}")
+# =============================================================================
+# Output Directory Configuration
+# =============================================================================
+# Hierarchical structure: build/windows/arch/buildtype/
+set(BUILD_ROOT "${CMAKE_SOURCE_DIR}/build/windows/${ARCHITECTURE_LC}/${BUILD_TYPE_LC}")
 set(OUTPUT_DIR "${BUILD_ROOT}")
 
-# Set optimization level based on build type
+# =============================================================================
+# Architecture-Specific Target Triple
+# =============================================================================
+if(ARCHITECTURE_LC STREQUAL "i386")
+    set(TARGET_TRIPLE "i386-pc-windows-gnu")
+    set(ARCH_DEFINES ARCHITECTURE_I386 PLATFORM_WINDOWS PLATFORM_WINDOWS_I386)
+elseif(ARCHITECTURE_LC STREQUAL "x86_64")
+    set(TARGET_TRIPLE "x86_64-pc-windows-gnu")
+    set(ARCH_DEFINES ARCHITECTURE_X86_64 PLATFORM_WINDOWS PLATFORM_WINDOWS_X86_64)
+elseif(ARCHITECTURE_LC STREQUAL "armv7a")
+    set(TARGET_TRIPLE "armv7a-pc-windows-gnu")
+    set(ARCH_DEFINES ARCHITECTURE_ARMV7A PLATFORM_WINDOWS PLATFORM_WINDOWS_ARMV7A)
+elseif(ARCHITECTURE_LC STREQUAL "aarch64")
+    set(TARGET_TRIPLE "aarch64-pc-windows-gnu")
+    set(ARCH_DEFINES ARCHITECTURE_AARCH64 PLATFORM_WINDOWS PLATFORM_WINDOWS_AARCH64)
+endif()
+
+# =============================================================================
+# Optimization Flags
+# =============================================================================
 if(BUILD_TYPE_LC STREQUAL "debug")
     # Debug optimization flags:
-    #   -Og              - Optimize for debugging experience (minimal optimizations that don't hurt debugging)
-    #   -ferror-limit=200 - Show up to 200 errors before stopping (helpful during development)
+    #   -Og              - Optimize for debugging experience (minimal optimizations)
+    #   -ferror-limit=200 - Show up to 200 errors before stopping
     set(OPTIMIZATION_FLAGS "-Og" "-ferror-limit=200")
+    list(APPEND ARCH_DEFINES DEBUG)
 else()
     # Release optimization flag:
-    #   -O3 - Maximum optimization level (aggressive inlining, vectorization, loop opts)
+    #   -O3 - Maximum optimization (aggressive inlining, vectorization, loop opts)
     set(OPTIMIZATION_FLAGS "-O3")
 endif()
 
-# Base compiler flags (all platforms/architectures)
-# These flags are essential for generating position-independent code without .rdata dependencies
+# =============================================================================
+# Source Files
+# =============================================================================
+set(INCLUDE_PATHS
+    ${CMAKE_SOURCE_DIR}/
+    ${CMAKE_SOURCE_DIR}/include/
+    ${CMAKE_SOURCE_DIR}/include/runtime/
+    ${CMAKE_SOURCE_DIR}/include/runtime/platform/
+    ${CMAKE_SOURCE_DIR}/include/runtime/platform/windows/
+    ${CMAKE_SOURCE_DIR}/include/runtime/primitives/
+    ${CMAKE_SOURCE_DIR}/tests/
+)
+
+# Collect all source files from src/ directory
+file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/*.cc)
+
+# =============================================================================
+# Base Compiler Flags (All Architectures)
+# =============================================================================
+# These flags are essential for position-independent code without .rdata dependencies
 set(BASE_COMPILER_FLAGS
     -std=c++23                              # C++23 standard for consteval, concepts, fold expressions
-    -fno-jump-tables                        # CRITICAL: Prevent switch statements from generating jump tables in .rdata
-    -Werror                                 # Treat all warnings as errors for strict code quality
-    -Wall                                   # Enable all common compiler warnings
-    -Wextra                                 # Enable additional warnings beyond -Wall
-    -Wno-gnu-string-literal-operator-template # Suppress warning for GNU extension used in _embed string literals
-    -Qn                                     # Suppress compiler identification in output (reduces binary fingerprint)
-    -nostdlib                               # Do not link standard C/C++ libraries (no CRT dependency)
-    -fno-ident                              # Do not emit .comment section with compiler version strings
-    -fno-exceptions                         # Disable C++ exceptions (no .pdata/.xdata unwind tables)
-    -fno-rtti                               # Disable RTTI (no typeinfo/vtable references in .rdata)
-    -fno-stack-check                        # Disable stack limit checking code generation
-    -ffunction-sections                     # Place each function in its own section for linker dead-code elimination
-    -fdata-sections                         # Place each data item in its own section for linker garbage collection
-    -fno-builtin                            # Disable compiler built-in replacements (ensures our implementations are used)
-    -fshort-wchar                           # Use 2-byte wchar_t (matches Windows ABI for wide strings)
+    -fno-jump-tables                        # CRITICAL: Prevent switch jump tables in .rdata
+    -Werror                                 # Treat all warnings as errors
+    -Wall                                   # Enable all common warnings
+    -Wextra                                 # Enable additional warnings
+    -Wno-gnu-string-literal-operator-template # Suppress warning for _embed literals
+    -Qn                                     # Suppress compiler identification
+    -nostdlib                               # No standard C/C++ libraries (no CRT)
+    -fno-ident                              # No .comment section with compiler version
+    -fno-exceptions                         # Disable C++ exceptions (no .pdata/.xdata)
+    -fno-rtti                               # Disable RTTI (no typeinfo in .rdata)
+    -fno-stack-check                        # Disable stack limit checking
+    -ffunction-sections                     # Each function in own section (dead code elimination)
+    -fdata-sections                         # Each data item in own section (garbage collection)
+    -fno-builtin                            # Disable compiler built-ins
+    -fshort-wchar                           # 2-byte wchar_t (Windows ABI)
 )
 
-# x86-specific compiler flags (not valid on ARM architectures)
+# =============================================================================
+# Architecture-Specific Compiler Flags
+# =============================================================================
 if(ARCHITECTURE_LC STREQUAL "i386" OR ARCHITECTURE_LC STREQUAL "x86_64")
+    # x86-specific flags
     list(APPEND BASE_COMPILER_FLAGS
-        -mno-stack-arg-probe                # Disable Windows stack probing (__chkstk calls) - x86 only
-        -msoft-float                        # Use software floating-point ABI (no FPU register dependencies) - x86 only
+        -mno-stack-arg-probe                # Disable __chkstk calls (x86 only)
+        -msoft-float                        # Software floating-point ABI (x86 only)
     )
 endif()
 
-# ARM-specific compiler flags (aarch64 and armv7a)
 if(ARCHITECTURE_LC STREQUAL "armv7a" OR ARCHITECTURE_LC STREQUAL "aarch64")
+    # ARM-specific flags
     list(APPEND BASE_COMPILER_FLAGS
-        -mno-implicit-float                 # Disable implicit generation of floating-point instructions
+        -mno-implicit-float                 # No implicit FP instructions
     )
 endif()
 
-# Base linker flags (all platforms/architectures)
+# =============================================================================
+# Build Type Specific Compiler Flags
+# =============================================================================
+if(BUILD_TYPE_LC STREQUAL "debug")
+    # Debug-specific compiler flags
+    list(APPEND BASE_COMPILER_FLAGS
+        -gcodeview                          # CodeView debug info (WinDbg/VS)
+        -g3                                 # Maximum debug information
+        -fno-omit-frame-pointer             # Keep frame pointer for stack traces
+    )
+else()
+    # Release-specific compiler flags (maximum optimization)
+    list(APPEND BASE_COMPILER_FLAGS
+        -fno-omit-frame-pointer             # Keep frame pointer (profiling/crash analysis)
+        -fno-asynchronous-unwind-tables     # No .eh_frame section
+        -fno-unwind-tables                  # No unwind tables
+        -flto=full                          # Full link-time optimization
+        -finline-functions                  # Aggressive inlining
+        -funroll-loops                      # Unroll loops
+        -fwhole-program-vtables             # LTO devirtualization
+    )
+endif()
+
+# =============================================================================
+# Base Linker Flags
+# =============================================================================
 set(BASE_LINKER_FLAGS
-    -fuse-ld=lld                            # Use LLVM's LLD linker (fast, supports all target platforms)
-    -nostdlib                               # Do not link standard libraries (no CRT startup code)
+    -fuse-ld=lld                            # LLVM LLD linker
+    -nostdlib                               # No standard libraries (no CRT startup)
 )
 
-# Platform-specific configuration
-if(PLATFORM_LC STREQUAL "windows")
-    set(INCLUDE_PATHS
-        ${CMAKE_SOURCE_DIR}/
-        ${CMAKE_SOURCE_DIR}/include/
-        ${CMAKE_SOURCE_DIR}/include/runtime/platform/
-        ${CMAKE_SOURCE_DIR}/include/runtime/platform/windows/
-        ${CMAKE_SOURCE_DIR}/include/runtime/
-        ${CMAKE_SOURCE_DIR}/include/runtime/primitives/
-        ${CMAKE_SOURCE_DIR}/tests/
-    )
-    file(GLOB_RECURSE SOURCES
-        ${CMAKE_SOURCE_DIR}/src/*.cc
-    )
-    # Exclude linux and uefi sources
-    list(FILTER SOURCES EXCLUDE REGEX ".*/linux/.*")
-    list(FILTER SOURCES EXCLUDE REGEX ".*/uefi/.*")
-    set(OUTPUT_EXT ".exe")
-    # Windows linker flags (passed to LLD via -Wl):
-    #   /Entry:_start        - Use _start as entry point (bypass CRT initialization)
-    #   /SUBSYSTEM:CONSOLE   - Console application (allocates console window)
-    #   /ORDER:@orderfile    - Control function placement order in .text section
-    #   /MERGE:.rdata=.text  - CRITICAL: Merge read-only data into code section for PIC
-    #                          (LTO may generate .rdata constants that would break position-independence)
-    set(LINKER_BASE "-Wl,/Entry:_start,/SUBSYSTEM:CONSOLE,/ORDER:@${CMAKE_SOURCE_DIR}/orderfile.txt,/MERGE:.rdata=.text")
+# Windows linker flags (passed to LLD via -Wl):
+#   /Entry:_start        - Use _start as entry point (bypass CRT)
+#   /SUBSYSTEM:CONSOLE   - Console application
+#   /ORDER:@orderfile    - Control function placement in .text
+#   /MERGE:.rdata=.text  - CRITICAL: Merge read-only data into code for PIC
+set(LINKER_BASE "-Wl,/Entry:_start,/SUBSYSTEM:CONSOLE,/ORDER:@${CMAKE_SOURCE_DIR}/orderfile.txt,/MERGE:.rdata=.text")
 
-    # Architecture-specific configuration for Windows
-    if(ARCHITECTURE_LC STREQUAL "i386")
-        set(TARGET_TRIPLE "i386-pc-windows-gnu")
-        set(ARCH_DEFINES ARCHITECTURE_I386 PLATFORM_WINDOWS PLATFORM_WINDOWS_I386)
-        # i386-specific linker flags:
-        #   /BASE:0x400000    - Preferred load address (standard for 32-bit Windows EXEs)
-        #   /FILEALIGN:0x1000 - File section alignment (4KB pages)
-        set(LINKER_EXTRA ",/BASE:0x400000,/FILEALIGN:0x1000,/SAFESEH:NO")
-    elseif(ARCHITECTURE_LC STREQUAL "x86_64")
-        set(TARGET_TRIPLE "x86_64-pc-windows-gnu")
-        set(ARCH_DEFINES ARCHITECTURE_X86_64 PLATFORM_WINDOWS PLATFORM_WINDOWS_X86_64)
-        set(LINKER_EXTRA "")
-    elseif(ARCHITECTURE_LC STREQUAL "armv7a")
-        set(TARGET_TRIPLE "armv7a-pc-windows-gnu")
-        set(ARCH_DEFINES ARCHITECTURE_ARMV7A PLATFORM_WINDOWS PLATFORM_WINDOWS_ARMV7A)
-        set(LINKER_EXTRA "")
-    elseif(ARCHITECTURE_LC STREQUAL "aarch64")
-        set(TARGET_TRIPLE "aarch64-pc-windows-gnu")
-        set(ARCH_DEFINES ARCHITECTURE_AARCH64 PLATFORM_WINDOWS PLATFORM_WINDOWS_AARCH64)
-        set(LINKER_EXTRA "")
-    endif()
-
-    # Build type specific flags for Windows
-    if(BUILD_TYPE_LC STREQUAL "debug")
-        list(APPEND ARCH_DEFINES DEBUG)
-        # Debug compiler flags:
-        #   -gcodeview           - Generate CodeView debug info (for Windows debuggers like WinDbg/VS)
-        #   -g3                  - Maximum debug information level (includes macro definitions)
-        #   -fno-omit-frame-pointer - Keep frame pointer for accurate stack traces
-        list(APPEND BASE_COMPILER_FLAGS -gcodeview -g3 -fno-omit-frame-pointer)
-        # Debug linker flags:
-        #   /DEBUG - Include debug information in PE file
-        #   /MAP   - Generate linker map file for symbol analysis
-        set(LINKER_FLAGS "${LINKER_BASE}${LINKER_EXTRA},/DEBUG,/MAP:${OUTPUT_DIR}/output.map.txt")
-    else()
-        # Release compiler flags for maximum optimization:
-        list(APPEND BASE_COMPILER_FLAGS
-            -fno-omit-frame-pointer             # Keep frame pointer (useful for profiling/crash analysis)
-            -fno-asynchronous-unwind-tables     # No .eh_frame section (reduces binary size)
-            -fno-unwind-tables                  # No unwind tables (exceptions disabled anyway)
-            -flto=full                          # Full link-time optimization (cross-module inlining)
-            -finline-functions                  # Aggressively inline functions for performance
-            -funroll-loops                      # Unroll loops to reduce branch overhead
-            -fwhole-program-vtables             # LTO optimization for devirtualization
-        )
-        # Release linker flags:
-        #   --strip-all - Remove all symbol and debug information
-        #   /OPT:REF    - Remove unreferenced functions and data (dead code elimination)
-        #   /OPT:ICF    - Fold identical code sequences (reduces size)
-        #   /RELEASE    - Set release flag in PE header (optimizes loading)
-        #   /LTCG       - Link-time code generation (works with -flto)
-        #   /MAP        - Generate linker map file for analysis
-        set(LINKER_FLAGS "${LINKER_BASE}${LINKER_EXTRA},--strip-all,/OPT:REF,/OPT:ICF,/RELEASE,/LTCG,/MAP:${OUTPUT_DIR}/output.map.txt")
-    endif()
-
+# =============================================================================
+# Architecture-Specific Linker Flags
+# =============================================================================
+if(ARCHITECTURE_LC STREQUAL "i386")
+    # i386-specific linker flags:
+    #   /BASE:0x400000    - Preferred load address (standard for 32-bit Windows)
+    #   /FILEALIGN:0x1000 - File section alignment (4KB pages)
+    #   /SAFESEH:NO       - Disable SafeSEH
+    set(LINKER_EXTRA ",/BASE:0x400000,/FILEALIGN:0x1000,/SAFESEH:NO")
+else()
+    set(LINKER_EXTRA "")
 endif()
 
-# Create output directory and set CMake output paths
+# =============================================================================
+# Build Type Specific Linker Flags
+# =============================================================================
+if(BUILD_TYPE_LC STREQUAL "debug")
+    # Debug linker flags:
+    #   /DEBUG - Include debug information in PE
+    #   /MAP   - Generate linker map file
+    set(LINKER_FLAGS "${LINKER_BASE}${LINKER_EXTRA},/DEBUG,/MAP:${OUTPUT_DIR}/output.map.txt")
+else()
+    # Release linker flags:
+    #   --strip-all - Remove all symbols and debug info
+    #   /OPT:REF    - Remove unreferenced functions/data
+    #   /OPT:ICF    - Fold identical code sequences
+    #   /RELEASE    - Set release flag in PE header
+    #   /LTCG       - Link-time code generation
+    #   /MAP        - Generate linker map file
+    set(LINKER_FLAGS "${LINKER_BASE}${LINKER_EXTRA},--strip-all,/OPT:REF,/OPT:ICF,/RELEASE,/LTCG,/MAP:${OUTPUT_DIR}/output.map.txt")
+endif()
+
+# =============================================================================
+# Create Output Directory
+# =============================================================================
 file(MAKE_DIRECTORY "${OUTPUT_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_DIR}")
@@ -195,13 +216,15 @@ set(CMAKE_PDB_OUTPUT_DIRECTORY "${OUTPUT_DIR}")
 set(CMAKE_PDB_OUTPUT_DIRECTORY_DEBUG "${OUTPUT_DIR}")
 set(CMAKE_PDB_OUTPUT_DIRECTORY_RELEASE "${OUTPUT_DIR}")
 
-# Create the executable
+# =============================================================================
+# Create Executable Target
+# =============================================================================
 add_executable(${TARGET_TRIPLE} ${SOURCES})
 
-# Set target properties - use simple "output" name since directory structure provides context
+# Set target properties - use simple "output" name (directory provides context)
 set_target_properties(${TARGET_TRIPLE} PROPERTIES
     OUTPUT_NAME "output"
-    SUFFIX "${OUTPUT_EXT}"
+    SUFFIX ".exe"
 )
 
 # Include directories
@@ -224,8 +247,10 @@ target_link_options(${TARGET_TRIPLE} PRIVATE
     "SHELL:${LINKER_FLAGS}"
 )
 
-# Post-build commands for generating PIC blob and analysis files
-set(OUTPUT_EXE "${OUTPUT_DIR}/output${OUTPUT_EXT}")
+# =============================================================================
+# Post-Build Commands (PIC Blob Generation & Analysis)
+# =============================================================================
+set(OUTPUT_EXE "${OUTPUT_DIR}/output.exe")
 set(OUTPUT_BIN "${OUTPUT_DIR}/output.bin")
 set(OUTPUT_TXT "${OUTPUT_DIR}/output.txt")
 set(OUTPUT_STR "${OUTPUT_DIR}/output.strings.txt")
@@ -235,32 +260,34 @@ set(OUTPUT_MAP "${OUTPUT_DIR}/output.map.txt")
 add_custom_command(TARGET ${TARGET_TRIPLE} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "Build SUCCEEDED: ${OUTPUT_EXE}"
 
-    # Generate object dump
+    # Generate object dump (disassembly + section headers + .text content)
     COMMAND llvm-objdump -d -s -h -j .text ${OUTPUT_EXE} > ${OUTPUT_TXT}
 
     # Extract .text section as PIC blob
     COMMAND llvm-objcopy "--dump-section=.text=${OUTPUT_BIN}" ${OUTPUT_EXE}
 
-    # Generate strings file
+    # Generate strings file (verify no embedded string literals)
     COMMAND llvm-strings ${OUTPUT_EXE} > ${OUTPUT_STR}
 
-    # Base64 encode the PIC blob (platform-specific)
+    # Base64 encode the PIC blob
     COMMAND ${CMAKE_COMMAND} -DPIC_FILE=${OUTPUT_BIN} -DBASE64_FILE=${OUTPUT_B64} -P "${CMAKE_SOURCE_DIR}/cmake/base64_encode.cmake"
 
-    # Verify no .rdata section exists (critical for PIC - would break position-independence)
+    # Verify no .rdata section exists (critical for PIC)
     COMMAND ${CMAKE_COMMAND} -DMAP_FILE=${OUTPUT_MAP} -P "${CMAKE_SOURCE_DIR}/cmake/verify_no_rdata.cmake"
 
     COMMENT "Generating PIC blob and analysis files..."
 )
 
-# Print configuration summary
+# =============================================================================
+# Configuration Summary
+# =============================================================================
 message(STATUS "")
 message(STATUS "=== Build Configuration ===")
 message(STATUS "ARCHITECTURE:     ${ARCHITECTURE_LC}")
-message(STATUS "PLATFORM:         ${PLATFORM_LC}")
+message(STATUS "PLATFORM:         ${PLATFORM}")
 message(STATUS "BUILD_TYPE:       ${BUILD_TYPE_LC}")
 message(STATUS "TARGET_TRIPLE:    ${TARGET_TRIPLE}")
 message(STATUS "OUTPUT_DIR:       ${OUTPUT_DIR}")
-message(STATUS "OUTPUT:           output${OUTPUT_EXT}")
+message(STATUS "OUTPUT:           output.exe")
 message(STATUS "===========================")
 message(STATUS "")
