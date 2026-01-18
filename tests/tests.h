@@ -31,3 +31,4 @@
 #include "int64_tests.h"
 #include "double_tests.h"
 #include "string_formatter_tests.h"
+#include "socket_tests.h"

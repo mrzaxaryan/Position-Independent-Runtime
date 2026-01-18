@@ -44,6 +44,11 @@ ENTRYPOINT INT32 _start(VOID)
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
 
+	// Run socket tests (requires network connectivity)
+	Logger::Info<WCHAR>(L"=== Socket Tests (Network Required) ==="_embed);
+	SocketTests::RunAllTests();
+	Logger::Info<WCHAR>(L""_embed);
+
 	// Final summary
 	Logger::Info<WCHAR>(L"=== Test Suite Complete ==="_embed);
 	if (allPassed)
