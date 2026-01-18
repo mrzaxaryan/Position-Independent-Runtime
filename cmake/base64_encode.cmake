@@ -17,10 +17,24 @@ if(WIN32)
     )
 else()
     # Use base64 on Linux/macOS
+    # Try GNU base64 (with -w flag) first, fall back to BSD base64
     execute_process(
-        COMMAND sh -c "base64 -w 0 '${PIC_FILE}' > '${BASE64_FILE}' 2>/dev/null || base64 '${PIC_FILE}' | tr -d '\\n' > '${BASE64_FILE}'"
+        COMMAND base64 -w 0 "${PIC_FILE}"
+        OUTPUT_FILE "${BASE64_FILE}"
+        ERROR_QUIET
         RESULT_VARIABLE RESULT
     )
+    if(NOT RESULT EQUAL 0)
+        # Fallback to BSD base64 (macOS) - output to variable then write
+        execute_process(
+            COMMAND base64 "${PIC_FILE}"
+            OUTPUT_VARIABLE BASE64_CONTENT
+            RESULT_VARIABLE RESULT
+        )
+        # Remove newlines from BSD base64 output
+        string(REPLACE "\n" "" BASE64_CONTENT "${BASE64_CONTENT}")
+        file(WRITE "${BASE64_FILE}" "${BASE64_CONTENT}")
+    endif()
     # Add trailing newline
     file(APPEND "${BASE64_FILE}" "\n")
 endif()
