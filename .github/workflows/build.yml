@@ -112,35 +112,37 @@ jobs:
 
       - name: Run test
         if: matrix.can-test
-        shell: pwsh
+        shell: cmd
         run: |
-          $arch = "${{ matrix.arch }}"
-          $platform = "${{ matrix.platform }}"
-          Write-Host "=== Testing $arch-$platform ===" -ForegroundColor Cyan
-          Write-Host "Note: ${{ matrix.note }}" -ForegroundColor Gray
-          Write-Host ""
+          @echo off
+          echo === Testing ${{ matrix.arch }}-${{ matrix.platform }} ===
+          echo Note: ${{ matrix.note }}
+          echo.
 
-          $exes = Get-ChildItem -Path artifacts -Recurse -Filter *.exe -Exclude a.exe
-          if ($exes.Count -eq 0) {
-            throw "No .exe found in artifacts/"
-          }
-          if ($exes.Count -gt 1) {
-            Write-Host "Multiple .exe files found (ambiguous):"
-            $exes | ForEach-Object { Write-Host "  $($_.FullName)" }
-            throw "Ambiguous .exe selection"
-          }
+          for /r artifacts %%f in (*.exe) do (
+            if not "%%~nf"=="a" (
+              set "TEST_EXE=%%f"
+            )
+          )
 
-          $exe = $exes[0].FullName
-          Write-Host "=== Executing: $exe ===" -ForegroundColor Yellow
-          Write-Host ""
+          if not defined TEST_EXE (
+            echo ERROR: No .exe found in artifacts/
+            exit /b 1
+          )
 
-          & $exe
-          if ($LASTEXITCODE -ne 0) {
-            throw "❌ TEST FAILED: exit code $LASTEXITCODE (expected 0)"
-          }
+          echo === Executing: %TEST_EXE% ===
+          echo.
 
-          Write-Host ""
-          Write-Host "✔ TEST PASSED" -ForegroundColor Green
+          "%TEST_EXE%"
+          set EXIT_CODE=%ERRORLEVEL%
+
+          echo.
+          if %EXIT_CODE%==0 (
+            echo TEST PASSED (exit code: %EXIT_CODE%)
+          ) else (
+            echo TEST FAILED: exit code %EXIT_CODE% (expected 0)
+            exit /b %EXIT_CODE%
+          )
 
       - name: Skip test
         if: ${{ !matrix.can-test }}
