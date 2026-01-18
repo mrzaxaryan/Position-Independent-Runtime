@@ -70,7 +70,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.target }}
-          path: build/**
+          path: |
+            build/**
+            !build/**/cmake/CMakeFiles/**
 
   # =========================================================
   # TEST (Linux) -> downloads artifacts, runs SINGLE *.elf
@@ -196,7 +198,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.target }}
-          path: build/**
+          path: |
+            build/**
+            !build/**/cmake/CMakeFiles/**
 
   # =========================================================
   # TEST (Windows x64 runner)
