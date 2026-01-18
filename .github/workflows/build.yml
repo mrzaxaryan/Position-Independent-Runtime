@@ -225,14 +225,17 @@ jobs:
           name: build-${{ matrix.target }}
           path: artifacts
 
-      - name: Locate and run produced EXE (PASS = exit code 0)
+      - name: Run EXE test for ${{ matrix.target }}
         if: matrix.target != 'aarch64-windows'
         shell: pwsh
         run: |
-          Write-Host "=== Artifact tree ==="
-          Get-ChildItem -Path artifacts -Recurse | ForEach-Object { $_.FullName }
+          Write-Host "=== Testing ${{ matrix.target }} ===" -ForegroundColor Cyan
+          Write-Host ""
+          Write-Host "=== Artifact tree (top-level only) ==="
+          Get-ChildItem -Path artifacts -Recurse -Depth 5 -File | ForEach-Object { Write-Host "  $($_.FullName)" }
+          Write-Host ""
 
-          $exes = Get-ChildItem -Path artifacts -Recurse -Filter *.exe
+          $exes = Get-ChildItem -Path artifacts -Recurse -Filter *.exe -Exclude a.exe
           if ($exes.Count -eq 0) {
             throw "No .exe found in artifacts/"
           }
@@ -243,18 +246,21 @@ jobs:
           }
 
           $exe = $exes[0].FullName
-          Write-Host "=== TEST RUN: $exe ==="
+          Write-Host "=== TEST RUN: $exe ===" -ForegroundColor Yellow
 
           & $exe
           if ($LASTEXITCODE -ne 0) {
             throw "❌ TEST FAIL: exit code $LASTEXITCODE (expected 0)"
           }
 
-          Write-Host "✔ TEST PASS: exit code 0"
+          Write-Host "✔ TEST PASS: exit code 0" -ForegroundColor Green
 
-      - name: Skip runtime test for aarch64-windows on x64 runner
+      - name: Skip aarch64-windows test (requires ARM64 runner)
         if: matrix.target == 'aarch64-windows'
         shell: pwsh
         run: |
-          Write-Host "Skipping runtime test: ARM64 Windows binaries can't run on x64 Windows hosted runners."
-          Write-Host "To test aarch64-windows, use a self-hosted Windows ARM64 runner (labels: self-hosted, windows, arm64)."
+          Write-Host "=== Testing ${{ matrix.target }} ===" -ForegroundColor Cyan
+          Write-Host ""
+          Write-Host "⚠ Skipping runtime test: ARM64 Windows binaries cannot run on x64 Windows runners." -ForegroundColor Yellow
+          Write-Host "To test aarch64-windows, use a self-hosted Windows ARM64 runner."
+          Write-Host "Build artifacts were created successfully - only execution is skipped." -ForegroundColor Green
