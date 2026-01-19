@@ -141,12 +141,19 @@ private:
 
 	static BOOL TestUInt32ArrayStorage()
 	{
-		static constexpr const UINT32 testData[] = {0x12345678, 0x9ABCDEF0, 0x11223344, 0x55667788};
+		static constexpr const UINT32 testData[] = {1, 2, 3, 4};
 		static constexpr auto storage = MakeArrayStorage(testData);
 
 		// Verify size
 		if (storage.Count != 4)
 			return FALSE;
+
+		// Print values to console
+		Logger::Info<WCHAR>(L"    UINT32 values:"_embed);
+		for (USIZE i = 0; i < 4; i++)
+		{
+			Logger::Info<WCHAR>(L"      %u"_embed, storage[i]);
+		}
 
 		// Verify data integrity
 		for (USIZE i = 0; i < 4; i++)
