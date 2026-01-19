@@ -208,7 +208,7 @@ UINT128_ Ecc::Mul64_64(UINT64 left, UINT64 right)
     m2 += m1;
     if (m2 < m1)
     { // overflow
-        m3 += 0x100000000ull;
+        m3 += UINT64(0x100000000ull);
     }
 
     result.low = (m0 & 0xffffffffull) | (m2 << 32);
