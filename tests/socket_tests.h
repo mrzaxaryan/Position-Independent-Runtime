@@ -10,13 +10,14 @@
 // Test Server: 0y.wtf (79.133.51.99)
 // =============================================================================
 
-namespace SocketTests
+class SocketTests
 {
+private:
 	// Test server IP address: 79.133.51.99 (0y.wtf)
-	constexpr UINT32 TEST_SERVER_IP = 0x6333854F; // Network byte order
+	static constexpr UINT32 TEST_SERVER_IP = 0x6333854F; // Network byte order
 
 	// Test 1: Socket creation
-	BOOL TestSocketCreation()
+	static BOOL TestSocketCreation()
 	{
 		LOG_INFO("Test: Socket Creation");
 
@@ -35,7 +36,7 @@ namespace SocketTests
 	}
 
 	// Test 2: Socket connection to HTTP port
-	BOOL TestSocketConnection()
+	static BOOL TestSocketConnection()
 	{
 		LOG_INFO("Test: Socket Connection (HTTP:80)");
 
@@ -61,7 +62,7 @@ namespace SocketTests
 	}
 
 	// Test 3: HTTP GET request (port 80)
-	BOOL TestHttpRequest()
+	static BOOL TestHttpRequest()
 	{
 		LOG_INFO("Test: HTTP GET Request (port 80)");
 
@@ -107,7 +108,7 @@ namespace SocketTests
 	}
 
 	// Test 4: WebSocket connection (port 80)
-	BOOL TestWebSocketConnection()
+	static BOOL TestWebSocketConnection()
 	{
 		LOG_INFO("Test: WebSocket Connection (WS:80)");
 
@@ -156,7 +157,7 @@ namespace SocketTests
 	}
 
 	// Test 5: TCP Echo Server (port 8080)
-	BOOL TestTcpEcho()
+	static BOOL TestTcpEcho()
 	{
 		LOG_INFO("Test: TCP Echo Server (port 8080)");
 
@@ -228,7 +229,7 @@ namespace SocketTests
 	}
 
 	// Test 6: Multiple sequential connections
-	BOOL TestMultipleConnections()
+	static BOOL TestMultipleConnections()
 	{
 		LOG_INFO("Test: Multiple Sequential Connections");
 
@@ -274,7 +275,7 @@ namespace SocketTests
 	}
 
 	// Test 7: Large HTTP response handling
-	BOOL TestLargeResponse()
+	static BOOL TestLargeResponse()
 	{
 		LOG_INFO("Test: Large HTTP Response Handling");
 
@@ -336,7 +337,7 @@ namespace SocketTests
 	}
 
 	// Test 8: IP address conversion
-	BOOL TestIpConversion()
+	static BOOL TestIpConversion()
 	{
 		LOG_INFO("Test: IP Address Conversion");
 
@@ -387,8 +388,9 @@ namespace SocketTests
 		return TRUE;
 	}
 
+public:
 	// Run all socket tests
-	VOID RunAllTests()
+	static BOOL RunAll()
 	{
 		LOG_INFO("=== Starting Socket Tests ===");
 		LOG_INFO("Test Server: 0y.wtf (79.133.51.99)");
@@ -414,5 +416,6 @@ namespace SocketTests
 			passed++;
 
 		LOG_INFO("=== Socket Tests Complete: %d/%d passed ===", passed, total);
+		return (passed == total);
 	}
-}
+};

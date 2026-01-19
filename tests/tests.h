@@ -22,7 +22,7 @@
  *   // Run all tests
  *   Djb2Tests::RunAll();
  *   MemoryTests::RunAll();
- *   SocketTests::RunAllTests();
+ *   SocketTests::RunAll();
  *   TlsTests::RunAll();
  *   // ... etc
  */

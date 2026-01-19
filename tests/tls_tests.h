@@ -24,7 +24,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Client Creation");
 
-		TLSClient tlsClient("0y.wtf", TEST_SERVER_IP, TLS_PORT);
+		TLSClient tlsClient("0y.wtf"_embed, TEST_SERVER_IP, TLS_PORT);
 
 		LOG_INFO("TLS client created successfully");
 		return TRUE;
@@ -35,7 +35,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Handshake (port 8443)");
 
-		TLSClient tlsClient("0y.wtf", TEST_SERVER_IP, TLS_PORT);
+		TLSClient tlsClient("0y.wtf"_embed, TEST_SERVER_IP, TLS_PORT);
 
 		if (!tlsClient.Open())
 		{
@@ -53,7 +53,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Echo - Single Message");
 
-		TLSClient tlsClient("0y.wtf", TEST_SERVER_IP, TLS_PORT);
+		TLSClient tlsClient("0y.wtf"_embed, TEST_SERVER_IP, TLS_PORT);
 
 		if (!tlsClient.Open())
 		{
@@ -124,7 +124,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Echo - Multiple Messages");
 
-		TLSClient tlsClient("0y.wtf", TEST_SERVER_IP, TLS_PORT);
+		TLSClient tlsClient("0y.wtf"_embed, TEST_SERVER_IP, TLS_PORT);
 
 		if (!tlsClient.Open())
 		{
@@ -207,7 +207,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Echo - Variable Data Sizes");
 
-		TLSClient tlsClient("0y.wtf", TEST_SERVER_IP, TLS_PORT);
+		TLSClient tlsClient("0y.wtf"_embed, TEST_SERVER_IP, TLS_PORT);
 
 		if (!tlsClient.Open())
 		{
@@ -350,7 +350,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Echo - Binary Data");
 
-		TLSClient tlsClient("0y.wtf", TEST_SERVER_IP, TLS_PORT);
+		TLSClient tlsClient("0y.wtf"_embed, TEST_SERVER_IP, TLS_PORT);
 
 		if (!tlsClient.Open())
 		{
@@ -415,7 +415,7 @@ private:
 
 		for (UINT32 i = 0; i < 3; i++)
 		{
-			TLSClient tlsClient("0y.wtf", TEST_SERVER_IP, TLS_PORT);
+			TLSClient tlsClient("0y.wtf"_embed, TEST_SERVER_IP, TLS_PORT);
 
 			if (!tlsClient.Open())
 			{
@@ -459,7 +459,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Large Data Transfer");
 
-		TLSClient tlsClient("0y.wtf", TEST_SERVER_IP, TLS_PORT);
+		TLSClient tlsClient("0y.wtf"_embed, TEST_SERVER_IP, TLS_PORT);
 
 		if (!tlsClient.Open())
 		{
