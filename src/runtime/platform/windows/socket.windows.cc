@@ -3,6 +3,7 @@
 #include "socket.h"
 #include "logger.h"
 #include "string.h"
+#include "network.h"
 
 // =============================================================================
 // Socket Class Implementation - AFD-based Windows Networking

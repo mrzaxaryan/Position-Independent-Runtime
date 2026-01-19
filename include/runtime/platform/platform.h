@@ -104,7 +104,7 @@ public:
 
             for (USIZE b = 0; b < sizeof(TChar); ++b)
             {
-                const UINT8 data = (UINT8)((v >> (b * 8u)) & (U)0xFFu);
+                const UINT8 data = (UINT8)((v >> (int)(b * 8u)) & (U)0xFFu);
                 SetByte(i * sizeof(TChar) + b, data);
             }
         }

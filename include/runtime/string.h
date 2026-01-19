@@ -214,7 +214,7 @@ inline DOUBLE String::ParseString<DOUBLE>(const CHAR *s)
     // sign
     if (*s == '-')
     {
-        sign = -1.0_embed;
+        sign = DOUBLE(-1.0_embed);
         s++;
     }
     else if (*s == '+')
