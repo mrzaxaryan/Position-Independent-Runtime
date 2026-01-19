@@ -9,7 +9,7 @@ This guide provides detailed information about the Windows-specific implementati
 3. [Key Components](#key-components)
 4. [Memory Management](#memory-management)
 5. [Console Output](#console-output)
-6. [Direct Syscalls](#direct-syscalls)
+6. [Low-Level Native Interfaces](#low-level-native-interfaces)
 7. [Linker Configuration](#linker-configuration)
 8. [Best Practices](#best-practices)
 
@@ -110,7 +110,7 @@ Higher-level Windows APIs:
 
 | Function | Hash | Purpose |
 |----------|------|---------|
-| `GetStdHandle` | Computed at runtime | Retrieves standard console handles (stdin/stdout/stderr) |
+| `WriteConsoleA` | Computed at runtime | Writes ANSI (narrow) characters output to the console |
 | `WriteConsoleW` | Computed at runtime | Writes wide-character output to the console |
 
 ---
@@ -172,7 +172,7 @@ CPP-PIC implements console output using `WriteConsoleW` for wide character suppo
 
 ```cpp
 // Get stdout handle
-HANDLE stdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+HANDLE stdOut = pPeb->ProcessParameters->StandardOutput;
 
 // Write wide string
 WCHAR buffer[] = L"Hello, World!\n";
@@ -209,7 +209,7 @@ Console::WriteFormatted<WCHAR>(L"String: %ls\n"_embed, L"Hello");
 
 ---
 
-## Direct Syscalls
+## Low-Level Native Interfaces
 
 ### Why Not Standard APIs?
 
