@@ -86,6 +86,8 @@ set(INCLUDE_PATHS
     ${CMAKE_SOURCE_DIR}/include/
     ${CMAKE_SOURCE_DIR}/include/runtime/
     ${CMAKE_SOURCE_DIR}/include/runtime/crypt/
+    ${CMAKE_SOURCE_DIR}/include/runtime/crypt/random/
+    ${CMAKE_SOURCE_DIR}/include/runtime/date_time/
     ${CMAKE_SOURCE_DIR}/include/runtime/platform/
     ${CMAKE_SOURCE_DIR}/include/runtime/platform/windows/
     ${CMAKE_SOURCE_DIR}/include/runtime/primitives/

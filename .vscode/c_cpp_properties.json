@@ -9,6 +9,9 @@
             "${workspaceFolder}/include/runtime/primitives",
             "${workspaceFolder}/include/runtime/platform",
             "${workspaceFolder}/include/runtime/platform/windows",
+            "${workspaceFolder}/include/runtime/crypt",
+            "${workspaceFolder}/include/runtime/crypt/random",
+            "${workspaceFolder}/include/runtime/date_time",
             "${workspaceFolder}/include/runtime/network",
             "${workspaceFolder}/include/runtime/network/tls",
             "${workspaceFolder}/tests"
@@ -20,6 +23,11 @@
             "${workspaceFolder}/src/runtime/console/windows",
             "${workspaceFolder}/src/runtime/platform",
             "${workspaceFolder}/src/runtime/platform/windows",
+            "${workspaceFolder}/src/runtime/crypt",
+            "${workspaceFolder}/src/runtime/crypt/random",
+            "${workspaceFolder}/src/runtime/crypt/random/windows",
+            "${workspaceFolder}/src/runtime/date_time",
+            "${workspaceFolder}/src/runtime/date_time/windows",
             "${workspaceFolder}/src/runtime/network",
             "${workspaceFolder}/src/runtime/network/tls"
         ],
