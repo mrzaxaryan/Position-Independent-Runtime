@@ -342,7 +342,7 @@ private:
 		LOG_INFO("Test: IP Address Conversion");
 
 		// Test ConvertIP function with test server address
-		auto ipStr = "79.133.51.99"_embed;
+		auto ipStr = "1.1.1.1"_embed;
 		UINT32 convertedIp = ConvertIP((PCCHAR)ipStr);
 
 		if (convertedIp == INVALID_IPV4)

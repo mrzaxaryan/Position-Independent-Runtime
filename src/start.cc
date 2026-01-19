@@ -50,11 +50,19 @@ ENTRYPOINT INT32 _start(VOID)
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
 
+	if (!ShaTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	if (!EccTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
 	// Run socket tests (requires network connectivity)
 	if(!SocketTests::RunAll())
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
-
+	// Run TLS tests (requires network connectivity)
 	if(!TlsTests::RunAll())
 		allPassed = FALSE;
 

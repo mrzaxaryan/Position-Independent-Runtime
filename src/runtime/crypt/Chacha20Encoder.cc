@@ -66,11 +66,16 @@ BOOL ChaCha20Encoder::Decode(TlsBufferReader *in, TlsBuffer *out, const UCHAR *a
     LOG_DEBUG("Decoding packet with Chacha20 encoder, input size: %d bytes", in->GetSize());
     UINT32 counter = 1;
 
+    // Update IV with sequence number and counter
     this->remoteCipher.IvUpdate(this->remoteNonce, (UINT8 *)sequence, (PUCHAR)&counter);
     LOG_DEBUG("Chacha20 encoder updated IV with sequence: %p, counter: %d", sequence, counter);
+
+    // Generate Poly1305 key from current cipher state
     UCHAR poly1305_key[POLY1305_KEYLEN];
     this->remoteCipher.Poly1305Key(poly1305_key);
     LOG_DEBUG("Chacha20 encoder computed Poly1305 key: %p", poly1305_key);
+
+    // Decode and verify (poly_key is already computed, don't regenerate inside Poly1305Decode)
     INT32 size = this->remoteCipher.Poly1305Decode((UINT8 *)in->GetBuffer(), in->GetSize(), (UINT8 *)aad, aadSize, poly1305_key, (UINT8 *)out->GetBuffer());
     LOG_DEBUG("Chacha20 decode returned size: %d", size);
     if (size <= 0)
