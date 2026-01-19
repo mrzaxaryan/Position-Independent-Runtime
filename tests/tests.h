@@ -12,6 +12,7 @@
  *   Int64Tests             - Signed 64-bit integer tests
  *   DoubleTests            - Floating-point tests
  *   StringFormatterTests   - Printf-style formatting tests
+ *   RandomTests            - Random number generation tests
  *
  * USAGE:
  *   #include "tests.h"
@@ -31,4 +32,5 @@
 #include "int64_tests.h"
 #include "double_tests.h"
 #include "string_formatter_tests.h"
+#include "random_tests.h"
 #include "socket_tests.h"
