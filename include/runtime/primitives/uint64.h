@@ -346,6 +346,10 @@ public:
         UINT32 carry = (newLow < low) ? 1 : 0;
         return UINT64(high + carry, newLow);
     }
+    constexpr UINT64 operator+(int val) const noexcept
+    {
+        return *this + UINT64((unsigned long long)val);
+    }
 
     constexpr UINT64 operator-(UINT32 val) const noexcept
     {
