@@ -1,6 +1,7 @@
 #pragma once
 
 #include "uint64.h"
+#include "int64_common.h"
 
 /**
  * INT64 - Position-independent 64-bit signed integer class

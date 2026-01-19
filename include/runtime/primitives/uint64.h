@@ -52,6 +52,7 @@
 #pragma once
 
 #include "primitives.h"
+#include "int64_common.h"
 
 /**
  * UINT64 - Position-independent 64-bit unsigned integer class
