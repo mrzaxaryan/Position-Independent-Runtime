@@ -13,6 +13,8 @@
  *   DoubleTests            - Floating-point tests
  *   StringFormatterTests   - Printf-style formatting tests
  *   RandomTests            - Random number generation tests
+ *   SocketTests            - Socket and network tests
+ *   TlsTests               - TLS 1.3 implementation tests
  *
  * USAGE:
  *   #include "tests.h"
@@ -20,6 +22,8 @@
  *   // Run all tests
  *   Djb2Tests::RunAll();
  *   MemoryTests::RunAll();
+ *   SocketTests::RunAllTests();
+ *   TlsTests::RunAll();
  *   // ... etc
  */
 
@@ -34,3 +38,4 @@
 #include "string_formatter_tests.h"
 #include "random_tests.h"
 #include "socket_tests.h"
+#include "tls_tests.h"
