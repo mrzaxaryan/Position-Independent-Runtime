@@ -9,6 +9,8 @@
             "${workspaceFolder}/include/runtime/primitives",
             "${workspaceFolder}/include/runtime/platform",
             "${workspaceFolder}/include/runtime/platform/windows",
+            "${workspaceFolder}/include/runtime/network",
+            "${workspaceFolder}/include/runtime/network/tls",
             "${workspaceFolder}/tests"
         ],
         "windowsSourcePath": [
@@ -17,7 +19,9 @@
             "${workspaceFolder}/src/runtime/console",
             "${workspaceFolder}/src/runtime/console/windows",
             "${workspaceFolder}/src/runtime/platform",
-            "${workspaceFolder}/src/runtime/platform/windows"
+            "${workspaceFolder}/src/runtime/platform/windows",
+            "${workspaceFolder}/src/runtime/network",
+            "${workspaceFolder}/src/runtime/network/tls"
         ],
     },
     "configurations": [

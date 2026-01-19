@@ -88,6 +88,8 @@ set(INCLUDE_PATHS
     ${CMAKE_SOURCE_DIR}/include/runtime/platform/
     ${CMAKE_SOURCE_DIR}/include/runtime/platform/windows/
     ${CMAKE_SOURCE_DIR}/include/runtime/primitives/
+    ${CMAKE_SOURCE_DIR}/include/runtime/network/
+    ${CMAKE_SOURCE_DIR}/include/runtime/network/tls/
     ${CMAKE_SOURCE_DIR}/tests/
 )
 
