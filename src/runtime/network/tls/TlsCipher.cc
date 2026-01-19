@@ -59,7 +59,7 @@ PINT8 TlsCipher::CreateClientRand()
     // random.SetSeed(0);
 
     LOG_DEBUG("Creating client random data for cipher: %p", this);
-    for (UINT64 i = UINT64(0, 0); i < UINT64((UINT32)sizeof(this->data12.clientRandom)); i++)
+    for (UINT64 i = 0; i < (UINT64)sizeof(this->data12.clientRandom); i++)
     {
 
         this->data12.clientRandom[i] = random.Get() & 0xff;
@@ -279,8 +279,7 @@ VOID TlsCipher::Encode(TlsBuffer *sendbuf, const CHAR *packet, INT32 packetSize,
     aad[1] = sendbuf->GetBuffer()[1];
     aad[2] = sendbuf->GetBuffer()[2];
     *((UINT16 *)(aad + 3)) = UINT16SwapByteOrder(ChaCha20Encoder::ComputeSize(packetSize, 0)); //-header_size
-    UINT64 clientSeq = UINT64((UINT32)this->clientSeqNum++);
-    *((UINT64 *)(aad + 5)) = UINT64SwapByteOrder(clientSeq);
+    *((UINT64 *)(aad + 5)) = UINT64SwapByteOrder(this->clientSeqNum++);
 
     this->chacha20Context.Encode(sendbuf, packet, packetSize, aad, sizeof(aad));
 }
@@ -298,8 +297,7 @@ BOOL TlsCipher::Decode(TlsBufferReader *inout, INT32 version)
     aad[1] = UINT16SwapByteOrder(version) >> 8;
     aad[2] = UINT16SwapByteOrder(version) & 0xff;
     *((UINT16 *)(aad + 3)) = UINT16SwapByteOrder(inout->GetSize()); //-header_size
-    UINT64 serverSeq = UINT64((UINT32)this->serverSeqNum++);
-    *((UINT64 *)(aad + 5)) = UINT64SwapByteOrder(serverSeq);
+    *((UINT64 *)(aad + 5)) = UINT64SwapByteOrder(this->serverSeqNum++);
 
     BOOL ret = this->chacha20Context.Decode(inout, &this->decodeBuffer, aad, sizeof(aad));
     if (!ret)
