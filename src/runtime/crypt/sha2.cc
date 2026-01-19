@@ -204,7 +204,7 @@ VOID SHA256::Transform(SHA256 *ctx, const UINT8 *message, UINT64 block_nb)
 
         for (j = 0; j < 64; j++)
         {
-            t1 = wv[7] + SHA256_F2(wv[4]) + CH(wv[4], wv[5], wv[6]) + ((PUINT32)(PCVOID)(MakeArrayStorage(sha256_k)))[j] + w[j];
+            t1 = wv[7] + SHA256_F2(wv[4]) + CH(wv[4], wv[5], wv[6]) + ((PUINT32)(PCVOID)(MakeEmbedArray(sha256_k)))[j] + w[j];
             t2 = SHA256_F1(wv[0]) + MAJ(wv[0], wv[1], wv[2]);
             wv[7] = wv[6];
             wv[6] = wv[5];
@@ -229,7 +229,7 @@ SHA256::SHA256()
     INT32 i;
     for (i = 0; i < 8; i++)
     {
-        this->h[i] = ((PUINT32)(PCVOID)MakeArrayStorage(sha256_h0))[i];
+        this->h[i] = ((PUINT32)(PCVOID)MakeEmbedArray(sha256_h0))[i];
     }
 
     this->len = 0;
@@ -337,7 +337,7 @@ VOID SHA512::Transform(SHA512 *ctx, const UINT8 *message, UINT64 block_nb)
         }
         for (j = 0; j < 80; j++)
         {
-            t1 = wv[7] + SHA512_F2(wv[4]) + CH(wv[4], wv[5], wv[6]) + ((PUINT64)(PCVOID)MakeArrayStorage(sha512_k))[j] + w[j];
+            t1 = wv[7] + SHA512_F2(wv[4]) + CH(wv[4], wv[5], wv[6]) + ((PUINT64)(PCVOID)MakeEmbedArray(sha512_k))[j] + w[j];
             t2 = SHA512_F1(wv[0]) + MAJ(wv[0], wv[1], wv[2]);
             wv[7] = wv[6];
             wv[6] = wv[5];
@@ -362,7 +362,7 @@ SHA512::SHA512()
     INT32 i;
     for (i = 0; i < 8; i++)
     {
-        this->h[i] = ((PUINT64)(PCVOID)MakeArrayStorage(sha512_h0))[i];
+        this->h[i] = ((PUINT64)(PCVOID)MakeEmbedArray(sha512_h0))[i];
     }
 
     this->len = 0;
@@ -447,7 +447,7 @@ SHA224::SHA224()
     INT32 i;
     for (i = 0; i < 8; i++)
     {
-        this->h[i] = ((PUINT32)(PCVOID)MakeArrayStorage(sha224_h0))[i];
+        this->h[i] = ((PUINT32)(PCVOID)MakeEmbedArray(sha224_h0))[i];
     }
 
     this->len = 0;
@@ -531,7 +531,7 @@ SHA384::SHA384()
     INT32 i;
     for (i = 0; i < 8; i++)
     {
-        this->h[i] = ((PUINT64)(PCVOID)MakeArrayStorage(sha384_h0))[i];
+        this->h[i] = ((PUINT64)(PCVOID)MakeEmbedArray(sha384_h0))[i];
     }
 
     this->len = 0;

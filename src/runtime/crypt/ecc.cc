@@ -939,35 +939,35 @@ INT32 Ecc::Initialize(INT32 bytes)
     this->numEccDigits = bytes / 8;
     if (bytes == secp128r1)
     {
-        Memory::Copy(this->curveP, MakeArrayStorage(Curve_P_16), sizeof(Curve_P_16));
-        Memory::Copy(this->curveB, MakeArrayStorage(Curve_B_16), sizeof(Curve_B_16));
-        Memory::Copy(this->curveG.x, MakeArrayStorage(Curve_G_16.x), sizeof(Curve_G_16.x));
-        Memory::Copy(this->curveG.y, MakeArrayStorage(Curve_G_16.y), sizeof(Curve_G_16.y));
-        Memory::Copy(this->curveN, MakeArrayStorage(Curve_N_16), sizeof(Curve_N_16));
+        Memory::Copy(this->curveP, MakeEmbedArray(Curve_P_16), sizeof(Curve_P_16));
+        Memory::Copy(this->curveB, MakeEmbedArray(Curve_B_16), sizeof(Curve_B_16));
+        Memory::Copy(this->curveG.x, MakeEmbedArray(Curve_G_16.x), sizeof(Curve_G_16.x));
+        Memory::Copy(this->curveG.y, MakeEmbedArray(Curve_G_16.y), sizeof(Curve_G_16.y));
+        Memory::Copy(this->curveN, MakeEmbedArray(Curve_N_16), sizeof(Curve_N_16));
     }
     else if (bytes == secp192r1)
     {
-        Memory::Copy(this->curveP, MakeArrayStorage(Curve_P_24), sizeof(Curve_P_24));
-        Memory::Copy(this->curveB, MakeArrayStorage(Curve_B_24), sizeof(Curve_B_24));
-        Memory::Copy(this->curveG.x, MakeArrayStorage(Curve_G_24.x), sizeof(Curve_G_24.x));
-        Memory::Copy(this->curveG.y, MakeArrayStorage(Curve_G_24.y), sizeof(Curve_G_24.y));
-        Memory::Copy(this->curveN, MakeArrayStorage(Curve_N_24), sizeof(Curve_N_24));
+        Memory::Copy(this->curveP, MakeEmbedArray(Curve_P_24), sizeof(Curve_P_24));
+        Memory::Copy(this->curveB, MakeEmbedArray(Curve_B_24), sizeof(Curve_B_24));
+        Memory::Copy(this->curveG.x, MakeEmbedArray(Curve_G_24.x), sizeof(Curve_G_24.x));
+        Memory::Copy(this->curveG.y, MakeEmbedArray(Curve_G_24.y), sizeof(Curve_G_24.y));
+        Memory::Copy(this->curveN, MakeEmbedArray(Curve_N_24), sizeof(Curve_N_24));
     }
     else if (bytes == secp256r1)
     {
-        Memory::Copy(this->curveP, MakeArrayStorage(Curve_P_32), sizeof(Curve_P_32));
-        Memory::Copy(this->curveB, MakeArrayStorage(Curve_B_32), sizeof(Curve_B_32));
-        Memory::Copy(this->curveG.x, MakeArrayStorage(Curve_G_32.x), sizeof(Curve_G_32.x));
-        Memory::Copy(this->curveG.y, MakeArrayStorage(Curve_G_32.y), sizeof(Curve_G_32.y));
-        Memory::Copy(this->curveN, MakeArrayStorage(Curve_N_32), sizeof(Curve_N_32));
+        Memory::Copy(this->curveP, MakeEmbedArray(Curve_P_32), sizeof(Curve_P_32));
+        Memory::Copy(this->curveB, MakeEmbedArray(Curve_B_32), sizeof(Curve_B_32));
+        Memory::Copy(this->curveG.x, MakeEmbedArray(Curve_G_32.x), sizeof(Curve_G_32.x));
+        Memory::Copy(this->curveG.y, MakeEmbedArray(Curve_G_32.y), sizeof(Curve_G_32.y));
+        Memory::Copy(this->curveN, MakeEmbedArray(Curve_N_32), sizeof(Curve_N_32));
     }
     else if (bytes == secp384r1)
     {
-        Memory::Copy(this->curveP, MakeArrayStorage(Curve_P_48), sizeof(Curve_P_48));
-        Memory::Copy(this->curveB, MakeArrayStorage(Curve_B_48), sizeof(Curve_B_48));
-        Memory::Copy(this->curveG.x, MakeArrayStorage(Curve_G_48.x), sizeof(Curve_G_48.x));
-        Memory::Copy(this->curveG.y, MakeArrayStorage(Curve_G_48.y), sizeof(Curve_G_48.y));
-        Memory::Copy(this->curveN, MakeArrayStorage(Curve_N_48), sizeof(Curve_N_48));
+        Memory::Copy(this->curveP, MakeEmbedArray(Curve_P_48), sizeof(Curve_P_48));
+        Memory::Copy(this->curveB, MakeEmbedArray(Curve_B_48), sizeof(Curve_B_48));
+        Memory::Copy(this->curveG.x, MakeEmbedArray(Curve_G_48.x), sizeof(Curve_G_48.x));
+        Memory::Copy(this->curveG.y, MakeEmbedArray(Curve_G_48.y), sizeof(Curve_G_48.y));
+        Memory::Copy(this->curveN, MakeEmbedArray(Curve_N_48), sizeof(Curve_N_48));
     }
     else
         return -1;
