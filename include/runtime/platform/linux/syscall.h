@@ -192,7 +192,7 @@ public:
      *   void* p = Syscall::Mmap(NULL, size, PROT_READ|PROT_WRITE,
      *                          MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
      *
-     * Implementation note:
+     * NOTE:
      *   32-bit platforms (i386, armv7a) use mmap2 syscall where offset
      *   is in pages, not bytes. Our wrapper handles this transparently.
      *
