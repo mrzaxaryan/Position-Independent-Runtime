@@ -107,79 +107,7 @@ private:
 		return TRUE;
 	}
 
-	// Test 4: TCP Echo Server (port 8080)
-	static BOOL TestTcpEcho()
-	{
-		LOG_INFO("Test: TCP Echo Server (port 8080)");
-
-		// Connect to TCP echo port
-		Socket sock(TEST_SERVER_IP, 8080);
-
-		if (!sock.IsValid() || !sock.Open())
-		{
-			LOG_ERROR("Socket initialization or connection failed");
-			return FALSE;
-		}
-
-		// Send test message
-		auto message = "Hello from CPP-PIC TCP test!"_embed;
-		UINT32 bytesSent = sock.Write((PCVOID)(PCCHAR)message, message.Length);
-
-		if (bytesSent != message.Length)
-		{
-			LOG_ERROR("Failed to send complete message to echo server");
-			sock.Close();
-			return FALSE;
-		}
-
-		LOG_INFO("Sent %d bytes to echo server", bytesSent);
-
-		// Receive echo response
-		CHAR buffer[256];
-		Memory::Zero(buffer, sizeof(buffer));
-		SSIZE bytesRead = sock.Read(buffer, sizeof(buffer) - 1);
-
-		if (bytesRead <= 0)
-		{
-			LOG_ERROR("Failed to receive echo response");
-			sock.Close();
-			return FALSE;
-		}
-
-		LOG_INFO("Received echo response (%d bytes): %s", bytesRead, buffer);
-
-		// Verify echo matches sent message
-		if (bytesRead != (SSIZE)message.Length)
-		{
-			LOG_ERROR("Echo length mismatch: sent %d, received %d", message.Length, bytesRead);
-			sock.Close();
-			return FALSE;
-		}
-
-		// Compare echoed data
-		BOOL match = TRUE;
-		for (UINT32 i = 0; i < message.Length; i++)
-		{
-			if (buffer[i] != message[i])
-			{
-				match = FALSE;
-				break;
-			}
-		}
-
-		if (!match)
-		{
-			LOG_ERROR("Echo data mismatch");
-			sock.Close();
-			return FALSE;
-		}
-
-		LOG_INFO("Echo test passed - data matches");
-		sock.Close();
-		return TRUE;
-	}
-
-	// Test 5: Multiple sequential connections
+	// Test 4: Multiple sequential connections
 	static BOOL TestMultipleConnections()
 	{
 		LOG_INFO("Test: Multiple Sequential Connections");
@@ -225,7 +153,7 @@ private:
 		return TRUE;
 	}
 
-	// Test 6: IP address conversion
+	// Test 5: IP address conversion
 	static BOOL TestIpConversion()
 	{
 		LOG_INFO("Test: IP Address Conversion");
@@ -282,18 +210,16 @@ public:
 	static BOOL RunAll()
 	{
 		LOG_INFO("=== Starting Socket Tests ===");
-		LOG_INFO("Test Server: 0y.wtf (79.133.51.99)");
+		LOG_INFO("Test Server: 1.1.1.1 (Cloudflare)");
 
 		UINT32 passed = 0;
-		UINT32 total = 6;
+		UINT32 total = 5;
 
 		if (TestSocketCreation())
 			passed++;
 		if (TestSocketConnection())
 			passed++;
 		if (TestHttpRequest())
-			passed++;
-		if (TestTcpEcho())
 			passed++;
 		if (TestMultipleConnections())
 			passed++;
