@@ -179,8 +179,7 @@ BOOL TLSClient::SendClientHello(const CHAR *host)
             UINT16 eccIana = ecc_iana_list[i];
             sendBuffer.Append((INT16)UINT16SwapByteOrder(eccIana));
             INT32 shareSizeSub = sendBuffer.AppendSize(2);
-            BOOL ret = !crypto.ComputePublicKey(i, &sendBuffer);
-            if (ret)
+            if (!crypto.ComputePublicKey(i, &sendBuffer))
             {
                 LOG_DEBUG("Failed to compute public key for ECC group %d", i);
                 return FALSE;
@@ -313,10 +312,9 @@ BOOL TLSClient::OnServerHello(TlsBufferReader *reader)
             return FALSE;
         }
 
-        BOOL ret;
         LOG_DEBUG("Valid TLS version and public key size, tls_ver: %d, pubkey.size: %d, eccgroup: %d", tls_ver, pubkey.GetSize(), eccgroup);
 
-        if ((ret = !crypto.ComputeKey(eccgroup, pubkey.GetBuffer(), pubkey.GetSize(), 0)))
+        if (!crypto.ComputeKey(eccgroup, pubkey.GetBuffer(), pubkey.GetSize(), 0))
         {
             LOG_DEBUG("Failed to compute TLS 1.3 key for client: %p, ECC group: %d, public key size: %d", this, eccgroup, pubkey.GetSize());
             pubkey.Clear();
@@ -411,7 +409,7 @@ BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBufferReader *TlsRe
     if (packetType != CONTENT_CHANGECIPHERSPEC && packetType != CONTENT_ALERT)
     {
         LOG_DEBUG("Processing packet with type: %d, version: %d, size: %d bytes", packetType, version, TlsReader->GetSize());
-        if (crypto.Decode(TlsReader, version))
+        if (!crypto.Decode(TlsReader, version))
         {
             LOG_DEBUG("Failed to Decode packet for client: %p, type: %d, version: %d", this, packetType, version);
             return FALSE;

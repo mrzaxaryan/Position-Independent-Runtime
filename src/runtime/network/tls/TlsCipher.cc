@@ -295,7 +295,7 @@ BOOL TlsCipher::Decode(TlsBufferReader *inout, INT32 version)
     if (!this->isEncoding || !this->chacha20Context.IsInitialized())
     {
         LOG_DEBUG("Encoding not enabled or encoder is NULL, cannot Decode packet");
-        return 0;
+        return TRUE;
     }
     UCHAR aad[13];
 
@@ -315,7 +315,7 @@ BOOL TlsCipher::Decode(TlsBufferReader *inout, INT32 version)
     inout->SetBuffer(this->decodeBuffer.GetBuffer());
     inout->SetSize(this->decodeBuffer.GetSize());
 
-    return 0;
+    return TRUE;
 }
 
 VOID TlsCipher::SetEncoding(BOOL encoding)
