@@ -19,6 +19,8 @@
 
 #include "console.h"
 #include "date_time.h"
+#include "file_system.h"
+#include "string_formatter.h"
 
 // Convenience macros that automatically embed wide strings
 #define LOG_INFO(format, ...) Logger::Info<WCHAR>(L##format##_embed, ##__VA_ARGS__)
@@ -40,9 +42,16 @@ enum class LogLevels : UINT8
 	Debug = 2    // All messages
 };
 
+enum class LogOutputs : UINT8
+{
+	Console = 0x1, // Output to console
+	File    = 0x2,  // Output to file (not implemented)
+	Both    = 0x3  // Output to both console and file
+};
+
 // Global log level - modify this to control logging at compile-time
 inline constexpr LogLevels LogLevel = LogLevels::Default;
-
+inline constexpr LogOutputs LogOutput = LogOutputs::Both;
 /**
  * Logger - Static logging utility class
  *
@@ -53,35 +62,76 @@ class Logger
 {
 private:
 	/**
+	 * ConsoleCallback - Callback for console output (with ANSI colors)
+	 */
+	template <TCHAR TChar>
+	static BOOL ConsoleCallback(PVOID context, TChar ch)
+	{
+		(VOID)context;
+		return Console::Write(&ch, 1);
+	}
+
+	/**
+	 * FileCallback - Callback for file output (plain text, no colors)
+	 */
+	template <TCHAR TChar>
+	static BOOL FileCallback(PVOID context, TChar ch)
+	{
+		File *logFile = static_cast<File *>(context);
+		if (logFile && logFile->IsValid())
+		{
+			logFile->Write(&ch, sizeof(TChar));
+		}
+		return TRUE;
+	}
+
+	/**
 	 * LogWithPrefix - Internal helper to eliminate VA_LIST duplication
 	 *
-	 * Centralizes the common pattern:
-	 *   1. VA_START to initialize variadic args
-	 *   2. Write colored prefix
-	 *   3. Format and write message
-	 *   4. Write color reset and newline
-	 *   5. VA_END cleanup
+	 * Writes colored output to console and plain text to file.
 	 *
-	 * @param prefix - ANSI-colored prefix string (e.g., "[INFO]")
-	 * @param format - Format string with embedded specifiers
-	 * @param args   - Variadic argument list (already initialized)
+	 * @param colorPrefix - ANSI-colored prefix for console (e.g., "\033[0;32m[INF] ")
+	 * @param plainPrefix - Plain prefix for file (e.g., "[INF] ")
+	 * @param format      - Format string with embedded specifiers
+	 * @param args        - Variadic argument list (already initialized)
 	 *
 	 * TEMPLATE PARAMETERS:
 	 *   TChar - Character type for format string (CHAR or WCHAR)
 	 */
 	template <TCHAR TChar>
-	FORCE_INLINE static VOID LogWithPrefixV(const WCHAR *prefix, const TChar *format, VA_LIST args)
+	FORCE_INLINE static VOID LogWithPrefixV(const WCHAR *colorPrefix, const WCHAR *plainPrefix, const TChar *format, VA_LIST args)
 	{
 		// Get current time
 		DateTime now = DateTime::Now();
 		TimeOnlyString<WCHAR> timeStr = now.ToTimeOnlyString<WCHAR>();
 
-		Console::Write<WCHAR>(prefix);                 // Colored prefix (e.g., "[INFO]")
-		Console::Write<WCHAR>(L"["_embed);             // Start time bracket
-		Console::Write<WCHAR>((const WCHAR *)timeStr); // Current time
-		Console::Write<WCHAR>(L"] "_embed);            // End time bracket + space
-		Console::WriteFormattedV<TChar>(format, args); // User message
-		Console::Write<WCHAR>(L"\033[0m\n"_embed);     // Reset color + newline
+		// Console output (with colors)
+		if constexpr ((static_cast<UINT8>(LogOutput) & static_cast<UINT8>(LogOutputs::Console)) != 0)
+		{
+			auto consoleW = (BOOL (*)(PVOID, WCHAR))PerformRelocation((PVOID)ConsoleCallback<WCHAR>);
+			auto consoleT = (BOOL (*)(PVOID, TChar))PerformRelocation((PVOID)ConsoleCallback<TChar>);
+
+			StringFormatter::Format<WCHAR>(consoleW, NULL, L"%ls[%ls] "_embed, colorPrefix, (const WCHAR *)timeStr);
+			StringFormatter::FormatV<TChar>(consoleT, NULL, format, args);
+			StringFormatter::Format<WCHAR>(consoleW, NULL, L"\033[0m\n"_embed);
+		}
+
+		// File output (plain text, no colors)
+		if constexpr ((static_cast<UINT8>(LogOutput) & static_cast<UINT8>(LogOutputs::File)) != 0)
+		{
+			File logFile = FileSystem::Open(L"output.log.txt"_embed, FS_WRITE | FS_CREATE | FS_APPEND);
+			if (logFile.IsValid())
+			{
+				logFile.MoveOffset(0, OffsetOrigin::End);
+
+				auto fileW = (BOOL (*)(PVOID, WCHAR))PerformRelocation((PVOID)FileCallback<WCHAR>);
+				auto fileT = (BOOL (*)(PVOID, TChar))PerformRelocation((PVOID)FileCallback<TChar>);
+
+				StringFormatter::Format<WCHAR>(fileW, &logFile, L"%ls[%ls] "_embed, plainPrefix, (const WCHAR *)timeStr);
+				StringFormatter::FormatV<TChar>(fileT, &logFile, format, args);
+				StringFormatter::Format<WCHAR>(fileW, &logFile, L"\n"_embed);
+			}
+		}
 	}
 
 public:
@@ -144,7 +194,7 @@ VOID Logger::Info(const TChar *format, ...)
 	{
 		VA_LIST args;
 		VA_START(args, format);
-		LogWithPrefixV<TChar>(L"\033[0;32m[INF] "_embed, format, args);
+		LogWithPrefixV<TChar>(L"\033[0;32m[INF] "_embed, L"[INF] "_embed, format, args);
 		VA_END(args);
 	}
 	else
@@ -166,7 +216,7 @@ VOID Logger::Error(const TChar *format, ...)
 	{
 		VA_LIST args;
 		VA_START(args, format);
-		LogWithPrefixV<TChar>(L"\033[0;31m[ERR] "_embed, format, args);
+		LogWithPrefixV<TChar>(L"\033[0;31m[ERR] "_embed, L"[ERR] "_embed, format, args);
 		VA_END(args);
 	}
 	else
@@ -188,7 +238,7 @@ VOID Logger::Warning(const TChar *format, ...)
 	{
 		VA_LIST args;
 		VA_START(args, format);
-		LogWithPrefixV<TChar>(L"\033[0;33m[WRN] "_embed, format, args);
+		LogWithPrefixV<TChar>(L"\033[0;33m[WRN] "_embed, L"[WRN] "_embed, format, args);
 		VA_END(args);
 	}
 	else
@@ -210,7 +260,7 @@ VOID Logger::Debug(const TChar *format, ...)
 	{
 		VA_LIST args;
 		VA_START(args, format);
-		LogWithPrefixV<TChar>(L"\033[0;33m[DBG] "_embed, format, args);
+		LogWithPrefixV<TChar>(L"\033[0;33m[DBG] "_embed, L"[DBG] "_embed, format, args);
 		VA_END(args);
 	}
 	else
