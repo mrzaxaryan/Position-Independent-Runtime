@@ -5,6 +5,7 @@
 #include "memory.h"
 #include "socket.h"
 #include "tls.h"
+#include "network.h"
 
 class HttpClient
 {
