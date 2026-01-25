@@ -1,9 +1,9 @@
+#pragma once
+
 #include "primitives.h"
 #include "chacha20.h"
 #include "tls_buffer.h"
 #include "tls_buffer_reader.h"
-
-#pragma once
 
 typedef struct ChaCha20Encoder ChaCha20Encoder;
 
