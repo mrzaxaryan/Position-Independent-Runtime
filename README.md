@@ -18,6 +18,10 @@
 - [How It Works](#how-it-works)
 - [Building](#building)
 - [Windows Implementation](#windows-implementation)
+- [Cryptography](#cryptography)
+- [Networking](#networking)
+- [Logging](#logging)
+- [Testing](#testing)
 - [Use Cases](#use-cases)
 - [Documentation](#documentation)
 
@@ -38,6 +42,9 @@ This project represents years of research into compiler behavior, binary structu
 - **Windows-Native**: Direct syscalls, PEB walking, PE parsing - no imports
 - **Multi-Architecture**: Supports i386, x86_64, armv7a, and aarch64
 - **Full Optimization Support**: Works with all LLVM optimization levels (-O0 through -Oz)
+- **Cryptography**: SHA-256/512, ChaCha20, ECC (Elliptic Curve), Base64, cryptographic RNG
+- **Networking**: DNS resolution, HTTP client, WebSocket support, TLS 1.3 with certificate verification
+- **File System**: Complete file and directory operations via NTAPI
 
 ## Platform Support
 
@@ -284,6 +291,32 @@ auto writeConsole = GetExportByHash(kernel32, 0x7B8F69D2);
 - Hash-based lookups prevent string analysis
 - Position-independent
 
+### File System Operations
+
+Complete file and directory operations via NTAPI:
+
+```cpp
+// File operations
+File file;
+file.Open(path, FileMode::Read);
+file.Read(buffer, size, &bytesRead);
+file.Write(data, size, &bytesWritten);
+file.Close();
+
+// Directory operations
+Directory dir;
+dir.Create(path);
+dir.Exists(path);
+dir.Delete(path);
+dir.Enumerate(path, callback);
+```
+
+**Supported Operations:**
+- File create, read, write, delete
+- Directory create, enumerate, delete
+- File attributes and metadata
+- Path manipulation
+
 ### Console Output
 
 Printf-style formatting without CRT:
@@ -322,6 +355,121 @@ Critical flags for position-independence:
 /LTCG           # Link-time code generation
 ```
 
+## Cryptography
+
+CPP-PIC includes a complete cryptographic suite implemented without any external dependencies:
+
+### Hashing
+
+```cpp
+// SHA-256
+UINT8 hash[32];
+Sha256::Hash(data, dataLen, hash);
+
+// SHA-512
+UINT8 hash[64];
+Sha512::Hash(data, dataLen, hash);
+
+// HMAC variants
+Sha256::Hmac(key, keyLen, data, dataLen, mac);
+```
+
+### Symmetric Encryption
+
+```cpp
+// ChaCha20 stream cipher
+ChaCha20 cipher(key, nonce);
+cipher.Encrypt(plaintext, ciphertext, length);
+```
+
+### Elliptic Curve Cryptography
+
+```cpp
+// ECC key generation and operations
+Ecc::GenerateKeyPair(privateKey, publicKey);
+Ecc::Sign(privateKey, message, signature);
+Ecc::Verify(publicKey, message, signature);
+```
+
+### Encoding
+
+```cpp
+// Base64 encoding/decoding
+Base64::Encode(input, inputLen, output, &outputLen);
+Base64::Decode(input, inputLen, output, &outputLen);
+```
+
+## Networking
+
+Full networking stack built on Windows sockets:
+
+### DNS Resolution
+
+```cpp
+// Resolve domain to IP address
+Dns dns;
+auto ip = dns.Resolve("example.com"_embed);
+```
+
+### HTTP Client
+
+```cpp
+// HTTP requests
+Http http;
+http.Connect(host, port);
+http.Get("/api/endpoint"_embed, response);
+```
+
+### WebSocket
+
+```cpp
+// WebSocket connections
+WebSocket ws;
+ws.Connect(host, port, path);
+ws.Send(message, length);
+ws.Receive(buffer, &received);
+```
+
+### TLS 1.3
+
+```cpp
+// Secure connections with certificate verification
+Tls tls;
+tls.Connect(host, port);
+tls.Send(data, length);
+tls.Receive(buffer, &received);
+```
+
+**TLS Features:**
+- TLS 1.3 only (RFC 8446)
+- Certificate chain verification
+- ChaCha20-Poly1305 cipher suite
+- ECDHE key exchange (secp256r1, secp384r1)
+
+## Logging
+
+The Logger class provides structured logging with multiple output targets:
+
+```cpp
+// Initialize logger with console and file output
+Logger logger;
+logger.SetLevel(LogLevel::Debug);
+logger.SetFileOutput("app.log"_embed);
+
+// Log messages at different levels
+logger.Debug("Debug message: %d"_embed, value);
+logger.Info("Information message"_embed);
+logger.Warning("Warning: %s"_embed, message);
+logger.Error("Error occurred: 0x%X"_embed, errorCode);
+```
+
+**Features:**
+- **Log Levels**: Debug, Info, Warning, Error
+- **ANSI Colors**: Colored output for different log levels (console)
+- **Timestamps**: Automatic timestamp prefixing
+- **File Output**: Write logs to file with automatic flushing
+- **Format Specifiers**: Full printf-style formatting support
+
 ## Compiler & Linker Flags
 
 ### PIC-Critical Flags
@@ -345,37 +493,68 @@ Critical flags for position-independence:
 
 ## Project Structure
 
+The codebase follows a **three-layer architecture** for clean separation of concerns:
+
 ```
 cpp-pic/
 ├── cmake/                          # Build system
-│   ├── toolchain-clang.cmake      # Clang toolchain
-│   ├── base64_encode.cmake        # Base64 encoding
-│   └── verify_no_rdata.cmake      # .rdata validation
+│   ├── toolchain-clang.cmake      # Clang cross-compilation toolchain
+│   ├── base64_encode.cmake        # Base64 encoding for PIC blobs
+│   └── verify_no_rdata.cmake      # Post-build .rdata validation
 ├── include/
-│   └── runtime/
-│       ├── platform/
-│       │   ├── primitives/        # EMBEDDED_STRING, DOUBLE, etc.
-│       │   ├── windows/           # Windows headers
-│       │   ├── allocator.h
-│       │   └── platform.h
-│       ├── console.h
-│       ├── logger.h
-│       ├── memory.h
-│       └── string_formatter.h
+│   ├── bal/                       # Base Abstraction Layer (platform-independent)
+│   │   ├── primitives/            # EMBEDDED_STRING, UINT64, INT64, DOUBLE
+│   │   ├── djb2.h                 # Hash function for symbol lookup
+│   │   ├── memory.h               # Copy, Zero, Compare operations
+│   │   ├── string.h               # String manipulation utilities
+│   │   ├── string_formatter.h     # Printf-style formatting
+│   │   └── bal.h                  # Master header
+│   ├── pal/                       # Platform Abstraction Layer (OS/hardware)
+│   │   ├── windows/               # Windows-specific types and APIs
+│   │   ├── allocator.h            # Memory allocation interface
+│   │   ├── console.h              # Console I/O interface
+│   │   ├── date_time.h            # Date/time operations
+│   │   ├── file_system.h          # File and directory operations
+│   │   ├── socket.h               # Network socket interface
+│   │   └── pal.h                  # Master header
+│   └── ral/                       # Runtime Abstraction Layer (application features)
+│       ├── logger.h               # Logging with file output, ANSI colors
+│       ├── crypt/                 # Cryptography (SHA2, ChaCha20, ECC, Base64)
+│       ├── network/               # Networking (DNS, HTTP, WebSocket, TLS)
+│       └── ral.h                  # Master header
 ├── src/
-│   ├── start.cc                   # Entry point
-│   └── runtime/
-│       ├── platform/windows/      # Windows implementation
-│       └── console/windows/       # Windows console
-├── build/windows/                 # Build artifacts
-├── docs/                          # Documentation
-├── scripts/                       # Automation scripts
-├── tests/                         # Test suite
+│   ├── start.cc                   # Entry point (_start)
+│   ├── bal/                       # BAL implementations
+│   │   └── string.cc
+│   └── pal/windows/               # Windows PAL implementations
+│       ├── platform.windows.cc    # PEB walking, API resolution
+│       ├── allocator.windows.cc   # NtAllocateVirtualMemory
+│       ├── console.windows.cc     # WriteConsoleW
+│       ├── socket.windows.cc      # Windows sockets
+│       ├── file_system.cc         # File/directory operations
+│       ├── date_time.windows.cc   # Windows time functions
+│       ├── peb.cc                 # Process Environment Block
+│       ├── pe.cc                  # PE parsing for exports
+│       ├── ntdll.cc               # ntdll.dll API resolution
+│       ├── kernel32.cc            # kernel32.dll API resolution
+│       └── random/windows/        # Cryptographic RNG
+├── tests/                         # Test suite (13+ categories)
+├── docs/                          # Architecture and platform guides
+├── scripts/                       # Automation scripts (PowerShell loader)
+├── build/windows/                 # Build artifacts (generated)
 ├── .vscode/                       # VSCode integration
 ├── .github/workflows/             # CI/CD pipeline
 ├── CMakeLists.txt
 └── README.md
 ```
+
+### Three-Layer Architecture
+
+| Layer | Purpose | Examples |
+|-------|---------|----------|
+| **BAL** (Base Abstraction) | Platform-independent primitives and utilities | EMBEDDED_STRING, UINT64, INT64, DOUBLE, DJB2, Memory, StringFormatter |
+| **PAL** (Platform Abstraction) | OS/hardware abstraction interfaces | Allocator, Console, Socket, FileSystem, DateTime |
+| **RAL** (Runtime Abstraction) | High-level application features | Logger, Cryptography (SHA, ChaCha20, ECC), Networking (DNS, HTTP, TLS) |
 
 ## Use Cases
 
@@ -411,23 +590,43 @@ Tests run automatically when executing the built binary:
 **Expected Output:**
 ```
 CPP-PIC Runtime Starting...
+Running DJB2 Tests... PASSED
+Running Memory Tests... PASSED
+Running String Tests... PASSED
 Running UINT64 Tests... PASSED
 Running INT64 Tests... PASSED
 Running Double Tests... PASSED
-Running String Tests... PASSED
+Running ArrayStorage Tests... PASSED
 Running StringFormatter Tests... PASSED
+Running Random Tests... PASSED
+Running SHA Tests... PASSED
+Running ECC Tests... PASSED
+Running Socket Tests... PASSED
+Running TLS Tests... PASSED
+Running DNS Tests... PASSED
 All tests passed!
 ```
 
 ### Test Coverage
 
-The test suite validates:
-- **UINT64/INT64**: Software 64-bit integer operations
-- **DOUBLE**: IEEE-754 floating-point operations
-- **String**: String manipulation functions
-- **StringFormatter**: Printf-style formatting
-- **Memory**: Memory operations (Copy, Zero, Compare)
-- **DJB2**: Hash function consistency
+The test suite validates all major components:
+
+| Test Suite | Purpose |
+|------------|---------|
+| **Djb2Tests** | Hash function consistency |
+| **MemoryTests** | Copy, Zero, Compare, Fill operations |
+| **StringTests** | String manipulation functions |
+| **Uint64Tests** | 64-bit unsigned arithmetic, shifts, comparisons |
+| **Int64Tests** | 64-bit signed arithmetic with sign handling |
+| **DoubleTests** | IEEE-754 floating-point operations and conversions |
+| **ArrayStorageTests** | Compile-time template array storage |
+| **StringFormatterTests** | Printf-style format specifiers (%d, %f, %s, %x, etc.) |
+| **RandomTests** | Cryptographic RNG (Windows entropy source) |
+| **ShaTests** | SHA-256/512 hashing with HMAC variants |
+| **EccTests** | Elliptic curve cryptography operations |
+| **SocketTests** | TCP socket connectivity |
+| **TlsTests** | TLS 1.3 handshake, encryption, certificate verification |
+| **DnsTests** | Domain name resolution |
 
 ### CI/CD Testing
 
