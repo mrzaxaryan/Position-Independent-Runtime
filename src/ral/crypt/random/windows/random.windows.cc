@@ -28,5 +28,8 @@ INT32 Random::Get()
 // Constructor to initialize the random number generator
 Random::Random()
 {
-    this->seed = (UINT32)GetSeedFromTime();
+    // Seed using high-resolution time + this pointer + stack variable
+    SSIZE ptr = (SSIZE)this;
+    SSIZE stack_var = (SSIZE)&ptr;
+    this->seed = (UINT32)(GetSeedFromTime() + stack_var);
 }
