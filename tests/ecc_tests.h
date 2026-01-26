@@ -397,7 +397,7 @@ private:
 		ecc2.ExportPublicKey(pubKey2, sizeof(pubKey2));
 
 		// Keys should be different (each Initialize() call uses RNG)
-		BOOL key1DiffersFrom2 = !CompareBytes(pubKey1, pubKey2, sizeof(pubKey1));
+		BOOL key1DiffersFrom2 = !CompareBytes(pubKey1, pubKey2, 32 * 2);
 
 		// Verify keys are valid (not all zeros)
 		BOOL key1Valid = pubKey1[0] == 0x04 && !IsAllZeros(pubKey1 + 1, 64);
