@@ -8,12 +8,6 @@ INT32 Random::GetSeedFromTime()
 {
     auto dateTime = DateTime::Now();
 
-    // Make a 64-bit value combining all time components
-    UINT32 t = 0;
-    t |= (UINT32)dateTime.Milliseconds << 4;  // cast first!
-    t |= (UINT32)dateTime.Microseconds << 12; // shift enough to avoid overlap
-    t |= (UINT32)dateTime.Second;             // seconds in lowest bits
-
     // Mix down to 32-bit seed
     return (UINT32)(dateTime.Milliseconds);
 }
