@@ -406,6 +406,7 @@ private:
 		LOG_INFO("Key 1 valid: %d, Key 2 valid: %d, Keys differ: %d", key1Valid, key2Valid, key1DiffersFrom2);
 
 		// return key1DiffersFrom2 && key1Valid && key2Valid;
+
 		return TRUE;
 	}
 };
