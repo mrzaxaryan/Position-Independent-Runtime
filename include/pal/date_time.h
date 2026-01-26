@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bal.h"  // primitives, TCHAR
+#include "bal.h" // primitives, TCHAR
 
 // Fixed-size string template
 template <TCHAR TChar, USIZE N>
@@ -10,7 +10,7 @@ private:
     TChar data[N]{}; // Fixed-size character array
 
 public:
-    VOID *operator new(USIZE) = delete; // Disable dynamic allocation
+    VOID *operator new(USIZE) = delete;    // Disable dynamic allocation
     VOID operator delete(VOID *) = delete; // Disable dynamic deallocation
 
     // Operators for conversion and indexing
@@ -58,9 +58,9 @@ public:
     UINT32 Hour = 0;
     UINT32 Minute = 0;
     UINT32 Second = 0;
-    UINT64 Milliseconds = 0;
-    UINT64 Microseconds = 0;
-    UINT64 Nanoseconds = 0;
+    UINT64 Millisecond = 0;
+    UINT64 Microsecond = 0;
+    UINT64 Nanosecond = 0;
     // Disable dynamic allocation and deallocation
     VOID *operator new(USIZE) = delete;
     VOID operator delete(VOID *) = delete;
@@ -128,7 +128,7 @@ public:
     {
         return ToTimeOnlyString<TChar>();
     }
-    
+
     template <TCHAR TChar>
     constexpr DateOnlyString<TChar> ToDateString() const
     {

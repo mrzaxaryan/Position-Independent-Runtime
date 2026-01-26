@@ -136,9 +136,9 @@ DateTime DateTime::Now()
     dt.Second = (UINT32)(total_secs % UINT64(60u));
 
     // sub-second from remaining 100ns ticks
-    UINT64 sub100ns = dayTicks % TICKS_PER_SEC;          // 0..9,999,999 (100ns units)
-    dt.Milliseconds = sub100ns / UINT64(10000u);         // 1 ms = 10,000 * 100ns
-    dt.Microseconds = (sub100ns / UINT64(10u)) % UINT64(1000u); // 1 us = 10 * 100ns
-    dt.Nanoseconds = (sub100ns % UINT64(10u)) * UINT64(100u);   // remainder * 100ns -> ns
+    UINT64 sub100ns = dayTicks % TICKS_PER_SEC;                // 0..9,999,999 (100ns units)
+    dt.Millisecond = sub100ns / UINT64(10000u);                // 1 ms = 10,000 * 100ns
+    dt.Microsecond = (sub100ns / UINT64(10u)) % UINT64(1000u); // 1 us = 10 * 100ns
+    dt.Nanosecond = (sub100ns % UINT64(10u)) * UINT64(100u);   // remainder * 100ns -> ns
     return dt;
 }
