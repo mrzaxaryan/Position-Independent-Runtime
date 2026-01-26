@@ -396,7 +396,7 @@ private:
 		UINT8 pubKey2[32 * 2 + 1];
 		ecc2.ExportPublicKey(pubKey2, sizeof(pubKey2));
 
-		// Keys should be different (each Initialize() call uses RNG)
+				// Keys should be different (each Initialize() call uses RNG)
 		BOOL key1DiffersFrom2 = !CompareBytes(pubKey1, pubKey2, sizeof(pubKey1));
 
 		// Verify keys are valid (not all zeros)
