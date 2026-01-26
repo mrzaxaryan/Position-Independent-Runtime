@@ -159,6 +159,7 @@ public:
 	// Run all DNS tests
 	static BOOL RunAll()
 	{
+
 		LOG_INFO("=== Starting DNS Tests ===");
 		LOG_INFO("Testing DNS resolution via DoT, DoH (JSON), and DoH (binary wireformat)");
 
