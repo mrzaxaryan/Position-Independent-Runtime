@@ -139,6 +139,7 @@ public:
 	// Minimum supported client	Windows Vista [desktop apps | UWP apps]
 	static UINT64 GetTickCount64();
 
+	
 	// sleep
 	static VOID Sleep(UINT32 milliseconds);
 };
