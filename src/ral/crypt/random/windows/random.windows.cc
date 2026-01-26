@@ -1,6 +1,7 @@
 #include "random.h"
 #include "date_time.h"
 #include "pal.h"
+#include "kernel32.h"
 
 INT32 Random::GetSeedFromTime()
 {
@@ -28,5 +29,5 @@ INT32 Random::Get()
 // Constructor to initialize the random number generator
 Random::Random()
 {
-    this->seed = (UINT32)GetSeedFromTime();
+    this->seed = Kernel32::GetTickCount64() & 0xFFFFFFFF;
 }

@@ -135,6 +135,9 @@ public:
 	// This function closes a file search handle opened by the FindFirstFile, FindFirstFileEx, or FindFirstFileTransacted function.
 	// Minimum supported client	Windows XP [desktop apps | UWP apps]
 	static BOOL FindClose(PVOID hFindFile);
+	// Retrieves the number of milliseconds that have elapsed since the system was started.
+	// Minimum supported client	Windows Vista [desktop apps | UWP apps]
+	static UINT64 GetTickCount64();
 };
 
 #endif // PLATFORM_WINDOWS
