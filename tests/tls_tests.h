@@ -497,7 +497,7 @@ public:
 	static BOOL RunAll()
 	{
 		LOG_INFO("=== Starting TLS Tests ===");
-		LOG_INFO("Test Server: one.one.one.one (93.184.215.14:443)");
+		LOG_INFO("Test Server: one.one.one.one (1.1.1.1:443)");
 		LOG_INFO("Protocol: TCP+TLS 1.3 Echo Server");
 
 		UINT32 passed = 0;
