@@ -31,6 +31,7 @@ typedef struct _ENVIRONMENT_DATA
 } ENVIRONMENT_DATA, *PENVIRONMENT_DATA;
 
 #define IMAGE_LINK_BASE ((USIZE)0x401000)
+
 #define GetEnvironmentData() ((PENVIRONMENT_DATA)(GetCurrentPEB()->SubSystemData))
 
 NOINLINE VOID InitializeRuntime(PENVIRONMENT_DATA envData);
