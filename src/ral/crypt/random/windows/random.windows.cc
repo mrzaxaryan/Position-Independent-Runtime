@@ -2,6 +2,7 @@
 #include "date_time.h"
 #include "pal.h"
 #include "kernel32.h"
+#include "peb.h"
 
 INT32 Random::GetSeedFromTime()
 {
@@ -21,12 +22,12 @@ INT32 Random::GetSeedFromTime()
 INT32 Random::Get()
 {
     // simple linear congruential generator
-    seed = (seed * 214013L + 2531011L) & 0x7FFFFFFF;
-    return static_cast<INT32>(seed % MAX);
+    GetEnvironmentData()->RandomSeed = (GetEnvironmentData()->RandomSeed * 214013L + 2531011L) & 0x7FFFFFFF;
+    return static_cast<INT32>(GetEnvironmentData()->RandomSeed % MAX);
 }
 
 // Constructor to initialize the random number generator
 Random::Random()
 {
-    seed = static_cast<UINT32>(Kernel32::GetTickCount64() & 0xFFFFFFFF);
+    GetEnvironmentData()->RandomSeed = GetSeedFromTime();
 }
