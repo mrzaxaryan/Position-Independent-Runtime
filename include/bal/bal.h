@@ -14,6 +14,7 @@
 #include "double.h"
 #include "embedded_double.h"
 #include "embedded_string.h"
+#include "embedded_function_pointer.h"
 #include "embed_array.h"
 
 // Base utilities

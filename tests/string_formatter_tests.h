@@ -139,7 +139,7 @@ private:
 		ctx.buffer = buffer;
 		ctx.index = 0;
 		ctx.maxSize = 64;
-		auto fixed = (BOOL (*)(PVOID, CHAR))PerformRelocation((PVOID)CharWriter);
+		auto fixed = EMBED_FUNC(CharWriter);
 		auto fmt_d = "%d"_embed;
 		// Positive integer
 		Memory::Zero(buffer, 64);
@@ -175,7 +175,7 @@ private:
 		ctx.buffer = buffer;
 		ctx.index = 0;
 		ctx.maxSize = 64;
-		auto fixed = (BOOL (*)(PVOID, CHAR))PerformRelocation((PVOID)CharWriter);
+		auto fixed = EMBED_FUNC(CharWriter);
 		auto fmt_u = "%u"_embed;
 
 		// Simple unsigned
@@ -205,7 +205,7 @@ private:
 		ctx.buffer = buffer;
 		ctx.index = 0;
 		ctx.maxSize = 64;
-		auto fixed = (BOOL (*)(PVOID, CHAR))PerformRelocation((PVOID)CharWriter);
+		auto fixed = EMBED_FUNC(CharWriter);
 		auto fmt_x = "%x"_embed;
 		auto fmt_X = "%X"_embed;
 		auto fmt_hash_x = "%#x"_embed;
@@ -252,7 +252,7 @@ private:
 		ctx.buffer = buffer;
 		ctx.index = 0;
 		ctx.maxSize = 64;
-		auto fixed = (BOOL (*)(PVOID, CHAR))PerformRelocation((PVOID)CharWriter);
+		auto fixed = EMBED_FUNC(CharWriter);
 		auto fmt_s = "%s"_embed;
 		auto fmt_ss = "%s%s"_embed;
 		auto testStr = "Hello"_embed;
@@ -285,7 +285,7 @@ private:
 		ctx.buffer = buffer;
 		ctx.index = 0;
 		ctx.maxSize = 64;
-		auto fixed = (BOOL (*)(PVOID, CHAR))PerformRelocation((PVOID)CharWriter);
+		auto fixed = EMBED_FUNC(CharWriter);
 		auto fmt_c = "%c"_embed;
 		auto fmt_ccc = "%c%c%c"_embed;
 
@@ -315,7 +315,7 @@ private:
 		ctx.buffer = buffer;
 		ctx.index = 0;
 		ctx.maxSize = 64;
-		auto fixed = (BOOL (*)(PVOID, CHAR))PerformRelocation((PVOID)CharWriter);
+		auto fixed = EMBED_FUNC(CharWriter);
 		auto fmt_5d = "%5d"_embed;
 		auto fmt_05d = "%05d"_embed;
 		auto fmt_m5d = "%-5d"_embed;
@@ -366,7 +366,7 @@ private:
 		ctx.buffer = buffer;
 		ctx.index = 0;
 		ctx.maxSize = 64;
-		auto fixed = (BOOL (*)(PVOID, CHAR))PerformRelocation((PVOID)CharWriter);
+		auto fixed = EMBED_FUNC(CharWriter);
 		auto fmt_2f = "%.2f"_embed;
 		auto fmt_0f = "%.0f"_embed;
 		auto fmt_1f = "%.1f"_embed;
@@ -408,7 +408,7 @@ private:
 		ctx.buffer = buffer;
 		ctx.index = 0;
 		ctx.maxSize = 64;
-		auto fixed = (BOOL (*)(PVOID, CHAR))PerformRelocation((PVOID)CharWriter);
+		auto fixed = EMBED_FUNC(CharWriter);
 		auto fmt = "100%%"_embed;
 
 		// Double percent becomes single percent

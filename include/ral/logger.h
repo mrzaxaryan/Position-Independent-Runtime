@@ -17,9 +17,8 @@
 
 #pragma once
 
-#include "console.h"
-#include "date_time.h"
-#include "file_system.h"
+#include "pal.h"  // Includes bal.h which provides EMBEDDED_FUNCTION_POINTER, console.h, date_time.h
+#include "file_system.h"  // File I/O for log file
 #include "string_formatter.h"
 
 // Convenience macros that automatically embed wide strings
@@ -108,8 +107,8 @@ private:
 		// Console output (with colors)
 		if constexpr ((static_cast<UINT8>(LogOutput) & static_cast<UINT8>(LogOutputs::Console)) != 0)
 		{
-			auto consoleW = (BOOL (*)(PVOID, WCHAR))PerformRelocation((PVOID)ConsoleCallback<WCHAR>);
-			auto consoleT = (BOOL (*)(PVOID, TChar))PerformRelocation((PVOID)ConsoleCallback<TChar>);
+			auto consoleW = EMBED_FUNC(ConsoleCallback<WCHAR>);
+			auto consoleT = EMBED_FUNC(ConsoleCallback<TChar>);
 
 			StringFormatter::Format<WCHAR>(consoleW, NULL, L"%ls[%ls] "_embed, colorPrefix, (const WCHAR *)timeStr);
 			StringFormatter::FormatV<TChar>(consoleT, NULL, format, args);
@@ -124,8 +123,8 @@ private:
 			{
 				logFile.MoveOffset(0, OffsetOrigin::End);
 
-				auto fileW = (BOOL (*)(PVOID, WCHAR))PerformRelocation((PVOID)FileCallback<WCHAR>);
-				auto fileT = (BOOL (*)(PVOID, TChar))PerformRelocation((PVOID)FileCallback<TChar>);
+				auto fileW = EMBED_FUNC(FileCallback<WCHAR>);
+				auto fileT = EMBED_FUNC(FileCallback<TChar>);
 
 				StringFormatter::Format<WCHAR>(fileW, &logFile, L"%ls[%ls] "_embed, plainPrefix, (const WCHAR *)timeStr);
 				StringFormatter::FormatV<TChar>(fileT, &logFile, format, args);

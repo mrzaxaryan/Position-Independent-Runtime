@@ -101,7 +101,7 @@ BOOL WebSocketClient::Open()
                   "Sec-WebSocket-Key: %s\r\n"_embed
                   "Sec-WebSocket-Version: 13\r\n"_embed;
 
-    BOOL (*fixed)(PVOID, CHAR) = (BOOL (*)(PVOID, CHAR))PerformRelocation((PVOID)FormatterCallback);
+    auto fixed = EMBED_FUNC(FormatterCallback);
     StringFormatter::Format<CHAR>(fixed, this, format, path, hostName, secureKey);
     delete[] secureKey;
 

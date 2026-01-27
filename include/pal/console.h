@@ -27,15 +27,9 @@
 
 #pragma once
 
-#include "string_formatter.h"  // Printf-style formatting engine
-#include "string.h"            // String utilities (length, copy, etc.)
+#include "bal.h"  // Includes EMBEDDED_FUNCTION_POINTER, string.h, string_formatter.h
 
-// Forward declare PerformRelocation (defined in pal.h)
-#if defined(PLATFORM_WINDOWS_I386)
-PVOID PerformRelocation(PVOID p);
-#else
-#define PerformRelocation(p) (p)
-#endif
+// EMBEDDED_FUNCTION_POINTER is now available for position-independent function pointers
 
 /**
  * Console - Static class providing console I/O operations
@@ -63,8 +57,8 @@ private:
 	 *   TChar - Character type (CHAR or WCHAR) determined at compile-time
 	 *
 	 * POSITION-INDEPENDENT NOTE:
-	 *   The function pointer passed to StringFormatter must be relocated
-	 *   using PerformRelocation() to work in position-independent code.
+	 *   The function pointer is wrapped with EMBEDDED_FUNCTION_POINTER
+	 *   to work correctly in position-independent code.
 	 */
 	template <TCHAR TChar>
 	static BOOL FormatterCallback(PVOID context, TChar ch);
@@ -181,15 +175,15 @@ public:
 	 * @return Number of characters written
 	 *
 	 * IMPLEMENTATION DETAIL:
-	 *   This function performs position-independent callback relocation:
-	 *   1. Gets address of FormatterCallback<TChar>
-	 *   2. Calls PerformRelocation() to adjust for current load address
-	 *   3. Passes relocated callback to StringFormatter::FormatV()
+	 *   This function uses EMBEDDED_FUNCTION_POINTER for position-independent callbacks:
+	 *   1. Gets address of FormatterCallback<TChar> using EMBEDDED_FUNCTION_POINTER
+	 *   2. Uses PC-relative addressing (no base address lookup needed)
+	 *   3. Passes position-independent callback to StringFormatter::FormatV()
 	 *
-	 * WHY RELOCATION IS NEEDED:
-	 *   In position-independent code, function addresses are relative.
-	 *   StringFormatter needs an absolute address to call our callback.
-	 *   PerformRelocation() converts relative → absolute at runtime.
+	 * WHY EMBEDDED_FUNCTION_POINTER:
+	 *   In position-independent code, function addresses need PC-relative calculation.
+	 *   EMBEDDED_FUNCTION_POINTER automatically handles this for both PIC and normal EXE.
+	 *   Works universally without runtime mode checks or base address lookups.
 	 */
 	template <TCHAR TChar>
 	static UINT32 WriteFormattedV(const TChar *format, VA_LIST args);
@@ -244,31 +238,30 @@ BOOL Console::FormatterCallback(PVOID context, TChar ch)
  * This is the core formatting function. WriteFormatted() is just a thin
  * wrapper that sets up the va_list and calls this function.
  *
- * POSITION-INDEPENDENT CALLBACK RELOCATION:
+ * POSITION-INDEPENDENT CALLBACK USING EMBEDDED_FUNCTION_POINTER:
  *
  * The challenge: FormatterCallback is a template function, so its address
  * depends on the template parameter TChar. We need to pass this address
- * to StringFormatter, but in position-independent code, we need to relocate it.
+ * to StringFormatter in a position-independent way.
  *
- * The solution:
- *   1. Get compile-time address: FormatterCallback<TChar>
- *   2. Cast to void pointer: (PVOID)FormatterCallback<TChar>
- *   3. Relocate at runtime: PerformRelocation((PVOID)FormatterCallback<TChar>)
- *   4. Cast to function pointer: (BOOL (*)(PVOID, TChar))
- *   5. Pass to formatter: StringFormatter::FormatV(callback, ...)
+ * The solution using EMBEDDED_FUNCTION_POINTER:
+ *   1. Template instantiation: FormatterCallback<TChar>
+ *   2. PC-relative wrapper: EMBEDDED_FUNCTION_POINTER<BOOL (*)(PVOID, TChar), FormatterCallback<TChar>>
+ *   3. Get position-independent pointer: ::Get()
+ *   4. Pass to formatter: StringFormatter::FormatV(callback, ...)
  *
- * This ensures the callback works correctly regardless of where the code is loaded.
+ * This works correctly in both PIC blob and normal EXE modes without runtime checks.
  */
 template <TCHAR TChar>
 UINT32 Console::WriteFormattedV(const TChar *format, VA_LIST args)
 {
-	// Perform position-independent relocation of the callback function pointer
-	// Without this, the callback address would be incorrect in PIC environments
-	auto fixed = (BOOL (*)(PVOID, TChar))PerformRelocation((PVOID)FormatterCallback<TChar>);
+	// Get position-independent function pointer using EMBED_FUNC
+	// This works correctly regardless of where the code is loaded (PIC or normal EXE)
+	auto fixed = EMBED_FUNC(FormatterCallback<TChar>);
 
 	// Delegate to StringFormatter which handles all format specifier parsing
 	// Parameters:
-	//   fixed  - Relocated callback function
+	//   fixed  - Position-independent callback function
 	//   NULL   - Context (unused, could be used for buffering)
 	//   format - Format string (embedded, not in .rdata)
 	//   args   - Variable arguments list

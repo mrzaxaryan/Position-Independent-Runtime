@@ -36,9 +36,8 @@ typedef struct _ENVIRONMENT_DATA
 
 NOINLINE VOID InitializeRuntime(PENVIRONMENT_DATA envData);
 
-#if defined(PLATFORM_WINDOWS_I386)
-PVOID PerformRelocation(PVOID p);
-#endif
+// PerformRelocation has been removed - use EMBEDDED_FUNCTION_POINTER instead
+// See: include/bal/primitives/embedded_function_pointer.h
 
 // Entry point macro
 #define ENTRYPOINT extern "C" __attribute__((noreturn))

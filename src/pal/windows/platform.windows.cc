@@ -54,24 +54,4 @@ NOINLINE VOID InitializeRuntime(PENVIRONMENT_DATA envData)
 #endif // PLATFORM_WINDOWS_I386
 }
 
-#if defined(PLATFORM_WINDOWS_I386)
-// Perform pointer relocation for position-independent code
-PVOID PerformRelocation(PVOID p)
-{
-    PENVIRONMENT_DATA envData = GetEnvironmentData();
-
-    if (envData->ShouldRelocate)
-    {
-        // Running as PIC blob - need to relocate
-        return (PVOID)((USIZE)p + (USIZE)envData->BaseAddress - IMAGE_LINK_BASE);
-    }
-    else
-    {
-        // Running as normal EXE - pointer is already relocated
-        return p;
-    }
-}
-
-#endif // PLATFORM_WINDOWS_I386
-
 #endif // PLATFORM_WINDOWS

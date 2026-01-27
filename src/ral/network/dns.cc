@@ -511,7 +511,7 @@ IPv4 DNS::ResolveOverHttp(PCCHAR host, RequestType dnstype)
                   "accept: application"_embed
                   "/dns-json\r\n\r\n"_embed;
 
-    BOOL (*fixed)(PVOID, CHAR) = (BOOL (*)(PVOID, CHAR))PerformRelocation((PVOID)FormatterCallback);
+    auto fixed = EMBED_FUNC(FormatterCallback);
     StringFormatter::Format<CHAR>(fixed, &tlsClient, (PCCHAR)format, host, (PCCHAR)dnsHostName); // Format the path with the hostname
 
     UINT16 handshakeResponseBufferSize = 4096;                 // Buffer size for the handshake response
@@ -654,8 +654,8 @@ IPv4 DNS::ResloveOverHttpPost(PCCHAR host, IPv4 DNSServerIp, PCCHAR DNSServerNam
     // format packet that will be sent in the body
     UINT8 buffer[0xff];                                                         // Buffer to hold the DNS request
     UINT16 bufferSize = DNS_GenerateQuery(host, dnstype, (PCHAR)buffer, false); // Initialize the DNS request buffer
-    PVOID fixed = PerformRelocation((PVOID)FormatterCallback);
-    StringFormatter::Format<CHAR>((BOOL (*)(PVOID, CHAR))fixed, &tlsClient, (PCCHAR)format, DNSServerName, bufferSize);
+    auto fixed = EMBED_FUNC(FormatterCallback);
+    StringFormatter::Format<CHAR>(fixed, &tlsClient, (PCCHAR)format, DNSServerName, bufferSize);
 
     tlsClient.Write(buffer, bufferSize); // Send the handshake request
 
