@@ -23,12 +23,15 @@ NO_RETURN VOID ExitProcess(USIZE code)
     __builtin_unreachable();
 }
 
-#if defined(PLATFORM_WINDOWS_I386)
-
 // InitializeRuntime environment data for PIC-style rebasing
 // Must be called from _start with a stack-allocated ENVIRONMENT_DATA struct
 NOINLINE VOID InitializeRuntime(PENVIRONMENT_DATA envData)
 {
+    // Get the PEB and store envData pointer
+    PPEB peb = GetCurrentPEB();
+    peb->SubSystemData = (PVOID)envData;
+#if defined(PLATFORM_WINDOWS_I386)
+
     // Get the return address (points inside _start)
     PCHAR currentAddress = (PCHAR)__builtin_return_address(0);
 
@@ -37,10 +40,6 @@ NOINLINE VOID InitializeRuntime(PENVIRONMENT_DATA envData)
 
     // Scan backward for function prologue to find _start's address
     PCHAR functionStart = ReversePatternSearch(currentAddress, (PCHAR)&functionPrologue, sizeof(functionPrologue));
-
-    // Get the PEB and store envData pointer
-    PPEB peb = GetCurrentPEB();
-    peb->SubSystemData = (PVOID)envData;
 
     // Get loader data to find the EXE's entry point
     PPEB_LDR_DATA ldr = peb->LoaderData;
@@ -52,8 +51,10 @@ NOINLINE VOID InitializeRuntime(PENVIRONMENT_DATA envData)
     // Determine if we need to relocate (PIC blob vs normal EXE)
     envData->BaseAddress = functionStart;
     envData->ShouldRelocate = (EntryPoint != (USIZE)functionStart);
+#endif // PLATFORM_WINDOWS_I386
 }
 
+#if defined(PLATFORM_WINDOWS_I386)
 // Perform pointer relocation for position-independent code
 PVOID PerformRelocation(PVOID p)
 {

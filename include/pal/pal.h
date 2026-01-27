@@ -27,18 +27,17 @@ typedef struct _ENVIRONMENT_DATA
 {
     PVOID BaseAddress;
     BOOL ShouldRelocate;
+    INT32 RandomSeed;
 } ENVIRONMENT_DATA, *PENVIRONMENT_DATA;
 
-#if defined(PLATFORM_WINDOWS_I386)
 #define IMAGE_LINK_BASE ((USIZE)0x401000)
+
 #define GetEnvironmentData() ((PENVIRONMENT_DATA)(GetCurrentPEB()->SubSystemData))
 
 NOINLINE VOID InitializeRuntime(PENVIRONMENT_DATA envData);
-PVOID PerformRelocation(PVOID p);
 
-#else
-#define PerformRelocation(p) (p)
-#define InitializeRuntime(envData) ((VOID)envData)
+#if defined(PLATFORM_WINDOWS_I386)
+PVOID PerformRelocation(PVOID p);
 #endif
 
 // Entry point macro

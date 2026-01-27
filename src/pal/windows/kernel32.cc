@@ -37,7 +37,6 @@ BOOL Kernel32::ReadFile(PVOID hFile, PVOID lpBuffer, INT32 nNumberOfBytesToRead,
     return ((BOOL(STDCALL *)(PVOID hFile, PVOID lpBuffer, INT32 nNumberOfBytesToRead, PUINT32 lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped))ResolveKernel32ExportAddress("ReadFile"))(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
 }
 
-
 PVOID Kernel32::FindFirstFileW(PCWCHAR lpFileName, LPWIN32_FIND_DATAW lpFindFileData)
 {
     return ((PVOID(STDCALL *)(PCWCHAR lpFileName, LPWIN32_FIND_DATAW lpFindFileData))ResolveKernel32ExportAddress("FindFirstFileW"))(lpFileName, lpFindFileData);
@@ -51,4 +50,3 @@ BOOL Kernel32::FindClose(PVOID hFindFile)
 {
     return ((BOOL(STDCALL *)(PVOID hFindFile))ResolveKernel32ExportAddress("FindClose"))(hFindFile);
 }
-

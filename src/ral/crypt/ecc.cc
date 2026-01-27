@@ -222,6 +222,7 @@ UINT128_ Ecc::Add128_128(UINT128_ a, UINT128_ b)
     UINT128_ result;
     result.low = a.low + b.low;
     result.high = a.high + b.high + (result.low < a.low);
+
     return result;
 }
 
@@ -932,9 +933,6 @@ INT32 Ecc::ComputeSharedSecret(const UINT8 *publicKey, UINT32 publicKeySize, UIN
 
 INT32 Ecc::Initialize(INT32 bytes)
 {
-    // PMEMORY_PAL pMemory = GetMemoryPal();
-    Random random;
-
     this->eccBytes = bytes;
     this->numEccDigits = bytes / 8;
     if (bytes == secp128r1)
@@ -976,6 +974,7 @@ INT32 Ecc::Initialize(INT32 bytes)
 
     do
     {
+        Random random;
         if (!random.GetArray((USIZE)(this->numEccDigits * sizeof(UINT64)), (UINT8 *)this->privateKey) || (l_tries++ >= MAX_TRIES))
             return -1;
         if (this->VliIsZero(this->privateKey))
