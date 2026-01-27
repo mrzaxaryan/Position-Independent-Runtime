@@ -13,24 +13,14 @@
 // Platform Core
 // =============================================================================
 
-PVOID GetInstructionAddress(VOID);
-PCHAR ReversePatternSearch(PCHAR ip, const CHAR *pattern, UINT32 len);
-
 // Function to get export address from PEB modules
 PVOID ResolveExportAddressFromPebModule(USIZE moduleNameHash, USIZE functionNameHash);
-
-#define GetEnvironmentBaseAddress() (USIZE)(GetCurrentPEB()->SubSystemData)
-#define SetEnvironmentBaseAddress(v) (GetCurrentPEB()->SubSystemData = (PVOID)(v))
 
 // Environment data structure for PIC-style rebasing (used on Windows i386)
 typedef struct _ENVIRONMENT_DATA
 {
-    PVOID BaseAddress;
-    BOOL ShouldRelocate;
     INT32 RandomSeed;
 } ENVIRONMENT_DATA, *PENVIRONMENT_DATA;
-
-#define IMAGE_LINK_BASE ((USIZE)0x401000)
 
 #define GetEnvironmentData() ((PENVIRONMENT_DATA)(GetCurrentPEB()->SubSystemData))
 
