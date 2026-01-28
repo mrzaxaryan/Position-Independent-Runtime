@@ -295,10 +295,10 @@ set(OUTPUT_STR "${OUTPUT_DIR}/output.strings.txt")
 set(OUTPUT_B64 "${OUTPUT_DIR}/output.b64.txt")
 set(OUTPUT_MAP "${OUTPUT_DIR}/output.map.txt")
 
-# Generate inline verification script for .rdata checking
+# Generate inline verification script for .rdata/.rodata/.data checking
 set(VERIFY_RDATA_SCRIPT "${CMAKE_BINARY_DIR}/verify_no_rdata.cmake")
 file(WRITE "${VERIFY_RDATA_SCRIPT}" [[
-# Verify no .rdata section exists in the binary
+# Verify no .rdata/.rodata/.data sections exist in the binary
 if(NOT DEFINED MAP_FILE)
     message(FATAL_ERROR "MAP_FILE must be defined")
 endif()
@@ -311,25 +311,37 @@ endif()
 
 file(READ "${MAP_FILE}" MAP_CONTENT)
 
-# Check for .rdata/.rodata sections (both input and output)
+# Check for .rdata/.rodata/.data sections (both input and output)
+# Windows PE format uses .rdata, Linux ELF uses .rodata and .data
 string(REGEX MATCH "[ \t]+[0-9a-fA-F]+:[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+H[ \t]+\\.rdata[ \t]" RDATA_IN "${MAP_CONTENT}")
 string(REGEX MATCH "[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9]+[ \t]+\\.rdata[ \t]" RDATA_OUT "${MAP_CONTENT}")
 string(REGEX MATCH "[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9]+[ \t]+\\.rodata[^.]" RODATA_OUT "${MAP_CONTENT}")
+string(REGEX MATCH "[ \t]+[0-9a-fA-F]+:[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+H[ \t]+\\.data[ \t]" DATA_IN "${MAP_CONTENT}")
+string(REGEX MATCH "[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9]+[ \t]+\\.data[ \t]" DATA_OUT "${MAP_CONTENT}")
 
-if(RDATA_IN OR RDATA_OUT OR RODATA_OUT)
+if(RDATA_IN OR RDATA_OUT OR RODATA_OUT OR DATA_IN OR DATA_OUT)
+    set(ERROR_MSG "CRITICAL: Data section detected that breaks position-independence!\n")
+    if(RDATA_IN OR RDATA_OUT)
+        set(ERROR_MSG "${ERROR_MSG}  - .rdata section found (Windows PE read-only data)\n")
+    endif()
+    if(RODATA_OUT)
+        set(ERROR_MSG "${ERROR_MSG}  - .rodata section found (Linux ELF read-only data)\n")
+    endif()
+    if(DATA_IN OR DATA_OUT)
+        set(ERROR_MSG "${ERROR_MSG}  - .data section found (writable data)\n")
+    endif()
     message(FATAL_ERROR
-        "CRITICAL: Read-only data section detected!\n"
+        "${ERROR_MSG}"
         "This breaks position-independence. Check for:\n"
-        "  - Static const variables with runtime initialization\n"
-        "  - Jump tables from switch statements (use -fno-jump-tables)\n"
+        "  - Static/global variables (use stack allocation or EMBEDDED_* types)\n"
         "  - Floating-point constants not using EMBEDDED_DOUBLE\n"
         "  - String literals not using EMBEDDED_STRING\n"
-        "  - RTTI or exception tables (use -fno-rtti -fno-exceptions)\n"
+        "  - Array literals not using EMBEDDED_ARRAY\n"
         "Map file: ${MAP_FILE}"
     )
 endif()
 
-message(STATUS "Verification PASSED: No .rdata/.rodata sections found")
+message(STATUS "Verification PASSED: No .rdata/.rodata/.data sections found")
 ]])
 
 # Generate inline Base64 encoding script
