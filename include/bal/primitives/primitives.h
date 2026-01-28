@@ -1,19 +1,6 @@
 #pragma once
 
-#if !defined(__llvm__) && !defined(__clang__)
-#error "Only Clang/LLVM compiler is supported!"
-#endif
-
-#if defined(DEBUG)
-#define FORCE_INLINE
-#else
-#define FORCE_INLINE __attribute__((always_inline)) inline
-#endif
-
-#define NOINLINE __attribute__((noinline))
-#define DISABLE_OPTIMIZATION __attribute__((optnone))
-
-#define NO_RETURN extern "C" __attribute__((noreturn))
+#include "compiler.h"
 
 #define TRUE true
 #define FALSE false
