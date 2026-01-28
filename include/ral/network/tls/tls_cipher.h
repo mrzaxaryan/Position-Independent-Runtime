@@ -1,9 +1,10 @@
+#pragma once
+
 #include "primitives.h"
 #include "tls_buffer.h"
 #include "ecc.h"
 #include "tls_hash.h"
 #include "chacha20_encoder.h"
-#pragma once
 
 #define ECC_COUNT 2
 #define RAND_SIZE 32

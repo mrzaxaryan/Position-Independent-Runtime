@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bal/primitives/primitives.h>
+#include "primitives.h"
 
 /**
  * Basic Abstraction Layer - Math Functions

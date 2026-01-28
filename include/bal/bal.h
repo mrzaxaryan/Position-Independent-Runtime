@@ -22,3 +22,4 @@
 #include "string_formatter.h"
 #include "djb2.h"
 #include "memory.h"
+#include "math.h"
