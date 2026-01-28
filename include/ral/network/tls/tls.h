@@ -1,8 +1,6 @@
 #pragma once
 
-#include "primitives.h"
-#include "socket.h"
-#include "ip_address.h"
+#include "pal.h"
 #include "tls_buffer_reader.h"
 #include "tls_buffer.h"
 #include "tls_cipher.h"

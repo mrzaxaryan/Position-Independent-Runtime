@@ -2,7 +2,6 @@
 
 #include "ral.h"
 #include "embedded_string.h"
-#include "ip_address.h"
 
 class DnsTests
 {

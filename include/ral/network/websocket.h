@@ -1,8 +1,6 @@
 #pragma once
-#include "primitives.h"
-#include "socket.h"
+#include "pal.h"
 #include "tls.h"
-#include "ip_address.h"
 
 #define OPCODE_CONTINUE 0x0
 #define OPCODE_TEXT 0x1

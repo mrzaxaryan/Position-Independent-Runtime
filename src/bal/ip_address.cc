@@ -1,7 +1,6 @@
 #include "ip_address.h"
 #include "memory.h"
 #include "string.h"
-#include "logger.h"
 
 // Default constructor - creates an invalid IP address
 IPAddress::IPAddress() : version(IPVersion::Invalid)

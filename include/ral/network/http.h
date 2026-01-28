@@ -1,11 +1,7 @@
 #pragma once
 
-#include "primitives.h"
-#include "string.h"
-#include "memory.h"
-#include "socket.h"
+#include "pal.h"
 #include "tls.h"
-#include "ip_address.h"
 
 class HttpClient
 {

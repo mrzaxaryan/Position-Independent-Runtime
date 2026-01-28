@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ral.h"
-#include "ip_address.h"
 
 // =============================================================================
 // WebSocket Tests - WebSocketClient Implementation Validation

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "primitives.h"
-#include "uint64.h"
+#include "bal.h"
 
 // SHA-2 Constants
 #define SHA224_DIGEST_SIZE (224 / 8)

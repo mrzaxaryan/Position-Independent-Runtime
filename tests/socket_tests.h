@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ral.h"
-#include "ip_address.h"
 
 // =============================================================================
 // Socket Tests - AFD Socket Implementation Validation

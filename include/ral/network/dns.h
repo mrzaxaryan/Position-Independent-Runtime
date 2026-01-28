@@ -1,8 +1,6 @@
 #pragma once
 
-#include "primitives.h"
 #include "pal.h"
-#include "ip_address.h"
 
 // https://tools.ietf.org/html/rfc1035#section-3.2.2
 // https://tools.ietf.org/html/rfc3596
