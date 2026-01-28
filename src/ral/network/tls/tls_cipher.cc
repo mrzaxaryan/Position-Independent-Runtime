@@ -5,6 +5,7 @@
 #include "tls_hmac.h"
 #include "tls_hkdf.h"
 #include "network.h"
+#include "math.h"
 
 TlsCipher::TlsCipher()
 {
@@ -24,7 +25,7 @@ VOID TlsCipher::Reset()
     this->publicKey.Clear();
     this->decodeBuffer.Clear();
     LOG_DEBUG("Resetting tls_cipher structure for cipher: %p", this);
-    Memory::Zero(&this->data12, max(sizeof(this->data12), sizeof(this->data13)));
+    Memory::Zero(&this->data12, Math::Max(sizeof(this->data12), sizeof(this->data13)));
     this->clientSeqNum = 0;
     this->serverSeqNum = 0;
     this->handshakeHash.Reset();

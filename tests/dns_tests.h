@@ -1,9 +1,6 @@
 #pragma once
 
 #include "ral.h"
-#include "dns.h"
-#include "network.h"
-#include "logger.h"
 #include "embedded_string.h"
 
 class DnsTests

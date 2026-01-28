@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include "primitives.h"
 #include "windows_types.h"
 #include "djb2.h"
-#include "pal.h"
 
 #define HANDLE_FLAG_INHERIT 0x00000001
 #define SW_HIDE 0

@@ -1,4 +1,5 @@
 #include "kernel32.h"
+#include "pal.h"
 
 #define ResolveKernel32ExportAddress(functionName) ResolveExportAddressFromPebModule(Djb2::HashCompileTime(L"kernel32.dll"), Djb2::HashCompileTime(functionName))
 

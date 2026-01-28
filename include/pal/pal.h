@@ -41,3 +41,6 @@ NO_RETURN VOID ExitProcess(USIZE code);
 #include "allocator.h"
 #include "console.h"
 #include "date_time.h"
+#include "file_system.h"
+#include "network.h"
+#include "socket.h"

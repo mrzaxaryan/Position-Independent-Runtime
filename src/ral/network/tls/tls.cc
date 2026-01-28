@@ -6,6 +6,7 @@
 #include "string.h"
 #include "pal.h"
 #include "logger.h"
+#include <bal/math.h>
 
 
 #define TLS_CHACHA20_POLY1305_SHA256 0x1303
@@ -581,7 +582,7 @@ BOOL TLSClient::ProcessReceive()
 
 INT32 TLSClient::ReadChannel(PCHAR out, INT32 size)
 {
-    INT32 movesize = min(size, channelBuffer.GetSize() - channelBytesRead);
+    INT32 movesize = Math::Min(size, channelBuffer.GetSize() - channelBytesRead);
     LOG_DEBUG("Reading from channel for client: %p, requested size: %d, available size: %d, readed size: %d",
               this, size, channelBuffer.GetSize() - channelBytesRead, channelBytesRead);
     Memory::Copy(out, channelBuffer.GetBuffer() + channelBytesRead, movesize);
@@ -663,7 +664,7 @@ UINT32 TLSClient::Write(PCVOID buffer, UINT32 bufferLength)
     sendBuffer.Clear();
     for (UINT32 i = 0; i < bufferLength;)
     {
-        INT32 send_size = min(bufferLength - i, 1024 * 16);
+        INT32 send_size = Math::Min(bufferLength - i, 1024 * 16);
         sendBuffer.SetSize(send_size);
         Memory::Copy(sendBuffer.GetBuffer(), (PCHAR)buffer + i, send_size);
         if (!SendPacket(CONTENT_APPLICATION_DATA, 0x303, &sendBuffer))

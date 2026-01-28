@@ -17,8 +17,7 @@
 
 #pragma once
 
-#include "pal.h"  // Includes bal.h which provides EMBEDDED_FUNCTION_POINTER, console.h, date_time.h
-#include "file_system.h"  // File I/O for log file
+#include "pal.h"  // Includes bal.h, console.h, date_time.h, file_system.h
 #include "string_formatter.h"
 
 // Convenience macros that automatically embed wide strings

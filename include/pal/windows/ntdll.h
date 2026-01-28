@@ -1,8 +1,9 @@
 #if defined(PLATFORM_WINDOWS)
 #pragma once
 
+#include "primitives.h"
+#include "int64.h"
 #include "windows_types.h"
-#include "pal.h"
 #include "djb2.h"
 
 #define EVENT_ALL_ACCESS ((0x000F0000L) | (0x00100000L) | 0x3)
