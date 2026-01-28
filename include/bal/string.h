@@ -13,6 +13,8 @@ class String
 private:
     template <TCHAR TChar>
     static BOOL IsSpace(TChar c); // Check if character is a whitespace
+    template <TCHAR TChar>
+    static BOOL IsDigit(TChar c); // Check if character is a digit
 
 public:
     // Getting the length of a string
@@ -258,4 +260,11 @@ BOOL String::IsSpace(TChar c)
             c == (TChar)'\v' || // vertical tab
             c == (TChar)'\f' || // form feed
             c == (TChar)'\r');  // carriage return
+}
+
+template <TCHAR TChar>
+BOOL String::IsDigit(TChar c)
+{
+    // Check if character is a digit (0-9)
+    return (c >= (TChar)'0' && c <= (TChar)'9');
 }

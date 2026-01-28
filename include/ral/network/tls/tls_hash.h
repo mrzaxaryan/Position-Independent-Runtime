@@ -1,6 +1,7 @@
+#pragma once
+
 #include "primitives.h"
 #include "tls_buffer.h"
-#pragma once
 
 // Hash structure
 class TlsHash

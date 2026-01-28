@@ -1,5 +1,6 @@
-#include "primitives.h"
 #pragma once
+
+#include "primitives.h"
 
 // HKDF (HMAC-based Key Derivation Function) for TLS 1.3
 class TlsHKDF

@@ -1,7 +1,7 @@
+#pragma once
 
 #include "primitives.h"
 #include "sha2.h"
-#pragma once
 
 #define MAX_HASH_LEN 64
 #define CIPHER_HASH_SIZE 32

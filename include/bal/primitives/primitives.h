@@ -15,9 +15,6 @@
 
 #define NO_RETURN extern "C" __attribute__((noreturn))
 
-#define IS_DIGIT(c) ((c) >= '0' && (c) <= '9')
-
-
 #define TRUE true
 #define FALSE false
 #define NULL nullptr
