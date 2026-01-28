@@ -21,12 +21,14 @@ private:
         UINT8 ipv6[16];     // IPv6 address (16 bytes)
     } address;
 
-public:
-    // Constructors
-    IPAddress();
+private:
+    // Private constructors - use static factory methods instead
     IPAddress(UINT32 ipv4Address);
     IPAddress(const UINT8 ipv6Address[16]);
-    IPAddress(PCCHAR ipString);
+
+public:
+    // Default constructor - creates an invalid IP address
+    IPAddress();
 
     // Copy constructor
     IPAddress(const IPAddress& other);

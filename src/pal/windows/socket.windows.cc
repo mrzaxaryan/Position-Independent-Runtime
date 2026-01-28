@@ -31,14 +31,21 @@
 #define SOCKET_ERROR (-1)
 
 
-// Bind data structure
+// Bind data structure for IPv4
 typedef struct _AFD_BindData
 {
     UINT32 ShareType;
     SockAddr Address;
 } AFD_BindData;
 
-// Connect data structure
+// Bind data structure for IPv6
+typedef struct _AFD_BindData6
+{
+    UINT32 ShareType;
+    SockAddr6 Address;
+} AFD_BindData6;
+
+// Connect data structure for IPv4
 typedef struct _AFD_ConnctInfo
 {
     SSIZE UseSAN;
@@ -46,6 +53,15 @@ typedef struct _AFD_ConnctInfo
     SSIZE Unknown;
     SockAddr Address;
 } AFD_ConnctInfo;
+
+// Connect data structure for IPv6
+typedef struct _AFD_ConnctInfo6
+{
+    SSIZE UseSAN;
+    SSIZE Root;
+    SSIZE Unknown;
+    SockAddr6 Address;
+} AFD_ConnctInfo6;
 
 // Data buffer structure
 typedef struct _AFD_DataBufferStruct
@@ -130,27 +146,52 @@ BOOL Socket::Bind(SockAddr *SocketAddress, INT32 ShareType)
         return NT_SUCCESS(Status);
     }
     LOG_DEBUG("Event successfully created for socket binding\n");
-    // Prepare the bind configuration structure
-    AFD_BindData BindConfig;
+
     IO_STATUS_BLOCK IOSB;
-    // Zero out the bind configuration structure
-    Memory::Zero(&BindConfig, sizeof(BindConfig));
-    BindConfig.ShareType = ShareType;
-    BindConfig.Address = *SocketAddress;
     UINT8 OutputBlock[40];
-    // Zero out the output block
     Memory::Zero(&OutputBlock, sizeof(OutputBlock));
-    // Attempt to bind the socket using NtDeviceIoControlFile
-    Status = NTDLL::NtDeviceIoControlFile(m_socket,
-                                          SockEvent,
-                                          NULL,
-                                          NULL,
-                                          &IOSB,
-                                          IOCTL_AFD_BIND,
-                                          &BindConfig,
-                                          sizeof(BindConfig),
-                                          &OutputBlock,
-                                          sizeof(OutputBlock));
+
+    // Check address family and prepare appropriate bind structure
+    if (SocketAddress->sin_family == AF_INET6)
+    {
+        // IPv6 bind
+        AFD_BindData6 BindConfig;
+        Memory::Zero(&BindConfig, sizeof(BindConfig));
+        BindConfig.ShareType = ShareType;
+        BindConfig.Address = *(SockAddr6*)SocketAddress;
+
+        // Attempt to bind the socket using NtDeviceIoControlFile
+        Status = NTDLL::NtDeviceIoControlFile(m_socket,
+                                              SockEvent,
+                                              NULL,
+                                              NULL,
+                                              &IOSB,
+                                              IOCTL_AFD_BIND,
+                                              &BindConfig,
+                                              sizeof(BindConfig),
+                                              &OutputBlock,
+                                              sizeof(OutputBlock));
+    }
+    else
+    {
+        // IPv4 bind
+        AFD_BindData BindConfig;
+        Memory::Zero(&BindConfig, sizeof(BindConfig));
+        BindConfig.ShareType = ShareType;
+        BindConfig.Address = *SocketAddress;
+
+        // Attempt to bind the socket using NtDeviceIoControlFile
+        Status = NTDLL::NtDeviceIoControlFile(m_socket,
+                                              SockEvent,
+                                              NULL,
+                                              NULL,
+                                              &IOSB,
+                                              IOCTL_AFD_BIND,
+                                              &BindConfig,
+                                              sizeof(BindConfig),
+                                              &OutputBlock,
+                                              sizeof(OutputBlock));
+    }
     // // Validate the status of the bind operation
     // if (STATUS_FAILED(status))
     // {
@@ -194,21 +235,31 @@ BOOL Socket::Open()
     //     LOG_ERROR("Socket not initialized\n");
     //     return FALSE;
     // }
-    // Prepare the socket address structure
-    SockAddr SocketAddress;
-    Memory::Zero(&SocketAddress, sizeof(SocketAddress));
-    SocketAddress.sin_family = AF_INET;
-    SocketAddress.sin_port = UINT16SwapByteOrder(port);
-    SocketAddress.sin_addr = ip.ToIPv4();
 
-    SockAddr SockAddr;
-    Memory::Zero(&SockAddr, sizeof(SockAddr));
-    SockAddr.sin_family = AF_INET;
-    // Bind the socket to the specified address and port
-    if (Bind(&SockAddr, AFD_SHARE_REUSE) == FALSE)
+    // Prepare bind address based on IP version
+    if (ip.IsIPv6())
     {
-        LOG_ERROR("Failed to bind socket\n");
-        return FALSE;
+        // Bind for IPv6
+        SockAddr6 BindAddr;
+        Memory::Zero(&BindAddr, sizeof(BindAddr));
+        BindAddr.sin6_family = AF_INET6;
+        if (Bind((SockAddr*)&BindAddr, AFD_SHARE_REUSE) == FALSE)
+        {
+            LOG_ERROR("Failed to bind IPv6 socket\n");
+            return FALSE;
+        }
+    }
+    else
+    {
+        // Bind for IPv4
+        SockAddr BindAddr;
+        Memory::Zero(&BindAddr, sizeof(BindAddr));
+        BindAddr.sin_family = AF_INET;
+        if (Bind(&BindAddr, AFD_SHARE_REUSE) == FALSE)
+        {
+            LOG_ERROR("Failed to bind socket\n");
+            return FALSE;
+        }
     }
     LOG_DEBUG("Socket bound successfully\n");
     // Handle for the socket event
@@ -232,24 +283,72 @@ BOOL Socket::Open()
         return FALSE;
     }
     LOG_DEBUG("Event successfully created for socket connection\n");
-    // Prepare the connection information structure
-    AFD_ConnctInfo ConnectInfo;
+
+    // Prepare the connection address based on IP version
     IO_STATUS_BLOCK IOSB;
-    ConnectInfo.UseSAN = 0;
-    ConnectInfo.Root = 0;
-    ConnectInfo.Unknown = 0;
-    ConnectInfo.Address = SocketAddress;
-    // Attempt to connect the socket using NtDeviceIoControlFile
-    Status = NTDLL::NtDeviceIoControlFile((PVOID)m_socket,
-                                          SockEvent,
-                                          NULL,
-                                          NULL,
-                                          &IOSB,
-                                          IOCTL_AFD_CONNECT,
-                                          &ConnectInfo,
-                                          sizeof(ConnectInfo),
-                                          NULL,
-                                          0);
+
+    if (ip.IsIPv6())
+    {
+        // IPv6 connection
+        SockAddr6 SocketAddress;
+        Memory::Zero(&SocketAddress, sizeof(SocketAddress));
+        SocketAddress.sin6_family = AF_INET6;
+        SocketAddress.sin6_port = UINT16SwapByteOrder(port);
+        const UINT8* ipv6Addr = ip.ToIPv6();
+        if (ipv6Addr != NULL)
+        {
+            Memory::Copy(SocketAddress.sin6_addr, ipv6Addr, 16);
+        }
+        SocketAddress.sin6_flowinfo = 0;
+        SocketAddress.sin6_scope_id = 0;
+
+        // Prepare the connection information structure for IPv6
+        AFD_ConnctInfo6 ConnectInfo;
+        ConnectInfo.UseSAN = 0;
+        ConnectInfo.Root = 0;
+        ConnectInfo.Unknown = 0;
+        ConnectInfo.Address = SocketAddress;
+
+        // Attempt to connect the socket using NtDeviceIoControlFile
+        Status = NTDLL::NtDeviceIoControlFile((PVOID)m_socket,
+                                              SockEvent,
+                                              NULL,
+                                              NULL,
+                                              &IOSB,
+                                              IOCTL_AFD_CONNECT,
+                                              &ConnectInfo,
+                                              sizeof(ConnectInfo),
+                                              NULL,
+                                              0);
+    }
+    else
+    {
+        // IPv4 connection
+        SockAddr SocketAddress;
+        Memory::Zero(&SocketAddress, sizeof(SocketAddress));
+        SocketAddress.sin_family = AF_INET;
+        SocketAddress.sin_port = UINT16SwapByteOrder(port);
+        SocketAddress.sin_addr = ip.ToIPv4();
+
+        // Prepare the connection information structure for IPv4
+        AFD_ConnctInfo ConnectInfo;
+        ConnectInfo.UseSAN = 0;
+        ConnectInfo.Root = 0;
+        ConnectInfo.Unknown = 0;
+        ConnectInfo.Address = SocketAddress;
+
+        // Attempt to connect the socket using NtDeviceIoControlFile
+        Status = NTDLL::NtDeviceIoControlFile((PVOID)m_socket,
+                                              SockEvent,
+                                              NULL,
+                                              NULL,
+                                              &IOSB,
+                                              IOCTL_AFD_CONNECT,
+                                              &ConnectInfo,
+                                              sizeof(ConnectInfo),
+                                              NULL,
+                                              0);
+    }
     // // Validate the status of the connect operation
     // if (STATUS_FAILED(status))
     // {
@@ -539,8 +638,8 @@ Socket::Socket(const IPAddress& ipAddress, UINT16 port) : ip(ipAddress), port(po
     // STATUS status = 0;   // Variable to hold the status of the operation
     NTSTATUS Status = 0; // Variable to hold the NT status of the operation
 
-    // Define socket parameters
-    INT32 AddressFamily = AF_INET;
+    // Define socket parameters based on IP version
+    INT32 AddressFamily = ip.IsIPv6() ? AF_INET6 : AF_INET;
     INT32 SocketType = SOCK_STREAM;
     INT32 Protocol = IPPROTO_TCP;
 

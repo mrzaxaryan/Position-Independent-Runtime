@@ -21,12 +21,6 @@ IPAddress::IPAddress(const UINT8 ipv6Address[16]) : version(IPVersion::IPv6)
     Memory::Copy(address.ipv6, ipv6Address, 16);
 }
 
-// Constructor from string - automatically detects IPv4 or IPv6
-IPAddress::IPAddress(PCCHAR ipString)
-{
-    *this = FromString(ipString);
-}
-
 // Copy constructor
 IPAddress::IPAddress(const IPAddress& other) : version(other.version)
 {
@@ -128,11 +122,12 @@ static void WriteHex(PCHAR buffer, UINT32 num)
 
     CHAR temp[9];
     INT32 i = 0;
-    const CHAR hexChars[] = "0123456789abcdef";
 
     while (num > 0)
     {
-        temp[i++] = hexChars[num & 0xF];
+        UINT32 digit = num & 0xF;
+        // Generate hex character at runtime to avoid .rdata section
+        temp[i++] = (digit < 10) ? ('0' + digit) : ('a' + digit - 10);
         num >>= 4;
     }
 

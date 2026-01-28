@@ -761,9 +761,9 @@ IPAddress DNS::GoogleResolve(PCCHAR host, RequestType dnstype)
     return ip;
 }
 
-IPAddress DNS::Resolve(PCCHAR host, RequestType dnstype)
+IPAddress DNS::Resolve(PCCHAR host)
 {
-    LOG_DEBUG("DNS_resolve(host: %s, dnstype: %d) called", host, dnstype);
+    LOG_DEBUG("DNS_resolve(host: %s) called - trying IPv6 first", host);
 
     // Try IPv6 (AAAA) first
     LOG_DEBUG("Attempting IPv6 (AAAA) resolution for %s", host);

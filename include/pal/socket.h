@@ -6,6 +6,7 @@
 
 /* Socket address families */
 #define AF_INET      2
+#define AF_INET6     23
 
 /* Socket types */
 #define SOCK_STREAM  1
@@ -22,6 +23,15 @@ struct SockAddr
 	UINT16 sin_port;
 	UINT32 sin_addr;
 	CHAR sin_zero[8];
+};
+
+struct SockAddr6
+{
+	INT16 sin6_family;
+	UINT16 sin6_port;
+	UINT32 sin6_flowinfo;
+	UINT8 sin6_addr[16];
+	UINT32 sin6_scope_id;
 };
 
 class Socket

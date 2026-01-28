@@ -198,15 +198,73 @@ private:
 		return TRUE;
 	}
 
+	// Test 6: IPv6 Socket connection
+	static BOOL TestIPv6Connection()
+	{
+		LOG_INFO("Test: IPv6 Socket Connection (HTTP:80)");
+
+		// Use Cloudflare DNS IPv6 address: 2606:4700:4700::1111
+		auto ipv6Str = "2606:4700:4700::1111"_embed;
+		IPAddress ipv6Address = IPAddress::FromString((PCCHAR)ipv6Str);
+
+		if (!ipv6Address.IsValid() || !ipv6Address.IsIPv6())
+		{
+			LOG_ERROR("Failed to parse IPv6 address: %s", (PCCHAR)ipv6Str);
+			return FALSE;
+		}
+
+		Socket sock(ipv6Address, 80);
+
+		if (!sock.Open())
+		{
+			LOG_ERROR("IPv6 socket connection failed");
+			sock.Close();
+			return FALSE;
+		}
+
+		LOG_INFO("IPv6 socket connected successfully to %s:80", (PCCHAR)ipv6Str);
+
+		// Send minimal HTTP request
+		auto request = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n"_embed;
+		UINT32 bytesSent = sock.Write((PCVOID)(PCCHAR)request, request.Length);
+
+		if (bytesSent != request.Length)
+		{
+			LOG_ERROR("Failed to send complete HTTP request over IPv6 (sent %d/%d bytes)", bytesSent, request.Length);
+			sock.Close();
+			return FALSE;
+		}
+
+		LOG_INFO("HTTP request sent successfully over IPv6 (%d bytes)", bytesSent);
+
+		// Receive response
+		CHAR buffer[512];
+		Memory::Zero(buffer, sizeof(buffer));
+		SSIZE bytesRead = sock.Read(buffer, sizeof(buffer) - 1);
+
+		if (bytesRead <= 0)
+		{
+			LOG_ERROR("Failed to receive HTTP response over IPv6");
+			sock.Close();
+			return FALSE;
+		}
+
+		LOG_INFO("Received HTTP response over IPv6 (%d bytes)", bytesRead);
+		LOG_DEBUG("Response preview: %.80s", buffer);
+
+		sock.Close();
+		return TRUE;
+	}
+
 public:
 	// Run all socket tests
 	static BOOL RunAll()
 	{
 		LOG_INFO("=== Starting Socket Tests ===");
-		LOG_INFO("Test Server: one.one.one.one (1.1.1.1)");
+		LOG_INFO("Test Server: one.one.one.one (1.1.1.1 / 2606:4700:4700::1111)");
 
 		UINT32 passed = 0;
-		UINT32 total = 5;
+		UINT32 total = 6;
 
 		if (TestSocketCreation())
 			passed++;
@@ -217,6 +275,8 @@ public:
 		if (TestMultipleConnections())
 			passed++;
 		if (TestIpConversion())
+			passed++;
+		if (TestIPv6Connection())
 			passed++;
 
 		LOG_INFO("=== Socket Tests Complete: %d/%d passed ===", passed, total);

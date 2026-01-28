@@ -571,8 +571,8 @@ WebSocketClient::WebSocketClient(PCCHAR url)
     }
 
     // Buffer to hold the resolved IP address
-    // Attempt to resolve the host name to an IP address
-    ipAddress = DNS::ResolveOverHttp(hostName);
+    // Attempt to resolve the host name to an IP address (tries IPv6 first, falls back to IPv4)
+    ipAddress = DNS::Resolve(hostName);
     if (!ipAddress.IsValid())
     {
         LOG_ERROR("Failed to resolve hostname %s", hostName);

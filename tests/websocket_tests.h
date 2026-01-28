@@ -28,16 +28,16 @@ private:
 	{
 		LOG_INFO("Test: WebSocket Connection with Explicit DNS");
 
-		// First verify DNS resolution works
+		// First verify DNS resolution works (tries IPv6 first, falls back to IPv4)
 		auto domain = "echo.websocket.org"_embed;
-		IPAddress resolvedIp = DNS::ResolveOverHttp((PCCHAR)domain);
+		IPAddress resolvedIp = DNS::Resolve((PCCHAR)domain);
 		if (resolvedIp .IsValid() == FALSE)
 		{
 			LOG_ERROR("DNS resolution failed for %s", (PCCHAR)domain);
 			LOG_ERROR("WebSocket tests require network connectivity");
 			return FALSE;
 		}
-		LOG_INFO("DNS resolved: %s -> 0x%08X", (PCCHAR)domain, resolvedIp.ToIPv4());
+		LOG_INFO("DNS resolved: %s successfully", (PCCHAR)domain);
 
 		auto wssUrl = "wss://echo.websocket.org/"_embed;
 		WebSocketClient wsClient((PCCHAR)wssUrl);
