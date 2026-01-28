@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ral.h"
+#include "ip_address.h"
 
 // =============================================================================
 // Socket Tests - AFD Socket Implementation Validation
@@ -18,7 +19,7 @@ private:
 	{
 		LOG_INFO("Test: Socket Creation");
 
-		Socket sock(TEST_SERVER_IP, 80);
+		Socket sock(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
 
 		LOG_INFO("Socket created successfully");
 		sock.Close();
@@ -30,7 +31,7 @@ private:
 	{
 		LOG_INFO("Test: Socket Connection (HTTP:80)");
 
-		Socket sock(TEST_SERVER_IP, 80);
+		Socket sock(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
 
 		if (!sock.Open())
 		{
@@ -49,7 +50,7 @@ private:
 	{
 		LOG_INFO("Test: HTTP GET Request (port 80)");
 
-		Socket sock(TEST_SERVER_IP, 80);
+		Socket sock(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
 
 		if (!sock.Open())
 		{
@@ -96,7 +97,7 @@ private:
 
 		for (UINT32 i = 0; i < 3; i++)
 		{
-			Socket sock(TEST_SERVER_IP, 80);
+			Socket sock(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
 
 			if (!sock.Open())
 			{
@@ -140,49 +141,59 @@ private:
 	{
 		LOG_INFO("Test: IP Address Conversion");
 
-		// Test ConvertIP function with test server address
+		// Test IPAddress::FromString with test server address
 		auto ipStr = "1.1.1.1"_embed;
-		UINT32 convertedIp = ConvertIP((PCCHAR)ipStr);
+		IPAddress convertedIp = IPAddress::FromString((PCCHAR)ipStr);
 
-		if (convertedIp == INVALID_IPV4)
+		if (!convertedIp.IsValid())
 		{
 			LOG_ERROR("IP conversion failed for valid IP");
 			return FALSE;
 		}
 
-		if (convertedIp != TEST_SERVER_IP)
+		if (convertedIp.ToIPv4() != TEST_SERVER_IP)
 		{
-			LOG_ERROR("IP conversion mismatch: expected 0x%08X, got 0x%08X", TEST_SERVER_IP, convertedIp);
+			LOG_ERROR("IP conversion mismatch: expected 0x%08X, got 0x%08X", TEST_SERVER_IP, convertedIp.ToIPv4());
 			return FALSE;
 		}
 
-		LOG_INFO("IP conversion successful: %s -> 0x%08X", (PCCHAR)ipStr, convertedIp);
+		LOG_INFO("IP conversion successful: %s -> 0x%08X", (PCCHAR)ipStr, convertedIp.ToIPv4());
 
 		// Test invalid IP addresses
 		auto invalidIp1 = "256.1.1.1"_embed;
-		UINT32 result1 = ConvertIP((PCCHAR)invalidIp1);
-		if (result1 != INVALID_IPV4)
+		IPAddress result1 = IPAddress::FromString((PCCHAR)invalidIp1);
+		if (result1.IsValid())
 		{
 			LOG_ERROR("Failed to reject invalid IP: %s", (PCCHAR)invalidIp1);
 			return FALSE;
 		}
 
 		auto invalidIp2 = "192.168.1"_embed;
-		UINT32 result2 = ConvertIP((PCCHAR)invalidIp2);
-		if (result2 != INVALID_IPV4)
+		IPAddress result2 = IPAddress::FromString((PCCHAR)invalidIp2);
+		if (result2.IsValid())
 		{
 			LOG_ERROR("Failed to reject invalid IP: %s", (PCCHAR)invalidIp2);
 			return FALSE;
 		}
 
 		auto invalidIp3 = "abc.def.ghi.jkl"_embed;
-		UINT32 result3 = ConvertIP((PCCHAR)invalidIp3);
-		if (result3 != INVALID_IPV4)
+		IPAddress result3 = IPAddress::FromString((PCCHAR)invalidIp3);
+		if (result3.IsValid())
 		{
 			LOG_ERROR("Failed to reject invalid IP: %s", (PCCHAR)invalidIp3);
 			return FALSE;
 		}
 
+		// Test IPv6 address parsing
+		auto ipv6Str = "2001:db8::1"_embed;
+		IPAddress ipv6Address = IPAddress::FromString((PCCHAR)ipv6Str);
+		if (!ipv6Address.IsValid() || !ipv6Address.IsIPv6())
+		{
+			LOG_ERROR("IPv6 conversion failed for valid IPv6");
+			return FALSE;
+		}
+
+		LOG_INFO("IPv6 conversion successful: %s", (PCCHAR)ipv6Str);
 		LOG_INFO("Invalid IP rejection tests passed");
 		return TRUE;
 	}

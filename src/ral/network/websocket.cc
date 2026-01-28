@@ -543,7 +543,7 @@ end:
 }
 WebSocketClient::WebSocketClient(PCCHAR url, PCCHAR ipAddress)
 {
-    this->ipAddress = ConvertIP(ipAddress);
+    this->ipAddress = IPAddress::FromString(ipAddress);
     isConnected = FALSE;
 
     // Attempt to parse the URL to extract the host name, path, port, and security setting
@@ -573,11 +573,12 @@ WebSocketClient::WebSocketClient(PCCHAR url)
     // Buffer to hold the resolved IP address
     // Attempt to resolve the host name to an IP address
     ipAddress = DNS::ResolveOverHttp(hostName);
-    if (ipAddress == INVALID_IPV4)
+    if (!ipAddress.IsValid())
     {
         LOG_ERROR("Failed to resolve hostname %s", hostName);
         return;
     }
+
     if (isSecure)
     {
         tlsContext = TLSClient(hostName, ipAddress, port);

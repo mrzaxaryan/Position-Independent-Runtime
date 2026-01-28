@@ -2,6 +2,7 @@
 
 #include "ral.h"
 #include "embedded_string.h"
+#include "ip_address.h"
 
 class DnsTests
 {
@@ -11,12 +12,12 @@ private:
 	{
 		LOG_INFO("Test: Localhost Resolution");
 
-		IPv4 ip = DNS::ResolveOverTls("localhost"_embed);
+		IPAddress ip = DNS::ResolveOverTls("localhost"_embed);
 
 		// localhost should resolve to 127.0.0.1 = 0x7F000001 in network byte order = 0x0100007F
 		if (ip != 0x0100007F)
 		{
-			LOG_ERROR("Localhost resolution failed: expected 0x0100007F, got 0x%08X", ip);
+			LOG_ERROR("Localhost resolution failed: expected 0x0100007F, got 0x%08X", ip.ToIPv4());
 			return FALSE;
 		}
 
@@ -29,9 +30,9 @@ private:
 	{
 		LOG_INFO("Test: Cloudflare DNS Resolution (dns.google)");
 
-		IPv4 ip = DNS::CloudflareResolve("dns.google"_embed);
+		IPAddress ip = DNS::CloudflareResolve("dns.google"_embed);
 
-		if (ip == INVALID_IPV4)
+		if (ip .IsValid() == FALSE)
 		{
 			LOG_ERROR("Cloudflare DNS resolution failed");
 			return FALSE;
@@ -42,11 +43,11 @@ private:
 		// 8.8.4.4 in network byte order = 0x04040808
 		if (ip != 0x08080808 && ip != 0x04040808)
 		{
-			LOG_ERROR("Unexpected IP for dns.google: 0x%08X", ip);
+			LOG_ERROR("Unexpected IP for dns.google: 0x%08X", ip.ToIPv4());
 			return FALSE;
 		}
 
-		LOG_INFO("Cloudflare resolved dns.google to 0x%08X", ip);
+		LOG_INFO("Cloudflare resolved dns.google to 0x%08X", ip.ToIPv4());
 		return TRUE;
 	}
 
@@ -55,9 +56,9 @@ private:
 	{
 		LOG_INFO("Test: Google DNS Resolution (one.one.one.one)");
 
-		IPv4 ip = DNS::GoogleResolve("one.one.one.one"_embed);
+		IPAddress ip = DNS::GoogleResolve("one.one.one.one"_embed);
 
-		if (ip == INVALID_IPV4)
+		if (ip .IsValid() == FALSE)
 		{
 			LOG_ERROR("Google DNS resolution failed");
 			return FALSE;
@@ -68,11 +69,11 @@ private:
 		// 1.0.0.1 in network byte order = 0x01000001
 		if (ip != 0x01010101 && ip != 0x01000001)
 		{
-			LOG_ERROR("Unexpected IP for one.one.one.one: 0x%08X", ip);
+			LOG_ERROR("Unexpected IP for one.one.one.one: 0x%08X", ip.ToIPv4());
 			return FALSE;
 		}
 
-		LOG_INFO("Google resolved one.one.one.one to 0x%08X", ip);
+		LOG_INFO("Google resolved one.one.one.one to 0x%08X", ip.ToIPv4());
 		return TRUE;
 	}
 
@@ -81,15 +82,15 @@ private:
 	{
 		LOG_INFO("Test: DNS over TLS Resolution");
 
-		IPv4 ip = DNS::ResolveOverTls("cloudflare.com"_embed);
+		IPAddress ip = DNS::ResolveOverTls("cloudflare.com"_embed);
 
-		if (ip == INVALID_IPV4)
+		if (ip .IsValid() == FALSE)
 		{
 			LOG_ERROR("DNS over TLS resolution failed");
 			return FALSE;
 		}
 
-		LOG_INFO("DNS over TLS resolved cloudflare.com to 0x%08X", ip);
+		LOG_INFO("DNS over TLS resolved cloudflare.com to 0x%08X", ip.ToIPv4());
 		return TRUE;
 	}
 
@@ -98,15 +99,15 @@ private:
 	{
 		LOG_INFO("Test: DNS over HTTPS (JSON) Resolution");
 
-		IPv4 ip = DNS::ResolveOverHttp("google.com"_embed);
+		IPAddress ip = DNS::ResolveOverHttp("google.com"_embed);
 
-		if (ip == INVALID_IPV4)
+		if (ip .IsValid() == FALSE)
 		{
 			LOG_ERROR("DNS over HTTPS resolution failed");
 			return FALSE;
 		}
 
-		LOG_INFO("DNS over HTTPS resolved google.com to 0x%08X", ip);
+		LOG_INFO("DNS over HTTPS resolved google.com to 0x%08X", ip.ToIPv4());
 		return TRUE;
 	}
 
@@ -115,16 +116,16 @@ private:
 	{
 		LOG_INFO("Test: Main DNS Resolve Function");
 
-		IPv4 ip = DNS::Resolve("example.com"_embed);
+		IPAddress ip = DNS::Resolve("example.com"_embed);
 
-		if (ip == INVALID_IPV4)
+		if (ip .IsValid() == FALSE)
 		{
 			LOG_ERROR("Main DNS resolution failed");
 			return FALSE;
 		}
 
 		// example.com typically resolves to 93.184.215.14 = 0x5DB8D70E in network byte order = 0x0ED7B85D
-		LOG_INFO("Main Resolve resolved example.com to 0x%08X", ip);
+		LOG_INFO("Main Resolve resolved example.com to 0x%08X", ip.ToIPv4());
 		return TRUE;
 	}
 
@@ -133,9 +134,9 @@ private:
 	{
 		LOG_INFO("Test: Known IP Resolution (dns.google -> 8.8.8.8 or 8.8.4.4)");
 
-		IPv4 ip = DNS::Resolve("dns.google"_embed);
+		IPAddress ip = DNS::Resolve("dns.google"_embed);
 
-		if (ip == INVALID_IPV4)
+		if (ip .IsValid() == FALSE)
 		{
 			LOG_ERROR("DNS resolution for dns.google failed");
 			return FALSE;
@@ -144,11 +145,11 @@ private:
 		// dns.google should resolve to 8.8.8.8 or 8.8.4.4
 		if (ip != 0x08080808 && ip != 0x04040808)
 		{
-			LOG_ERROR("Unexpected IP for dns.google: 0x%08X (expected 8.8.8.8 or 8.8.4.4)", ip);
+			LOG_ERROR("Unexpected IP for dns.google: 0x%08X (expected 8.8.8.8 or 8.8.4.4)", ip.ToIPv4());
 			return FALSE;
 		}
 
-		LOG_INFO("Known IP resolution passed: dns.google -> 0x%08X", ip);
+		LOG_INFO("Known IP resolution passed: dns.google -> 0x%08X", ip.ToIPv4());
 		return TRUE;
 	}
 

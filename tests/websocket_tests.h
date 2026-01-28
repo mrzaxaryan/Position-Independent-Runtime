@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ral.h"
+#include "ip_address.h"
 
 // =============================================================================
 // WebSocket Tests - WebSocketClient Implementation Validation
@@ -29,14 +30,14 @@ private:
 
 		// First verify DNS resolution works
 		auto domain = "echo.websocket.org"_embed;
-		IPv4 resolvedIp = DNS::ResolveOverHttp((PCCHAR)domain);
-		if (resolvedIp == INVALID_IPV4)
+		IPAddress resolvedIp = DNS::ResolveOverHttp((PCCHAR)domain);
+		if (resolvedIp .IsValid() == FALSE)
 		{
 			LOG_ERROR("DNS resolution failed for %s", (PCCHAR)domain);
 			LOG_ERROR("WebSocket tests require network connectivity");
 			return FALSE;
 		}
-		LOG_INFO("DNS resolved: %s -> 0x%08X", (PCCHAR)domain, resolvedIp);
+		LOG_INFO("DNS resolved: %s -> 0x%08X", (PCCHAR)domain, resolvedIp.ToIPv4());
 
 		auto wssUrl = "wss://echo.websocket.org/"_embed;
 		WebSocketClient wsClient((PCCHAR)wssUrl);

@@ -2,6 +2,7 @@
 #include "primitives.h"
 #include "socket.h"
 #include "tls.h"
+#include "ip_address.h"
 
 #define OPCODE_CONTINUE 0x0
 #define OPCODE_TEXT 0x1
@@ -29,7 +30,7 @@ private:
     BOOL isSecure;
     CHAR hostName[1024];
     CHAR path[1024];
-    IPv4 ipAddress;
+    IPAddress ipAddress;
     UINT16 port;
 
     TLSClient tlsContext;

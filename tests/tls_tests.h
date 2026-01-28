@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ral.h"
+#include "ip_address.h"
 
 class TlsTests
 {
@@ -13,7 +14,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Handshake (ip: %x, port %d)", TEST_SERVER_IP, TLS_PORT);
 
-		TLSClient tlsClient("one.one.one.one"_embed, TEST_SERVER_IP, TLS_PORT);
+		TLSClient tlsClient("one.one.one.one"_embed, IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
 
 		if (!tlsClient.Open())
 		{
@@ -31,7 +32,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Echo - Single Message (ip: %x, port %d)", TEST_SERVER_IP, TLS_PORT);
 
-		TLSClient tlsClient("www.one.one.one.one"_embed, TEST_SERVER_IP, TLS_PORT);
+		TLSClient tlsClient("www.one.one.one.one"_embed, IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
 
 		if (!tlsClient.Open())
 		{
@@ -79,7 +80,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Echo - Multiple Messages (port %d)", TLS_PORT);
 
-		TLSClient tlsClient("www.one.one.one.one"_embed, TEST_SERVER_IP, TLS_PORT);
+		TLSClient tlsClient("www.one.one.one.one"_embed, IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
 
 		if (!tlsClient.Open())
 		{

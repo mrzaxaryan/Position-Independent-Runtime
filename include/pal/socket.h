@@ -2,6 +2,7 @@
 
 #include "primitives.h"
 #include "network.h"
+#include "ip_address.h"
 
 /* Socket address families */
 #define AF_INET      2
@@ -26,7 +27,7 @@ struct SockAddr
 class Socket
 {
 private:
-	UINT32 ip;
+	IPAddress ip;
 	UINT16 port;
 	PVOID m_socket;
 	BOOL Bind(SockAddr *SocketAddress, INT32 ShareType);
@@ -35,7 +36,7 @@ public:
 	VOID *operator new(USIZE) = delete;
 	VOID operator delete(VOID *) = delete;
 	Socket() = default;
-	Socket(UINT32 ip, UINT16 port);
+	Socket(const IPAddress& ipAddress, UINT16 port);
 	BOOL IsValid() const { return m_socket != NULL && m_socket != (PVOID)(SSIZE)(-1); }
 	BOOL Open();
 	BOOL Close();

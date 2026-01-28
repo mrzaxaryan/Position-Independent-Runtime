@@ -178,7 +178,7 @@ BOOL Socket::Bind(SockAddr *SocketAddress, INT32 ShareType)
 // Function to connect the NT socket to a specified IP and port
 BOOL Socket::Open()
 {
-    LOG_DEBUG("Connect(pNTSocket: 0x%p, ip: %d, port: %d)\n", this, ip, port);
+    LOG_DEBUG("Connect(pNTSocket: 0x%p, port: %d)\n", this, port);
     // Validate input parameter
     // ASSERT_NOT_NULL(pNTSocketContext, FALSE);
     // STATUS status = 0;   // Variable to hold the status of the operation
@@ -199,7 +199,7 @@ BOOL Socket::Open()
     Memory::Zero(&SocketAddress, sizeof(SocketAddress));
     SocketAddress.sin_family = AF_INET;
     SocketAddress.sin_port = UINT16SwapByteOrder(port);
-    SocketAddress.sin_addr = ip;
+    SocketAddress.sin_addr = ip.ToIPv4();
 
     SockAddr SockAddr;
     Memory::Zero(&SockAddr, sizeof(SockAddr));
@@ -530,7 +530,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 }
 
 // Function to create a new NT socket
-Socket::Socket(UINT32 ip, UINT16 port) : ip(ip), port(port)
+Socket::Socket(const IPAddress& ipAddress, UINT16 port) : ip(ipAddress), port(port)
 {
     LOG_DEBUG("Create(pNTSocket: 0x%p)\n", this);
     // Validate input parameter

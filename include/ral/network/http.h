@@ -5,6 +5,7 @@
 #include "memory.h"
 #include "socket.h"
 #include "tls.h"
+#include "ip_address.h"
 
 class HttpClient
 {
@@ -12,7 +13,7 @@ private:
     BOOL isSecure;
     CHAR hostName[1024];
     CHAR path[1024];
-    IPv4 ipAddress;
+    IPAddress ipAddress;
     UINT16 port;
     TLSClient tlsContext;
     Socket socketContext;
