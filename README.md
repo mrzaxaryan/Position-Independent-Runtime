@@ -344,7 +344,7 @@ Critical flags for position-independence:
 # Custom entry point (no CRT)
 /Entry:_start
 
-# Function ordering (i386 only)
+# Function ordering
 /ORDER:@orderfile.txt
 
 # Release optimizations
