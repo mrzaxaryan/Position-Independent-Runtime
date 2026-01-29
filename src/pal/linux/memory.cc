@@ -23,7 +23,6 @@ constexpr int MAP_PRIVATE = 0x2;
 constexpr int MAP_ANONYMOUS = 0x20;
 
 // Memory allocator using mmap/munmap
-// This implementation is stateless and PIC-compatible (no global variables)
 // Each allocation is a separate mmap, which is simple but not efficient for
 // many small allocations. Suitable for basic needs.
 
