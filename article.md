@@ -333,8 +333,7 @@ This project is still a work in progress. Below is a list of remaining tasks and
 
 - Support for additional platforms
 - Windows syscall implementations
-- Compile-time obfuscation techniques
-- Compile-time string hashing ✅ **done**
+- Compile-time polymorphism
 
 ## Conclusion
 
