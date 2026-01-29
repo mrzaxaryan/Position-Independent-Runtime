@@ -5,24 +5,6 @@
 // Linux syscall numbers
 namespace Syscall
 {
-#if defined(ARCHITECTURE_X86_64)
-    constexpr USIZE SYS_EXIT = 60;
-    constexpr USIZE SYS_WRITE = 1;
-    constexpr USIZE SYS_READ = 0;
-#elif defined(ARCHITECTURE_I386)
-    constexpr USIZE SYS_EXIT = 1;
-    constexpr USIZE SYS_WRITE = 4;
-    constexpr USIZE SYS_READ = 3;
-#elif defined(ARCHITECTURE_AARCH64)
-    constexpr USIZE SYS_EXIT = 93;
-    constexpr USIZE SYS_WRITE = 64;
-    constexpr USIZE SYS_READ = 63;
-#elif defined(ARCHITECTURE_ARMV7A)
-    constexpr USIZE SYS_EXIT = 1;
-    constexpr USIZE SYS_WRITE = 4;
-    constexpr USIZE SYS_READ = 3;
-#endif
-
     // x86_64 syscall wrappers
 #if defined(ARCHITECTURE_X86_64)
 
@@ -175,13 +157,12 @@ namespace Syscall
     {
         SSIZE ret;
         __asm__ volatile(
-            "mov %1, %%ebx\n"
-            "mov %2, %%eax\n"
+            "xchg %%ebx, %1\n"  // Save ebx (PIC register), load arg1
             "int $0x80\n"
-            "mov %%eax, %0\n"
-            : "=r"(ret)
-            : "r"(arg1), "r"(number)
-            : "eax", "ebx", "memory"
+            "xchg %%ebx, %1\n"  // Restore ebx
+            : "=a"(ret)
+            : "r"(arg1), "a"(number)
+            : "memory"
         );
         return ret;
     }
@@ -191,14 +172,12 @@ namespace Syscall
     {
         SSIZE ret;
         __asm__ volatile(
-            "mov %1, %%ebx\n"
-            "mov %2, %%ecx\n"
-            "mov %3, %%eax\n"
+            "xchg %%ebx, %1\n"  // Save ebx, load arg1
             "int $0x80\n"
-            "mov %%eax, %0\n"
-            : "=r"(ret)
-            : "r"(arg1), "r"(arg2), "r"(number)
-            : "eax", "ebx", "ecx", "memory"
+            "xchg %%ebx, %1\n"  // Restore ebx
+            : "=a"(ret)
+            : "r"(arg1), "c"(arg2), "a"(number)
+            : "memory"
         );
         return ret;
     }
@@ -208,15 +187,12 @@ namespace Syscall
     {
         SSIZE ret;
         __asm__ volatile(
-            "mov %1, %%ebx\n"
-            "mov %2, %%ecx\n"
-            "mov %3, %%edx\n"
-            "mov %4, %%eax\n"
+            "xchg %%ebx, %1\n"  // Save ebx, load arg1
             "int $0x80\n"
-            "mov %%eax, %0\n"
-            : "=r"(ret)
-            : "r"(arg1), "r"(arg2), "r"(arg3), "r"(number)
-            : "eax", "ebx", "ecx", "edx", "memory"
+            "xchg %%ebx, %1\n"  // Restore ebx
+            : "=a"(ret)
+            : "r"(arg1), "c"(arg2), "d"(arg3), "a"(number)
+            : "memory"
         );
         return ret;
     }
@@ -226,16 +202,12 @@ namespace Syscall
     {
         SSIZE ret;
         __asm__ volatile(
-            "mov %1, %%ebx\n"
-            "mov %2, %%ecx\n"
-            "mov %3, %%edx\n"
-            "mov %4, %%esi\n"
-            "mov %5, %%eax\n"
+            "xchg %%ebx, %1\n"  // Save ebx, load arg1
             "int $0x80\n"
-            "mov %%eax, %0\n"
-            : "=r"(ret)
-            : "r"(arg1), "r"(arg2), "r"(arg3), "r"(arg4), "r"(number)
-            : "eax", "ebx", "ecx", "edx", "esi", "memory"
+            "xchg %%ebx, %1\n"  // Restore ebx
+            : "=a"(ret)
+            : "r"(arg1), "c"(arg2), "d"(arg3), "S"(arg4), "a"(number)
+            : "memory"
         );
         return ret;
     }
@@ -245,17 +217,13 @@ namespace Syscall
     {
         SSIZE ret;
         __asm__ volatile(
-            "mov %1, %%ebx\n"
-            "mov %2, %%ecx\n"
-            "mov %3, %%edx\n"
-            "mov %4, %%esi\n"
-            "mov %5, %%edi\n"
-            "mov %6, %%eax\n"
+            "push %%ebx\n"      // Save ebx (PIC register)
+            "mov %1, %%ebx\n"   // Load arg1
             "int $0x80\n"
-            "mov %%eax, %0\n"
-            : "=r"(ret)
-            : "r"(arg1), "r"(arg2), "r"(arg3), "r"(arg4), "r"(arg5), "r"(number)
-            : "eax", "ebx", "ecx", "edx", "esi", "edi", "memory"
+            "pop %%ebx\n"       // Restore ebx
+            : "=a"(ret)
+            : "r"(arg1), "c"(arg2), "d"(arg3), "S"(arg4), "D"(arg5), "a"(number)
+            : "memory"
         );
         return ret;
     }
@@ -265,18 +233,16 @@ namespace Syscall
     {
         SSIZE ret;
         __asm__ volatile(
-            "mov %1, %%ebx\n"
-            "mov %2, %%ecx\n"
-            "mov %3, %%edx\n"
-            "mov %4, %%esi\n"
-            "mov %5, %%edi\n"
-            "mov %6, %%ebp\n"
-            "mov %7, %%eax\n"
+            "push %%ebp\n"      // Save ebp
+            "push %%ebx\n"      // Save ebx (PIC register)
+            "mov %1, %%ebx\n"   // Load arg1
+            "mov %6, %%ebp\n"   // Load arg6
             "int $0x80\n"
-            "mov %%eax, %0\n"
-            : "=r"(ret)
-            : "r"(arg1), "r"(arg2), "r"(arg3), "r"(arg4), "r"(arg5), "r"(arg6), "r"(number)
-            : "eax", "ebx", "ecx", "edx", "esi", "edi", "ebp", "memory"
+            "pop %%ebx\n"       // Restore ebx
+            "pop %%ebp\n"       // Restore ebp
+            : "=a"(ret)
+            : "r"(arg1), "c"(arg2), "d"(arg3), "S"(arg4), "D"(arg5), "r"(arg6), "a"(number)
+            : "memory"
         );
         return ret;
     }

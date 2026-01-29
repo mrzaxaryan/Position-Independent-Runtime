@@ -9,7 +9,7 @@ ENTRYPOINT INT32 _start(VOID)
 {
 	BOOL allPassed = TRUE;
 
-	// Logger::Info<WCHAR>(L"=== CPP-PIC Test Suite ==="_embed);
+	Logger::Info<WCHAR>(L"=== CPP-PIC Test Suite ==="_embed);
 	// Logger::Info<WCHAR>(L""_embed);
 
 	// // Run all test suites (Embedded/Primitives -> BAL -> PAL -> RAL)
