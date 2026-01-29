@@ -327,6 +327,13 @@ CPP-PIC is designed to support execution environments where traditional runtime 
 - Cross-architecture C++ development
 - Environments without standard C runtime support
 
+## To do
+This project is still a work in progress. Below is a list of remaining tasks and planned improvements. Any help or contributions are greatly appreciated.
+-Support for additional platforms
+-Windows syscall implementations
+-Compile-time obfuscation techniques
+-Additional hashing functions
+
 ## Conclusion
 
 CPP-PIC is not merely a library — it is a proof of concept that challenges long-held assumptions about C++, Windows binaries, and position-independent execution. This project is compiled into a PE file on Windows or an ELF file on Linux, and it can run both as a standalone executable and as shellcode after extracting the .text section. By eliminating `.rdata`, CRT dependencies, relocations, and static API references, CPP-PIC enables a new class of C++ programs capable of running in environments where traditional C++ has never been viable. As demonstrated throughout this work, modern C++23 compile‑time features and carefully selected compiler intrinsics play a key role in achieving these guarantees, allowing expressive high‑level code while preserving strict low‑level control.
