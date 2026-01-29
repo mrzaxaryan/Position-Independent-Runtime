@@ -10,7 +10,7 @@ INT32 Random::GetSeedFromTime()
     auto dateTime = DateTime::Now();
 
     // Mix down to 32-bit seed
-    return (UINT32)(dateTime.Milliseconds + dateTime.Seconds);
+    return (UINT32)(dateTime.Nanoseconds * dateTime.Seconds);
 }
 
 // Function to get a random number in the range of 0 to RANDOM_MAX
@@ -25,9 +25,6 @@ INT32 Random::Get()
 // Constructor to initialize the random number generator
 Random::Random()
 {
-    if (seed == 0)
-    {
-        seed = GetSeedFromTime();
-        Logger::Debug<WCHAR>(L"[Random] Initialized with seed: %u"_embed, seed);
-    }
+    seed = GetSeedFromTime();
+    Logger::Debug<WCHAR>(L"[Random] Initialized with seed: %u"_embed, seed);
 }
