@@ -58,8 +58,7 @@ ninja --version
 
 - **CMake**: 3.20 or higher
 - **Ninja**: 1.10 or higher
-- **LLVM/Clang**: 18 or higher (20+ recommended)
-
+- **LLVM/Clang**: 20 or higher
 ## Next Steps
 
 After installing the toolchain, refer to the main [README.md](README.md) for build instructions and usage examples.
