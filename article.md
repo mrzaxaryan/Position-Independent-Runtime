@@ -1,6 +1,6 @@
 # CPP-PIC: A Modern C++ Approach to Zero-Dependency, Position-Independent Code Generation
 
-## Intoduction
+## Introduction
 
 Shellcode, in security research and malware analysis, is a small, self-contained sequence of machine instructions that can be injected into memory and executed from an arbitrary location. It must operate without relying on external components such as DLLs, runtime initialization routines or fixed stack layouts. Because of these strict constraints, shellcode is traditionally written in assembly language, which provides precise control over instructions, registers, and memory access.
 While assembly ensures fully dependency-free and position-independent execution, it quickly becomes impractical as complexity grows due to its low-level nature and limited expressiveness. High-level languages like C greatly improve readability, maintainability, and development speed, but standard C and C++ compilation models introduce significant challenges for shellcode development. Modern compilers typically generate binaries that depend on runtime libraries, import tables, relocation information, and read-only data sections. These dependencies violate the core requirement of shellcode—execution independent of any fixed memory layout or external support—and, moreover, these problems do not admit simple or universally effective solutions.
@@ -21,7 +21,7 @@ With this work, I would like to add my two cents to that debate, even though muc
 4. Static exposure of imported APIs
 5. Inability to execute reliably from arbitrary memory locations
 
-**1.1. Traditinal Solutions**
+**1.1. Traditional Solutions**
 
 * **Problem:** When writing shellcode in C, only the `.text` section is available after compilation, so global constants and string literals cannot be used because they are placed in `.rdata` or `.data`.
 
@@ -48,7 +48,7 @@ With this work, I would like to add my two cents to that debate, even though muc
 
 * **Solution:** Preform the relocation manually:
 
-    At runtime, the shellcode can determine its own position in memory and perform the loader’s work manually. In this approach, constants and strings may reside in sections such as `.rdata`, which are then merged into the `.text` section using a linker script. During execution, relocation entries are processed explicitly to fix up absolute addresses. 
+    At runtime, the shellcode can determine its own position in memory and perform the loader's work manually. In this approach, constants and strings may reside in sections such as `.rdata`, which are then merged into the `.text` section using `/MERGE:.rdata=.text` for MSVC and a custom linker script for Clang. During execution, relocation entries are processed explicitly to fix up absolute addresses. 
 
     ```
     PCHAR GetInstructionAddress(VOID)
@@ -281,17 +281,18 @@ CPP-PIC is designed around the following goals:
     CPP-PIC achieves complete independence from the C runtime (CRT) and standard libraries by providing fully custom implementations for essential services such as memory management, string manipulation, formatted output, and runtime initialization. Rather than relying on CRT startup code, CPP-PIC defines a custom entry point, enabling execution without loader-managed runtime setup.
     Interaction with Windows system functionality is performed through low-level native interfaces. The runtime traverses the Process Environment Block (PEB) to locate loaded modules and parses PE export tables to resolve function addresses using hash-based lookup. By avoiding import tables, string-based API resolution, and `GetProcAddress` calls, CPP-PIC minimizes static analysis visibility and enables execution in constrained or adversarial environments.
 
-I would also like to bring your attention to a challenge we faced during the project improvement phase. Ensuring that the shellcode entry point was placed at the very beginning of the `.text` section proved to be challenging, yet crucial for this architecture. After many hours of research, we discovered a solution using a linker script, which worked well under GCC. To achieve the same result with Clang, we used the following configuration:
+I would also like to bring your attention to a challenge we faced during the project improvement phase. Ensuring that the shellcode entry point was placed at the very beginning of the `.text` section proved to be challenging, yet crucial for this architecture. After many hours of research, we discovered a solution using:
 
-    
-    # Merge .rdata into .text (CRITICAL for PIC)
-    /MERGE:.rdata=.text
+For MSVC:
+```
+# Custom entry point (no CRT)
+/Entry:_start
 
-    # Custom entry point (no CRT)
-    /Entry:_start
+# Function ordering for MSVC
+/ORDER:@orderfile.txt
+```
 
-    # Funrepresentations MSVC
-    /ORDER:@orderfile.txt
+For Clang, we used custom linker scripts with section ordering directives to achieve the same result.
     
 ## Windows Implementation
 
