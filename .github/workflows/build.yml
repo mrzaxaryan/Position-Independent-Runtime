@@ -55,9 +55,6 @@ jobs:
 
           "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
-          clang --version
-          lld-link --version
-
       - name: Build
         shell: pwsh
         run: |
@@ -214,10 +211,6 @@ jobs:
           sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${LLVM_MAJOR} 100
           sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-${LLVM_MAJOR} 100
           sudo update-alternatives --install /usr/bin/ld.lld ld.lld /usr/bin/ld.lld-${LLVM_MAJOR} 100
-
-          # Verify installation
-          clang --version
-          lld --version
 
       - name: Build
         run: |
