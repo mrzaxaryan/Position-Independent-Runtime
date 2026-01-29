@@ -15,16 +15,10 @@ ENTRYPOINT INT32 _start(VOID)
 	Logger::Info<WCHAR>(L"=== CPP-PIC Test Suite ==="_embed);
 	Logger::Info<WCHAR>(L""_embed);
 
-	// Run all test suites
-	if (!Djb2Tests::RunAll())
-		allPassed = FALSE;
-	Logger::Info<WCHAR>(L""_embed);
+	// Run all test suites (ordered from low-level primitives to high-level abstractions)
 
+	// PAL (Platform Abstraction Layer) - Core Primitives
 	if (!MemoryTests::RunAll())
-		allPassed = FALSE;
-	Logger::Info<WCHAR>(L""_embed);
-
-	if (!StringTests::RunAll())
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
 
@@ -39,13 +33,25 @@ ENTRYPOINT INT32 _start(VOID)
 	if (!DoubleTests::RunAll())
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
+
+	if (!StringTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	// BAL (Basic Abstraction Layer) - Data Structures and Utilities
 	if (!ArrayStorageTests::RunAll())
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
+
 	if (!StringFormatterTests::RunAll())
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
 
+	if (!Djb2Tests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	// BAL - Cryptographic Primitives
 	if (!RandomTests::RunAll())
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
@@ -58,21 +64,19 @@ ENTRYPOINT INT32 _start(VOID)
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
 
-	// Run socket tests (requires network connectivity)
+	// RAL (Runtime Abstraction Layer) - Network and I/O (requires network connectivity)
 	if (!SocketTests::RunAll())
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
-	// Run TLS tests (requires network connectivity)
+
 	if (!TlsTests::RunAll())
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
 
-	// Run DNS tests (requires network connectivity)
 	if (!DnsTests::RunAll())
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
 
-	// Run WebSocket tests (requires network connectivity)
 	if (!WebSocketTests::RunAll())
 		allPassed = FALSE;
 
