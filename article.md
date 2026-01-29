@@ -329,10 +329,11 @@ CPP-PIC is designed to support execution environments where traditional runtime 
 
 ## To do
 This project is still a work in progress. Below is a list of remaining tasks and planned improvements. Any help or contributions are greatly appreciated.
--Support for additional platforms
--Windows syscall implementations
--Compile-time obfuscation techniques
--Additional hashing functions
+
+- Support for additional platforms
+- Windows syscall implementations
+- Compile-time obfuscation techniques
+- Additional hashing functions
 
 ## Conclusion
 
