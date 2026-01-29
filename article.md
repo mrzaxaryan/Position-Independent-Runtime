@@ -189,13 +189,8 @@ CPP-PIC is designed around the following goals:
      
 
     Assembly Output:
-    ```
-    movw $0x48, (%rdi) ; 'H'
-    movw $0x65, 2(%rdi) ; 'e'
-    movw $0x6C, 4(%rdi) ; 'l'
-    movw $0x6C, 6(%rdi) ; 'l'
-    movw $0x6F, 8(%rdi) ; 'o'
-    movw $0x48, (%rdi) ; 'H'
+    ```asm
+    movw $0x48, (%rdi)  ; 'H'
     movw $0x65, 2(%rdi) ; 'e'
     movw $0x6C, 4(%rdi) ; 'l'
     movw $0x6C, 6(%rdi) ; 'l'
@@ -237,24 +232,15 @@ CPP-PIC is designed around the following goals:
 * **Solution: Pure Integer-Based Conversions**
 
     All type conversions are implemented using explicit bitwise and integer operations, preventing the compiler from emitting hidden constants or helper routines.
-       
-    ```
+
+    ```cpp
     // Extracts integer value from IEEE-754 without FPU instructions
-    INT64 operator(INT64)(const DOUBLE& d) 
+    INT64 d_to_i64(const DOUBLE& d)
     {
         UINT64 bits = d.bits;
         int exponent = ((bits >> 52) & 0x7FF) - 1023;
         UINT64 mantissa = (bits & 0xFFFFFFFFFFFFF) | 0x10000000000000;
         // ... bit shifting magic ...
-    }
-
-    // Extracts integer value from IEEE-754 without FPU instructions
-    INT64 operator(INT64)(const DOUBLE& d) 
-    {
-        UINT64 bits = d.bits;
-        int exponent = ((bits >> 52) & 0x7FF) - 1023;
-            UINT64 mantissa = (bits & 0xFFFFFFFFFFFFF) | 0x10000000000000;
-            // ... bit shifting magic ...
     }
     ```
     
@@ -326,7 +312,7 @@ This project is still a work in progress. Below is a list of remaining tasks and
 
 ## Conclusion
 
-CPP-PIC is not merely a library — it is a proof of concept that challenges long-held assumptions about C++, binary formats, and position-independent execution across multiple platforms. This project compiles into a PE file on Windows or an ELF file on Linux, supporting x86, x64, and ARM architectures. The resulting binary can run both as a standalone executable and as shellcode after extracting the `.text` section. By eliminating `.rdata`, CRT dependencies, relocations, and static API references, CPP-PIC enables a new class of C++ programs capable of running in environments where traditional C++ has never been viable.
+CPP-PIC is not merely a library — it is a proof of concept that challenges long-held assumptions about C++, binary formats, and position-independent execution across multiple platforms. This project compiles into a PE file on Windows or an ELF file on Linux, supporting i386, x86_64, armv7a, and aarch64 architectures. The resulting binary can run both as a standalone executable and as shellcode after extracting the `.text` section. By eliminating `.rdata`, CRT dependencies, relocations, and static API references, CPP-PIC enables a new class of C++ programs capable of running in environments where traditional C++ has never been viable.
 
 The platform abstraction layer demonstrates that the same high-level C++23 codebase can target fundamentally different operating systems — Windows with its PEB walking and NTAPI interfaces, and Linux with its direct syscall approach — while maintaining identical position-independence guarantees. As demonstrated throughout this work, modern C++23 compile‑time features and carefully selected compiler intrinsics play a key role in achieving these guarantees, allowing expressive high‑level code while preserving strict low‑level control.
 
