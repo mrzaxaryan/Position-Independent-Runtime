@@ -1,20 +1,20 @@
-# CPP-PIC: A Modern C++ Approach to Zero-Dependency, Position-Independent Code Generation
+# NOSTDLIB-RUNTIME: A Modern C++ Approach to Zero-Dependency, Position-Independent Code Generation
 
 ## Introduction
 
-Shellcode, in security research and malware analysis, is a small, self-contained sequence of machine instructions that can be injected into memory and executed from an arbitrary location. It must operate without relying on external components such as DLLs, runtime initialization routines or fixed stack layouts. Because of these strict constraints, shellcode is traditionally written in assembly language, which provides precise control over instructions, registers, and memory access.
+Shellcode, in security research and malware analysis, is a small, self-contained sequence of machine instructions that can be injected into memory and executed from an arbitrary location. It must operate without relying on external components such as DLLs, runtime initialization routines, or fixed stack layouts. Because of these strict constraints, shellcode is traditionally written in assembly language, which provides precise control over instructions, registers, and memory access.
 While assembly ensures fully dependency-free and position-independent execution, it quickly becomes impractical as complexity grows due to its low-level nature and limited expressiveness. High-level languages like C offer improved readability, maintainability, and development speed, but standard C and C++ compilation models introduce significant challenges for shellcode development. Modern compilers typically generate binaries that depend on runtime libraries, import tables, relocation information, and read-only data sections. These dependencies violate the core requirement of shellcode—execution independent of any fixed memory layout or external support—and these problems do not admit simple or universally effective solutions.
 As a result, code produced by conventional toolchains cannot be used as standalone shellcode without substantial modification or manual restructuring.
 
 ## Motivation
 A long time ago, in a corner of the darknet, two users debated which programming language was better. One argued that assembly provides almost complete control over execution, while the other claimed that C, as a higher-level language, is a better choice for implementing complex systems, since writing something like a TLS client in assembly is impractical.
-That debate ended with the assembly coder being kicked out from that forum.
+That debate ended with the assembly coder being kicked out of that forum.
 
-With this work, I would like to add my two cents to that debate by arguing that it is possible to leverage modern C++23 without compromising the strict execution guarantees required for shellcode.
+With this work, we would like to add our two cents to that debate by arguing that it is possible to leverage modern C++23 without compromising the strict execution guarantees required for shellcode.
 
 ## Common Problems and Solutions
 
-When writing shellcode in C/C++, developers face several fundamental challenges. Below, we examine each problem, the traditional approaches used to address it, why those approaches fall short, and how CPP-PIC provides a robust solution.
+When writing shellcode in C/C++, developers face several fundamental challenges. Below, we examine each problem, the traditional approaches used to address it, why those approaches fall short, and how NOSTDLIB-RUNTIME provides a robust solution.
 
 ### Problem 1: String Literals in .rdata
 
@@ -58,9 +58,9 @@ path[11] = '\0';
 
 These approaches are not universal because they rely on compiler-specific behavior and assumptions about stack layout. Modern compilers are sophisticated enough to recognize these patterns—when optimizations are enabled, the compiler may consolidate individual character assignments, place the string data in `.rdata`, and replace the code with a single `memcpy` call. This defeats the purpose of the technique and reintroduces the same `.rdata` dependency the approach was meant to avoid. Additionally, manually embedding constants and strings increases shellcode size, making it easier to detect and difficult to scale. These approaches also make the code less readable and harder to maintain.
 
-#### CPP-PIC Solution: Compile-Time String Decomposition
+#### NOSTDLIB-RUNTIME Solution: Compile-Time String Decomposition
 
-CPP-PIC replaces conventional string literals with compile-time decomposed representations. Using C++23 features such as user-defined literals, variadic templates, and fold expressions, strings are decomposed into individual characters at compile time:
+NOSTDLIB-RUNTIME replaces conventional string literals with compile-time decomposed representations. Using C++23 features such as user-defined literals, variadic templates, and fold expressions, strings are decomposed into individual characters at compile time:
 
 ```cpp
 template <typename TChar, TChar... Chars>
@@ -104,7 +104,7 @@ The same stack-based techniques used for strings are applied to arrays—manuall
 
 The same limitations apply: compiler optimizations can consolidate these into `.rdata`, the code becomes verbose and error-prone, and it doesn't scale for large arrays.
 
-#### CPP-PIC Solution: Compile-Time Array Embedding
+#### NOSTDLIB-RUNTIME Solution: Compile-Time Array Embedding
 
 Elements are packed into machine-word-sized integers at compile time and unpacked at runtime:
 
@@ -180,7 +180,7 @@ ENTRYPOINT INT32 _start(VOID)
 #endif
 ```
 
-And then perform relocation like this:
+Then, perform relocation like this:
 
 ```cpp
 CHAR *string = "Hello, World!";
@@ -194,9 +194,9 @@ WCHAR *relocatedWideString = (WCHAR*)((CHAR*)wideString + (SSIZE)startAddress);
 
 This method adds extra code and complexity, depends on unstable compiler behavior, and can easily break under optimization. As a result, it is unreliable and does not scale well for real-world shellcode.
 
-#### CPP-PIC Solution: No Relocations Needed
+#### NOSTDLIB-RUNTIME Solution: No Relocations Needed
 
-By eliminating all `.rdata` dependencies through compile-time embedding (strings, arrays, floating-point constants) and using pure relative addressing for function pointers, CPP-PIC produces code that requires no relocations whatsoever. The binary is inherently position-independent without any runtime fixups.
+By eliminating all `.rdata` dependencies through compile-time embedding (strings, arrays, floating-point constants) and using pure relative addressing for function pointers, NOSTDLIB-RUNTIME produces code that requires no relocations whatsoever. The binary is inherently position-independent without any runtime fixups.
 
 ### Problem 4: Floating-Point Constants
 
@@ -223,7 +223,7 @@ toDouble(1, 232342);
 
 While this avoids embedding floating-point literals, it increases code size and complexity, which is not suitable for this type of work.
 
-#### CPP-PIC Solution: Floating-Point Constant Embedding
+#### NOSTDLIB-RUNTIME Solution: Floating-Point Constant Embedding
 
 We solve this issue for double values; applying the same technique to float values is straightforward. Floating-point values are converted at compile time into IEEE-754 bit patterns and injected directly into registers as immediate operands:
 
@@ -264,7 +264,7 @@ Perform manual relocation at runtime, as discussed above.
 
 The same issues apply: complexity, fragility, and optimizer sensitivity.
 
-#### CPP-PIC Solution: Function Pointer Embedding
+#### NOSTDLIB-RUNTIME Solution: Function Pointer Embedding
 
 We introduce the `EMBED_FUNC` macro, which uses inline assembly to compute pure relative offsets without relying on absolute addresses. The target architecture is selected at compile time using CMake-defined macros, ensuring correct code generation without relocation dependencies. The implementation is located in `embedded_function_pointer.h`.
 
@@ -280,9 +280,9 @@ Implement those helper routines manually.
 
 Manual implementations are error-prone and may not cover all edge cases the compiler expects.
 
-#### CPP-PIC Solution: 64-bit Arithmetic on 32-bit Systems
+#### NOSTDLIB-RUNTIME Solution: 64-bit Arithmetic on 32-bit Systems
 
-We manually defined `UINT64` and `INT64` classes that store values as two 32-bit words (high and low). All operations are decomposed into 32-bit arithmetic with manual carry handling:
+We define custom `UINT64` and `INT64` classes that store values as two 32-bit words (high and low). All operations are decomposed into 32-bit arithmetic with manual carry handling:
 
 - **Multiplication**: Uses 16-bit partial products to avoid overflow, accumulating results with carry propagation across four 16-bit result segments
 - **Division**: Implements bit-by-bit long division, extracting one quotient bit per iteration from most-significant to least-significant
@@ -311,11 +311,11 @@ Manually implement required CRT functions and avoid using features that depend o
 
 This is tedious, incomplete, and doesn't address the fundamental issue of static API imports being visible to analysis tools.
 
-#### CPP-PIC Solution: Runtime Independence
+#### NOSTDLIB-RUNTIME Solution: Runtime Independence
 
-CPP-PIC achieves complete independence from the C runtime (CRT) and standard libraries by providing fully custom implementations for essential services such as memory management, string manipulation, formatted output, and runtime initialization. Rather than relying on CRT startup code, CPP-PIC defines a custom entry point, enabling execution without loader-managed runtime setup.
+NOSTDLIB-RUNTIME achieves complete independence from the C runtime (CRT) and standard libraries by providing fully custom implementations for essential services such as memory management, string manipulation, formatted output, and runtime initialization. Rather than relying on CRT startup code, NOSTDLIB-RUNTIME defines a custom entry point, enabling execution without loader-managed runtime setup.
 
-Interaction with Windows system functionality is performed through low-level native interfaces. The runtime traverses the Process Environment Block (PEB) to locate loaded modules and parses PE export tables to resolve function addresses using hash-based lookup. By avoiding import tables, string-based API resolution, and `GetProcAddress` calls, CPP-PIC minimizes static analysis visibility and enables execution in constrained or adversarial environments.
+Interaction with Windows system functionality is performed through low-level native interfaces. The runtime traverses the Process Environment Block (PEB) to locate loaded modules and parses PE export tables to resolve function addresses using hash-based lookup. By avoiding import tables, string-based API resolution, and `GetProcAddress` calls, NOSTDLIB-RUNTIME minimizes static analysis visibility and enables execution in constrained or adversarial environments.
 
 ### Problem 8: Type Conversions
 
@@ -325,7 +325,7 @@ Type conversions between integers and floating-point values can cause the compil
 
 Avoid type conversions or implement manual conversion functions.
 
-#### CPP-PIC Solution: Pure Integer-Based Conversions
+#### NOSTDLIB-RUNTIME Solution: Pure Integer-Based Conversions
 
 All type conversions are implemented using explicit bitwise and integer operations, preventing the compiler from emitting hidden constants or helper routines:
 
@@ -340,13 +340,13 @@ INT64 d_to_i64(const DOUBLE& d)
 }
 ```
 
-## CPP-PIC Architecture Overview
+## NOSTDLIB-RUNTIME Architecture Overview
 
-Within this work, we present CPP-PIC, a C++23 runtime designed to achieve fully position-independent execution by eliminating dependencies on `.rdata`, the C runtime (CRT), and other loader-managed components. CPP-PIC provides full position-independence for shellcode, code injection, and embedded systems, enabling execution from arbitrary memory locations.
+Within this work, we present NOSTDLIB-RUNTIME, a C++23 runtime designed to achieve fully position-independent execution by eliminating dependencies on `.rdata`, the C runtime (CRT), and other loader-managed components. NOSTDLIB-RUNTIME provides full position-independence for shellcode, code injection, and embedded systems, enabling execution from arbitrary memory locations.
 
 ### Design Goals
 
-CPP-PIC is designed around the following goals:
+NOSTDLIB-RUNTIME is designed around the following goals:
 
 1. **True position independence**
    Execution must not depend on fixed load addresses or loader-handled relocations.
@@ -371,7 +371,7 @@ CPP-PIC is designed around the following goals:
 
 ### Three-Layer Architecture
 
-CPP-PIC is built on a clean three-layer abstraction that separates concerns and enables multi-platform support:
+NOSTDLIB-RUNTIME is built on a clean three-layer abstraction that separates concerns and enables multi-platform support:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -403,7 +403,7 @@ CPP-PIC is built on a clean three-layer abstraction that separates concerns and 
 
 ### Entry Point Placement
 
-I would also like to highlight a challenge we faced during development. Ensuring that the shellcode entry point was placed at the very beginning of the `.text` section proved to be challenging, yet crucial for this architecture. After extensive research, we discovered a solution:
+We would also like to highlight a challenge faced during development. Ensuring that the shellcode entry point was placed at the very beginning of the `.text` section proved to be challenging, yet crucial for this architecture. After extensive research, we discovered a solution:
 
 For MSVC:
 ```
@@ -455,11 +455,11 @@ This verification runs after every build, ensuring that code changes don't accid
 
 ## Windows Implementation
 
-CPP-PIC integrates deeply with Windows internals to provide a fully functional, standalone execution environment while maintaining position independence.
+NOSTDLIB-RUNTIME integrates deeply with Windows internals to provide a fully functional, standalone execution environment while maintaining position independence.
 
 ### Low-Level Native Interfaces
 
-By completely eliminating static import tables and bypassing loader-dependent API resolution mechanisms such as `GetProcAddress`, CPP-PIC removes all dependencies on the operating system's runtime initialization and dynamic linking processes. This ensures that all required function addresses are resolved internally at runtime, using hash-based lookups of exported symbols in loaded modules. As a result, the generated binaries are fully self-contained, do not rely on predefined memory locations, and can execute correctly from any arbitrary memory address without requiring relocation tables or loader-managed fixups.
+By completely eliminating static import tables and bypassing loader-dependent API resolution mechanisms such as `GetProcAddress`, NOSTDLIB-RUNTIME removes all dependencies on the operating system's runtime initialization and dynamic linking processes. This ensures that all required function addresses are resolved internally at runtime, using hash-based lookups of exported symbols in loaded modules. As a result, the generated binaries are fully self-contained, do not rely on predefined memory locations, and can execute correctly from any arbitrary memory address without requiring relocation tables or loader-managed fixups.
 
 ### File System Support
 A complete abstraction over `NTAPI` enables file and directory operations:
@@ -473,7 +473,7 @@ All file system operations are executed without relying on CRT or standard libra
 Printf-style output is implemented natively within the runtime. This allows robust console output without runtime support.
 
 ### Cryptography and Networking
-CPP-PIC provides a complete cryptographic and networking stack:
+NOSTDLIB-RUNTIME provides a complete cryptographic and networking stack:
 * Cryptography: SHA-256/512, HMAC, ChaCha20, ECC, Base64 encoding/decoding
 * Networking: DNS resolution, HTTP client, WebSocket connections, TLS 1.3 with certificate verification
 
@@ -481,7 +481,7 @@ All functionality is implemented using low-level native interfaces to avoid exte
 
 ## Practical Use Cases
 
-CPP-PIC is designed to support execution environments where traditional runtime assumptions do not hold. Its architecture makes it particularly suitable for the following domains:
+NOSTDLIB-RUNTIME is designed to support execution environments where traditional runtime assumptions do not hold. Its architecture makes it particularly suitable for the following domains:
 - Shellcode and loaderless code execution
 - Security research and malware analysis
 - Embedded and low-level system programming
@@ -497,7 +497,7 @@ This project is still a work in progress. Below is a list of remaining tasks and
 
 ## Conclusion
 
-CPP-PIC is not merely a library—it is a proof of concept that challenges long-held assumptions about C++, binary formats, and position-independent execution across multiple platforms. This project compiles into a PE file on Windows or an ELF file on Linux, supporting i386, x86_64, armv7a, and aarch64 architectures. The resulting binary can run both as a standalone executable and as shellcode after extracting the `.text` section. By eliminating `.rdata`, CRT dependencies, relocations, and static API references, CPP-PIC enables a new class of C++ programs capable of running in environments where traditional C++ has never been viable.
+NOSTDLIB-RUNTIME is not merely a library—it is a proof of concept that challenges long-held assumptions about C++, binary formats, and position-independent execution across multiple platforms. This project compiles into a PE file on Windows or an ELF file on Linux, supporting i386, x86_64, armv7a, and aarch64 architectures. The resulting binary can run both as a standalone executable and as shellcode after extracting the `.text` section. By eliminating `.rdata`, CRT dependencies, relocations, and static API references, NOSTDLIB-RUNTIME enables a new class of C++ programs capable of running in environments where traditional C++ has never been viable.
 
 The platform abstraction layer demonstrates that the same high-level C++23 codebase can target fundamentally different operating systems—Windows with its PEB walking and NTAPI interfaces, and Linux with its direct syscall approach—while maintaining identical position-independence guarantees. As demonstrated throughout this work, modern C++23 compile-time features and carefully selected compiler intrinsics play a key role in achieving these guarantees, allowing expressive high-level code while preserving strict low-level control.
 
