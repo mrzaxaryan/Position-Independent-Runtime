@@ -154,8 +154,8 @@ CPP-PIC is designed around the following goals:
 5. **Modern C++ expressiveness**  
    Support for C++23 language features without requiring runtime initialization.
 
-6. **Multi-architecture support**  
-   Compatibility across x86, x64, and ARM architectures. While the current implementation is Windows-oriented, we designed it to make supporting other operating systems as straightforward as possible by replacing Windows‑specific low‑level interfaces with their platform‑appropriate equivalents. A Linux implementation is currently in progress.
+6. **Multi-architecture and multi-platform support**
+   Compatibility across x86, x64, and ARM architectures on both Windows and Linux. The platform abstraction layer cleanly separates OS-specific code, making it straightforward to add support for additional operating systems by implementing the appropriate low-level interfaces.
    
 7. **Full Optimization support**
    Supports all LLVM optimization levels, allowing builds from unoptimized `(-O0)` to maximum optimization or performance size(`-Oz` or `-03`).
@@ -320,12 +320,14 @@ CPP-PIC is designed to support execution environments where traditional runtime 
 ## To do
 This project is still a work in progress. Below is a list of remaining tasks and planned improvements. Any help or contributions are greatly appreciated.
 
-- Support for additional platforms
-- Windows syscall implementations
+- Support for additional platforms (macOS, UEFI)
+- Windows direct syscall implementations (bypassing ntdll)
 - Compile-time polymorphism
 
 ## Conclusion
 
-CPP-PIC is not merely a library — it is a proof of concept that challenges long-held assumptions about C++, Windows binaries, and position-independent execution. This project is compiled into a PE file on Windows or an ELF file on Linux, and it can run both as a standalone executable and as shellcode after extracting the .text section. By eliminating `.rdata`, CRT dependencies, relocations, and static API references, CPP-PIC enables a new class of C++ programs capable of running in environments where traditional C++ has never been viable. As demonstrated throughout this work, modern C++23 compile‑time features and carefully selected compiler intrinsics play a key role in achieving these guarantees, allowing expressive high‑level code while preserving strict low‑level control.
+CPP-PIC is not merely a library — it is a proof of concept that challenges long-held assumptions about C++, binary formats, and position-independent execution across multiple platforms. This project compiles into a PE file on Windows or an ELF file on Linux, supporting x86, x64, and ARM architectures. The resulting binary can run both as a standalone executable and as shellcode after extracting the `.text` section. By eliminating `.rdata`, CRT dependencies, relocations, and static API references, CPP-PIC enables a new class of C++ programs capable of running in environments where traditional C++ has never been viable.
+
+The platform abstraction layer demonstrates that the same high-level C++23 codebase can target fundamentally different operating systems — Windows with its PEB walking and NTAPI interfaces, and Linux with its direct syscall approach — while maintaining identical position-independence guarantees. As demonstrated throughout this work, modern C++23 compile‑time features and carefully selected compiler intrinsics play a key role in achieving these guarantees, allowing expressive high‑level code while preserving strict low‑level control.
 
 This project is intended for researchers, systems programmers, and security engineers who are willing to work beneath high-level abstractions and take full control of the machine. Any unauthorized or malicious use of this software is strictly prohibited and falls outside the scope of the project’s design goals.
