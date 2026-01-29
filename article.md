@@ -403,7 +403,7 @@ Printf-style output is implemented natively within the runtime.This allows robus
 
 ### Cryptography and Networking
 CPP-PIC provides a complete cryptographic and networking stack:
-* Cryptography: `SHA-256/512`, `HMAC`, `ChaCha20`, `ECC`,` Base64` encoding/decoding
+* Cryptography: `SHA-256/512`, `HMAC`, `ChaCha20`, `ECC`, `Base64` encoding/decoding
 * Networking: `DNS resolution`, `HTTP client`, `WebSocket` connections, `TLS 1.3` with certificate verification
 
 All functionality is implemented using low-level native interfaces to avoid external dependencies.
