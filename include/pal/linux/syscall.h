@@ -215,36 +215,38 @@ namespace Syscall
     // Syscall with 5 arguments
     inline SSIZE syscall5(USIZE number, USIZE arg1, USIZE arg2, USIZE arg3, USIZE arg4, USIZE arg5)
     {
-        SSIZE ret;
+        register USIZE r_ebx __asm__("ebx") = arg1;
+        register USIZE r_ecx __asm__("ecx") = arg2;
+        register USIZE r_edx __asm__("edx") = arg3;
+        register USIZE r_esi __asm__("esi") = arg4;
+        register USIZE r_edi __asm__("edi") = arg5;
+        register USIZE r_eax __asm__("eax") = number;
         __asm__ volatile(
-            "push %%ebx\n"      // Save ebx (PIC register)
-            "mov %1, %%ebx\n"   // Load arg1
             "int $0x80\n"
-            "pop %%ebx\n"       // Restore ebx
-            : "=a"(ret)
-            : "r"(arg1), "c"(arg2), "d"(arg3), "S"(arg4), "D"(arg5), "a"(number)
+            : "+r"(r_eax)
+            : "r"(r_ebx), "r"(r_ecx), "r"(r_edx), "r"(r_esi), "r"(r_edi)
             : "memory"
         );
-        return ret;
+        return (SSIZE)r_eax;
     }
 
     // Syscall with 6 arguments
     inline SSIZE syscall6(USIZE number, USIZE arg1, USIZE arg2, USIZE arg3, USIZE arg4, USIZE arg5, USIZE arg6)
     {
-        SSIZE ret;
+        register USIZE r_ebx __asm__("ebx") = arg1;
+        register USIZE r_ecx __asm__("ecx") = arg2;
+        register USIZE r_edx __asm__("edx") = arg3;
+        register USIZE r_esi __asm__("esi") = arg4;
+        register USIZE r_edi __asm__("edi") = arg5;
+        register USIZE r_ebp __asm__("ebp") = arg6;
+        register USIZE r_eax __asm__("eax") = number;
         __asm__ volatile(
-            "push %%ebp\n"      // Save ebp
-            "push %%ebx\n"      // Save ebx (PIC register)
-            "mov %1, %%ebx\n"   // Load arg1
-            "mov %6, %%ebp\n"   // Load arg6
             "int $0x80\n"
-            "pop %%ebx\n"       // Restore ebx
-            "pop %%ebp\n"       // Restore ebp
-            : "=a"(ret)
-            : "r"(arg1), "c"(arg2), "d"(arg3), "S"(arg4), "D"(arg5), "r"(arg6), "a"(number)
+            : "+r"(r_eax)
+            : "r"(r_ebx), "r"(r_ecx), "r"(r_edx), "r"(r_esi), "r"(r_edi), "r"(r_ebp)
             : "memory"
         );
-        return ret;
+        return (SSIZE)r_eax;
     }
 
     // AArch64 syscall wrappers
