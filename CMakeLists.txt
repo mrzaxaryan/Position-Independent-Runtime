@@ -313,7 +313,7 @@ elseif(PLATFORM_LC STREQUAL "linux")
         set(LINKER_FLAGS "${LINKER_BASE},--strip-all,--gc-sections,-Map,${OUTPUT_DIR}/output.map.txt")
     endif()
 
-    set(OUTPUT_EXTENSION "")
+    set(OUTPUT_EXTENSION ".elf")
 
 endif()
 
