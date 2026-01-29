@@ -189,29 +189,6 @@ public:
 	}
 
 private:
-	// Helper function to compare byte arrays
-	static BOOL CompareBytes(const CHAR* actual, const CHAR* expected, UINT32 length)
-	{
-		for (UINT32 i = 0; i < length; i++)
-		{
-			if (actual[i] != expected[i])
-				return FALSE;
-		}
-		return TRUE;
-	}
-
-	// Helper function to compare strings
-	static BOOL CompareStrings(const CHAR* actual, const CHAR* expected)
-	{
-		UINT32 i = 0;
-		while (expected[i] != '\0')
-		{
-			if (actual[i] != expected[i])
-				return FALSE;
-			i++;
-		}
-		return actual[i] == '\0';
-	}
 
 	// Test: Encode empty string
 	// Expected: ""
@@ -220,7 +197,7 @@ private:
 		CHAR output[10];
 		auto input = ""_embed;
 		Base64::Encode(static_cast<const char*>(input), 0, output);
-		return CompareStrings(output, "");
+		return String::Compare<CHAR>(output, static_cast<const char*>(""_embed));
 	}
 
 	// Test: Encode single character "f"
@@ -230,7 +207,7 @@ private:
 		CHAR output[10];
 		auto input = "f"_embed;
 		Base64::Encode(static_cast<const char*>(input), 1, output);
-		return CompareStrings(output, "Zg==");
+		return String::Compare<CHAR>(output, static_cast<const char*>("Zg=="_embed));
 	}
 
 	// Test: Encode two characters "fo"
@@ -240,7 +217,7 @@ private:
 		CHAR output[10];
 		auto input = "fo"_embed;
 		Base64::Encode(static_cast<const char*>(input), 2, output);
-		return CompareStrings(output, "Zm8=");
+		return String::Compare<CHAR>(output, static_cast<const char*>("Zm8="_embed));
 	}
 
 	// Test: Encode three characters "foo"
@@ -250,7 +227,7 @@ private:
 		CHAR output[10];
 		auto input = "foo"_embed;
 		Base64::Encode(static_cast<const char*>(input), 3, output);
-		return CompareStrings(output, "Zm9v");
+		return String::Compare<CHAR>(output, static_cast<const char*>("Zm9v"_embed));
 	}
 
 	// Test: Encode standard text "Hello, World!"
@@ -260,7 +237,7 @@ private:
 		CHAR output[30];
 		auto input = "Hello, World!"_embed;
 		Base64::Encode(static_cast<const char*>(input), 13, output);
-		return CompareStrings(output, "SGVsbG8sIFdvcmxkIQ==");
+		return String::Compare<CHAR>(output, static_cast<const char*>("SGVsbG8sIFdvcmxkIQ=="_embed));
 	}
 
 	// Test: Encode binary data
@@ -272,7 +249,7 @@ private:
 		constexpr UINT8 input_data[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
 		auto input = MakeEmbedArray(input_data);
 		Base64::Encode(reinterpret_cast<const char*>(static_cast<const VOID*>(input)), 6, output);
-		return CompareStrings(output, "AAECAwQF");
+		return String::Compare<CHAR>(output, static_cast<const char*>("AAECAwQF"_embed));
 	}
 
 	// Test: Encode strings of various lengths to test all padding cases
@@ -288,32 +265,32 @@ private:
 
 		auto input1 = "f"_embed;
 		Base64::Encode(static_cast<const char*>(input1), 1, output);
-		if (!CompareStrings(output, "Zg=="))
+		if (!String::Compare<CHAR>(output, static_cast<const char*>("Zg=="_embed)))
 			return FALSE;
 
 		auto input2 = "fo"_embed;
 		Base64::Encode(static_cast<const char*>(input2), 2, output);
-		if (!CompareStrings(output, "Zm8="))
+		if (!String::Compare<CHAR>(output, static_cast<const char*>("Zm8="_embed)))
 			return FALSE;
 
 		auto input3 = "foo"_embed;
 		Base64::Encode(static_cast<const char*>(input3), 3, output);
-		if (!CompareStrings(output, "Zm9v"))
+		if (!String::Compare<CHAR>(output, static_cast<const char*>("Zm9v"_embed)))
 			return FALSE;
 
 		auto input4 = "foob"_embed;
 		Base64::Encode(static_cast<const char*>(input4), 4, output);
-		if (!CompareStrings(output, "Zm9vYg=="))
+		if (!String::Compare<CHAR>(output, static_cast<const char*>("Zm9vYg=="_embed)))
 			return FALSE;
 
 		auto input5 = "fooba"_embed;
 		Base64::Encode(static_cast<const char*>(input5), 5, output);
-		if (!CompareStrings(output, "Zm9vYmE="))
+		if (!String::Compare<CHAR>(output, static_cast<const char*>("Zm9vYmE="_embed)))
 			return FALSE;
 
 		auto input6 = "foobar"_embed;
 		Base64::Encode(static_cast<const char*>(input6), 6, output);
-		if (!CompareStrings(output, "Zm9vYmFy"))
+		if (!String::Compare<CHAR>(output, static_cast<const char*>("Zm9vYmFy"_embed)))
 			return FALSE;
 
 		return TRUE;
@@ -335,7 +312,7 @@ private:
 		CHAR output[10];
 		auto input = "Zg=="_embed;
 		Base64::Decode(static_cast<const char*>(input), 4, output);
-		return CompareBytes(output, "f", 1);
+		return Memory::Compare(output, static_cast<const char*>("f"_embed), 1) == 0;
 	}
 
 	// Test: Decode "Zm8=" to "fo"
@@ -344,7 +321,7 @@ private:
 		CHAR output[10];
 		auto input = "Zm8="_embed;
 		Base64::Decode(static_cast<const char*>(input), 4, output);
-		return CompareBytes(output, "fo", 2);
+		return Memory::Compare(output, static_cast<const char*>("fo"_embed), 2) == 0;
 	}
 
 	// Test: Decode "Zm9v" to "foo"
@@ -353,7 +330,7 @@ private:
 		CHAR output[10];
 		auto input = "Zm9v"_embed;
 		Base64::Decode(static_cast<const char*>(input), 4, output);
-		return CompareBytes(output, "foo", 3);
+		return Memory::Compare(output, static_cast<const char*>("foo"_embed), 3) == 0;
 	}
 
 	// Test: Decode "SGVsbG8sIFdvcmxkIQ==" to "Hello, World!"
@@ -362,7 +339,7 @@ private:
 		CHAR output[30];
 		auto input = "SGVsbG8sIFdvcmxkIQ=="_embed;
 		Base64::Decode(static_cast<const char*>(input), 20, output);
-		return CompareBytes(output, "Hello, World!", 13);
+		return Memory::Compare(output, static_cast<const char*>("Hello, World!"_embed), 13) == 0;
 	}
 
 	// Test: Decode "AAECAwQF" to binary data {0x00, 0x01, 0x02, 0x03, 0x04, 0x05}
@@ -375,7 +352,7 @@ private:
 		constexpr UINT8 expected_data[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
 		auto expected = MakeEmbedArray(expected_data);
 
-		return CompareBytes(output, reinterpret_cast<const char*>(static_cast<const VOID*>(expected)), 6);
+		return Memory::Compare(output, static_cast<const VOID*>(expected), 6) == 0;
 	}
 
 	// Test: Round-trip encoding and decoding
@@ -389,21 +366,21 @@ private:
 		UINT32 len1 = 44;
 		Base64::Encode(static_cast<const char*>(test1), len1, encoded);
 		Base64::Decode(encoded, Base64::GetEncodeOutSize(len1) - 1, decoded);
-		if (!CompareBytes(decoded, static_cast<const char*>(test1), len1))
+		if (Memory::Compare(decoded, static_cast<const char*>(test1), len1) != 0)
 			return FALSE;
 
 		auto test2 = "1234567890"_embed;
 		UINT32 len2 = 10;
 		Base64::Encode(static_cast<const char*>(test2), len2, encoded);
 		Base64::Decode(encoded, Base64::GetEncodeOutSize(len2) - 1, decoded);
-		if (!CompareBytes(decoded, static_cast<const char*>(test2), len2))
+		if (Memory::Compare(decoded, static_cast<const char*>(test2), len2) != 0)
 			return FALSE;
 
 		auto test3 = "!@#$%^&*()_+-=[]{}|;:,.<>?"_embed;
 		UINT32 len3 = 26;
 		Base64::Encode(static_cast<const char*>(test3), len3, encoded);
 		Base64::Decode(encoded, Base64::GetEncodeOutSize(len3) - 1, decoded);
-		if (!CompareBytes(decoded, static_cast<const char*>(test3), len3))
+		if (Memory::Compare(decoded, static_cast<const char*>(test3), len3) != 0)
 			return FALSE;
 
 		return TRUE;
