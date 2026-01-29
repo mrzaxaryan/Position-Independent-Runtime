@@ -23,9 +23,9 @@ With this work, I would like to add my two cents to that debate, even though muc
 
 **1.1. Traditinal Solutions**
 
-* **Problem 1.1:** When writing shellcode in C, only the `.text` section is available after compilation, so global constants and string literals cannot be used because they are placed in `.rdata` or `.data`.
+* **Problem:** When writing shellcode in C, only the `.text` section is available after compilation, so global constants and string literals cannot be used because they are placed in `.rdata` or `.data`.
 
-* **Solution 1.1:** Minimize usage of construction that will cause generation of the data in `.rdata` or `.data`, with moving string literals to stack. To create stack‑based strings, represent the string as a character array stored in a local variable. This solution also obfuscates strings:
+* **Solution:** Minimize usage of construction that will cause generation of the data in `.rdata` or `.data`, with moving string literals to stack. To create stack‑based strings, represent the string as a character array stored in a local variable. This solution also obfuscates strings:
 
     ```
     // "example.exe"
@@ -44,9 +44,9 @@ With this work, I would like to add my two cents to that debate, even though muc
     This approach is not universal because it relies on compiler‑specific behavior and assumptions about stack layout. Compiler optimizations may modify or eliminate stack variables, breaking the intended execution. In addition, manually embedding constants and strings increases shellcode size, making it easier to detect and difficult to scale. Hand‑embedding large arrays is inefficient and does not guarantee that the data will remain on the stack. For large strings or when compiler optimizations are enabled, the compiler may place the data in other sections instead of stack-if string size is large enough, compiler may place the data in `.rdata` section. This approach also makes the code less readable and harder to maintain. 
 
 
-* **Problem 1.2:** C‑generated shellcode relies on loader‑handled relocations that are not applied in a loaderless execution environment, preventing reliable execution from arbitrary memory.
+* **Problem:** C‑generated shellcode relies on loader‑handled relocations that are not applied in a loaderless execution environment, preventing reliable execution from arbitrary memory.
 
-* **Solution 1.2:** Preform the relocation manually:
+* **Solution:** Preform the relocation manually:
 
     At runtime, the shellcode can determine its own position in memory and perform the loader’s work manually. In this approach, constants and strings may reside in sections such as `.rdata`, which are then merged into the `.text` section using a linker script. During execution, relocation entries are processed explicitly to fix up absolute addresses. 
 
@@ -100,9 +100,9 @@ With this work, I would like to add my two cents to that debate, even though muc
 
     This method adds extra code and complexity, depends on unstable compiler behavior, and can easily break under optimization. As a result, it is unreliable and does not scale well for real‑world shellcode.
 
-* **Problem 1.3:** Using floating‑point arithmetic in C‑generated shellcode introduces additional issues, as floating‑point constants are typically emitted into read‑only data sections such as `.rdata`. In a loaderless execution environment, these sections are not available, causing generated code to reference invalid memory. Consequently, floating‑point operations cannot be relied upon for safe, position‑independent shellcode execution.
+* **Problem:** Using floating‑point arithmetic in C‑generated shellcode introduces additional issues, as floating‑point constants are typically emitted into read‑only data sections such as `.rdata`. In a loaderless execution environment, these sections are not available, causing generated code to reference invalid memory. Consequently, floating‑point operations cannot be relied upon for safe, position‑independent shellcode execution.
 
-* **Solution 1.3:** The well-known solution is to represent floating‑point values using their hexadecimal (IEEE‑754) representation and then cast this value to a double at runtime:
+* **Solution:** The well-known solution is to represent floating‑point values using their hexadecimal (IEEE‑754) representation and then cast this value to a double at runtime:
 
     ```   
     uint64 f = 0x3426328629; // IEEE‑754 representation
@@ -121,14 +121,14 @@ With this work, I would like to add my two cents to that debate, even though muc
 
     While this really avoids embedding floating‑point literals, it increases code size and complexity, which is not suitable in this case of work.
 
-* **Problem 1.4:** Using function pointers in C‑generated shellcode introduces relocation dependencies, as function addresses are normally resolved by the loader. In a loaderless execution environment, these relocations are not applied, causing indirect function calls to reference invalid addresses and break execution from arbitrary memory locations.
+* **Problem:** Using function pointers in C‑generated shellcode introduces relocation dependencies, as function addresses are normally resolved by the loader. In a loaderless execution environment, these relocations are not applied, causing indirect function calls to reference invalid addresses and break execution from arbitrary memory locations.
 
 * **Solution 1.4:**
     Unfortunately, we could not identify a more effective solution than performing manual relocation at runtime. However, alternative ideas or improvements are welcome.
 
 
-* **Problem 2:** Performing arithmetic with 64-bit integers on a 32-bit system, or with floating-point numbers, can cause issues because the compiler expects certain helper routines to be present.
-* **Solution 2:** The common way to solve this problem is to implement that helper routines manually.
+* **Problem:** Performing arithmetic with 64-bit integers on a 32-bit system, or with floating-point numbers, can cause issues because the compiler expects certain helper routines to be present.
+* **Solution:** The common way to solve this problem is to implement that helper routines manually.
 
 ## What We Offer
 Within this work, we present fully alternative approaches to solve these problems. We introduce CPP‑PIC, a C++23 runtime library designed to achieve fully position‑independent execution by eliminating dependencies on `.rdata`, the C runtime (CRT), and other loader‑managed components. CPP-PIC provides a fully position-independence for
@@ -162,7 +162,7 @@ CPP-PIC is designed around the following goals:
 
 
 ### Solutions We Offer
-* **Solution 1.1: Compile-Time String Decomposition**
+* **Solution: Compile-Time String Decomposition**
 
     CPP-PIC replaces conventional string literals with compile-time decomposed representations.
     Using C++23 features such as user-defined literals, variadic templates, and fold expressions,
@@ -204,7 +204,7 @@ CPP-PIC is designed around the following goals:
 
     As a result, string data exists only transiently and never appears in static data sections.
 
-* **Solution 1.2: Floating-Point Constant Embedding**   
+* **Solution: Floating-Point Constant Embedding**   
     Floating-point values are converted at compile time into IEEE-754 bit patterns and injected
     directly into registers as immediate operands. This eliminates all floating-point constants
     from `.rdata` and avoids implicit compiler-generated helpers.
@@ -244,7 +244,7 @@ CPP-PIC is designed around the following goals:
     movabsq $0x400921f9f01b866e, %rax ; Pi as 64-bit immediate
     ```
     
-    * **Solution 1.3: Pure Integer-Based Conversions**
+* **Solution: Pure Integer-Based Conversions**
 
     All type conversions are implemented using explicit bitwise and integer operations, preventing the compiler from emitting hidden constants or helper routines.
        
@@ -268,11 +268,11 @@ CPP-PIC is designed around the following goals:
     }
     ```
     
-* **Solution 2: 64-bit Arithmetic on 32-bit Systems**  
+* **Solution: 64-bit Arithmetic on 32-bit Systems**  
 
     To perform 64-bit arithmetic on 32-bit systems, we manually defined a `uint64` class along with its arithmetic operations. This eliminates the need for compiler‑expected helper routines implementations.
 
-* **Solution 3: Runtime Independence**
+* **Solution: Runtime Independence**
 
     CPP-PIC achieves complete independence from the C runtime (CRT) and standard libraries by providing fully custom implementations for essential services such as memory management, string manipulation, formatted output, and runtime initialization. Rather than relying on CRT startup code, CPP-PIC defines a custom entry point, enabling execution without loader-managed runtime setup.
     Interaction with Windows system functionality is performed through low-level native interfaces. The runtime traverses the Process Environment Block (PEB) to locate loaded modules and parses PE export tables to resolve function addresses using hash-based lookup. By avoiding import tables, string-based API resolution, and `GetProcAddress` calls, CPP-PIC minimizes static analysis visibility and enables execution in constrained or adversarial environments.
