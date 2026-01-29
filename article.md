@@ -270,7 +270,7 @@ CPP-PIC is designed around the following goals:
     ```
     
 * **Solution: Function Pointer Embedding**
-    We introduce EMBED_FUNC macro, which uses inline assembly to compute pure relative offsets without relying on absolute addresses. The target architecture is selected at compile time using CMake‑defined macros, ensuring correct code generation without relocation dependencies.
+    We introduce EMBED_FUNC macro, which uses inline assembly to compute pure relative offsets without relying on absolute addresses. The target architecture is selected at compile time using CMake‑defined macros, ensuring correct code generation without relocation dependencies. The implementation of that approach is placed in file `embedded_function_pointer.h`.
 
 * **Solution: 64-bit Arithmetic on 32-bit Systems**  
 
