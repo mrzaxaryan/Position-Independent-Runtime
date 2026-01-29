@@ -11,8 +11,7 @@ UINT64 Random::GetSeedFromTime()
     auto dateTime = DateTime::Now();
 
     // Mix down to 32-bit seed
-    return (UINT64)(dateTime.Nanoseconds * dateTime.Microseconds + dateTime.Milliseconds * dateTime.Seconds +
-                    dateTime.Minutes * dateTime.Hours);
+    return (UINT64)(dateTime.Microseconds * dateTime.Microseconds);
 }
 
 // Function to get a random number in the range of 0 to RANDOM_MAX
