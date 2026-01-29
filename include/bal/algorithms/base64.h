@@ -1,6 +1,12 @@
+/**
+ * base64.h - Base64 Encoding/Decoding
+ *
+ * Platform-independent Base64 encoding and decoding utilities.
+ */
+
 #pragma once
 
-#include "bal.h"
+#include "bal/types/primitives.h"
 
 // Class to handle Base64 encoding and decoding
 class Base64

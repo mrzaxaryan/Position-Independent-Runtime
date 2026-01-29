@@ -115,7 +115,13 @@ set(INCLUDE_PATHS
     ${CMAKE_SOURCE_DIR}/include/
     # BAL - Base Abstraction Layer (platform-independent)
     ${CMAKE_SOURCE_DIR}/include/bal/
-    ${CMAKE_SOURCE_DIR}/include/bal/primitives/
+    ${CMAKE_SOURCE_DIR}/include/bal/core/
+    ${CMAKE_SOURCE_DIR}/include/bal/algorithms/
+    ${CMAKE_SOURCE_DIR}/include/bal/types/
+    ${CMAKE_SOURCE_DIR}/include/bal/types/numeric/
+    ${CMAKE_SOURCE_DIR}/include/bal/types/embedded/
+    ${CMAKE_SOURCE_DIR}/include/bal/types/network/
+    ${CMAKE_SOURCE_DIR}/include/bal/string/
     # PAL - Platform Abstraction Layer (OS/hardware)
     ${CMAKE_SOURCE_DIR}/include/pal/
     ${CMAKE_SOURCE_DIR}/include/pal/windows/

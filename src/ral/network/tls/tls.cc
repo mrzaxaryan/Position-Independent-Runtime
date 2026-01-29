@@ -6,7 +6,7 @@
 #include "string.h"
 #include "pal.h"
 #include "logger.h"
-#include <bal/math.h>
+#include "math.h"
 
 
 #define TLS_CHACHA20_POLY1305_SHA256 0x1303

@@ -2,7 +2,6 @@
 #include "memory.h"
 #include "network.h"
 #include "string.h"
-#include "base64.h"
 #include "random.h"
 #include "logger.h"
 #include "dns.h"

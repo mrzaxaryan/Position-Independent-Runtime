@@ -11,7 +11,7 @@
 
 #include "primitives.h"
 
-// C library memory functions (implemented in pal/allocator.cc)
+// C library memory functions implemented in memory.cc
 extern "C" PVOID memset(PVOID dest, INT32 ch, USIZE count);
 extern "C" PVOID memcpy(PVOID dest, const VOID *src, USIZE count);
 extern "C" INT32 memcmp(const VOID *ptr1, const VOID *ptr2, USIZE num);

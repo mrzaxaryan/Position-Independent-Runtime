@@ -16,7 +16,6 @@
 #include "ecc.h"
 #include "chacha20.h"
 #include "chacha20_encoder.h"
-#include "base64.h"
 
 // =============================================================================
 // Networking

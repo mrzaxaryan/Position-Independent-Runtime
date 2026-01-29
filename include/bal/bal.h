@@ -2,25 +2,36 @@
  * bal.h - Base Abstraction Layer
  *
  * Platform-independent types and utilities.
- * No dependencies on PAL or RAL.
  */
 
 #pragma once
 
-// Primitives and types
-#include "primitives.h"
-#include "uint64.h"
-#include "int64.h"
-#include "double.h"
-#include "embedded_double.h"
-#include "embedded_string.h"
-#include "embedded_function_pointer.h"
-#include "embedded_array.h"
+// Core utilities
+#include "core/compiler.h"
+#include "core/memory.h"
+#include "core/math.h"
 
-// Base utilities
-#include "string.h"
-#include "string_formatter.h"
-#include "djb2.h"
-#include "memory.h"
-#include "math.h"
-#include "ip_address.h"
+// Base types
+#include "types/primitives.h"
+
+// Numeric types
+#include "types/numeric/uint64.h"
+#include "types/numeric/int64.h"
+#include "types/numeric/double.h"
+
+// Embedded types
+#include "types/embedded/embedded_double.h"
+#include "types/embedded/embedded_string.h"
+#include "types/embedded/embedded_function_pointer.h"
+#include "types/embedded/embedded_array.h"
+
+// String utilities
+#include "string/string.h"
+#include "string/string_formatter.h"
+
+// Algorithms
+#include "algorithms/djb2.h"
+#include "algorithms/base64.h"
+
+// Network types
+#include "types/network/ip_address.h"
