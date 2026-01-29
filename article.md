@@ -123,7 +123,7 @@ With this work, I would like to add my two cents to that debate, even though muc
 
 * **Problem:** Using function pointers in C‑generated shellcode introduces relocation dependencies, as function addresses are normally resolved by the loader. In a loaderless execution environment, these relocations are not applied, causing indirect function calls to reference invalid addresses and break execution from arbitrary memory locations.
 
-* **Solution 1.4:**
+* **Solution:**
     Unfortunately, we could not identify a more effective solution than performing manual relocation at runtime. However, alternative ideas or improvements are welcome.
 
 
