@@ -7,15 +7,14 @@ class Random
 {
 private:
     // Internal state for the random number generator
-    UINT32 seed;
-    INT32 GetSeedFromTime();
+    UINT64 seed;
 
 public:
     VOID *operator new(USIZE) = delete;    // Disable dynamic allocation
     VOID operator delete(VOID *) = delete; // Disable dynamic deallocation
 
     // The maximum value for the random number generator
-    static constexpr INT32 MAX = 32767;
+    static constexpr INT32 MAX = 0x7FFFFFFF;
     // Constructor
     Random();
 
