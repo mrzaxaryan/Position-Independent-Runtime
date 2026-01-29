@@ -3,74 +3,70 @@
 
 // Linux syscall numbers for memory management
 #if defined(ARCHITECTURE_X86_64)
-constexpr USIZE SYS_BRK = 12;
+constexpr USIZE SYS_MMAP = 9;
+constexpr USIZE SYS_MUNMAP = 11;
 #elif defined(ARCHITECTURE_I386)
-constexpr USIZE SYS_BRK = 45;
+constexpr USIZE SYS_MMAP2 = 192;
+constexpr USIZE SYS_MUNMAP = 91;
 #elif defined(ARCHITECTURE_AARCH64)
-constexpr USIZE SYS_BRK = 214;
+constexpr USIZE SYS_MMAP = 222;
+constexpr USIZE SYS_MUNMAP = 215;
 #elif defined(ARCHITECTURE_ARMV7A)
-constexpr USIZE SYS_BRK = 45;
+constexpr USIZE SYS_MMAP2 = 192;
+constexpr USIZE SYS_MUNMAP = 91;
 #endif
 
-// Simple heap allocator using brk syscall
-// This is a very basic bump allocator - not suitable for production
-// but sufficient for basic needs
-namespace {
-    PVOID heapStart = NULL;
-    PVOID heapEnd = NULL;
-    PVOID heapCurrent = NULL;
-}
+// mmap flags and protection
+constexpr int PROT_READ = 0x1;
+constexpr int PROT_WRITE = 0x2;
+constexpr int MAP_PRIVATE = 0x2;
+constexpr int MAP_ANONYMOUS = 0x20;
+
+// Memory allocator using mmap/munmap
+// This implementation is stateless and PIC-compatible (no global variables)
+// Each allocation is a separate mmap, which is simple but not efficient for
+// many small allocations. Suitable for basic needs.
 
 PVOID Allocator::AllocateMemory(USIZE size)
 {
     if (size == 0)
         return NULL;
 
-    // Align size to 16 bytes
-    size = (size + 15) & ~15ULL;
+    // Align size to page boundary (4096 bytes)
+    // mmap allocates in pages, so we round up
+    size = (size + 4095) & ~4095ULL;
 
-    // Initialize heap if needed
-    if (heapStart == NULL)
-    {
-        // Get current brk
-        SSIZE result = Syscall::syscall1(SYS_BRK, 0);
-        if (result < 0)
-            return NULL;
+    // Use mmap to allocate memory
+    // fd = -1 for anonymous mapping (no file backing)
+    PVOID addr = NULL;
+    int prot = PROT_READ | PROT_WRITE;
+    int flags = MAP_PRIVATE | MAP_ANONYMOUS;
 
-        heapStart = (PVOID)result;
-        heapEnd = heapStart;
-        heapCurrent = heapStart;
-    }
+#if defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A)
+    // 32-bit architectures use mmap2 with page-shifted offset
+    USIZE offset = 0; // No offset for anonymous mapping
+    SSIZE result = Syscall::syscall6(SYS_MMAP2, (USIZE)addr, size, prot, flags, -1, offset);
+#else
+    // 64-bit architectures use mmap
+    USIZE offset = 0;
+    SSIZE result = Syscall::syscall6(SYS_MMAP, (USIZE)addr, size, prot, flags, -1, offset);
+#endif
 
-    // Check if we have enough space
-    USIZE available = (USIZE)heapEnd - (USIZE)heapCurrent;
-    if (available < size)
-    {
-        // Expand heap
-        USIZE newEnd = (USIZE)heapEnd + size + 4096; // Add some extra
-        SSIZE result = Syscall::syscall1(SYS_BRK, newEnd);
-        if (result < 0 || (USIZE)result < newEnd)
-        {
-            // Try exact size
-            newEnd = (USIZE)heapEnd + size;
-            result = Syscall::syscall1(SYS_BRK, newEnd);
-            if (result < 0 || (USIZE)result < newEnd)
-                return NULL;
-        }
-        heapEnd = (PVOID)result;
-    }
+    // mmap returns -1 on error (well, actually MAP_FAILED which is (void*)-1)
+    if (result == -1 || result < 0)
+        return NULL;
 
-    // Allocate from current position
-    PVOID allocated = heapCurrent;
-    heapCurrent = (PVOID)((USIZE)heapCurrent + size);
-
-    return allocated;
+    return (PVOID)result;
 }
 
 VOID Allocator::ReleaseMemory(PVOID address, USIZE size)
 {
-    // Simple bump allocator doesn't support freeing individual allocations
-    // In a real implementation, you'd use a proper heap allocator
-    (VOID)address;
-    (VOID)size;
+    if (address == NULL || size == 0)
+        return;
+
+    // Align size to page boundary (must match allocation alignment)
+    size = (size + 4095) & ~4095ULL;
+
+    // Use munmap to release memory
+    Syscall::syscall2(SYS_MUNMAP, (USIZE)address, size);
 }
