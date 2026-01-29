@@ -1,6 +1,5 @@
 #include "tls.h"
 #include "memory.h"
-#include "network.h"
 #include "random.h"
 #include "socket.h"
 #include "string.h"

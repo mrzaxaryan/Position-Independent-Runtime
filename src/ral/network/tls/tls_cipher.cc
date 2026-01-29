@@ -4,7 +4,6 @@
 #include "random.h"
 #include "tls_hmac.h"
 #include "tls_hkdf.h"
-#include "network.h"
 #include "math.h"
 
 TlsCipher::TlsCipher()

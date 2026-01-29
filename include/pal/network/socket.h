@@ -1,7 +1,6 @@
 #pragma once
 
 #include "bal.h"
-#include "network.h"
 
 /* Socket address families */
 #define AF_INET      2

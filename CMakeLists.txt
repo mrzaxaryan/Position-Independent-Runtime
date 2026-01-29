@@ -124,6 +124,10 @@ set(INCLUDE_PATHS
     ${CMAKE_SOURCE_DIR}/include/bal/string/
     # PAL - Platform Abstraction Layer (OS/hardware)
     ${CMAKE_SOURCE_DIR}/include/pal/
+    ${CMAKE_SOURCE_DIR}/include/pal/memory/
+    ${CMAKE_SOURCE_DIR}/include/pal/io/
+    ${CMAKE_SOURCE_DIR}/include/pal/network/
+    ${CMAKE_SOURCE_DIR}/include/pal/system/
     ${CMAKE_SOURCE_DIR}/include/pal/windows/
     # RAL - Runtime Abstraction Layer (application features)
     ${CMAKE_SOURCE_DIR}/include/ral/

@@ -35,3 +35,6 @@
 // =============================================================================
 
 #define NO_RETURN extern "C" __attribute__((noreturn))
+
+// Entry point macro
+#define ENTRYPOINT extern "C" __attribute__((noreturn))

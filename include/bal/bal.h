@@ -10,6 +10,7 @@
 #include "core/compiler.h"
 #include "core/memory.h"
 #include "core/math.h"
+#include "core/byteorder.h"
 
 // Base types
 #include "types/primitives.h"

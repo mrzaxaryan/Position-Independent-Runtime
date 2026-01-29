@@ -2,7 +2,6 @@
 #include "logger.h"
 #include "memory.h"
 #include "string.h"
-#include "network.h"
 #include "tls.h"
 #include "embedded_string.h"
 

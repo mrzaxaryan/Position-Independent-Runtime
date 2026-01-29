@@ -1,7 +1,6 @@
 #include "tls_hkdf.h"
 #include "logger.h"
 #include "memory.h"
-#include "network.h"
 #include "tls_hmac.h"
 #include "tls_buffer.h"
 

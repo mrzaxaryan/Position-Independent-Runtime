@@ -4,7 +4,6 @@
 #include "logger.h"
 #include "ntdll.h"
 #include "memory.h"
-#include "network.h"
 
 #define IOCTL_AFD_BIND ((0x00000012) << 12 | (0 << 2) | 3)
 #define IOCTL_AFD_CONNECT ((0x00000012) << 12 | (1 << 2) | 3)

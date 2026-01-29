@@ -26,11 +26,6 @@ typedef struct _ENVIRONMENT_DATA
 
 NOINLINE VOID InitializeRuntime(PENVIRONMENT_DATA envData);
 
-// PerformRelocation has been removed - use EMBEDDED_FUNCTION_POINTER instead
-// See: include/bal/primitives/embedded_function_pointer.h
-
-// Entry point macro
-#define ENTRYPOINT extern "C" __attribute__((noreturn))
 
 // Cross-platform exit process function
 NO_RETURN VOID ExitProcess(USIZE code);
@@ -38,11 +33,18 @@ NO_RETURN VOID ExitProcess(USIZE code);
 // =============================================================================
 // Platform Services
 // =============================================================================
-#include "allocator.h"
-#include "console.h"
-#include "date_time.h"
-#include "file_system.h"
-#include "logger.h"
-#include "network.h"
-#include "random.h"
-#include "socket.h"
+
+// Memory management
+#include "memory/allocator.h"
+
+// System utilities (must come before logger.h since it uses DateTime)
+#include "system/date_time.h"
+#include "system/random.h"
+
+// I/O services
+#include "io/console.h"
+#include "io/file_system.h"
+#include "io/logger.h"
+
+// Network services
+#include "network/socket.h"
