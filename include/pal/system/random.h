@@ -7,8 +7,8 @@ class Random
 {
 private:
     // Internal state for the random number generator
-    UINT32 seed;
-    INT32 GetSeedFromTime();
+    UINT64 seed;
+    UINT64 GetSeedFromTime();
 
 public:
     VOID *operator new(USIZE) = delete;    // Disable dynamic allocation
