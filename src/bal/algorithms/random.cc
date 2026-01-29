@@ -13,11 +13,17 @@ static inline UINT64 GetHardwareTimestamp()
     __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
     return ((UINT64)hi << 32) | lo;
 
-#elif defined(ARCHITECTURE_ARMV7A) || defined(ARCHITECTURE_AARCH64)
-    // ARM64: Read the Virtual Counter Register (CNTVCT_EL0)
+#elif defined(ARCHITECTURE_AARCH64)
+    // ARM64: Standard 64-bit system counter access
     UINT64 virtual_timer_value;
     __asm__ __volatile__("mrs %0, cntvct_el0" : "=r"(virtual_timer_value));
     return virtual_timer_value;
+
+#elif defined(ARCHITECTURE_ARMV7A)
+    // ARMv7-A (32-bit): Use mrrc to read the 64-bit CNTVCT into two registers
+    unsigned int lo, hi;
+    __asm__ __volatile__("mrrc p15, 1, %0, %1, c14" : "=r"(lo), "=r"(hi));
+    return ((UINT64)hi << 32) | lo;
 
 #else
 #error "GetHardwareTimestamp not implemented for this architecture"
