@@ -5,7 +5,7 @@ LLVM_VER="${LLVM_VER:-20}"
 
 # --- deps
 sudo apt-get update
-sudo apt-get install -y wget lsb-release ca-certificates gnupg
+sudo apt-get install -y wget lsb-release ca-certificates gnupg cmake ninja-build
 
 # --- add apt.llvm.org repo (recommended: /etc/apt/keyrings + signed-by)
 UBUNTU_CODENAME="$(lsb_release -cs)"

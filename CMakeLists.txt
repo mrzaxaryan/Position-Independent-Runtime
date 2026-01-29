@@ -216,10 +216,15 @@ endif()
 if(BUILD_TYPE_LC STREQUAL "debug")
     # Debug-specific compiler flags
     list(APPEND BASE_COMPILER_FLAGS
-        -gcodeview                          # CodeView debug info (WinDbg/VS)
         -g3                                 # Maximum debug information
         -fno-omit-frame-pointer             # Keep frame pointer for stack traces
     )
+    # Platform-specific debug info format
+    if(PLATFORM_LC STREQUAL "windows")
+        list(APPEND BASE_COMPILER_FLAGS
+            -gcodeview                      # CodeView debug info (WinDbg/VS)
+        )
+    endif()
 else()
     # Release-specific compiler flags (maximum optimization)
     list(APPEND BASE_COMPILER_FLAGS
