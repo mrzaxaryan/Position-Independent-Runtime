@@ -7,7 +7,9 @@
         "ms-python.vscode-pylance",
         "ms-python.debugpy",
         "ms-python.vscode-python-envs",
-        "llvm-vs-code-extensions.lldb-dap"
+        "llvm-vs-code-extensions.lldb-dap",
+        "ms-vscode-remote.remote-wsl",
+        "ms-vscode-remote.vscode-remote-extensionpack"
     ],
     "unwantedRecommendations": []
 }
