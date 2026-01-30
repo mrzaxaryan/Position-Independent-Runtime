@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "pal.h"  // Includes bal.h (with string_formatter.h), console.h, date_time.h, file_system.h
+#include "pal.h"  // Includes bal.h (with string_formatter.h), console.h, date_time.h
 
 // Convenience macros that automatically embed wide strings
 #define LOG_INFO(format, ...) Logger::Info<WCHAR>(L##format##_embed, ##__VA_ARGS__)
@@ -39,16 +39,8 @@ enum class LogLevels : UINT8
 	Debug = 2	 // All messages
 };
 
-enum class LogOutputs : UINT8
-{
-	Console = 0x1, // Output to console
-	File = 0x2,	   // Output to file (not implemented)
-	Both = 0x3	   // Output to both console and file
-};
-
 // Global log level - modify this to control logging at compile-time
 inline constexpr LogLevels LogLevel = LogLevels::Default;
-inline constexpr LogOutputs LogOutput = LogOutputs::Both;
 /**
  * Logger - Static logging utility class
  *
@@ -69,26 +61,11 @@ private:
 	}
 
 	/**
-	 * FileCallback - Callback for file output (plain text, no colors)
-	 */
-	template <TCHAR TChar>
-	static BOOL FileCallback(PVOID context, TChar ch)
-	{
-		File *logFile = static_cast<File *>(context);
-		if (logFile && logFile->IsValid())
-		{
-			logFile->Write(&ch, sizeof(TChar));
-		}
-		return TRUE;
-	}
-
-	/**
-	 * LogWithPrefix - Internal helper using variadic templates
+	 * TimestampedLogOutput - Internal helper using variadic templates
 	 *
-	 * Writes colored output to console and plain text to file.
+	 * Writes colored output to console.
 	 *
 	 * @param colorPrefix - ANSI-colored prefix for console (e.g., "\033[0;32m[INF] ")
-	 * @param plainPrefix - Plain prefix for file (e.g., "[INF] ")
 	 * @param format      - Format string with embedded specifiers
 	 * @param args        - Variadic template arguments
 	 *
@@ -97,39 +74,18 @@ private:
 	 *   Args  - Variadic template arguments (deduced automatically)
 	 */
 	template <TCHAR TChar, typename... Args>
-	FORCE_INLINE static VOID LogWithPrefix(const WCHAR *colorPrefix, const WCHAR *plainPrefix, const TChar *format, Args&&... args)
+	FORCE_INLINE static VOID TimestampedLogOutput(const WCHAR *colorPrefix, const TChar *format, Args&&... args)
 	{
 		// Get current time
 		DateTime now = DateTime::Now();
 		TimeOnlyString<WCHAR> timeStr = now.ToTimeOnlyString<WCHAR>();
 
-		// Console output (with colors)
-		if constexpr ((static_cast<UINT8>(LogOutput) & static_cast<UINT8>(LogOutputs::Console)) != 0)
-		{
-			auto consoleW = EMBED_FUNC(ConsoleCallback<WCHAR>);
-			auto consoleT = EMBED_FUNC(ConsoleCallback<TChar>);
+		auto consoleW = EMBED_FUNC(ConsoleCallback<WCHAR>);
+		auto consoleT = EMBED_FUNC(ConsoleCallback<TChar>);
 
-			StringFormatter::Format<WCHAR>(consoleW, NULL, L"%ls[%ls] "_embed, colorPrefix, (const WCHAR *)timeStr);
-			StringFormatter::Format<TChar>(consoleT, NULL, format, static_cast<Args&&>(args)...);
-			StringFormatter::Format<WCHAR>(consoleW, NULL, L"\033[0m\n"_embed);
-		}
-
-		// File output (plain text, no colors)
-		if constexpr ((static_cast<UINT8>(LogOutput) & static_cast<UINT8>(LogOutputs::File)) != 0)
-		{
-			File logFile = FileSystem::Open(L"output.log.txt"_embed, FileSystem::FS_WRITE | FileSystem::FS_CREATE | FileSystem::FS_APPEND);
-			if (logFile.IsValid())
-			{
-				logFile.MoveOffset(0, OffsetOrigin::End);
-
-				auto fileW = EMBED_FUNC(FileCallback<WCHAR>);
-				auto fileT = EMBED_FUNC(FileCallback<TChar>);
-
-				StringFormatter::Format<WCHAR>(fileW, &logFile, L"%ls[%ls] "_embed, plainPrefix, (const WCHAR *)timeStr);
-				StringFormatter::Format<TChar>(fileT, &logFile, format, static_cast<Args&&>(args)...);
-				StringFormatter::Format<WCHAR>(fileW, &logFile, L"\n"_embed);
-			}
-		}
+		StringFormatter::Format<WCHAR>(consoleW, NULL, L"%ls[%ls] "_embed, colorPrefix, (const WCHAR *)timeStr);
+		StringFormatter::Format<TChar>(consoleT, NULL, format, static_cast<Args&&>(args)...);
+		StringFormatter::Format<WCHAR>(consoleW, NULL, L"\033[0m\n"_embed);
 	}
 
 public:
@@ -186,13 +142,9 @@ public:
 	static VOID Debug(const TChar *format, Args&&... args);
 
 	/**
-	 * Clear - Clear log output
+	 * Clear - Clear console output
 	 *
-	 * Clears the active log outputs:
-	 *   - If file logging is active: deletes output.log.txt
-	 *   - If console logging is active: clears the console screen
-	 *
-	 * Uses compile-time checks to only include code for active outputs.
+	 * Clears the console screen.
 	 */
 	static VOID Clear();
 };
@@ -214,7 +166,7 @@ VOID Logger::Info(const TChar *format, Args&&... args)
 {
 	if constexpr (LogLevel != LogLevels::None)
 	{
-		LogWithPrefix<TChar>(L"\033[0;32m[INF] "_embed, L"[INF] "_embed, format, static_cast<Args&&>(args)...);
+		TimestampedLogOutput<TChar>(L"\033[0;32m[INF] "_embed, format, static_cast<Args&&>(args)...);
 	}
 	else
 	{
@@ -235,7 +187,7 @@ VOID Logger::Error(const TChar *format, Args&&... args)
 {
 	if constexpr (LogLevel != LogLevels::None)
 	{
-		LogWithPrefix<TChar>(L"\033[0;31m[ERR] "_embed, L"[ERR] "_embed, format, static_cast<Args&&>(args)...);
+		TimestampedLogOutput<TChar>(L"\033[0;31m[ERR] "_embed, format, static_cast<Args&&>(args)...);
 	}
 	else
 	{
@@ -256,7 +208,7 @@ VOID Logger::Warning(const TChar *format, Args&&... args)
 {
 	if constexpr (LogLevel != LogLevels::None)
 	{
-		LogWithPrefix<TChar>(L"\033[0;33m[WRN] "_embed, L"[WRN] "_embed, format, static_cast<Args&&>(args)...);
+		TimestampedLogOutput<TChar>(L"\033[0;33m[WRN] "_embed, format, static_cast<Args&&>(args)...);
 	}
 	else
 	{
@@ -277,34 +229,11 @@ VOID Logger::Debug(const TChar *format, Args&&... args)
 {
 	if constexpr (LogLevel == LogLevels::Debug)
 	{
-		LogWithPrefix<TChar>(L"\033[0;33m[DBG] "_embed, L"[DBG] "_embed, format, static_cast<Args&&>(args)...);
+		TimestampedLogOutput<TChar>(L"\033[0;33m[DBG] "_embed, format, static_cast<Args&&>(args)...);
 	}
 	else
 	{
 		(VOID) format; // Suppress unused parameter warning
 		((VOID) args, ...); // Suppress unused parameter warnings for all args
-	}
-}
-
-/**
- * Clear - Clear log output (implementation)
- *
- * Compile-time optimization:
- *   - Only includes code for active output modes
- *   - File: Deletes output.log.txt
- *   - Console: Sends ANSI clear screen + cursor home escape sequence
- */
-FORCE_INLINE VOID Logger::Clear()
-{
-	// Clear file output (delete the log file)
-	if constexpr ((static_cast<UINT8>(LogOutput) & static_cast<UINT8>(LogOutputs::File)) != 0)
-	{
-		FileSystem::Delete(L"output.log.txt"_embed);
-	}
-
-	// Clear console output (ANSI escape: clear screen + move cursor to home)
-	if constexpr ((static_cast<UINT8>(LogOutput) & static_cast<UINT8>(LogOutputs::Console)) != 0)
-	{
-		Console::Write<WCHAR>(L"\033[2J\033[H"_embed);
 	}
 }
