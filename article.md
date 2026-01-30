@@ -16,7 +16,7 @@ With this work, we would like to add our two cents to that debate by arguing tha
 
 When writing shellcode in C/C++, developers face several fundamental challenges.This section examines each of these problems, outlines the traditional approaches used to address them, explains the limitations of those approaches, and demonstrates how NOSTDLIB-RUNTIME provides a robust solution.
 
-### Problem 1: .rdata‑Resident Constant and other relocation Dependencies
+### Problem 1: String literals in .rdata and other relocation Dependencies
 
 C-generated shellcode relies on loader-handled relocations that are not applied in a loaderless execution environment, preventing reliable execution from arbitrary memory.
 
@@ -175,7 +175,7 @@ auto embedded = MakeEmbedArray(lookup);
 UINT32 value = embedded[0]; // Unpacked at runtime
 ```
 
-### Problem 4: Floating-Point Constants
+### Problem 2: Floating-Point Constants
 
 Using floating-point arithmetic in C-generated shellcode introduces additional issues, as floating-point constants are typically emitted into read-only data sections such as `.rdata`. In a loaderless execution environment, these sections are not available, causing generated code to reference invalid memory. Despite the problem is very similar to the one discused above but aproches and specific aspets make huge difference.
 
@@ -229,7 +229,7 @@ movabsq $0x400921f9f01b866e, %rax ; Pi as 64-bit immediate
 
 This eliminates all floating-point constants from `.rdata` and avoids implicit compiler-generated helpers.
 
-### Problem 5: Function Pointers
+### Problem 3: Function Pointers
 
 Using function pointers in C-generated shellcode introduces relocation dependencies, as function addresses are normally resolved by the loader. In a loaderless execution environment, these relocations are not applied, causing indirect function calls to reference invalid addresses.
 
@@ -245,7 +245,7 @@ The same issues remain: increased complexity, fragility, and sensitivity to comp
 
 We introduce the `EMBED_FUNC` macro, which uses inline assembly to compute pure relative offsets without relying on absolute addresses. The target architecture is selected at compile time using CMake-defined macros, ensuring correct code generation without relocation dependencies. The implementation is located [here](include/bal/types/embedded/embedded_function_pointer.h).
 
-### Problem 6: 64-bit Arithmetic on 32-bit Systems
+### Problem 4: 64-bit Arithmetic on 32-bit Systems
 
 Performing arithmetic with 64-bit integers on a 32-bit system, or with floating-point numbers, can cause issues because the compiler expects certain helper routines to be present.
 
@@ -276,7 +276,7 @@ UINT32 p2 = a0 * b1;  // bits [16:47]
 
 This eliminates the need for compiler-expected helper routines and guarantees no `.rdata` generation.
 
-### Problem 7: CRT and Runtime Dependencies
+### Problem 5: CRT and Runtime Dependencies
 
 Standard C/C++ programs depend on the C runtime (CRT) for initialization, memory management, and various helper functions. Shellcode cannot assume the presence of these.
 
@@ -294,7 +294,7 @@ NOSTDLIB-RUNTIME achieves complete independence from the C runtime (CRT) and sta
 
 Interaction with Windows system functionality is performed through low-level native interfaces. The runtime traverses the Process Environment Block (PEB) to locate loaded modules and parses PE export tables to resolve function addresses using hash-based lookup. By avoiding import tables, string-based API resolution, and `GetProcAddress` calls, NOSTDLIB-RUNTIME minimizes static analysis visibility and enables execution in constrained or adversarial environments.
 
-### Problem 8: Type Conversions
+### Problem 6: Type Conversions
 
 Type conversions between integers and floating-point values can cause the compiler to emit hidden constants or helper routines.
 
