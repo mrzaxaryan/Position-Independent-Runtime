@@ -347,7 +347,7 @@ def main():
             exit_code = execute_local(kernel32, shellcode)
 
         print(f"\n[+] Exit code: {exit_code}")
-        sys.exit(exit_code)
+        return exit_code
 
     except Exception as e:
         print(f"[-] Failed: {e}")
