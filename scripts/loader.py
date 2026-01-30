@@ -111,7 +111,16 @@ def can_execute(target_arch):
     target_family = target_info['family']
     target_bits = target_info['bits']
 
-    # Different CPU families cannot run each other's code
+    # Windows 11 ARM64 can emulate x86 and x86_64 code
+    if host_family == 'arm' and target_family == 'x86' and platform.system().lower() == 'windows':
+        print("[*] Using x86/x86_64 emulation on ARM64 Windows")
+        return True, None
+
+    # ARM code cannot run on x86 systems (no emulation in that direction)
+    if host_family == 'x86' and target_family == 'arm':
+        return False, f"Cannot run {target_family.upper()} code on {host_family.upper()} CPU"
+
+    # Different CPU families cannot run each other's code (unless handled above)
     if host_family != target_family:
         return False, f"Cannot run {target_family.upper()} code on {host_family.upper()} CPU"
 
