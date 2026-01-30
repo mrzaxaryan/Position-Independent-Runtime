@@ -371,28 +371,28 @@ private:
 		auto fmt_0f = "%.0f"_embed;
 		auto fmt_1f = "%.1f"_embed;
 
-		// Simple float
+		// Simple float - now passing DOUBLE directly!
 		Memory::Zero(buffer, 64);
 		ctx.index = 0;
-		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_2f, (double)3.14_embed);
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_2f, 3.14_embed);
 		// Should be "3.14"
 		auto expected_314 = "3.14"_embed;
 		if (Memory::Compare(buffer, (const CHAR*)expected_314, 4) != 0)
 			return FALSE;
 
-		// Integer value as float
+		// Integer value as float - now passing DOUBLE directly!
 		Memory::Zero(buffer, 64);
 		ctx.index = 0;
-		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_0f, (double)42.0_embed);
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_0f, 42.0_embed);
 		// Should be "42"
 		auto expected_f42 = "42"_embed;
 		if (Memory::Compare(buffer, (const CHAR*)expected_f42, 2) != 0)
 			return FALSE;
 
-		// Negative float
+		// Negative float - now passing DOUBLE directly!
 		Memory::Zero(buffer, 64);
 		ctx.index = 0;
-		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_1f, (double)-1.5_embed);
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_1f, -1.5_embed);
 		// Should be "-1.5"
 		auto expected_neg15 = "-1.5"_embed;
 		if (Memory::Compare(buffer, (const CHAR*)expected_neg15, 4) != 0)
