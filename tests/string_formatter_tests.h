@@ -99,6 +99,17 @@ public:
 			Logger::Info<WCHAR>(L"  PASSED: Percent literal"_embed);
 		}
 
+		// Test 9: USIZE and SSIZE formatting
+		if (!TestSizeFormat())
+		{
+			allPassed = FALSE;
+			Logger::Error<WCHAR>(L"  FAILED: Size format"_embed);
+		}
+		else
+		{
+			Logger::Info<WCHAR>(L"  PASSED: Size format"_embed);
+		}
+
 		if (allPassed)
 		{
 			Logger::Info<WCHAR>(L"All StringFormatter tests passed!"_embed);
@@ -371,28 +382,28 @@ private:
 		auto fmt_0f = "%.0f"_embed;
 		auto fmt_1f = "%.1f"_embed;
 
-		// Simple float
+		// Simple float - now passing DOUBLE directly!
 		Memory::Zero(buffer, 64);
 		ctx.index = 0;
-		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_2f, (double)3.14_embed);
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_2f, 3.14_embed);
 		// Should be "3.14"
 		auto expected_314 = "3.14"_embed;
 		if (Memory::Compare(buffer, (const CHAR*)expected_314, 4) != 0)
 			return FALSE;
 
-		// Integer value as float
+		// Integer value as float - now passing DOUBLE directly!
 		Memory::Zero(buffer, 64);
 		ctx.index = 0;
-		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_0f, (double)42.0_embed);
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_0f, 42.0_embed);
 		// Should be "42"
 		auto expected_f42 = "42"_embed;
 		if (Memory::Compare(buffer, (const CHAR*)expected_f42, 2) != 0)
 			return FALSE;
 
-		// Negative float
+		// Negative float - now passing DOUBLE directly!
 		Memory::Zero(buffer, 64);
 		ctx.index = 0;
-		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_1f, (double)-1.5_embed);
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_1f, -1.5_embed);
 		// Should be "-1.5"
 		auto expected_neg15 = "-1.5"_embed;
 		if (Memory::Compare(buffer, (const CHAR*)expected_neg15, 4) != 0)
@@ -418,6 +429,52 @@ private:
 		// Should be "100%"
 		auto expected_100pct = "100%"_embed;
 		if (Memory::Compare(buffer, (const CHAR*)expected_100pct, 4) != 0)
+			return FALSE;
+
+		return TRUE;
+	}
+
+	static BOOL TestSizeFormat()
+	{
+		CHAR buffer[64];
+		BufferContext ctx;
+		ctx.buffer = buffer;
+		ctx.index = 0;
+		ctx.maxSize = 64;
+		auto fixed = EMBED_FUNC(CharWriter);
+		auto fmt_zu = "%zu"_embed;
+		auto fmt_zd = "%zd"_embed;
+
+		// Test USIZE formatting (positive value)
+		Memory::Zero(buffer, 64);
+		ctx.index = 0;
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_zu, (USIZE)1024);
+		auto expected_1024 = "1024"_embed;
+		if (Memory::Compare(buffer, (const CHAR*)expected_1024, 4) != 0)
+			return FALSE;
+
+		// Test SSIZE formatting (positive value)
+		Memory::Zero(buffer, 64);
+		ctx.index = 0;
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_zd, (SSIZE)512);
+		auto expected_512 = "512"_embed;
+		if (Memory::Compare(buffer, (const CHAR*)expected_512, 3) != 0)
+			return FALSE;
+
+		// Test SSIZE formatting (negative value)
+		Memory::Zero(buffer, 64);
+		ctx.index = 0;
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_zd, (SSIZE)-256);
+		auto expected_neg256 = "-256"_embed;
+		if (Memory::Compare(buffer, (const CHAR*)expected_neg256, 4) != 0)
+			return FALSE;
+
+		// Test USIZE with zero
+		Memory::Zero(buffer, 64);
+		ctx.index = 0;
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_zu, (USIZE)0);
+		auto expected_0 = "0"_embed;
+		if (Memory::Compare(buffer, (const CHAR*)expected_0, 1) != 0)
 			return FALSE;
 
 		return TRUE;

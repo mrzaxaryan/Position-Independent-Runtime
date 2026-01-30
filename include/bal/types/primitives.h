@@ -29,27 +29,8 @@ typedef const WCHAR *PCWCHAR;
 
 typedef bool BOOL, *PBOOL, **PPBOOL;
 
-#if defined(PLATFORM_WINDOWS)
-    // Windows: Use long long for 64-bit, int for 32-bit
-    #if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_AARCH64)
-    typedef unsigned long long USIZE, *PUSIZE;
-    typedef signed long long SSIZE, *PSSIZE;
-    #else
-    typedef unsigned int USIZE, *PUSIZE;
-    typedef signed int SSIZE, *PSSIZE;
-    #endif
-#elif defined(PLATFORM_LINUX)
-    // Linux: size_t is unsigned long on all architectures
-    #if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_AARCH64)
-    typedef unsigned long USIZE, *PUSIZE;
-    typedef signed long SSIZE, *PSSIZE;
-    #else
-    typedef unsigned int USIZE, *PUSIZE;
-    typedef signed int SSIZE, *PSSIZE;
-    #endif
-#else
-#error "Unsupported platform for USIZE and SSIZE definitions"
-#endif
+typedef __SIZE_TYPE__ USIZE, *PUSIZE;
+typedef __INTPTR_TYPE__ SSIZE, *PSSIZE;
 
 typedef __builtin_va_list VA_LIST;
 #define VA_START(ap, v) __builtin_va_start(ap, v)
