@@ -35,6 +35,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: C:\Program Files\LLVM
+          key: llvm-${{ env.LLVM_VERSION }}-windows
+
       - name: Install LLVM and Ninja
         shell: pwsh
         run: |
@@ -44,14 +51,18 @@ jobs:
           choco install ninja -y
           ninja --version
 
-          # Install LLVM
-          $ver = "${{ env.LLVM_VERSION }}"
-          $exe = "LLVM-$ver-win64.exe"
-          $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-$ver/$exe"
+          # Install LLVM (skip if cached)
+          if ("${{ steps.cache-llvm.outputs.cache-hit }}" -ne "true") {
+            $ver = "${{ env.LLVM_VERSION }}"
+            $exe = "LLVM-$ver-win64.exe"
+            $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-$ver/$exe"
 
-          Write-Host "Downloading LLVM $ver..."
-          Invoke-WebRequest -Uri $url -OutFile $exe
-          Start-Process -FilePath ".\$exe" -ArgumentList "/S" -Wait
+            Write-Host "Downloading LLVM $ver..."
+            Invoke-WebRequest -Uri $url -OutFile $exe
+            Start-Process -FilePath ".\$exe" -ArgumentList "/S" -Wait
+          } else {
+            Write-Host "Using cached LLVM installation"
+          }
 
           "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
@@ -79,23 +90,26 @@ jobs:
   test-windows:
     name: Test ${{ matrix.arch }}-${{ matrix.platform }}
     needs: [build-windows]
-    runs-on: windows-2022
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - arch: i386
             platform: windows
+            runner: windows-2022
             can-test: true
             note: "Runs on x64 via WoW64 (32-bit compatibility)"
           - arch: x86_64
             platform: windows
+            runner: windows-2022
             can-test: true
             note: "Runs natively on x64"
           - arch: aarch64
             platform: windows
-            can-test: false
-            note: "Build-only (requires ARM64 runner to execute)"
+            runner: windows-11-arm
+            can-test: true
+            note: "Runs natively on ARM64"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,37 +122,34 @@ jobs:
 
       - name: Run test
         if: matrix.can-test
-        shell: cmd
+        shell: pwsh
         run: |
-          @echo off
-          echo === Testing ${{ matrix.arch }}-${{ matrix.platform }} ===
-          echo Note: ${{ matrix.note }}
-          echo.
+          $arch = "${{ matrix.arch }}"
+          Write-Host "=== Testing $arch-${{ matrix.platform }} ==="
+          Write-Host "Note: ${{ matrix.note }}"
+          Write-Host ""
 
-          for /r artifacts %%f in (*.exe) do (
-            if not "%%~nf"=="a" (
-              set "TEST_EXE=%%f"
-            )
-          )
+          # Find output.bin in artifacts
+          $binFile = Get-ChildItem -Path artifacts -Recurse -Filter "output.bin" | Select-Object -First 1
 
-          if not defined TEST_EXE (
-            echo ERROR: No .exe found in artifacts/
-            exit /b 1
-          )
+          if (-not $binFile) {
+            Write-Host "ERROR: No output.bin found in artifacts/"
+            exit 1
+          }
 
-          echo === Executing: %TEST_EXE% ===
-          echo.
+          Write-Host "=== Executing via loader.py: $($binFile.FullName) ==="
+          Write-Host ""
 
-          "%TEST_EXE%"
-          set EXIT_CODE=%ERRORLEVEL%
+          python scripts/loader.py --arch $arch $binFile.FullName
+          $exitCode = $LASTEXITCODE
 
-          echo.
-          if %EXIT_CODE%==0 (
-            echo TEST PASSED (exit code: %EXIT_CODE%)
-          ) else (
-            echo TEST FAILED: exit code %EXIT_CODE% (expected 0)
-            exit /b %EXIT_CODE%
-          )
+          Write-Host ""
+          if ($exitCode -eq 0) {
+            Write-Host "TEST PASSED (exit code: $exitCode)"
+          } else {
+            Write-Host "TEST FAILED: exit code $exitCode (expected 0)"
+            exit $exitCode
+          }
 
       - name: Upload test logs
         if: matrix.can-test && always()
@@ -183,6 +194,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/lib/llvm-*
+            /usr/bin/clang*
+            /usr/bin/lld*
+            /usr/bin/llvm-*
+          key: llvm-${{ env.LLVM_VERSION }}-ubuntu-22.04
+
       - name: Install LLVM and Ninja
         run: |
           set -e
@@ -194,14 +216,19 @@ jobs:
           sudo apt-get install -y ninja-build wget lsb-release ca-certificates gnupg cmake
           ninja --version
 
-          # Add LLVM apt repository
-          sudo mkdir -p /etc/apt/keyrings
-          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/apt.llvm.org.gpg >/dev/null
-          echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.gpg] http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-${LLVM_VER} main" | sudo tee /etc/apt/sources.list.d/llvm.list
-          sudo apt-get update
+          # Install LLVM only if not cached
+          if [ "${{ steps.cache-llvm.outputs.cache-hit }}" != "true" ]; then
+            # Add LLVM apt repository
+            sudo mkdir -p /etc/apt/keyrings
+            wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/apt.llvm.org.gpg >/dev/null
+            echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.gpg] http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-${LLVM_VER} main" | sudo tee /etc/apt/sources.list.d/llvm.list
+            sudo apt-get update
 
-          # Install LLVM, Clang, LLD, and tools
-          sudo apt-get install -y clang-${LLVM_VER} clang++-${LLVM_VER} lld-${LLVM_VER} llvm-${LLVM_VER}
+            # Install LLVM, Clang, LLD, and tools
+            sudo apt-get install -y clang-${LLVM_VER} clang++-${LLVM_VER} lld-${LLVM_VER} llvm-${LLVM_VER}
+          else
+            echo "Using cached LLVM installation"
+          fi
 
           # Create symbolic links for all required tools
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${LLVM_VER} 100
@@ -254,20 +281,24 @@ jobs:
         include:
           - arch: i386
             platform: linux
-            can-test: false
-            note: "Build-only (requires 32-bit multilib to execute)"
+            can-test: true
+            qemu: qemu-i386-static
+            note: "Runs via QEMU i386"
           - arch: x86_64
             platform: linux
             can-test: true
+            qemu: ""
             note: "Runs natively on x64"
           - arch: armv7a
             platform: linux
-            can-test: false
-            note: "Build-only (requires ARM runner to execute)"
+            can-test: true
+            qemu: qemu-arm-static
+            note: "Runs via QEMU ARM"
           - arch: aarch64
             platform: linux
-            can-test: false
-            note: "Build-only (requires ARM64 runner to execute)"
+            can-test: true
+            qemu: qemu-aarch64-static
+            note: "Runs via QEMU ARM64"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -278,16 +309,22 @@ jobs:
           name: build-${{ matrix.arch }}-${{ matrix.platform }}
           path: artifacts
 
+      - name: Install QEMU
+        if: matrix.qemu != ''
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
       - name: Run test
         if: matrix.can-test
         run: |
-          set -e
+          set -euo pipefail
           echo "=== Testing ${{ matrix.arch }}-${{ matrix.platform }} ==="
           echo "Note: ${{ matrix.note }}"
           echo ""
 
-          # Find the executable (output.elf on Linux)
-          TEST_EXE=$(find artifacts -type f -name "output.elf" | head -n 1)
+          # Find the executable (*.elf on Linux)
+          TEST_EXE=$(find artifacts -type f -name "*.elf" | head -n 1)
 
           if [ -z "$TEST_EXE" ]; then
             echo "ERROR: No executable found in artifacts/"
@@ -300,9 +337,15 @@ jobs:
           echo "=== Executing: $TEST_EXE ==="
           echo ""
 
-          # Run the test
-          "$TEST_EXE"
-          EXIT_CODE=$?
+          # Run the test with output capture (use stdbuf for unbuffered QEMU output)
+          set +e
+          if [ -n "${{ matrix.qemu }}" ]; then
+            stdbuf -oL -eL ${{ matrix.qemu }} "$TEST_EXE" 2>&1 | tee output.log.txt
+          else
+            "$TEST_EXE" 2>&1 | tee output.log.txt
+          fi
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -e
 
           echo ""
           if [ $EXIT_CODE -eq 0 ]; then
