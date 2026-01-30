@@ -184,6 +184,17 @@ public:
 	 */
 	template <TCHAR TChar, typename... Args>
 	static VOID Debug(const TChar *format, Args&&... args);
+
+	/**
+	 * Clear - Clear log output
+	 *
+	 * Clears the active log outputs:
+	 *   - If file logging is active: deletes output.log.txt
+	 *   - If console logging is active: clears the console screen
+	 *
+	 * Uses compile-time checks to only include code for active outputs.
+	 */
+	static VOID Clear();
 };
 
 // ============================================================================
@@ -272,5 +283,28 @@ VOID Logger::Debug(const TChar *format, Args&&... args)
 	{
 		(VOID) format; // Suppress unused parameter warning
 		((VOID) args, ...); // Suppress unused parameter warnings for all args
+	}
+}
+
+/**
+ * Clear - Clear log output (implementation)
+ *
+ * Compile-time optimization:
+ *   - Only includes code for active output modes
+ *   - File: Deletes output.log.txt
+ *   - Console: Sends ANSI clear screen + cursor home escape sequence
+ */
+FORCE_INLINE VOID Logger::Clear()
+{
+	// Clear file output (delete the log file)
+	if constexpr ((static_cast<UINT8>(LogOutput) & static_cast<UINT8>(LogOutputs::File)) != 0)
+	{
+		FileSystem::Delete(L"output.log.txt"_embed);
+	}
+
+	// Clear console output (ANSI escape: clear screen + move cursor to home)
+	if constexpr ((static_cast<UINT8>(LogOutput) & static_cast<UINT8>(LogOutputs::Console)) != 0)
+	{
+		Console::Write<WCHAR>(L"\033[2J\033[H"_embed);
 	}
 }

@@ -7,6 +7,7 @@
 
 ENTRYPOINT INT32 _start(VOID)
 {
+	Logger::Clear();
 	BOOL allPassed = TRUE;
 
 	Logger::Info<WCHAR>(L"=== CPP-PIC Test Suite ==="_embed);
