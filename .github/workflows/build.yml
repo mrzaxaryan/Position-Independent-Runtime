@@ -108,37 +108,34 @@ jobs:
 
       - name: Run test
         if: matrix.can-test
-        shell: cmd
+        shell: pwsh
         run: |
-          @echo off
-          echo === Testing ${{ matrix.arch }}-${{ matrix.platform }} ===
-          echo Note: ${{ matrix.note }}
-          echo.
+          $arch = "${{ matrix.arch }}"
+          Write-Host "=== Testing $arch-${{ matrix.platform }} ==="
+          Write-Host "Note: ${{ matrix.note }}"
+          Write-Host ""
 
-          for /r artifacts %%f in (*.exe) do (
-            if not "%%~nf"=="a" (
-              set "TEST_EXE=%%f"
-            )
-          )
+          # Find output.bin in artifacts
+          $binFile = Get-ChildItem -Path artifacts -Recurse -Filter "output.bin" | Select-Object -First 1
 
-          if not defined TEST_EXE (
-            echo ERROR: No .exe found in artifacts/
-            exit /b 1
-          )
+          if (-not $binFile) {
+            Write-Host "ERROR: No output.bin found in artifacts/"
+            exit 1
+          }
 
-          echo === Executing: %TEST_EXE% ===
-          echo.
+          Write-Host "=== Executing via loader.py: $($binFile.FullName) ==="
+          Write-Host ""
 
-          "%TEST_EXE%"
-          set EXIT_CODE=%ERRORLEVEL%
+          python scripts/loader.py --arch $arch $binFile.FullName
+          $exitCode = $LASTEXITCODE
 
-          echo.
-          if %EXIT_CODE%==0 (
-            echo TEST PASSED (exit code: %EXIT_CODE%)
-          ) else (
-            echo TEST FAILED: exit code %EXIT_CODE% (expected 0)
-            exit /b %EXIT_CODE%
-          )
+          Write-Host ""
+          if ($exitCode -eq 0) {
+            Write-Host "TEST PASSED (exit code: $exitCode)"
+          } else {
+            Write-Host "TEST FAILED: exit code $exitCode (expected 0)"
+            exit $exitCode
+          }
 
       - name: Upload test logs
         if: matrix.can-test && always()
