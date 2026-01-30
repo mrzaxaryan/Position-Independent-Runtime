@@ -170,42 +170,6 @@ BOOL String::Compare(const TChar *s1, const TChar *s2, BOOL ignoreCase)
     return (*str1 == *str2); // Both must land on the null terminator together
 }
 
-template <>
-inline INT32 String::ParseString<INT32>(const CHAR *str)
-{
-    INT32 num = 0;
-    INT32 sign = 1;
-
-    if (str == NULL)
-    {
-        return 0;
-    }
-    // Skip leading whitespace characters
-    while (*str == ' ')
-    {
-        str++;
-    }
-    // Check for optional sign character
-    if (*str == '-')
-    {
-        sign = -1; // If a negative sign is found, set the sign to -1
-        str++;     // Skip the sign character
-    }
-    else if (*str == '+')
-    {          // Check for a positive sign
-        str++; // Skip the positive sign character
-    }
-
-    // Convert string to integer
-    while (*str >= '0' && *str <= '9')
-    {
-        num = num * 10 + (*str - '0'); // Multiply the current number by 10 and add the integer value of the current character
-        str++;                         // Move to the next character in the string
-    }
-
-    return num * sign; // Return the final integer value, adjusting for sign
-}
-
 template <TCHAR TChar>
 BOOL String::IsSpace(TChar c)
 {
