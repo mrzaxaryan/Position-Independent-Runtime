@@ -120,7 +120,7 @@ jobs:
           retention-days: 1
           path: |
             build/**
-            !build/**/cmake/CMakeFiles/**
+            !build/**/cmake/**
 
   build-and-test-linux:
     name: Build & Test ${{ matrix.arch }}-${{ matrix.platform }}
@@ -271,4 +271,4 @@ jobs:
           retention-days: 1
           path: |
             build/**
-            !build/**/cmake/CMakeFiles/**
+            !build/**/cmake/**
