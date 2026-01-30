@@ -1,5 +1,4 @@
 #include "random.h"
-#include "pal.h"
 
 static inline UINT64 GetHardwareTimestamp()
 {
@@ -32,7 +31,6 @@ INT32 Random::Get()
 {
     // simple linear congruential generator
     seed = (seed * GetHardwareTimestamp() + (UINT64)214013) & 0x7FFFFFFF;
-    Logger::Debug<WCHAR>(L"[Random] Generated value: %u"_embed, static_cast<UINT32>((seed >> 16) & 0x7FFF));
     return static_cast<INT32>(seed % MAX);
 }
 
@@ -40,5 +38,4 @@ INT32 Random::Get()
 Random::Random()
 {
     seed = GetHardwareTimestamp();
-    Logger::Debug<WCHAR>(L"[Random] Initialized with seed: %llu"_embed, seed);
 }
