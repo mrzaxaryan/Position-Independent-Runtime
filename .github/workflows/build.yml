@@ -90,23 +90,26 @@ jobs:
   test-windows:
     name: Test ${{ matrix.arch }}-${{ matrix.platform }}
     needs: [build-windows]
-    runs-on: windows-2022
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - arch: i386
             platform: windows
+            runner: windows-2022
             can-test: true
             note: "Runs on x64 via WoW64 (32-bit compatibility)"
           - arch: x86_64
             platform: windows
+            runner: windows-2022
             can-test: true
             note: "Runs natively on x64"
           - arch: aarch64
             platform: windows
-            can-test: false
-            note: "Build-only (requires ARM64 runner to execute)"
+            runner: windows-11-arm
+            can-test: true
+            note: "Runs natively on ARM64"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
