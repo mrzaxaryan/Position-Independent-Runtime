@@ -16,7 +16,7 @@ With this work, we would like to add our two cents to that debate by arguing tha
 
 When writing shellcode in C/C++, developers face several fundamental challenges.This section examines each of these problems, outlines the traditional approaches used to address them, explains the limitations of those approaches, and demonstrates how NOSTDLIB-RUNTIME provides a robust solution.
 
-### Problem 1: Relocation Dependencies
+### Problem 1: String literals in .rdata and other relocation Dependencies
 
 C-generated shellcode relies on loader-handled relocations that are not applied in a loaderless execution environment, preventing reliable execution from arbitrary memory.
 
