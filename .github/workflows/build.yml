@@ -286,8 +286,8 @@ jobs:
           echo "Note: ${{ matrix.note }}"
           echo ""
 
-          # Find the executable (should be named 'output' without extension on Linux)
-          TEST_EXE=$(find artifacts -type f -name "output" ! -name "*.txt" ! -name "*.bin" ! -name "*.b64" ! -name "*.map" | head -n 1)
+          # Find the executable (output.elf on Linux)
+          TEST_EXE=$(find artifacts -type f -name "output.elf" | head -n 1)
 
           if [ -z "$TEST_EXE" ]; then
             echo "ERROR: No executable found in artifacts/"
