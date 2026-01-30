@@ -194,7 +194,7 @@ jobs:
           sudo apt-get install -y ninja-build wget lsb-release ca-certificates gnupg cmake
           ninja --version
 
-          # Add LLVM apt repository (from Toolchain.md)
+          # Add LLVM apt repository
           sudo mkdir -p /etc/apt/keyrings
           wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/apt.llvm.org.gpg >/dev/null
           echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.gpg] http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-${LLVM_VER} main" | sudo tee /etc/apt/sources.list.d/llvm.list
@@ -211,6 +211,15 @@ jobs:
           sudo update-alternatives --install /usr/bin/llvm-objdump llvm-objdump /usr/bin/llvm-objdump-${LLVM_VER} 100
           sudo update-alternatives --install /usr/bin/llvm-objcopy llvm-objcopy /usr/bin/llvm-objcopy-${LLVM_VER} 100
           sudo update-alternatives --install /usr/bin/llvm-strings llvm-strings /usr/bin/llvm-strings-${LLVM_VER} 100
+
+          # Select the installed LLVM version
+          sudo update-alternatives --set clang /usr/bin/clang-${LLVM_VER}
+          sudo update-alternatives --set clang++ /usr/bin/clang++-${LLVM_VER}
+          sudo update-alternatives --set lld /usr/bin/lld-${LLVM_VER}
+          sudo update-alternatives --set ld.lld /usr/bin/ld.lld-${LLVM_VER}
+          sudo update-alternatives --set llvm-objdump /usr/bin/llvm-objdump-${LLVM_VER}
+          sudo update-alternatives --set llvm-objcopy /usr/bin/llvm-objcopy-${LLVM_VER}
+          sudo update-alternatives --set llvm-strings /usr/bin/llvm-strings-${LLVM_VER}
 
           # Verify installation
           clang --version
