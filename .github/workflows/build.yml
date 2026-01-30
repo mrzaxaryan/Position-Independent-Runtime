@@ -198,8 +198,8 @@ jobs:
 
           echo "Installing LLVM $LLVM_MAJOR (closest to $LLVM_VERSION)..."
 
-          # Add LLVM apt repository
-          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          # Add LLVM apt repository (using modern method instead of deprecated apt-key)
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
           sudo add-apt-repository -y "deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-${LLVM_MAJOR} main"
           sudo apt-get update
 
