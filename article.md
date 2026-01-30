@@ -16,59 +16,48 @@ With this work, we would like to add our two cents to that debate by arguing tha
 
 When writing shellcode in C/C++, developers face several fundamental challenges.This section examines each of these problems, outlines the traditional approaches used to address them, explains the limitations of those approaches, and demonstrates how NOSTDLIB-RUNTIME provides a robust solution.
 
-### Problem 1: Constant Arrays in .rdata
 
-Similar to strings, constant arrays-such as lookup tables, binary blobs, are placed into `.rdata` by the compiler, making them inaccessible in a loaderless execution environment.
-
-#### Traditional Approach
-
-The same stack-based techniques used for strings can be applied to arrays by manually initializing each element at runtime.
-
-#### Why Traditional Approaches Fail
-
-The same limitations apply: compiler optimizations can consolidate the data into `.rdata`, the resulting code becomes verbose and error-prone, and the approach doesn't scale to large arrays.
-
-#### NOSTDLIB-RUNTIME Solution: Compile-Time Array Embedding
-
-Array elements are packed into machine-word-sized integers at compile time and unpacked at runtime:
-
-```cpp
-template <typename TChar, USIZE N>
-class EMBEDDED_ARRAY
-{
-    alignas(USIZE) USIZE words[WordCount]{};
-
-    consteval EMBEDDED_ARRAY(const TChar (&src)[N]) {
-        for (USIZE i = 0; i < N; ++i) {
-            // Pack each element byte-by-byte into words
-            for (USIZE b = 0; b < sizeof(TChar); ++b)
-                SetByte(i * sizeof(TChar) + b, (src[i] >> (b * 8)) & 0xFF);
-        }
-    }
-
-    TChar operator[](USIZE index) const {
-        // Unpack element from words at runtime
-    }
-};
-```
-
-Usage:
-```cpp
-constexpr UINT32 lookup[] = {0x12345678, 0xABCDEF00};
-auto embedded = MakeEmbedArray(lookup);
-UINT32 value = embedded[0]; // Unpacked at runtime
-```
-
-### Problem 2: Relocation Dependencies
+### Problem 1: Relocation Dependencies
 
 C-generated shellcode relies on loader-handled relocations that are not applied in a loaderless execution environment, preventing reliable execution from arbitrary memory.
 
 #### Traditional Approach
 
 **Option 1:** Use a custom shellcode loader.
+**Option 2:** Minimize usage of constructs that cause generation of data in `.rdata` or `.data` sections by moving string literals onto the stack. Stack-based strings can be created by representing the string as a character array stored in a local variable. This solution also obfuscates strings:
 
-**Option 2:** Perform the relocation manually at runtime. The shellcode determines its own position in memory and performs the loader's work manually. Constants and strings may reside in sections such as `.rdata`, which are then merged into the `.text` section using `/MERGE:.rdata=.text` with MSVC or a custom linker script with Clang. During execution, relocation entries are processed explicitly to fix up absolute addresses:
 
+```cpp
+// "example.exe"
+char path[] = {'e', 'x', 'a', 'm', 'p', 'l', 'e', '.', 'e', 'x', 'e', '\0'};
+```
+
+and in the case of wide character strings, the notation is as follows:
+
+```cpp
+// L"example.exe"
+wchar_t path[] = { L'e', L'x', L'a', L'm', L'p', L'l', L'e', L'.', L'e', L'x', L'e', L'\0' };
+```
+
+**Alternative:** Manually assign each character to an array element on the stack, one by one:
+
+```cpp
+char path[12];
+path[0] = 'e';
+path[1] = 'x';
+path[2] = 'a';
+path[3] = 'm';
+path[4] = 'p';
+path[5] = 'l';
+path[6] = 'e';
+path[7] = '.';
+path[8] = 'e';
+path[9] = 'x';
+path[10] = 'e';
+path[11] = '\0';
+```
+
+**Option 3:** Perform the relocation manually at runtime. The shellcode determines its own position in memory and performs the loader's work manually. Constants and strings may reside in sections such as `.rdata`, which are then merged into the `.text` section using `/MERGE:.rdata=.text` with link.exe or a custom [linker script](linker_script.txt) for lld/ld. During execution, relocation entries are processed explicitly to fix up absolute addresses:
 ```cpp
 PCHAR GetInstructionAddress(VOID)
 {
@@ -116,87 +105,55 @@ WCHAR *relocatedWideString = (WCHAR*)((CHAR*)wideString + (SSIZE)startAddress);
 
 #### Why Traditional Approaches Fail
 
-This method introduces additional code and complexity, depends on unstable compiler behavior, and can easily break under optimization. As a result, it is unreliable and does not scale well for real-world shellcode.
+These approaches are not universal, as they rely on compiler-specific behavior and assumptions about stack layout. Modern compilers are sophisticated enough to recognize these patterns; when optimizations are enabled, the compiler may consolidate individual character assignments, place the string data in `.rdata`, and replace the code with a single `memcpy` call. This defeats the purpose of the technique and reintroduces the same `.rdata` dependency the approach was meant to avoid. Additionally, manually embedding constants and strings increases shellcode size, making it easier to detect and difficult to scale. These approaches also make the code less readable and harder to maintain.
 
 #### NOSTDLIB-RUNTIME Solution: No Relocations Needed
 
 By eliminating all `.rdata` dependencies through compile-time embedding of strings, arrays, floating-point constants-and using pure relative addressing for function pointers, NOSTDLIB-RUNTIME produces code that requires no relocations. The resulting binary is inherently position-independent without any runtime fixups.
 
-A major source of relocation issues in C-generated shellcode is string literals. Compilers place string literals into the `.rdata` section, and references to them rely on loader-applied relocations. In a loaderless execution environment, these relocations are never processed, causing such references to break.
 
-To address this problem, several traditional approaches are commonly used.
+### Problem 2: Constant Arrays in .rdata
+
+Similar to strings, constant arrays-such as lookup tables, binary blobs, are placed into `.rdata` by the compiler, making them inaccessible in a loaderless execution environment.
 
 #### Traditional Approach
 
-Minimize usage of constructs that cause generation of data in `.rdata` or `.data` sections by moving string literals onto the stack. Stack-based strings can be created by representing the string as a character array stored in a local variable. This solution also obfuscates strings:
-
-```cpp
-// "example.exe"
-char path[] = {'e', 'x', 'a', 'm', 'p', 'l', 'e', '.', 'e', 'x', 'e', '\0'};
-```
-
-and in the case of wide character strings, the notation is as follows:
-
-```cpp
-// L"example.exe"
-wchar_t path[] = { L'e', L'x', L'a', L'm', L'p', L'l', L'e', L'.', L'e', L'x', L'e', L'\0' };
-```
-
-**Alternative:** Manually assign each character to an array element on the stack, one by one:
-
-```cpp
-char path[12];
-path[0] = 'e';
-path[1] = 'x';
-path[2] = 'a';
-path[3] = 'm';
-path[4] = 'p';
-path[5] = 'l';
-path[6] = 'e';
-path[7] = '.';
-path[8] = 'e';
-path[9] = 'x';
-path[10] = 'e';
-path[11] = '\0';
-```
+The same stack-based techniques used for strings can be applied to arrays by manually initializing each element at runtime.
 
 #### Why Traditional Approaches Fail
 
-These approaches are not universal, as they rely on compiler-specific behavior and assumptions about stack layout. Modern compilers are sophisticated enough to recognize these patterns; when optimizations are enabled, the compiler may consolidate individual character assignments, place the string data in `.rdata`, and replace the code with a single `memcpy` call. This defeats the purpose of the technique and reintroduces the same `.rdata` dependency the approach was meant to avoid. Additionally, manually embedding constants and strings increases shellcode size, making it easier to detect and difficult to scale. These approaches also make the code less readable and harder to maintain.
+The same limitations apply: compiler optimizations can consolidate the data into `.rdata`, the resulting code becomes verbose and error-prone, and the approach doesn't scale to large arrays.
 
-#### NOSTDLIB-RUNTIME Solution: Compile-Time String Decomposition
+#### NOSTDLIB-RUNTIME Solution: Compile-Time Array Embedding
 
-NOSTDLIB-RUNTIME replaces conventional string literals with compile-time decomposed representations. Using C++23 features such as user-defined literals, variadic templates, and fold expressions, strings are decomposed into individual characters at compile time:
+Array elements are packed into machine-word-sized integers at compile time and unpacked at runtime:
 
 ```cpp
-template <typename TChar, TChar... Chars>
-class EMBEDDED_STRING
+template <typename TChar, USIZE N>
+class EMBEDDED_ARRAY
 {
-    TChar data[sizeof...(Chars) + 1];
-    NOINLINE DISABLE_OPTIMIZATION EMBEDDED_STRING()
-    {
-        USIZE i = 0;
-        ((data[i++] = Chars), ...); // Fold expression
-        data[i] = 0;
+    alignas(USIZE) USIZE words[WordCount]{};
+
+    consteval EMBEDDED_ARRAY(const TChar (&src)[N]) {
+        for (USIZE i = 0; i < N; ++i) {
+            // Pack each element byte-by-byte into words
+            for (USIZE b = 0; b < sizeof(TChar); ++b)
+                SetByte(i * sizeof(TChar) + b, (src[i] >> (b * 8)) & 0xFF);
+        }
+    }
+
+    TChar operator[](USIZE index) const {
+        // Unpack element from words at runtime
     }
 };
 ```
 
 Usage:
 ```cpp
-auto msg = "Hello, World!"_embed; // Embedded in code, not .rdata
+constexpr UINT32 lookup[] = {0x12345678, 0xABCDEF00};
+auto embedded = MakeEmbedArray(lookup);
+UINT32 value = embedded[0]; // Unpacked at runtime
 ```
-
-Assembly Output:
-```asm
-movw $0x48, (%rdi)  ; 'H'
-movw $0x65, 2(%rdi) ; 'e'
-movw $0x6C, 4(%rdi) ; 'l'
-movw $0x6C, 6(%rdi) ; 'l'
-movw $0x6F, 8(%rdi) ; 'o'
-```
-
-As a result, string data exists only transiently and never appears in static data sections.
 
 ### Problem 4: Floating-Point Constants
 
@@ -266,7 +223,7 @@ The same issues remain: increased complexity, fragility, and sensitivity to comp
 
 #### NOSTDLIB-RUNTIME Solution: Function Pointer Embedding
 
-We introduce the `EMBED_FUNC` macro, which uses inline assembly to compute pure relative offsets without relying on absolute addresses. The target architecture is selected at compile time using CMake-defined macros, ensuring correct code generation without relocation dependencies. The implementation is located in `embedded_function_pointer.h`.
+We introduce the `EMBED_FUNC` macro, which uses inline assembly to compute pure relative offsets without relying on absolute addresses. The target architecture is selected at compile time using CMake-defined macros, ensuring correct code generation without relocation dependencies. The implementation is located [here](include/bal/types/embedded/embedded_function_pointer.h).
 
 ### Problem 6: 64-bit Arithmetic on 32-bit Systems
 
