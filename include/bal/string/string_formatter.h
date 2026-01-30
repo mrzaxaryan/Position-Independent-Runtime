@@ -778,6 +778,34 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
                     continue;
                 }
             }
+            // Handle size_t variants (%zu, %zd) - USIZE/SSIZE are stored as UINT64/INT64
+            else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'z')
+            {
+                if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'u')
+                {                                                                            // unsigned size_t (%zu)
+                    i += 2;                                                                  // Skip over "zu"
+                    if (currentArg >= argCount) continue;
+                    // USIZE is converted to UINT64 through Argument constructor
+                    UINT64 num = args[currentArg++].u64;                                     // Get as UINT64
+                    j += StringFormatter::FormatUInt64(writer, context, num, fieldWidth, zeroPad, leftAlign); // Convert USIZE to string
+                    continue;
+                }
+                else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'d')
+                {                                                                            // signed size_t (%zd)
+                    i += 2;                                                                  // Skip over "zd"
+                    if (currentArg >= argCount) continue;
+                    // SSIZE is converted to INT64 through Argument constructor
+                    INT64 num = args[currentArg++].i64;                                      // Get as INT64
+                    j += StringFormatter::FormatInt64(writer, context, num, fieldWidth, zeroPad, leftAlign); // Convert SSIZE to string
+                    continue;
+                }
+                else
+                {
+                    writer(context, format[i++]); // If it's not recognized, just copy the character as is.
+                    j++;
+                    continue;
+                }
+            }
             else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'f')
             {                                                                            // Handle %f (double)
                 i++;                                                                     // Skip 'f'
