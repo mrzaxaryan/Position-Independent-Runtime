@@ -581,11 +581,11 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, RequestType dnstype)
     }
 
     dnsResponse[totalBytesRead] = '\0';                             // Null-terminate the content length value
-    UINT32 contentLength = String::ParseString<INT32>(dnsResponse); // Convert the content length value to an integer
+    INT64 contentLength = INT64::Parse(dnsResponse); // Convert the content length value to an integer
     LOG_DEBUG("Content length: %d", contentLength);
 
     // Read the DNS response from the TLS server
-    tlsClient.Read(dnsResponse, contentLength);
+    tlsClient.Read(dnsResponse, (UINT32)contentLength);
 
     LOG_DEBUG("DNS response header read successfully, \n%s", dnsResponse);
 
@@ -719,17 +719,17 @@ IPAddress DNS::ResloveOverHttpPost(PCCHAR host, const IPAddress& DNSServerIp, PC
     offsetOfContentLength += contentLengthHeaderSize;
 
     // dnsResponse[totalBytesRead] = '\0';                          // Null-terminate the content length value
-    UINT32 contentLength = String::ParseString<INT32>((PCHAR)dnsResponse + offsetOfContentLength); // Convert the content length value to an integer
+    INT64 contentLength = INT64::Parse((PCHAR)dnsResponse + offsetOfContentLength); // Convert the content length value to an integer
     LOG_DEBUG("Content length: %d", contentLength);
 
     delete[] dnsResponseStart;
 
     CHAR binaryResponse[0xff];
-    tlsClient.Read(binaryResponse, contentLength); // Move the pointer to the start of the binary response
+    tlsClient.Read(binaryResponse, (UINT32)contentLength); // Move the pointer to the start of the binary response
 
     IPAddress ipAddress;
 
-    if (!DNS_parse((PUINT8)binaryResponse, contentLength, &ipAddress))
+    if (!DNS_parse((PUINT8)binaryResponse, (UINT16)contentLength, &ipAddress))
     {
         tlsClient.Close();
         LOG_ERROR("Failed to parse DNS response");
