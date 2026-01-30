@@ -129,19 +129,18 @@ jobs:
           Write-Host "Note: ${{ matrix.note }}"
           Write-Host ""
 
-          # Find the executable (*.exe on Windows)
-          $exeFile = Get-ChildItem -Path artifacts -Recurse -Filter "*.exe" | Select-Object -First 1
+          # Find output.bin in artifacts
+          $binFile = Get-ChildItem -Path artifacts -Recurse -Filter "output.bin" | Select-Object -First 1
 
-          if (-not $exeFile) {
-            Write-Host "ERROR: No .exe found in artifacts/"
+          if (-not $binFile) {
+            Write-Host "ERROR: No output.bin found in artifacts/"
             exit 1
           }
 
-          Write-Host "=== Executing: $($exeFile.FullName) ==="
+          Write-Host "=== Executing via loader.py: $($binFile.FullName) ==="
           Write-Host ""
 
-          # Run and capture output
-          & $exeFile.FullName 2>&1 | Tee-Object -FilePath output.log.txt
+          python scripts/loader.py --arch $arch $binFile.FullName
           $exitCode = $LASTEXITCODE
 
           Write-Host ""
@@ -195,25 +194,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/lib/llvm-*
+            /usr/bin/clang*
+            /usr/bin/lld*
+            /usr/bin/llvm-*
+          key: llvm-${{ env.LLVM_VERSION }}-ubuntu-22.04
+
       - name: Install LLVM and Ninja
         run: |
           set -e
+          # Extract major version for apt (e.g., "20" from "20.1.6")
           LLVM_VER=$(echo "${{ env.LLVM_VERSION }}" | cut -d. -f1)
 
           # Install dependencies and Ninja
           sudo apt-get update
           sudo apt-get install -y ninja-build wget lsb-release ca-certificates gnupg cmake
+          ninja --version
 
-          # Add LLVM apt repository
-          sudo mkdir -p /etc/apt/keyrings
-          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/apt.llvm.org.gpg >/dev/null
-          echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.gpg] http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-${LLVM_VER} main" | sudo tee /etc/apt/sources.list.d/llvm.list
-          sudo apt-get update
+          # Install LLVM only if not cached
+          if [ "${{ steps.cache-llvm.outputs.cache-hit }}" != "true" ]; then
+            # Add LLVM apt repository
+            sudo mkdir -p /etc/apt/keyrings
+            wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/apt.llvm.org.gpg >/dev/null
+            echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.gpg] http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-${LLVM_VER} main" | sudo tee /etc/apt/sources.list.d/llvm.list
+            sudo apt-get update
 
-          # Install LLVM, Clang, LLD, and tools
-          sudo apt-get install -y clang-${LLVM_VER} clang++-${LLVM_VER} lld-${LLVM_VER} llvm-${LLVM_VER}
+            # Install LLVM, Clang, LLD, and tools
+            sudo apt-get install -y clang-${LLVM_VER} clang++-${LLVM_VER} lld-${LLVM_VER} llvm-${LLVM_VER}
+          else
+            echo "Using cached LLVM installation"
+          fi
 
-          # Set up alternatives
+          # Create symbolic links for all required tools
           sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${LLVM_VER} 100
           sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${LLVM_VER} 100
           sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-${LLVM_VER} 100
@@ -221,6 +238,8 @@ jobs:
           sudo update-alternatives --install /usr/bin/llvm-objdump llvm-objdump /usr/bin/llvm-objdump-${LLVM_VER} 100
           sudo update-alternatives --install /usr/bin/llvm-objcopy llvm-objcopy /usr/bin/llvm-objcopy-${LLVM_VER} 100
           sudo update-alternatives --install /usr/bin/llvm-strings llvm-strings /usr/bin/llvm-strings-${LLVM_VER} 100
+
+          # Select the installed LLVM version
           sudo update-alternatives --set clang /usr/bin/clang-${LLVM_VER}
           sudo update-alternatives --set clang++ /usr/bin/clang++-${LLVM_VER}
           sudo update-alternatives --set lld /usr/bin/lld-${LLVM_VER}
@@ -228,6 +247,9 @@ jobs:
           sudo update-alternatives --set llvm-objdump /usr/bin/llvm-objdump-${LLVM_VER}
           sudo update-alternatives --set llvm-objcopy /usr/bin/llvm-objcopy-${LLVM_VER}
           sudo update-alternatives --set llvm-strings /usr/bin/llvm-strings-${LLVM_VER}
+
+          # Verify installation
+          clang --version
 
       - name: Build
         run: |
