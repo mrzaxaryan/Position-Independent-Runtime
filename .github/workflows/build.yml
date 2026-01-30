@@ -151,14 +151,6 @@ jobs:
             exit $exitCode
           }
 
-      - name: Upload test logs
-        if: matrix.can-test && always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-logs-${{ matrix.arch }}-${{ matrix.platform }}
-          path: output.log.txt
-          if-no-files-found: warn
-
       - name: Skip test
         if: ${{ !matrix.can-test }}
         shell: pwsh
@@ -337,14 +329,14 @@ jobs:
           echo "=== Executing: $TEST_EXE ==="
           echo ""
 
-          # Run the test with output capture (use stdbuf for unbuffered QEMU output)
+          # Run the test
           set +e
           if [ -n "${{ matrix.qemu }}" ]; then
-            stdbuf -oL -eL ${{ matrix.qemu }} "$TEST_EXE" 2>&1 | tee output.log.txt
+            ${{ matrix.qemu }} "$TEST_EXE"
           else
-            "$TEST_EXE" 2>&1 | tee output.log.txt
+            "$TEST_EXE"
           fi
-          EXIT_CODE=${PIPESTATUS[0]}
+          EXIT_CODE=$?
           set -e
 
           echo ""
@@ -354,14 +346,6 @@ jobs:
             echo "TEST FAILED: exit code $EXIT_CODE (expected 0)"
             exit $EXIT_CODE
           fi
-
-      - name: Upload test logs
-        if: matrix.can-test && always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-logs-${{ matrix.arch }}-${{ matrix.platform }}
-          path: output.log.txt
-          if-no-files-found: warn
 
       - name: Skip test
         if: ${{ !matrix.can-test }}
