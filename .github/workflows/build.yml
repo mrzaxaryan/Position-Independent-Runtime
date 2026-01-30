@@ -278,20 +278,24 @@ jobs:
         include:
           - arch: i386
             platform: linux
-            can-test: false
-            note: "Build-only (requires 32-bit multilib to execute)"
+            can-test: true
+            qemu: qemu-i386-static
+            note: "Runs via QEMU i386"
           - arch: x86_64
             platform: linux
             can-test: true
+            qemu: ""
             note: "Runs natively on x64"
           - arch: armv7a
             platform: linux
-            can-test: false
-            note: "Build-only (requires ARM runner to execute)"
+            can-test: true
+            qemu: qemu-arm-static
+            note: "Runs via QEMU ARM"
           - arch: aarch64
             platform: linux
-            can-test: false
-            note: "Build-only (requires ARM64 runner to execute)"
+            can-test: true
+            qemu: qemu-aarch64-static
+            note: "Runs via QEMU ARM64"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -301,6 +305,12 @@ jobs:
         with:
           name: build-${{ matrix.arch }}-${{ matrix.platform }}
           path: artifacts
+
+      - name: Install QEMU
+        if: matrix.qemu != ''
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
 
       - name: Run test
         if: matrix.can-test
@@ -324,8 +334,12 @@ jobs:
           echo "=== Executing: $TEST_EXE ==="
           echo ""
 
-          # Run the test
-          "$TEST_EXE"
+          # Run the test (use QEMU for non-native architectures)
+          if [ -n "${{ matrix.qemu }}" ]; then
+            ${{ matrix.qemu }} "$TEST_EXE"
+          else
+            "$TEST_EXE"
+          fi
           EXIT_CODE=$?
 
           echo ""
