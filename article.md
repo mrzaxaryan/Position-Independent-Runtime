@@ -26,7 +26,7 @@ C-generated shellcode relies on loader-handled relocations that are not applied 
 
 This aproach is not that easy to implement. Main difficulty is saving .reloc section in shellcode. 
 
-**Option 2:** Minimize usage of constructs that cause generation of data in `.rdata` or `.data` sections by moving string literals onto the stack. Stack-based strings can be created by representing the string as a character array stored in a local variable. This solution also obfuscates strings:
+**Option 2:** Minimize usage of constructs that cause generation of data in `.rdata` or `.data` sections by moving string literals onto the stack. Stack-based strings can be created by representing the string as a character array stored in a local variable.:
 
 
 ```cpp
