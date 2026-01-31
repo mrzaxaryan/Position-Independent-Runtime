@@ -1,6 +1,5 @@
 #include "socket.h"
 #include "syscall.h"
-#include "primitives.h"
 #include "memory.h"
 #include "ip_address.h"
 

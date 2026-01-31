@@ -1,6 +1,5 @@
 #include "file_system.h"
 #include "syscall.h"
-#include "primitives.h"
 #include "string.h"
 
 // Linux syscall numbers for this file

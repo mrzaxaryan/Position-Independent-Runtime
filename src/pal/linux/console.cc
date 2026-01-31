@@ -1,6 +1,5 @@
 #include "console.h"
 #include "syscall.h"
-#include "primitives.h"
 
 // Linux stdout file descriptor
 #define STDOUT_FILENO 1

@@ -1,6 +1,5 @@
 #include "date_time.h"
 #include "syscall.h"
-#include "primitives.h"
 
 // Linux syscall numbers for clock_gettime
 #if defined(ARCHITECTURE_X86_64)
@@ -121,6 +120,6 @@ UINT64 DateTime::GetMonotonicNanoseconds()
     }
 
     // Convert to nanoseconds
-    UINT64 nanoseconds = ((UINT64)ts.tv_sec * 1000000000ULL) + (UINT64)ts.tv_nsec;
+    UINT64 nanoseconds = ((UINT64)ts.tv_sec * UINT64(1000000000u)) + (UINT64)ts.tv_nsec;
     return nanoseconds;
 }
