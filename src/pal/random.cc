@@ -36,7 +36,7 @@ Random::Random()
 INT32 Random::Get()
 {
     // simple linear congruential generator
-    seed = (seed * GetHardwareTimestamp() + (UINT64)214013) & 0x7FFFFFFF;
+    seed = (seed * GetHardwareTimestamp() + 214013ULL) & 0x7FFFFFFF;
     return static_cast<INT32>(seed % MAX);
 }
 
