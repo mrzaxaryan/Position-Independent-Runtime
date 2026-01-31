@@ -6,7 +6,7 @@ static inline UINT64 GetHardwareTimestamp()
 {
 #if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_I386)
     // x86/x64: Read the Time Stamp Counter
-    unsigned int lo, hi;
+    UINT32 lo, hi;
     __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
     return ((UINT64)hi << 32) | lo;
 

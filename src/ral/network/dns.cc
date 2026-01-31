@@ -56,7 +56,7 @@ typedef struct
 
 #define isdigit(c) ((c) >= '0' && (c) <= '9')
 
-static inline UINT16 ReadU16BE(const void *buffer, USIZE index)
+static inline UINT16 ReadU16BE(PCVOID buffer, USIZE index)
 {
     const UINT8 *p = (const UINT8 *)buffer;
     return (UINT16)((p[index] << 8) | p[index + 1]);

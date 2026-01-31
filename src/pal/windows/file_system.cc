@@ -8,7 +8,7 @@
 
 // --- Internal Constructor ---
 // Translates a Windows HANDLE into our File object
-File::File(void *handle) : fileHandle(handle), fileSize(0)
+File::File(PVOID handle) : fileHandle(handle), fileSize(0)
 {
     if (IsValid())
     {
@@ -67,7 +67,7 @@ void File::Close()
 }
 
 // Read data from the file into the buffer
-UINT32 File::Read(void *buffer, UINT32 size)
+UINT32 File::Read(PVOID buffer, UINT32 size)
 {
     if (!IsValid())
         return 0;
@@ -82,7 +82,7 @@ UINT32 File::Read(void *buffer, UINT32 size)
 }
 
 // Write data from the buffer to the file
-UINT32 File::Write(const void *buffer, USIZE size)
+UINT32 File::Write(PCVOID buffer, USIZE size)
 {
     if (!IsValid())
         return 0;
@@ -121,7 +121,7 @@ void File::SetOffset(USIZE absoluteOffset)
     IO_STATUS_BLOCK ioStatusBlock;
     Memory::Zero(&posInfo, sizeof(FILE_POSITION_INFORMATION));
     Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
-    posInfo.CurrentByteOffset.QuadPart = INT64((signed long long)absoluteOffset);
+    posInfo.CurrentByteOffset.QuadPart = INT64((INT64)absoluteOffset);
     // Set the file pointer to the specified absolute offset using NtSetInformationFile
     NTDLL::NtSetInformationFile((PVOID)fileHandle, &ioStatusBlock, &posInfo, sizeof(posInfo), FilePositionInformation);
 }
@@ -233,7 +233,7 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
     if (!NT_SUCCESS(status) || hFile == INVALID_HANDLE_VALUE)
         return File();
 
-    return File((void *)hFile);
+    return File((PVOID)hFile);
 }
 
 // Delete a file at the specified path
@@ -458,7 +458,7 @@ BOOL DirectoryIterator::Next()
             return FALSE;
 
         // Find the next set bit
-        for (int i = 0; i < 26; i++)
+        for (INT32 i = 0; i < 26; i++)
         {
             if (mask & (1 << i))
             {

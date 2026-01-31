@@ -4,9 +4,9 @@
 
 #define ResolveKernel32ExportAddress(functionName) ResolveExportAddressFromPebModule(Djb2::HashCompileTime(L"kernel32.dll"), Djb2::HashCompileTime(functionName))
 
-BOOL Kernel32::WriteConsoleA(PVOID hConsoleOutput, const void *lpBuffer, INT32 nNumberOfCharsToWrite, PUINT32 lpNumberOfCharsWritten, LPOVERLAPPED lpOverlapped)
+BOOL Kernel32::WriteConsoleA(PVOID hConsoleOutput, PCVOID lpBuffer, INT32 nNumberOfCharsToWrite, PUINT32 lpNumberOfCharsWritten, LPOVERLAPPED lpOverlapped)
 {
-    return ((BOOL(STDCALL *)(PVOID hConsoleOutput, const void *lpBuffer, INT32 nNumberOfCharsToWrite, PUINT32 lpNumberOfCharsWritten, LPOVERLAPPED lpOverlapped))ResolveKernel32ExportAddress("WriteConsoleA"))(hConsoleOutput, lpBuffer, nNumberOfCharsToWrite, lpNumberOfCharsWritten, lpOverlapped);
+    return ((BOOL(STDCALL *)(PVOID hConsoleOutput, PCVOID lpBuffer, INT32 nNumberOfCharsToWrite, PUINT32 lpNumberOfCharsWritten, LPOVERLAPPED lpOverlapped))ResolveKernel32ExportAddress("WriteConsoleA"))(hConsoleOutput, lpBuffer, nNumberOfCharsToWrite, lpNumberOfCharsWritten, lpOverlapped);
 }
 
 BOOL Kernel32::CreateProcessA(PCHAR lpApplicationName, PCHAR lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, UINT32 dwCreationFlags, PVOID lpEnvironment, PCHAR lpCurrentDirectory, LPSTARTUPINFOA lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation)
@@ -14,9 +14,9 @@ BOOL Kernel32::CreateProcessA(PCHAR lpApplicationName, PCHAR lpCommandLine, LPSE
     return ((BOOL(STDCALL *)(PCHAR lpApplicationName, PCHAR lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, UINT32 dwCreationFlags, PVOID lpEnvironment, PCHAR lpCurrentDirectory, LPSTARTUPINFOA lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation))ResolveKernel32ExportAddress("CreateProcessA"))(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
 }
 
-BOOL Kernel32::WriteConsoleW(PVOID hConsoleOutput, const void *lpBuffer, INT32 nNumberOfCharsToWrite, PUINT32 lpNumberOfCharsWritten, LPOVERLAPPED lpOverlapped)
+BOOL Kernel32::WriteConsoleW(PVOID hConsoleOutput, PCVOID lpBuffer, INT32 nNumberOfCharsToWrite, PUINT32 lpNumberOfCharsWritten, LPOVERLAPPED lpOverlapped)
 {
-    return ((BOOL(STDCALL *)(PVOID hConsoleOutput, const void *lpBuffer, INT32 nNumberOfCharsToWrite, PUINT32 lpNumberOfCharsWritten, LPOVERLAPPED lpOverlapped))ResolveKernel32ExportAddress("WriteConsoleW"))(hConsoleOutput, lpBuffer, nNumberOfCharsToWrite, lpNumberOfCharsWritten, lpOverlapped);
+    return ((BOOL(STDCALL *)(PVOID hConsoleOutput, PCVOID lpBuffer, INT32 nNumberOfCharsToWrite, PUINT32 lpNumberOfCharsWritten, LPOVERLAPPED lpOverlapped))ResolveKernel32ExportAddress("WriteConsoleW"))(hConsoleOutput, lpBuffer, nNumberOfCharsToWrite, lpNumberOfCharsWritten, lpOverlapped);
 }
 
 BOOL Kernel32::CreatePipe(PPVOID hReadPipe, PPVOID hWritePipe, LPSECURITY_ATTRIBUTES lpPipeAttributes, UINT32 nSize)
@@ -29,9 +29,9 @@ BOOL Kernel32::SetHandleInformation(PVOID hObject, UINT32 dwMask, UINT32 dwFlags
     return ((BOOL(STDCALL *)(PVOID hObject, UINT32 dwMask, UINT32 dwFlags))ResolveKernel32ExportAddress("SetHandleInformation"))(hObject, dwMask, dwFlags);
 }
 
-BOOL Kernel32::WriteFile(PVOID hFile, const void *lpBuffer, INT32 nNumberOfBytesToWrite, PUINT32 lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped)
+BOOL Kernel32::WriteFile(PVOID hFile, PCVOID lpBuffer, INT32 nNumberOfBytesToWrite, PUINT32 lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped)
 {
-    return ((BOOL(STDCALL *)(PVOID hFile, const void *lpBuffer, INT32 nNumberOfBytesToWrite, PUINT32 lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped))ResolveKernel32ExportAddress("WriteFile"))(hFile, lpBuffer, nNumberOfBytesToWrite, lpNumberOfBytesWritten, lpOverlapped);
+    return ((BOOL(STDCALL *)(PVOID hFile, PCVOID lpBuffer, INT32 nNumberOfBytesToWrite, PUINT32 lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped))ResolveKernel32ExportAddress("WriteFile"))(hFile, lpBuffer, nNumberOfBytesToWrite, lpNumberOfBytesWritten, lpOverlapped);
 }
 
 BOOL Kernel32::ReadFile(PVOID hFile, PVOID lpBuffer, INT32 nNumberOfBytesToRead, PUINT32 lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)

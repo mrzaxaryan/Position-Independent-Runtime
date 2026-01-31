@@ -206,16 +206,6 @@ public:
         return int_value;
     }
 
-    NOINLINE DISABLE_OPTIMIZATION operator UINT32() const noexcept
-    {
-        return (UINT32)((UINT64)(*this));
-    }
-
-    NOINLINE DISABLE_OPTIMIZATION operator INT32() const noexcept
-    {
-        return (INT32)((INT64)(*this));
-    }
-
     NOINLINE DISABLE_OPTIMIZATION operator double() const noexcept
     {
         UINT64 ull = bits;

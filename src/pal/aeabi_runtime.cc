@@ -63,22 +63,22 @@ extern "C"
 
     // ARM EABI: unsigned division with modulo - returns quotient in r0, remainder in r1
     // The struct layout matches ARM register passing: first field in r0, second in r1
-    AEABI_FUNC unsigned long long __aeabi_uidivmod(UINT32 numerator, UINT32 denominator)
+    AEABI_FUNC UINT64 __aeabi_uidivmod(UINT32 numerator, UINT32 denominator)
     {
         UINT32 remainder = 0;
         UINT32 quotient = udiv_internal(numerator, denominator, &remainder);
 
         // Pack into 64-bit value: quotient (low 32 bits) and remainder (high 32 bits)
         // This matches ARM EABI convention: r0=quotient, r1=remainder
-        return ((unsigned long long)remainder << 32) | quotient;
+        return ((UINT64)remainder << 32) | quotient;
     }
 
     // ARM EABI: signed division with modulo - returns quotient in r0, remainder in r1
-    AEABI_FUNC long long __aeabi_idivmod(INT32 numerator, INT32 denominator)
+    AEABI_FUNC INT64 __aeabi_idivmod(INT32 numerator, INT32 denominator)
     {
         if (denominator == 0)
         {
-            return ((long long)numerator << 32) | 0;
+            return ((INT64)numerator << 32) | 0;
         }
 
         // Handle signs
@@ -99,7 +99,7 @@ extern "C"
         INT32 signed_rem = sign_num < 0 ? -(INT32)remainder : (INT32)remainder;
 
         // Pack into 64-bit value: quotient (low 32 bits) and remainder (high 32 bits)
-        return ((long long)signed_rem << 32) | (UINT32)signed_quot;
+        return ((INT64)signed_rem << 32) | (UINT32)signed_quot;
     }
 
     // ARM EABI: signed division - returns quotient only
@@ -125,8 +125,8 @@ extern "C"
     }
 
     // Helper for 64-bit unsigned division
-    static void udiv64_internal(unsigned long long numerator, unsigned long long denominator,
-                                 unsigned long long *quotient, unsigned long long *remainder)
+    static void udiv64_internal(UINT64 numerator, UINT64 denominator,
+                                 UINT64 *quotient, UINT64 *remainder)
     {
         if (denominator == 0)
         {
@@ -136,10 +136,10 @@ extern "C"
         }
 
         // Software 64-bit division algorithm
-        unsigned long long q = 0;
-        unsigned long long r = 0;
+        UINT64 q = 0;
+        UINT64 r = 0;
 
-        for (int i = 63; i >= 0; i--)
+        for (INT32 i = 63; i >= 0; i--)
         {
             // Shift remainder left by 1
             r <<= 1;
@@ -161,9 +161,9 @@ extern "C"
 
     // ARM EABI: 64-bit unsigned division with modulo
     // Returns {quotient, remainder} as a struct in r0:r1 and r2:r3
-    struct uldivmod_return { unsigned long long quot; unsigned long long rem; };
+    struct uldivmod_return { UINT64 quot; UINT64 rem; };
 
-    AEABI_FUNC struct uldivmod_return __aeabi_uldivmod(unsigned long long numerator, unsigned long long denominator)
+    AEABI_FUNC struct uldivmod_return __aeabi_uldivmod(UINT64 numerator, UINT64 denominator)
     {
         struct uldivmod_return result;
         udiv64_internal(numerator, denominator, &result.quot, &result.rem);
@@ -172,9 +172,9 @@ extern "C"
 
     // ARM EABI: 64-bit signed division with modulo
     // Returns {quotient, remainder} as a struct in r0:r1 and r2:r3
-    struct ldivmod_return { long long quot; long long rem; };
+    struct ldivmod_return { INT64 quot; INT64 rem; };
 
-    AEABI_FUNC struct ldivmod_return __aeabi_ldivmod(long long numerator, long long denominator)
+    AEABI_FUNC struct ldivmod_return __aeabi_ldivmod(INT64 numerator, INT64 denominator)
     {
         struct ldivmod_return result;
 
@@ -186,27 +186,27 @@ extern "C"
         }
 
         // Handle signs
-        int sign_num = numerator < 0 ? -1 : 1;
-        int sign_den = denominator < 0 ? -1 : 1;
-        int sign_quot = sign_num * sign_den;
+        INT32 sign_num = numerator < 0 ? -1 : 1;
+        INT32 sign_den = denominator < 0 ? -1 : 1;
+        INT32 sign_quot = sign_num * sign_den;
 
         // Work with absolute values
-        unsigned long long abs_num = (unsigned long long)(numerator < 0 ? -numerator : numerator);
-        unsigned long long abs_den = (unsigned long long)(denominator < 0 ? -denominator : denominator);
+        UINT64 abs_num = (UINT64)(numerator < 0 ? -numerator : numerator);
+        UINT64 abs_den = (UINT64)(denominator < 0 ? -denominator : denominator);
 
         // Perform unsigned division
-        unsigned long long quotient, remainder;
+        UINT64 quotient, remainder;
         udiv64_internal(abs_num, abs_den, &quotient, &remainder);
 
         // Apply signs to results
-        result.quot = sign_quot < 0 ? -(long long)quotient : (long long)quotient;
-        result.rem = sign_num < 0 ? -(long long)remainder : (long long)remainder;
+        result.quot = sign_quot < 0 ? -(INT64)quotient : (INT64)quotient;
+        result.rem = sign_num < 0 ? -(INT64)remainder : (INT64)remainder;
 
         return result;
     }
 
     // ARM EABI: 64-bit logical shift right
-    AEABI_FUNC unsigned long long __aeabi_llsr(unsigned long long value, int shift)
+    AEABI_FUNC UINT64 __aeabi_llsr(UINT64 value, INT32 shift)
     {
         if (shift < 0 || shift >= 64)
             return 0;
@@ -214,7 +214,7 @@ extern "C"
     }
 
     // ARM EABI: 64-bit logical shift left
-    AEABI_FUNC unsigned long long __aeabi_llsl(unsigned long long value, int shift)
+    AEABI_FUNC UINT64 __aeabi_llsl(UINT64 value, INT32 shift)
     {
         if (shift < 0 || shift >= 64)
             return 0;
@@ -233,8 +233,8 @@ extern "C"
 extern "C"
 {
     // Helper for 64-bit unsigned division
-    static void udiv64_internal(unsigned long long numerator, unsigned long long denominator,
-                                 unsigned long long *quotient, unsigned long long *remainder)
+    static void udiv64_internal(UINT64 numerator, UINT64 denominator,
+                                 UINT64 *quotient, UINT64 *remainder)
     {
         if (denominator == 0)
         {
@@ -244,10 +244,10 @@ extern "C"
         }
 
         // Software 64-bit division algorithm
-        unsigned long long q = 0;
-        unsigned long long r = 0;
+        UINT64 q = 0;
+        UINT64 r = 0;
 
-        for (int i = 63; i >= 0; i--)
+        for (INT32 i = 63; i >= 0; i--)
         {
             // Shift remainder left by 1
             r <<= 1;
@@ -268,67 +268,67 @@ extern "C"
     }
 
     // x86: 64-bit unsigned division - returns quotient
-    X86_RUNTIME_FUNC unsigned long long __udivdi3(unsigned long long numerator, unsigned long long denominator)
+    X86_RUNTIME_FUNC UINT64 __udivdi3(UINT64 numerator, UINT64 denominator)
     {
-        unsigned long long quotient, remainder;
+        UINT64 quotient, remainder;
         udiv64_internal(numerator, denominator, &quotient, &remainder);
         return quotient;
     }
 
     // x86: 64-bit unsigned modulo - returns remainder
-    X86_RUNTIME_FUNC unsigned long long __umoddi3(unsigned long long numerator, unsigned long long denominator)
+    X86_RUNTIME_FUNC UINT64 __umoddi3(UINT64 numerator, UINT64 denominator)
     {
-        unsigned long long quotient, remainder;
+        UINT64 quotient, remainder;
         udiv64_internal(numerator, denominator, &quotient, &remainder);
         return remainder;
     }
 
     // x86: 64-bit signed division - returns quotient
-    X86_RUNTIME_FUNC long long __divdi3(long long numerator, long long denominator)
+    X86_RUNTIME_FUNC INT64 __divdi3(INT64 numerator, INT64 denominator)
     {
         if (denominator == 0)
             return 0;
 
         // Handle signs
-        int sign_num = numerator < 0 ? -1 : 1;
-        int sign_den = denominator < 0 ? -1 : 1;
-        int sign_quot = sign_num * sign_den;
+        INT32 sign_num = numerator < 0 ? -1 : 1;
+        INT32 sign_den = denominator < 0 ? -1 : 1;
+        INT32 sign_quot = sign_num * sign_den;
 
         // Work with absolute values
-        unsigned long long abs_num = (unsigned long long)(numerator < 0 ? -numerator : numerator);
-        unsigned long long abs_den = (unsigned long long)(denominator < 0 ? -denominator : denominator);
+        UINT64 abs_num = (UINT64)(numerator < 0 ? -numerator : numerator);
+        UINT64 abs_den = (UINT64)(denominator < 0 ? -denominator : denominator);
 
         // Perform unsigned division
-        unsigned long long quotient, remainder;
+        UINT64 quotient, remainder;
         udiv64_internal(abs_num, abs_den, &quotient, &remainder);
 
         // Apply sign to quotient
-        return sign_quot < 0 ? -(long long)quotient : (long long)quotient;
+        return sign_quot < 0 ? -(INT64)quotient : (INT64)quotient;
     }
 
     // x86: 64-bit signed modulo - returns remainder
-    X86_RUNTIME_FUNC long long __moddi3(long long numerator, long long denominator)
+    X86_RUNTIME_FUNC INT64 __moddi3(INT64 numerator, INT64 denominator)
     {
         if (denominator == 0)
             return numerator;
 
         // Handle signs
-        int sign_num = numerator < 0 ? -1 : 1;
+        INT32 sign_num = numerator < 0 ? -1 : 1;
 
         // Work with absolute values
-        unsigned long long abs_num = (unsigned long long)(numerator < 0 ? -numerator : numerator);
-        unsigned long long abs_den = (unsigned long long)(denominator < 0 ? -denominator : denominator);
+        UINT64 abs_num = (UINT64)(numerator < 0 ? -numerator : numerator);
+        UINT64 abs_den = (UINT64)(denominator < 0 ? -denominator : denominator);
 
         // Perform unsigned division
-        unsigned long long quotient, remainder;
+        UINT64 quotient, remainder;
         udiv64_internal(abs_num, abs_den, &quotient, &remainder);
 
         // Apply sign to remainder (remainder takes sign of numerator)
-        return sign_num < 0 ? -(long long)remainder : (long long)remainder;
+        return sign_num < 0 ? -(INT64)remainder : (INT64)remainder;
     }
 
     // x86: 64-bit logical shift right
-    X86_RUNTIME_FUNC unsigned long long __lshrdi3(unsigned long long value, int shift)
+    X86_RUNTIME_FUNC UINT64 __lshrdi3(UINT64 value, INT32 shift)
     {
         if (shift < 0 || shift >= 64)
             return 0;
@@ -336,7 +336,7 @@ extern "C"
     }
 
     // x86: 64-bit arithmetic shift left
-    X86_RUNTIME_FUNC long long __ashldi3(long long value, int shift)
+    X86_RUNTIME_FUNC INT64 __ashldi3(INT64 value, INT32 shift)
     {
         if (shift < 0 || shift >= 64)
             return 0;
@@ -367,16 +367,16 @@ extern "C"
     }
 
     // Helper for 64-bit unsigned division (Windows ARM specific)
-    static unsigned long long rt_udiv64_internal(unsigned long long numerator, unsigned long long denominator)
+    static UINT64 rt_udiv64_internal(UINT64 numerator, UINT64 denominator)
     {
         if (denominator == 0)
             return 0;
 
         // Software 64-bit division algorithm
-        unsigned long long q = 0;
-        unsigned long long r = 0;
+        UINT64 q = 0;
+        UINT64 r = 0;
 
-        for (int i = 63; i >= 0; i--)
+        for (INT32 i = 63; i >= 0; i--)
         {
             r <<= 1;
             if ((numerator >> i) & 1ULL)
@@ -392,7 +392,7 @@ extern "C"
     }
 
     // Windows ARM: 64-bit unsigned division - returns quotient
-    WIN_ARM_RUNTIME_FUNC unsigned long long __rt_udiv64(unsigned long long numerator, unsigned long long denominator)
+    WIN_ARM_RUNTIME_FUNC UINT64 __rt_udiv64(UINT64 numerator, UINT64 denominator)
     {
         return rt_udiv64_internal(numerator, denominator);
     }

@@ -115,7 +115,7 @@ BOOL TLSClient::SendClientHello(const CHAR *host)
     LOG_DEBUG("Client has %d ciphers to append", crypto.GetCipherCount());
     INT32 cipherCountIndex = sendBuffer.AppendSize(2);
     LOG_DEBUG("Appending ClientHello with cipher count index: %d", cipherCountIndex);
-    for (int i = 0; i < crypto.GetCipherCount(); i++)
+    for (INT32 i = 0; i < crypto.GetCipherCount(); i++)
     {
         sendBuffer.Append((INT16)UINT16SwapByteOrder((UINT16)TLS_CHACHA20_POLY1305_SHA256));
         hastls13 = TRUE;
