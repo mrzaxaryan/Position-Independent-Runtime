@@ -1,366 +1,364 @@
 #!/usr/bin/env python3
 """
-Cross-platform shellcode loader for Windows
-Supports: i386, x86_64, aarch64
+PIC Shellcode Loader
+
+Cross-platform loader for position-independent code.
+Auto-detects platform. Uses QEMU for cross-arch on Linux.
 
 Usage:
-    python loader.py --arch i386 shellcode.bin
-    python loader.py --arch x86_64 shellcode.bin
-    python loader.py --arch aarch64 shellcode.bin
+    python loader.py --arch x86_64 output.bin
+    python loader.py --arch i386 output.bin
+    python loader.py --arch aarch64 output.bin
+    python loader.py --arch armv7a output.bin
 """
 
 import argparse
 import ctypes
+import mmap
 import os
 import platform
+import shutil
 import struct
+import subprocess
 import sys
-from ctypes import wintypes
 
-# Windows API constants
-MEM_COMMIT = 0x1000
-MEM_RESERVE = 0x2000
-MEM_RELEASE = 0x8000
-PAGE_EXECUTE_READWRITE = 0x40
-PAGE_READWRITE = 0x04
-PROCESS_ALL_ACCESS = 0x1F0FFF
-INFINITE = 0xFFFFFFFF
-CREATE_SUSPENDED = 0x00000004
-
-# Architecture mappings
-ARCH_INFO = {
-    'i386': {'bits': 32, 'family': 'x86'},
-    'x86_64': {'bits': 64, 'family': 'x86'},
-    'aarch64': {'bits': 64, 'family': 'arm'},
-}
-
-# Host processes for injection by architecture
-HOST_PROCESSES = {
-    'i386': [
-        r'C:\Windows\SysWOW64\cmd.exe',
-        r'C:\Windows\SysWOW64\conhost.exe',
-    ],
-    'x86_64': [
-        r'C:\Windows\System32\cmd.exe',
-        r'C:\Windows\System32\conhost.exe',
-    ],
-    'aarch64': [
-        r'C:\Windows\System32\cmd.exe',
-        r'C:\Windows\System32\conhost.exe',
-    ],
+ARCH = {
+    'i386':    {'bits': 32, 'family': 'x86', 'qemu': ['qemu-i386-static', 'qemu-i386']},
+    'x86_64':  {'bits': 64, 'family': 'x86', 'qemu': ['qemu-x86_64-static', 'qemu-x86_64']},
+    'armv7a':  {'bits': 32, 'family': 'arm', 'qemu': ['qemu-arm-static', 'qemu-arm']},
+    'aarch64': {'bits': 64, 'family': 'arm', 'qemu': ['qemu-aarch64-static', 'qemu-aarch64']},
 }
 
 
-class STARTUPINFO(ctypes.Structure):
-    _fields_ = [
-        ("cb", wintypes.DWORD),
-        ("lpReserved", wintypes.LPWSTR),
-        ("lpDesktop", wintypes.LPWSTR),
-        ("lpTitle", wintypes.LPWSTR),
-        ("dwX", wintypes.DWORD),
-        ("dwY", wintypes.DWORD),
-        ("dwXSize", wintypes.DWORD),
-        ("dwYSize", wintypes.DWORD),
-        ("dwXCountChars", wintypes.DWORD),
-        ("dwYCountChars", wintypes.DWORD),
-        ("dwFillAttribute", wintypes.DWORD),
-        ("dwFlags", wintypes.DWORD),
-        ("wShowWindow", wintypes.WORD),
-        ("cbReserved2", wintypes.WORD),
-        ("lpReserved2", ctypes.POINTER(wintypes.BYTE)),
-        ("hStdInput", wintypes.HANDLE),
-        ("hStdOutput", wintypes.HANDLE),
-        ("hStdError", wintypes.HANDLE),
-    ]
-
-
-class PROCESS_INFORMATION(ctypes.Structure):
-    _fields_ = [
-        ("hProcess", wintypes.HANDLE),
-        ("hThread", wintypes.HANDLE),
-        ("dwProcessId", wintypes.DWORD),
-        ("dwThreadId", wintypes.DWORD),
-    ]
-
-
-def get_python_bitness():
-    """Get the bitness of the current Python interpreter."""
-    return struct.calcsize("P") * 8
-
-
-def get_host_info():
-    """Get host CPU family and bitness."""
+def get_host():
+    os_name = platform.system().lower()
     machine = platform.machine().lower()
+
     if machine in ('amd64', 'x86_64'):
-        return 'x86', 64
+        return os_name, 'x86', 64
     elif machine in ('arm64', 'aarch64'):
-        return 'arm', 64
+        return os_name, 'arm', 64
     elif machine in ('i386', 'i686', 'x86'):
-        return 'x86', 32
-    return machine, 64
+        return os_name, 'x86', 32
+    elif machine in ('armv7l', 'armv7a'):
+        return os_name, 'arm', 32
+    return os_name, machine, 64
 
 
-def can_execute(target_arch):
-    """Check if we can execute the target architecture on this host."""
-    host_family, host_bits = get_host_info()
-    target_info = ARCH_INFO.get(target_arch)
-
-    if not target_info:
-        return False, f"Unknown architecture: {target_arch}"
-
-    target_family = target_info['family']
-    target_bits = target_info['bits']
-
-    # Windows 11 ARM64 can emulate x86 and x86_64 code
-    if host_family == 'arm' and target_family == 'x86' and platform.system().lower() == 'windows':
-        print("[*] Using x86/x86_64 emulation on ARM64 Windows")
-        return True, None
-
-    # ARM code cannot run on x86 systems (no emulation in that direction)
-    if host_family == 'x86' and target_family == 'arm':
-        return False, f"Cannot run {target_family.upper()} code on {host_family.upper()} CPU"
-
-    # Different CPU families cannot run each other's code (unless handled above)
-    if host_family != target_family:
-        return False, f"Cannot run {target_family.upper()} code on {host_family.upper()} CPU"
-
-    # 32-bit host cannot run 64-bit code
-    if host_bits == 32 and target_bits == 64:
-        return False, "Cannot run 64-bit code on 32-bit system"
-
-    return True, None
+def read_elf_entry(path):
+    with open(path, 'rb') as f:
+        if f.read(4) != b'\x7fELF':
+            return None
+        ei_class = struct.unpack('B', f.read(1))[0]
+        f.seek(0x18)
+        if ei_class == 1:
+            return struct.unpack('<I', f.read(4))[0]
+        else:
+            return struct.unpack('<Q', f.read(8))[0]
 
 
-def needs_injection(target_arch):
-    """Check if we need process injection (bitness mismatch)."""
-    python_bits = get_python_bitness()
-    target_bits = ARCH_INFO.get(target_arch, {}).get('bits', 64)
-    return python_bits != target_bits
+def read_pe_entry(path):
+    """Read entry point offset relative to .text section start."""
+    try:
+        with open(path, 'rb') as f:
+            if f.read(2) != b'MZ':
+                return None
+            f.seek(0x3C)
+            pe_off = struct.unpack('<I', f.read(4))[0]
+            f.seek(pe_off)
+            if f.read(4) != b'PE\x00\x00':
+                return None
+
+            # Read COFF header
+            f.seek(pe_off + 6)
+            num_sections = struct.unpack('<H', f.read(2))[0]
+            f.seek(pe_off + 20)
+            optional_header_size = struct.unpack('<H', f.read(2))[0]
+
+            # Read entry point RVA from optional header
+            f.seek(pe_off + 0x28)
+            entry_rva = struct.unpack('<I', f.read(4))[0]
+
+            # Find .text section to get its RVA
+            section_table_off = pe_off + 24 + optional_header_size
+            text_rva = None
+            for i in range(num_sections):
+                f.seek(section_table_off + i * 40)
+                name = f.read(8).rstrip(b'\x00').decode('ascii', errors='ignore')
+                if name == '.text':
+                    f.seek(section_table_off + i * 40 + 12)  # VirtualAddress offset
+                    text_rva = struct.unpack('<I', f.read(4))[0]
+                    break
+
+            # If .text not found, assume entry is at start of first section (offset 0)
+            if text_rva is None:
+                return 0
+
+            return entry_rva - text_rva
+    except Exception:
+        return None
 
 
-def find_host_process(target_arch):
-    """Find a suitable host process for the target architecture."""
-    candidates = HOST_PROCESSES.get(target_arch, [])
-
-    for path in candidates:
+def get_entry_offset(bin_path):
+    base = bin_path.rsplit('.', 1)[0]
+    for ext, reader in [('.elf', read_elf_entry), ('.exe', read_pe_entry)]:
+        path = base + ext
         if os.path.exists(path):
-            return path
+            entry = reader(path)
+            if entry is not None:
+                return entry, path
+    sys.exit(f"[-] Cannot find .elf or .exe to read entry point")
 
-    raise FileNotFoundError(f"No suitable host process found for {target_arch}")
+
+def needs_qemu(host_family, host_bits, target_arch):
+    target = ARCH[target_arch]
+    if target['family'] != host_family:
+        return True
+    if target['bits'] != host_bits:
+        return True
+    return False
 
 
-def load_shellcode(filepath):
-    """Load shellcode from file."""
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"Shellcode file not found: {filepath}")
+def run_qemu(elf_path, qemu_cmds):
+    qemu_cmd = None
+    for cmd in qemu_cmds:
+        if shutil.which(cmd):
+            qemu_cmd = cmd
+            break
 
-    with open(filepath, 'rb') as f:
-        shellcode = f.read()
+    if not qemu_cmd:
+        sys.exit(f"[-] QEMU not found. Install qemu-user-static.")
 
-    if len(shellcode) == 0:
-        raise ValueError("Shellcode file is empty")
+    print(f"[+] Using: {qemu_cmd}")
+    print("[*] Executing...")
+    sys.stdout.flush()
 
-    return shellcode
+    return subprocess.run([qemu_cmd, elf_path]).returncode
+
+
+def run_mmap(shellcode, entry_offset):
+    mem = mmap.mmap(-1, len(shellcode), prot=mmap.PROT_READ | mmap.PROT_WRITE | mmap.PROT_EXEC)
+    mem.write(shellcode)
+
+    base = ctypes.addressof(ctypes.c_char.from_buffer(mem))
+    entry = base + entry_offset
+
+    print(f"[+] Base: 0x{base:x}, Entry: 0x{entry:x}")
+    print("[*] Executing...")
+    sys.stdout.flush()
+
+    return ctypes.CFUNCTYPE(ctypes.c_int)(entry)()
 
 
 def setup_kernel32():
-    """Setup kernel32 function prototypes."""
-    kernel32 = ctypes.windll.kernel32
+    from ctypes import wintypes
+    k32 = ctypes.windll.kernel32
 
-    kernel32.VirtualAlloc.argtypes = [wintypes.LPVOID, ctypes.c_size_t, wintypes.DWORD, wintypes.DWORD]
-    kernel32.VirtualAlloc.restype = wintypes.LPVOID
+    k32.VirtualAlloc.argtypes = [wintypes.LPVOID, ctypes.c_size_t, wintypes.DWORD, wintypes.DWORD]
+    k32.VirtualAlloc.restype = wintypes.LPVOID
 
-    kernel32.VirtualAllocEx.argtypes = [wintypes.HANDLE, wintypes.LPVOID, ctypes.c_size_t, wintypes.DWORD, wintypes.DWORD]
-    kernel32.VirtualAllocEx.restype = wintypes.LPVOID
+    k32.VirtualAllocEx.argtypes = [wintypes.HANDLE, wintypes.LPVOID, ctypes.c_size_t, wintypes.DWORD, wintypes.DWORD]
+    k32.VirtualAllocEx.restype = wintypes.LPVOID
 
-    kernel32.WriteProcessMemory.argtypes = [wintypes.HANDLE, wintypes.LPVOID, wintypes.LPCVOID, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t)]
-    kernel32.WriteProcessMemory.restype = wintypes.BOOL
+    k32.VirtualProtect.argtypes = [wintypes.LPVOID, ctypes.c_size_t, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD)]
+    k32.VirtualProtect.restype = wintypes.BOOL
 
-    kernel32.CreateProcessW.argtypes = [
+    k32.WriteProcessMemory.argtypes = [wintypes.HANDLE, wintypes.LPVOID, wintypes.LPCVOID, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t)]
+    k32.WriteProcessMemory.restype = wintypes.BOOL
+
+    k32.CreateThread.argtypes = [wintypes.LPVOID, ctypes.c_size_t, wintypes.LPVOID, wintypes.LPVOID, wintypes.DWORD, wintypes.LPVOID]
+    k32.CreateThread.restype = wintypes.HANDLE
+
+    k32.CreateRemoteThread.argtypes = [wintypes.HANDLE, wintypes.LPVOID, ctypes.c_size_t, wintypes.LPVOID, wintypes.LPVOID, wintypes.DWORD, wintypes.LPVOID]
+    k32.CreateRemoteThread.restype = wintypes.HANDLE
+
+    k32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+    k32.WaitForSingleObject.restype = wintypes.DWORD
+
+    k32.GetExitCodeThread.argtypes = [wintypes.HANDLE, wintypes.LPDWORD]
+    k32.GetExitCodeThread.restype = wintypes.BOOL
+
+    k32.CloseHandle.argtypes = [wintypes.HANDLE]
+    k32.CloseHandle.restype = wintypes.BOOL
+
+    k32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
+    k32.TerminateProcess.restype = wintypes.BOOL
+
+    k32.GetLastError.argtypes = []
+    k32.GetLastError.restype = wintypes.DWORD
+
+    k32.CreateProcessW.argtypes = [
         wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.LPVOID, wintypes.LPVOID,
         wintypes.BOOL, wintypes.DWORD, wintypes.LPVOID, wintypes.LPCWSTR,
-        ctypes.POINTER(STARTUPINFO), ctypes.POINTER(PROCESS_INFORMATION)
+        wintypes.LPVOID, wintypes.LPVOID
     ]
-    kernel32.CreateProcessW.restype = wintypes.BOOL
+    k32.CreateProcessW.restype = wintypes.BOOL
 
-    kernel32.CreateRemoteThread.argtypes = [
-        wintypes.HANDLE, wintypes.LPVOID, ctypes.c_size_t,
-        wintypes.LPVOID, wintypes.LPVOID, wintypes.DWORD, wintypes.LPVOID
-    ]
-    kernel32.CreateRemoteThread.restype = wintypes.HANDLE
-
-    kernel32.RtlMoveMemory.argtypes = [wintypes.LPVOID, wintypes.LPCVOID, ctypes.c_size_t]
-    kernel32.RtlMoveMemory.restype = None
-
-    kernel32.CreateThread.argtypes = [wintypes.LPVOID, ctypes.c_size_t, wintypes.LPVOID, wintypes.LPVOID, wintypes.DWORD, wintypes.LPVOID]
-    kernel32.CreateThread.restype = wintypes.HANDLE
-
-    kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
-    kernel32.WaitForSingleObject.restype = wintypes.DWORD
-
-    kernel32.GetExitCodeThread.argtypes = [wintypes.HANDLE, wintypes.LPDWORD]
-    kernel32.GetExitCodeThread.restype = wintypes.BOOL
-
-    kernel32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
-    kernel32.TerminateProcess.restype = wintypes.BOOL
-
-    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
-    kernel32.CloseHandle.restype = wintypes.BOOL
-
-    kernel32.GetLastError.argtypes = []
-    kernel32.GetLastError.restype = wintypes.DWORD
-
-    return kernel32
+    return k32
 
 
-def execute_local(kernel32, shellcode):
-    """Execute shellcode in current process."""
-    shellcode_size = len(shellcode)
+def run_virtualalloc(shellcode, entry_offset):
+    from ctypes import wintypes
+    k32 = setup_kernel32()
 
-    print(f"[*] Allocating {shellcode_size} bytes...")
-    ptr = kernel32.VirtualAlloc(None, shellcode_size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE)
-
+    # Allocate RW memory first
+    ptr = k32.VirtualAlloc(None, len(shellcode), 0x3000, 0x04)  # PAGE_READWRITE
     if not ptr:
-        raise OSError(f"VirtualAlloc failed: {kernel32.GetLastError()}")
+        raise OSError(f"VirtualAlloc failed: {k32.GetLastError()}")
 
-    print(f"[+] Memory at: 0x{ptr:016x}")
-    print("[*] Copying shellcode...")
-    kernel32.RtlMoveMemory(ptr, shellcode, shellcode_size)
+    print(f"[+] Allocated: 0x{ptr:x}")
 
+    # Copy shellcode
+    ctypes.memmove(ptr, shellcode, len(shellcode))
+
+    # Change to RWX
+    old_protect = wintypes.DWORD()
+    if not k32.VirtualProtect(ptr, len(shellcode), 0x40, ctypes.byref(old_protect)):  # PAGE_EXECUTE_READWRITE
+        raise OSError(f"VirtualProtect failed: {k32.GetLastError()}")
+
+    entry = ptr + entry_offset
+    print(f"[+] Entry: 0x{entry:x}")
     print("[*] Executing...")
-    thread = kernel32.CreateThread(None, 0, ptr, None, 0, None)
+    sys.stdout.flush()
 
+    thread = k32.CreateThread(None, 0, entry, None, 0, None)
     if not thread:
-        raise OSError(f"CreateThread failed: {kernel32.GetLastError()}")
+        raise OSError(f"CreateThread failed: {k32.GetLastError()}")
 
-    kernel32.WaitForSingleObject(thread, INFINITE)
-
-    exit_code = wintypes.DWORD()
-    kernel32.GetExitCodeThread(thread, ctypes.byref(exit_code))
-    kernel32.CloseHandle(thread)
-
-    return exit_code.value
+    k32.WaitForSingleObject(thread, 0xFFFFFFFF)
+    code = wintypes.DWORD()
+    k32.GetExitCodeThread(thread, ctypes.byref(code))
+    k32.CloseHandle(thread)
+    return code.value
 
 
-def execute_injected(kernel32, shellcode, target_arch):
-    """Execute shellcode via process injection."""
-    shellcode_size = len(shellcode)
-    host_path = find_host_process(target_arch)
+def run_injected(shellcode, entry_offset, target_arch):
+    """Run shellcode via process injection (for bitness mismatch on Windows)."""
+    from ctypes import wintypes
 
-    print(f"[*] Host process: {host_path}")
+    # Find host process for target arch
+    host_procs = {
+        'i386': r'C:\Windows\SysWOW64\cmd.exe',
+        'x86_64': r'C:\Windows\System32\cmd.exe',
+        'aarch64': r'C:\Windows\System32\cmd.exe',
+    }
+    host_exe = host_procs.get(target_arch)
+    if not host_exe or not os.path.exists(host_exe):
+        raise OSError(f"No suitable host process for {target_arch}")
 
-    si = STARTUPINFO()
-    si.cb = ctypes.sizeof(STARTUPINFO)
+    print(f"[+] Host process: {host_exe}")
+
+    k32 = setup_kernel32()
+
+    # STARTUPINFOW structure
+    class STARTUPINFOW(ctypes.Structure):
+        _fields_ = [
+            ("cb", wintypes.DWORD), ("lpReserved", wintypes.LPWSTR),
+            ("lpDesktop", wintypes.LPWSTR), ("lpTitle", wintypes.LPWSTR),
+            ("dwX", wintypes.DWORD), ("dwY", wintypes.DWORD),
+            ("dwXSize", wintypes.DWORD), ("dwYSize", wintypes.DWORD),
+            ("dwXCountChars", wintypes.DWORD), ("dwYCountChars", wintypes.DWORD),
+            ("dwFillAttribute", wintypes.DWORD), ("dwFlags", wintypes.DWORD),
+            ("wShowWindow", wintypes.WORD), ("cbReserved2", wintypes.WORD),
+            ("lpReserved2", ctypes.POINTER(wintypes.BYTE)),
+            ("hStdInput", wintypes.HANDLE), ("hStdOutput", wintypes.HANDLE),
+            ("hStdError", wintypes.HANDLE),
+        ]
+
+    class PROCESS_INFORMATION(ctypes.Structure):
+        _fields_ = [
+            ("hProcess", wintypes.HANDLE), ("hThread", wintypes.HANDLE),
+            ("dwProcessId", wintypes.DWORD), ("dwThreadId", wintypes.DWORD),
+        ]
+
+    si = STARTUPINFOW()
+    si.cb = ctypes.sizeof(STARTUPINFOW)
     pi = PROCESS_INFORMATION()
 
-    print("[*] Creating suspended process...")
-    success = kernel32.CreateProcessW(
-        host_path, None, None, None, True, CREATE_SUSPENDED,
-        None, None, ctypes.byref(si), ctypes.byref(pi)
-    )
+    # Create suspended process
+    CREATE_SUSPENDED = 0x00000004
+    if not k32.CreateProcessW(host_exe, None, None, None, False, CREATE_SUSPENDED, None, None, ctypes.byref(si), ctypes.byref(pi)):
+        raise OSError(f"CreateProcessW failed: {k32.GetLastError()}")
 
-    if not success:
-        raise OSError(f"CreateProcessW failed: {kernel32.GetLastError()}")
-
-    print(f"[+] PID: {pi.dwProcessId}")
+    print(f"[+] Created process PID: {pi.dwProcessId}")
 
     try:
-        print(f"[*] Allocating {shellcode_size} bytes...")
-        remote_mem = kernel32.VirtualAllocEx(
-            pi.hProcess, None, shellcode_size,
-            MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE
-        )
-
+        # Allocate memory in remote process
+        remote_mem = k32.VirtualAllocEx(pi.hProcess, None, len(shellcode), 0x3000, 0x40)  # RWX
         if not remote_mem:
-            raise OSError(f"VirtualAllocEx failed: {kernel32.GetLastError()}")
+            raise OSError(f"VirtualAllocEx failed: {k32.GetLastError()}")
 
-        print(f"[+] Remote memory at: 0x{remote_mem:08x}")
+        print(f"[+] Remote memory: 0x{remote_mem:x}")
 
-        print("[*] Writing shellcode...")
+        # Write shellcode
         written = ctypes.c_size_t()
-        success = kernel32.WriteProcessMemory(
-            pi.hProcess, remote_mem, shellcode, shellcode_size, ctypes.byref(written)
-        )
+        if not k32.WriteProcessMemory(pi.hProcess, remote_mem, shellcode, len(shellcode), ctypes.byref(written)):
+            raise OSError(f"WriteProcessMemory failed: {k32.GetLastError()}")
 
-        if not success:
-            raise OSError(f"WriteProcessMemory failed: {kernel32.GetLastError()}")
+        print(f"[+] Written: {written.value} bytes")
 
-        print(f"[+] Written {written.value} bytes")
+        # Create remote thread at entry point
+        entry = remote_mem + entry_offset
+        print(f"[+] Entry: 0x{entry:x}")
         print("[*] Executing...")
-        print("=" * 50)
+        sys.stdout.flush()
 
-        remote_thread = kernel32.CreateRemoteThread(
-            pi.hProcess, None, 0, remote_mem, None, 0, None
-        )
-
+        remote_thread = k32.CreateRemoteThread(pi.hProcess, None, 0, entry, None, 0, None)
         if not remote_thread:
-            raise OSError(f"CreateRemoteThread failed: {kernel32.GetLastError()}")
+            raise OSError(f"CreateRemoteThread failed: {k32.GetLastError()}")
 
-        kernel32.WaitForSingleObject(remote_thread, INFINITE)
+        k32.WaitForSingleObject(remote_thread, 0xFFFFFFFF)
 
-        print("=" * 50)
-
-        exit_code = wintypes.DWORD()
-        kernel32.GetExitCodeThread(remote_thread, ctypes.byref(exit_code))
-        kernel32.CloseHandle(remote_thread)
-
-        return exit_code.value
+        code = wintypes.DWORD()
+        k32.GetExitCodeThread(remote_thread, ctypes.byref(code))
+        k32.CloseHandle(remote_thread)
+        return code.value
 
     finally:
-        kernel32.TerminateProcess(pi.hProcess, 0)
-        kernel32.CloseHandle(pi.hThread)
-        kernel32.CloseHandle(pi.hProcess)
+        k32.TerminateProcess(pi.hProcess, 0)
+        k32.CloseHandle(pi.hThread)
+        k32.CloseHandle(pi.hProcess)
+
+
+def get_python_bits():
+    return struct.calcsize("P") * 8
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Shellcode loader for Windows')
-    parser.add_argument('--arch', required=True, choices=['i386', 'x86_64', 'aarch64'],
-                        help='Target architecture')
-    parser.add_argument('shellcode', help='Path to shellcode binary')
-
+    parser = argparse.ArgumentParser(description='PIC Shellcode Loader')
+    parser.add_argument('--arch', required=True, choices=list(ARCH.keys()))
+    parser.add_argument('shellcode')
     args = parser.parse_args()
 
+    host_os, host_family, host_bits = get_host()
+    target = ARCH[args.arch]
+    python_bits = get_python_bits()
+
+    print(f"[*] Host: {host_os}/{host_family}/{host_bits}bit")
+    print(f"[*] Python: {python_bits}bit")
     print(f"[*] Target: {args.arch}")
-    print(f"[*] File: {args.shellcode}")
-    print(f"[*] Host: {platform.system()} {platform.machine()}")
-    print()
 
-    # Check if we can run this architecture
-    can_run, error = can_execute(args.arch)
-    if not can_run:
-        print(f"[-] Error: {error}")
-        sys.exit(1)
+    entry_offset, exe_path = get_entry_offset(args.shellcode)
+    print(f"[+] Entry offset: 0x{entry_offset:x}")
 
-    # Load shellcode
-    try:
-        shellcode = load_shellcode(args.shellcode)
-        print(f"[+] Loaded {len(shellcode)} bytes")
-    except (FileNotFoundError, ValueError) as e:
-        print(f"[-] Error: {e}")
-        sys.exit(1)
+    with open(args.shellcode, 'rb') as f:
+        shellcode = f.read()
+    print(f"[+] Loaded: {len(shellcode)} bytes")
 
-    # Must be Windows
-    if platform.system().lower() != 'windows':
-        print(f"[-] This loader only supports Windows")
-        sys.exit(1)
-
-    # Execute
-    try:
-        kernel32 = setup_kernel32()
-
-        if needs_injection(args.arch):
-            print(f"[*] Using process injection")
-            exit_code = execute_injected(kernel32, shellcode, args.arch)
+    if host_os == 'windows':
+        # Check if we need process injection (bitness mismatch)
+        if python_bits != target['bits']:
+            print(f"[*] Bitness mismatch ({python_bits}bit Python, {target['bits']}bit target) - using injection")
+            code = run_injected(shellcode, entry_offset, args.arch)
         else:
-            print(f"[*] Executing locally")
-            exit_code = execute_local(kernel32, shellcode)
+            code = run_virtualalloc(shellcode, entry_offset)
+    elif needs_qemu(host_family, host_bits, args.arch):
+        code = run_qemu(exe_path, target['qemu'])
+    else:
+        code = run_mmap(shellcode, entry_offset)
 
-        print(f"\n[+] Exit code: {exit_code}")
-        return exit_code
-
-    except Exception as e:
-        print(f"[-] Failed: {e}")
-        sys.exit(1)
+    print(f"[+] Exit: {code}")
+    sys.exit(code)
 
 
 if __name__ == '__main__':
