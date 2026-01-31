@@ -74,47 +74,27 @@ static BOOL InitializeNetworkInterface(EFI_BOOT_SERVICES *bs, EFI_HANDLE ImageHa
 	return g_NetworkInitialized;
 }
 
-// Wait for async operation using WaitForEvent + Poll
+// Wait for async operation with Poll to drive network stack
 template <typename TCP_PROTOCOL>
 static EFI_STATUS WaitForCompletion(EFI_BOOT_SERVICES *bs, TCP_PROTOCOL *Tcp, EFI_EVENT Event, volatile EFI_STATUS *TokenStatus, UINT64 TimeoutMs)
 {
-	// Check immediately
+	(VOID)Event;
+
+	// Check immediately - fast path
+	Tcp->Poll(Tcp);
 	if (*TokenStatus != EFI_NOT_READY)
 		return EFI_SUCCESS;
 
-	// Convert ms to 100ns units for timer
-	UINT64 timeout100ns = TimeoutMs * 10000;
-	EFI_EVENT timerEvent;
-
-	if (EFI_ERROR_CHECK(bs->CreateEvent(EVT_TIMER, 0, NULL, NULL, &timerEvent)))
-	{
-		// Fallback to polling if timer fails
-		for (UINT64 i = 0; i < TimeoutMs && *TokenStatus == EFI_NOT_READY; i++)
-		{
-			Tcp->Poll(Tcp);
-			bs->Stall(1000);
-		}
-		return (*TokenStatus != EFI_NOT_READY) ? EFI_SUCCESS : EFI_TIMEOUT;
-	}
-
-	bs->SetTimer(timerEvent, TimerRelative, timeout100ns);
-
-	EFI_EVENT waitEvents[2] = {Event, timerEvent};
-	USIZE index;
-
-	while (*TokenStatus == EFI_NOT_READY)
+	// Poll loop with short stalls
+	for (UINT64 i = 0; i < TimeoutMs; i++)
 	{
 		Tcp->Poll(Tcp);
-
-		EFI_STATUS waitStatus = bs->WaitForEvent(2, waitEvents, &index);
-		if (EFI_ERROR_CHECK(waitStatus) || index == 1)
-			break; // Timeout or error
+		if (*TokenStatus != EFI_NOT_READY)
+			return EFI_SUCCESS;
+		bs->Stall(1000); // 1ms
 	}
 
-	bs->SetTimer(timerEvent, TimerCancel, 0);
-	bs->CloseEvent(timerEvent);
-
-	return (*TokenStatus != EFI_NOT_READY) ? EFI_SUCCESS : EFI_TIMEOUT;
+	return EFI_TIMEOUT;
 }
 
 // =============================================================================
@@ -494,7 +474,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 		EFI_STATUS Status = sockCtx->Tcp6->Transmit(sockCtx->Tcp6, &TxToken);
 		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			if (!EFI_ERROR_CHECK(WaitForToken(bs, &TxToken.CompletionToken.Status, 30000)) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
+			if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp6, TxEvent, &TxToken.CompletionToken.Status, 30000)) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
 				bytesSent = bufferLength;
 		}
 	}
@@ -517,7 +497,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 		EFI_STATUS Status = sockCtx->Tcp4->Transmit(sockCtx->Tcp4, &TxToken);
 		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			if (!EFI_ERROR_CHECK(WaitForToken(bs, &TxToken.CompletionToken.Status, 30000)) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
+			if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp4, TxEvent, &TxToken.CompletionToken.Status, 30000)) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
 				bytesSent = bufferLength;
 		}
 	}
