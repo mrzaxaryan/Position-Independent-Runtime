@@ -17,10 +17,10 @@ constexpr USIZE SYS_MUNMAP = 91;
 #endif
 
 // mmap flags and protection
-constexpr int PROT_READ = 0x1;
-constexpr int PROT_WRITE = 0x2;
-constexpr int MAP_PRIVATE = 0x2;
-constexpr int MAP_ANONYMOUS = 0x20;
+constexpr INT32 PROT_READ = 0x1;
+constexpr INT32 PROT_WRITE = 0x2;
+constexpr INT32 MAP_PRIVATE = 0x2;
+constexpr INT32 MAP_ANONYMOUS = 0x20;
 
 // Memory allocator using mmap/munmap
 // Each allocation is a separate mmap, which is simple but not efficient for
@@ -38,8 +38,8 @@ PVOID Allocator::AllocateMemory(USIZE size)
     // Use mmap to allocate memory
     // fd = -1 for anonymous mapping (no file backing)
     PVOID addr = NULL;
-    int prot = PROT_READ | PROT_WRITE;
-    int flags = MAP_PRIVATE | MAP_ANONYMOUS;
+    INT32 prot = PROT_READ | PROT_WRITE;
+    INT32 flags = MAP_PRIVATE | MAP_ANONYMOUS;
 
 #if defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A)
     // 32-bit architectures use mmap2 with page-shifted offset

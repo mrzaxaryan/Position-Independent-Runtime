@@ -1,8 +1,6 @@
 #pragma once
 
 #include "primitives.h"
-#include "uint64.h"
-#include "int64.h"
 
 #define IMAGE_NUMBEROF_DIRECTORY_ENTRIES 16
 

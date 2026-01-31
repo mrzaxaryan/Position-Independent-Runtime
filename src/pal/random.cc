@@ -6,7 +6,7 @@ static inline UINT64 GetHardwareTimestamp()
 {
 #if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_I386)
     // x86/x64: Read the Time Stamp Counter
-    unsigned int lo, hi;
+    UINT32 lo, hi;
     __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
     return ((UINT64)hi << 32) | lo;
 
@@ -36,7 +36,7 @@ Random::Random()
 INT32 Random::Get()
 {
     // simple linear congruential generator
-    seed = (seed * GetHardwareTimestamp() + (UINT64)214013) & 0x7FFFFFFF;
+    seed = (seed * GetHardwareTimestamp() + 214013ULL) & 0x7FFFFFFF;
     return static_cast<INT32>(seed % MAX);
 }
 

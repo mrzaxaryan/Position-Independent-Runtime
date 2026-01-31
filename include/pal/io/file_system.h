@@ -1,7 +1,6 @@
 #pragma once
 
 #include "primitives.h"
-#include "int64.h"
 
 // Offset origin for file seeking
 enum class OffsetOrigin : INT32

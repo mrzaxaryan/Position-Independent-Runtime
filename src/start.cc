@@ -15,14 +15,6 @@ ENTRYPOINT INT32 _start(VOID)
 	// Run all test suites (Embedded/Primitives -> BAL -> PAL -> RAL)
 
 	// BAL - Embedded Types and Numeric Primitives (bal/types/)
-	if (!Uint64Tests::RunAll())
-		allPassed = FALSE;
-	Logger::Info<WCHAR>(L""_embed);
-
-	if (!Int64Tests::RunAll())
-		allPassed = FALSE;
-	Logger::Info<WCHAR>(L""_embed);
-
 	if (!DoubleTests::RunAll())
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);

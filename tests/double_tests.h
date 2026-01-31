@@ -127,23 +127,23 @@ private:
 	{
 		// Default constructor (zero)
 		DOUBLE a;
-		if (a.Bits().High() != 0 || a.Bits().Low() != 0)
+		if (a.Bits() != 0)
 			return FALSE;
 
 		// Construction from embedded double
 		DOUBLE b = 1.0_embed;
 		// IEEE-754: 1.0 = 0x3FF0000000000000
-		if (b.Bits().High() != 0x3FF00000 || b.Bits().Low() != 0x00000000)
+		if (b.Bits() != 0x3FF0000000000000ULL)
 			return FALSE;
 
 		// Construction from bit pattern
-		DOUBLE c(UINT64(0x40000000, 0x00000000)); // 2.0
+		DOUBLE c(0x4000000000000000ULL); // 2.0
 		double native_c = (double)c;
 		if (native_c != (double)2.0_embed)
 			return FALSE;
 
-		// Construction from two 32-bit values
-		DOUBLE d(0x3FF00000, 0x00000000); // 1.0
+		// Construction from bit pattern (1.0 = 0x3FF0000000000000)
+		DOUBLE d(0x3FF0000000000000ULL); // 1.0
 		double native_d = (double)d;
 		if (native_d != (double)1.0_embed)
 			return FALSE;
@@ -155,7 +155,7 @@ private:
 	{
 		// Zero
 		DOUBLE zero(INT32(0));
-		if (zero.Bits().High() != 0 || zero.Bits().Low() != 0)
+		if (zero.Bits() != 0)
 			return FALSE;
 
 		// Positive integer
@@ -427,9 +427,9 @@ private:
 		for (INT64 i = 0; i < 10; i++)
 		{
 			INT64 index = i;
-			DOUBLE val = testArray[(signed long long)index];
+			DOUBLE val = testArray[(INT64)index];
 			// Just verify non-zero (all values are > 1.0)
-			if (val.Bits().High() == 0 && val.Bits().Low() == 0)
+			if (val.Bits() == 0)
 				return FALSE;
 		}
 

@@ -8,10 +8,7 @@
  */
 #pragma once
 
-#include "uint64.h"
-
-// Forward declaration
-class INT64;
+#include "primitives.h"
 
 /**
  * Position-independent IEEE-754 double precision floating-point
@@ -25,23 +22,22 @@ class DOUBLE
 private:
     UINT64 bits;
 
-    static constexpr int SIGN_SHIFT = 63;
-    static constexpr int EXP_SHIFT = 52;
+    static constexpr INT32 SIGN_SHIFT = 63;
+    static constexpr INT32 EXP_SHIFT = 52;
 
-    static constexpr UINT64 GetSignMask() noexcept { return UINT64(0x80000000U, 0x00000000U); }
-    static constexpr UINT64 GetExpMask() noexcept { return UINT64(0x7FF00000U, 0x00000000U); }
-    static constexpr UINT64 GetMantissaMask() noexcept { return UINT64(0x000FFFFFU, 0xFFFFFFFFU); }
+    static constexpr UINT64 GetSignMask() noexcept { return 0x8000000000000000ULL; }
+    static constexpr UINT64 GetExpMask() noexcept { return 0x7FF0000000000000ULL; }
+    static constexpr UINT64 GetMantissaMask() noexcept { return 0x000FFFFFFFFFFFFFULL; }
 
 public:
-    constexpr DOUBLE() noexcept : bits(0, 0) {}
+    constexpr DOUBLE() noexcept : bits(0ULL) {}
     constexpr DOUBLE(const DOUBLE &) noexcept = default;
     constexpr explicit DOUBLE(UINT64 bitPattern) noexcept : bits(bitPattern) {}
-    constexpr DOUBLE(UINT32 high, UINT32 low) noexcept : bits(high, low) {}
 
     constexpr DOUBLE(double val) noexcept
     {
-        unsigned long long ull = __builtin_bit_cast(unsigned long long, val);
-        bits = UINT64(ull);
+        UINT64 ull = __builtin_bit_cast(UINT64, val);
+        bits = ull;
     }
 
 private:
@@ -49,12 +45,12 @@ private:
     struct CompileTimeLiteral {};
     consteval DOUBLE(double val, CompileTimeLiteral) noexcept
     {
-        unsigned long long ull = __builtin_bit_cast(unsigned long long, val);
-        bits = UINT64(ull);
+        UINT64 ull = __builtin_bit_cast(UINT64, val);
+        bits = ull;
     }
 
     friend consteval DOUBLE operator""_embed(long double v);
-    friend consteval DOUBLE operator""_embed(unsigned long long value);
+    friend consteval DOUBLE operator""_embed(UINT64 value);
 
 public:
     /**
@@ -62,7 +58,7 @@ public:
      * @param s String to parse (supports sign, integer, and fractional parts)
      * @return Parsed DOUBLE value
      */
-    static DOUBLE Parse(const char *s) noexcept
+    static DOUBLE Parse(PCCHAR s) noexcept
     {
         // Initialize result variables (use INT32 constructor to avoid .rdata)
         DOUBLE sign = DOUBLE(INT32(1));
@@ -108,20 +104,20 @@ public:
     {
         if (val == 0)
         {
-            bits = UINT64(0, 0);
+            bits = 0ULL;
             return;
         }
 
-        bool negative = val < 0;
+        BOOL negative = val < 0;
         UINT32 absVal = negative ? (UINT32)(-val) : (UINT32)val;
 
-        int msb = 31;
+        INT32 msb = 31;
         while (msb >= 0 && !((absVal >> msb) & 1))
             msb--;
 
-        int exponent = 1023 + msb;
+        INT32 exponent = 1023 + msb;
 
-        UINT64 mantissa = UINT64(absVal);
+        UINT64 mantissa = (UINT64)absVal;
         if (msb >= 52)
             mantissa = mantissa >> (msb - 52);
         else
@@ -129,8 +125,8 @@ public:
 
         mantissa = mantissa & GetMantissaMask();
 
-        UINT64 sign = negative ? GetSignMask() : UINT64(0, 0);
-        UINT64 exp = UINT64((UINT32)exponent << 20, 0);
+        UINT64 sign = negative ? GetSignMask() : 0ULL;
+        UINT64 exp = (UINT64)exponent << 52;
         bits = sign | exp | mantissa;
     }
 
@@ -139,13 +135,13 @@ public:
     NOINLINE DISABLE_OPTIMIZATION operator INT32() const noexcept
     {
         INT64 val64 = (INT64)(*this);
-        return (INT32)(val64.Low());
+        return (INT32)val64;
     }
 
     NOINLINE DISABLE_OPTIMIZATION operator UINT32() const noexcept
     {
         UINT64 val64 = (UINT64)(*this);
-        return val64.Low();
+        return (UINT32)val64;
     }
 
     NOINLINE DISABLE_OPTIMIZATION operator INT64() const noexcept
@@ -154,20 +150,20 @@ public:
         UINT64 exp_bits = bits & GetExpMask();
         UINT64 mantissa_bits = bits & GetMantissaMask();
 
-        int exponent = (int)((exp_bits >> EXP_SHIFT).Low()) - 1023;
+        INT32 exponent = (INT32)(UINT32)(exp_bits >> EXP_SHIFT) - 1023;
 
         if (exponent < 0)
-            return INT64(0, 0);
+            return 0LL;
 
         if (exponent >= 63)
         {
-            if (sign_bit.High() != 0)
-                return INT64((INT32)0x80000000, 0);
+            if ((sign_bit >> 32) != 0)
+                return 0x8000000000000000LL; // INT64_MIN
             else
-                return INT64((INT32)0x7FFFFFFF, 0xFFFFFFFF);
+                return 0x7FFFFFFFFFFFFFFFLL; // INT64_MAX
         }
 
-        UINT64 mantissa_with_implicit_one = mantissa_bits | UINT64(0x00100000U, 0x00000000U);
+        UINT64 mantissa_with_implicit_one = mantissa_bits | 0x0010000000000000ULL;
 
         UINT64 int_value;
         if (exponent <= 52)
@@ -175,8 +171,8 @@ public:
         else
             int_value = mantissa_with_implicit_one << (exponent - 52);
 
-        INT64 result = INT64((INT32)int_value.High(), int_value.Low());
-        if (sign_bit.High() != 0)
+        INT64 result = (INT64)int_value;
+        if ((sign_bit >> 32) != 0)
             result = -result;
 
         return result;
@@ -188,18 +184,18 @@ public:
         UINT64 exp_bits = bits & GetExpMask();
         UINT64 mantissa_bits = bits & GetMantissaMask();
 
-        int exponent = (int)((exp_bits >> EXP_SHIFT).Low()) - 1023;
+        INT32 exponent = (INT32)(UINT32)(exp_bits >> EXP_SHIFT) - 1023;
 
-        if (sign_bit.High() != 0)
-            return UINT64(0, 0);
+        if ((sign_bit >> 32) != 0)
+            return 0ULL;
 
         if (exponent < 0)
-            return UINT64(0, 0);
+            return 0ULL;
 
         if (exponent >= 64)
-            return UINT64(0xFFFFFFFF, 0xFFFFFFFF);
+            return 0xFFFFFFFFFFFFFFFFULL; // UINT64_MAX
 
-        UINT64 mantissa_with_implicit_one = mantissa_bits | UINT64(0x00100000U, 0x00000000U);
+        UINT64 mantissa_with_implicit_one = mantissa_bits | 0x0010000000000000ULL;
 
         UINT64 int_value;
         if (exponent <= 52)
@@ -210,29 +206,9 @@ public:
         return int_value;
     }
 
-    NOINLINE DISABLE_OPTIMIZATION operator unsigned long long() const noexcept
-    {
-        return (unsigned long long)((UINT64)(*this));
-    }
-
-    NOINLINE DISABLE_OPTIMIZATION operator signed long long() const noexcept
-    {
-        return (signed long long)((INT64)(*this));
-    }
-
-    NOINLINE DISABLE_OPTIMIZATION operator unsigned long() const noexcept
-    {
-        return (unsigned long)((UINT64)(*this));
-    }
-
-    NOINLINE DISABLE_OPTIMIZATION operator signed long() const noexcept
-    {
-        return (signed long)((INT64)(*this));
-    }
-
     NOINLINE DISABLE_OPTIMIZATION operator double() const noexcept
     {
-        unsigned long long ull = (unsigned long long)bits;
+        UINT64 ull = bits;
         return __builtin_bit_cast(double, ull);
     }
 
@@ -244,56 +220,56 @@ public:
 
     constexpr DOUBLE &operator=(double val) noexcept
     {
-        unsigned long long ull = __builtin_bit_cast(unsigned long long, val);
-        bits = UINT64(ull);
+        UINT64 ull = __builtin_bit_cast(UINT64, val);
+        bits = ull;
         return *this;
     }
 
-    NOINLINE DISABLE_OPTIMIZATION bool operator==(const DOUBLE &other) const noexcept
+    NOINLINE DISABLE_OPTIMIZATION BOOL operator==(const DOUBLE &other) const noexcept
     {
-        unsigned long long ull_a = (unsigned long long)bits;
-        unsigned long long ull_b = (unsigned long long)other.bits;
+        UINT64 ull_a = bits;
+        UINT64 ull_b = other.bits;
         double a = __builtin_bit_cast(double, ull_a);
         double b = __builtin_bit_cast(double, ull_b);
         return a == b;
     }
 
-    NOINLINE DISABLE_OPTIMIZATION bool operator!=(const DOUBLE &other) const noexcept
+    NOINLINE DISABLE_OPTIMIZATION BOOL operator!=(const DOUBLE &other) const noexcept
     {
         return !(*this == other);
     }
 
-    NOINLINE DISABLE_OPTIMIZATION bool operator<(const DOUBLE &other) const noexcept
+    NOINLINE DISABLE_OPTIMIZATION BOOL operator<(const DOUBLE &other) const noexcept
     {
-        unsigned long long ull_a = (unsigned long long)bits;
-        unsigned long long ull_b = (unsigned long long)other.bits;
+        UINT64 ull_a = bits;
+        UINT64 ull_b = other.bits;
         double a = __builtin_bit_cast(double, ull_a);
         double b = __builtin_bit_cast(double, ull_b);
         return a < b;
     }
 
-    NOINLINE DISABLE_OPTIMIZATION bool operator<=(const DOUBLE &other) const noexcept
+    NOINLINE DISABLE_OPTIMIZATION BOOL operator<=(const DOUBLE &other) const noexcept
     {
-        unsigned long long ull_a = (unsigned long long)bits;
-        unsigned long long ull_b = (unsigned long long)other.bits;
+        UINT64 ull_a = bits;
+        UINT64 ull_b = other.bits;
         double a = __builtin_bit_cast(double, ull_a);
         double b = __builtin_bit_cast(double, ull_b);
         return a <= b;
     }
 
-    NOINLINE DISABLE_OPTIMIZATION bool operator>(const DOUBLE &other) const noexcept
+    NOINLINE DISABLE_OPTIMIZATION BOOL operator>(const DOUBLE &other) const noexcept
     {
-        unsigned long long ull_a = (unsigned long long)bits;
-        unsigned long long ull_b = (unsigned long long)other.bits;
+        UINT64 ull_a = bits;
+        UINT64 ull_b = other.bits;
         double a = __builtin_bit_cast(double, ull_a);
         double b = __builtin_bit_cast(double, ull_b);
         return a > b;
     }
 
-    NOINLINE DISABLE_OPTIMIZATION bool operator>=(const DOUBLE &other) const noexcept
+    NOINLINE DISABLE_OPTIMIZATION BOOL operator>=(const DOUBLE &other) const noexcept
     {
-        unsigned long long ull_a = (unsigned long long)bits;
-        unsigned long long ull_b = (unsigned long long)other.bits;
+        UINT64 ull_a = bits;
+        UINT64 ull_b = other.bits;
         double a = __builtin_bit_cast(double, ull_a);
         double b = __builtin_bit_cast(double, ull_b);
         return a >= b;
@@ -301,46 +277,46 @@ public:
 
     NOINLINE DISABLE_OPTIMIZATION DOUBLE operator+(const DOUBLE &other) const noexcept
     {
-        unsigned long long ull_a = (unsigned long long)bits;
-        unsigned long long ull_b = (unsigned long long)other.bits;
+        UINT64 ull_a = bits;
+        UINT64 ull_b = other.bits;
         double a = __builtin_bit_cast(double, ull_a);
         double b = __builtin_bit_cast(double, ull_b);
         double result = a + b;
-        unsigned long long result_ull = __builtin_bit_cast(unsigned long long, result);
-        return DOUBLE(UINT64(result_ull));
+        UINT64 result_ull = __builtin_bit_cast(UINT64, result);
+        return DOUBLE(result_ull);
     }
 
     NOINLINE DISABLE_OPTIMIZATION DOUBLE operator-(const DOUBLE &other) const noexcept
     {
-        unsigned long long ull_a = (unsigned long long)bits;
-        unsigned long long ull_b = (unsigned long long)other.bits;
+        UINT64 ull_a = bits;
+        UINT64 ull_b = other.bits;
         double a = __builtin_bit_cast(double, ull_a);
         double b = __builtin_bit_cast(double, ull_b);
         double result = a - b;
-        unsigned long long result_ull = __builtin_bit_cast(unsigned long long, result);
-        return DOUBLE(UINT64(result_ull));
+        UINT64 result_ull = __builtin_bit_cast(UINT64, result);
+        return DOUBLE(result_ull);
     }
 
     NOINLINE DISABLE_OPTIMIZATION DOUBLE operator*(const DOUBLE &other) const noexcept
     {
-        unsigned long long ull_a = (unsigned long long)bits;
-        unsigned long long ull_b = (unsigned long long)other.bits;
+        UINT64 ull_a = bits;
+        UINT64 ull_b = other.bits;
         double a = __builtin_bit_cast(double, ull_a);
         double b = __builtin_bit_cast(double, ull_b);
         double result = a * b;
-        unsigned long long result_ull = __builtin_bit_cast(unsigned long long, result);
-        return DOUBLE(UINT64(result_ull));
+        UINT64 result_ull = __builtin_bit_cast(UINT64, result);
+        return DOUBLE(result_ull);
     }
 
     NOINLINE DISABLE_OPTIMIZATION DOUBLE operator/(const DOUBLE &other) const noexcept
     {
-        unsigned long long ull_a = (unsigned long long)bits;
-        unsigned long long ull_b = (unsigned long long)other.bits;
+        UINT64 ull_a = bits;
+        UINT64 ull_b = other.bits;
         double a = __builtin_bit_cast(double, ull_a);
         double b = __builtin_bit_cast(double, ull_b);
         double result = a / b;
-        unsigned long long result_ull = __builtin_bit_cast(unsigned long long, result);
-        return DOUBLE(UINT64(result_ull));
+        UINT64 result_ull = __builtin_bit_cast(UINT64, result);
+        return DOUBLE(result_ull);
     }
 
     NOINLINE DISABLE_OPTIMIZATION DOUBLE operator-() const noexcept
@@ -373,25 +349,12 @@ public:
         return *this;
     }
 
-    NOINLINE DISABLE_OPTIMIZATION bool operator<(INT32 val) const noexcept
+    NOINLINE DISABLE_OPTIMIZATION BOOL operator<(INT32 val) const noexcept
     {
         return *this < DOUBLE(val);
     }
 
     NOINLINE DISABLE_OPTIMIZATION DOUBLE operator-(UINT64 val) const noexcept
-    {
-        unsigned long long ull_val = (unsigned long long)val;
-        DOUBLE d_val = DOUBLE((INT32)ull_val);
-        return *this - d_val;
-    }
-
-    NOINLINE DISABLE_OPTIMIZATION DOUBLE operator-(unsigned long long val) const noexcept
-    {
-        DOUBLE d_val = DOUBLE((INT32)val);
-        return *this - d_val;
-    }
-
-    NOINLINE DISABLE_OPTIMIZATION DOUBLE operator-(unsigned long val) const noexcept
     {
         DOUBLE d_val = DOUBLE((INT32)val);
         return *this - d_val;
@@ -410,7 +373,7 @@ consteval DOUBLE operator""_embed(long double v)
     return DOUBLE(static_cast<double>(v), DOUBLE::CompileTimeLiteral{});
 }
 
-consteval DOUBLE operator""_embed(unsigned long long value)
+consteval DOUBLE operator""_embed(UINT64 value)
 {
     return DOUBLE(static_cast<double>(value), DOUBLE::CompileTimeLiteral{});
 }

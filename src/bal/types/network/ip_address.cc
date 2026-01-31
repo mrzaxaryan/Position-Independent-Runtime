@@ -302,7 +302,7 @@ IPAddress IPAddress::FromString(PCCHAR ipString)
                     return Invalid();
                 }
 
-                dwOctet = INT64::Parse(szCurrOctet);
+                dwOctet = ParseINT64(szCurrOctet);
                 if (dwOctet > 255)
                 {
                     return Invalid();

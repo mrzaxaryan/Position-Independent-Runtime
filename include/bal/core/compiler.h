@@ -30,6 +30,10 @@
 #define NOINLINE __attribute__((noinline))
 #define DISABLE_OPTIMIZATION __attribute__((optnone))
 
+// Compiler runtime functions: prevent inlining, LTO, and optimization
+// Used for ABI-mandated runtime functions called by the compiler
+#define COMPILER_RUNTIME __attribute__((noinline, used, optnone))
+
 // =============================================================================
 // FUNCTION ATTRIBUTES
 // =============================================================================

@@ -13,7 +13,7 @@ PCHAR TlsBuffer::GetBuffer()
 }
 
 // Function definitions
-INT32 TlsBuffer::Append(const void *data, INT32 size)
+INT32 TlsBuffer::Append(PCVOID data, INT32 size)
 {
     // PMEMORY pMemory = GetMemory();
     CheckSize(size);

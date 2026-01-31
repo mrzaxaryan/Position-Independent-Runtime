@@ -28,8 +28,6 @@ private:
         // PIC-safe primitive type constructors
         Argument(INT32 v) : type(Type::INT32), i32(v) {}
         Argument(UINT32 v) : type(Type::UINT32), u32(v) {}
-        Argument(INT64 v) : type(Type::INT64), i64(v) {}
-        Argument(UINT64 v) : type(Type::UINT64), u64(v) {}
         Argument(DOUBLE v) : type(Type::DOUBLE), dbl(v) {}
 
         // String and pointer constructors
@@ -39,9 +37,9 @@ private:
         Argument(WCHAR* v) : type(Type::WSTR), wstr(v) {}
         Argument(PVOID v) : type(Type::PTR), ptr(v) {}
 
-        // Native C++ type compatibility
-        Argument(signed long long v) : type(Type::INT64), i64(INT64(v)) {}
-        Argument(unsigned long long v) : type(Type::UINT64), u64(UINT64(v)) {}
+        // Native C++ type compatibility (INT64/UINT64 are typedefs)
+        Argument(INT64 v) : type(Type::INT64), i64(v) {}
+        Argument(UINT64 v) : type(Type::UINT64), u64(v) {}
 #if defined(__LP64__) || defined(_LP64)
         Argument(signed long v) : type(Type::INT64), i64(INT64(v)) {}
         Argument(unsigned long v) : type(Type::UINT64), u64(UINT64(v)) {}

@@ -8,7 +8,7 @@
 
 // --- Internal Constructor ---
 // Translates a Windows HANDLE into our File object
-File::File(void *handle) : fileHandle(handle), fileSize(0)
+File::File(PVOID handle) : fileHandle(handle), fileSize(0)
 {
     if (IsValid())
     {
@@ -67,7 +67,7 @@ void File::Close()
 }
 
 // Read data from the file into the buffer
-UINT32 File::Read(void *buffer, UINT32 size)
+UINT32 File::Read(PVOID buffer, UINT32 size)
 {
     if (!IsValid())
         return 0;
@@ -82,7 +82,7 @@ UINT32 File::Read(void *buffer, UINT32 size)
 }
 
 // Write data from the buffer to the file
-UINT32 File::Write(const void *buffer, USIZE size)
+UINT32 File::Write(PCVOID buffer, USIZE size)
 {
     if (!IsValid())
         return 0;
@@ -121,7 +121,7 @@ void File::SetOffset(USIZE absoluteOffset)
     IO_STATUS_BLOCK ioStatusBlock;
     Memory::Zero(&posInfo, sizeof(FILE_POSITION_INFORMATION));
     Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
-    posInfo.CurrentByteOffset.QuadPart = INT64((signed long long)absoluteOffset);
+    posInfo.CurrentByteOffset.QuadPart = INT64((INT64)absoluteOffset);
     // Set the file pointer to the specified absolute offset using NtSetInformationFile
     NTDLL::NtSetInformationFile((PVOID)fileHandle, &ioStatusBlock, &posInfo, sizeof(posInfo), FilePositionInformation);
 }
@@ -233,7 +233,7 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
     if (!NT_SUCCESS(status) || hFile == INVALID_HANDLE_VALUE)
         return File();
 
-    return File((void *)hFile);
+    return File((PVOID)hFile);
 }
 
 // Delete a file at the specified path
@@ -362,7 +362,7 @@ static void FillEntry(DirectoryEntry &entry, const WIN32_FIND_DATAW &data)
     }
 
     // 2. Size
-    entry.size = INT64((INT32)data.nFileSizeHigh, data.nFileSizeLow);
+    entry.size = (INT64)(((UINT64)(UINT32)data.nFileSizeHigh << 32) | (UINT64)data.nFileSizeLow);
 
     // 3. Attributes
     UINT32 attr = data.dwFileAttributes;
@@ -372,8 +372,7 @@ static void FillEntry(DirectoryEntry &entry, const WIN32_FIND_DATAW &data)
     entry.isReadOnly = (attr & 0x01);  // FILE_ATTRIBUTE_READONLY
 
     // 4. Timestamps (Convert 2xUINT32 to UINT64)
-    entry.creationTime = UINT64(data.ftCreationTime.dwHighDateTime,
-                                data.ftCreationTime.dwLowDateTime);
+    entry.creationTime = (((UINT64)data.ftCreationTime.dwHighDateTime) << 32) | ((UINT64)data.ftCreationTime.dwLowDateTime);
 
     // 5. IsDrive
     // Usually false in an iterator unless you are at the "This PC" level.
@@ -435,7 +434,7 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path) : handle((PVOID)-1), first(TR
         // We store it so the first call to Next() returns it.
         // Or we can fill currentEntry now.
         String::Copy(currentEntry.name, findData.cFileName);
-        currentEntry.size = INT64((INT32)findData.nFileSizeHigh, findData.nFileSizeLow);
+        currentEntry.size = (INT64)(((UINT64)(UINT32)findData.nFileSizeHigh << 32) | (UINT64)findData.nFileSizeLow);
         currentEntry.isDirectory = (findData.dwFileAttributes & 0x10); // FILE_ATTRIBUTE_DIRECTORY
     }
 }
@@ -459,7 +458,7 @@ BOOL DirectoryIterator::Next()
             return FALSE;
 
         // Find the next set bit
-        for (int i = 0; i < 26; i++)
+        for (INT32 i = 0; i < 26; i++)
         {
             if (mask & (1 << i))
             {
