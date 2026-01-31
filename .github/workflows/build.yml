@@ -603,11 +603,12 @@ jobs:
           echo "Running UEFI application in QEMU with networking..."
           # Run QEMU with user-mode networking for TCP/IP support
           # e1000 (x86_64) and virtio-net-pci (aarch64) have UEFI drivers in OVMF
+          # Network config: guest=10.0.2.15, gateway=10.0.2.2, dns=10.0.2.3
           timeout 180s ${{ matrix.qemu_cmd }} \
             -bios "${{ matrix.ovmf_path }}" \
             -drive format=raw,file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }} \
             -nographic \
-            -device ${{ matrix.net_device }},netdev=net0 \
-            -netdev user,id=net0 \
+            -device ${{ matrix.net_device }},netdev=net0,mac=52:54:00:12:34:56 \
+            -netdev user,id=net0,net=10.0.2.0/24,dhcpstart=10.0.2.15,dns=10.0.2.3 \
             -no-reboot || true
           echo "QEMU test completed"
