@@ -516,12 +516,14 @@ jobs:
             ovmf_path: /usr/share/ovmf/OVMF.fd
             qemu_cmd: qemu-system-x86_64
             boot_file: BOOTX64.EFI
+            net_device: e1000
           - arch: aarch64
             platform: uefi
             ovmf_pkg: qemu-efi-aarch64
             ovmf_path: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
             qemu_cmd: qemu-system-aarch64 -M virt -cpu cortex-a72
             boot_file: BOOTAA64.EFI
+            net_device: virtio-net-pci
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -595,15 +597,17 @@ jobs:
             !build/**/cmake/**
 
       - name: Test UEFI in QEMU
-        timeout-minutes: 2
+        timeout-minutes: 5
         continue-on-error: true
         run: |
-          echo "Running UEFI application in QEMU..."
-          # Run QEMU with timeout - UEFI app should exit cleanly
-          timeout 60s ${{ matrix.qemu_cmd }} \
+          echo "Running UEFI application in QEMU with networking..."
+          # Run QEMU with user-mode networking for TCP/IP support
+          # e1000 (x86_64) and virtio-net-pci (aarch64) have UEFI drivers in OVMF
+          timeout 180s ${{ matrix.qemu_cmd }} \
             -bios "${{ matrix.ovmf_path }}" \
             -drive format=raw,file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }} \
             -nographic \
-            -net none \
+            -device ${{ matrix.net_device }},netdev=net0 \
+            -netdev user,id=net0 \
             -no-reboot || true
           echo "QEMU test completed"
