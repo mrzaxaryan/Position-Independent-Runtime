@@ -12,17 +12,15 @@
 
 #if defined(ARCHITECTURE_ARMV7A)
 
-namespace
-{
-    // =========================================================================
-    // 32-bit Division Helpers
-    // =========================================================================
+// =============================================================================
+// 32-bit Division Helpers
+// =============================================================================
 
-    /**
-     * Internal 32-bit unsigned division with optional remainder
-     * Optimized with fast path for power-of-2 divisors
-     */
-    static inline UINT32 udiv32_internal(UINT32 numerator, UINT32 denominator, UINT32 *remainder)
+/**
+ * Internal 32-bit unsigned division with optional remainder
+ * Optimized with fast path for power-of-2 divisors
+ */
+static inline UINT32 udiv32_internal(UINT32 numerator, UINT32 denominator, UINT32 *remainder)
     {
         if (denominator == 0)
         {
@@ -65,16 +63,16 @@ namespace
         return quotient;
     }
 
-    // =========================================================================
-    // 64-bit Division Helpers
-    // =========================================================================
+// =============================================================================
+// 64-bit Division Helpers
+// =============================================================================
 
-    /**
-     * Internal 64-bit unsigned division with quotient and remainder
-     * Uses binary long division algorithm
-     */
-    static void udiv64_internal(UINT64 numerator, UINT64 denominator,
-                                UINT64 *quotient, UINT64 *remainder)
+/**
+ * Internal 64-bit unsigned division with quotient and remainder
+ * Uses binary long division algorithm
+ */
+static void udiv64_internal(UINT64 numerator, UINT64 denominator,
+                            UINT64 *quotient, UINT64 *remainder)
     {
         if (denominator == 0)
         {
@@ -102,8 +100,6 @@ namespace
         *quotient = q;
         *remainder = r;
     }
-
-} // anonymous namespace
 
 extern "C"
 {

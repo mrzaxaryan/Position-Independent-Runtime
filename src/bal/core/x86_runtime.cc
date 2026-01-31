@@ -12,18 +12,16 @@
 
 #if defined(ARCHITECTURE_I386)
 
-namespace
-{
-    // =========================================================================
-    // 64-bit Division Helpers
-    // =========================================================================
+// =============================================================================
+// 64-bit Division Helpers
+// =============================================================================
 
-    /**
-     * Internal 64-bit unsigned division with quotient and remainder
-     * Uses binary long division algorithm
-     */
-    static inline void udiv64_internal(UINT64 numerator, UINT64 denominator,
-                                       UINT64 *quotient, UINT64 *remainder)
+/**
+ * Internal 64-bit unsigned division with quotient and remainder
+ * Uses binary long division algorithm
+ */
+static inline void udiv64_internal(UINT64 numerator, UINT64 denominator,
+                                   UINT64 *quotient, UINT64 *remainder)
     {
         if (denominator == 0)
         {
@@ -51,8 +49,6 @@ namespace
         *quotient = q;
         *remainder = r;
     }
-
-} // anonymous namespace
 
 extern "C"
 {
