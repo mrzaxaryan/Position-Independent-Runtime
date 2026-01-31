@@ -4,7 +4,7 @@
 
 #include "primitives.h"
 
-#if defined(ARCHITECTURE_ARMV7A) || defined(ARCHITECTURE_AARCH64)
+#if defined(ARCHITECTURE_ARMV7A)
 
 // Disable LTO and inlining for EABI functions to preserve their exact signatures
 #define AEABI_FUNC __attribute__((noinline, used, optnone))
@@ -125,4 +125,4 @@ extern "C"
     }
 }
 
-#endif // ARCHITECTURE_ARMV7A || ARCHITECTURE_AARCH64
+#endif // ARCHITECTURE_ARMV7A 
