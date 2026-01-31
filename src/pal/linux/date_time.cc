@@ -14,6 +14,7 @@ constexpr USIZE SYS_CLOCK_GETTIME = 263;
 #endif
 
 constexpr USIZE CLOCK_REALTIME = 0;
+constexpr USIZE CLOCK_MONOTONIC = 1;
 
 // Linux timespec structure
 struct timespec
@@ -105,4 +106,21 @@ DateTime DateTime::Now()
     dt.Days = (UINT32)days + 1;  // Days are 1-indexed
 
     return dt;
+}
+
+UINT64 DateTime::GetMonotonicNanoseconds()
+{
+    timespec ts;
+
+    // Get monotonic time (not affected by system clock changes)
+    SSIZE result = Syscall::syscall2(SYS_CLOCK_GETTIME, CLOCK_MONOTONIC, (USIZE)&ts);
+    if (result != 0)
+    {
+        // Fallback: return 0 if syscall fails
+        return 0;
+    }
+
+    // Convert to nanoseconds
+    UINT64 nanoseconds = ((UINT64)ts.tv_sec * 1000000000ULL) + (UINT64)ts.tv_nsec;
+    return nanoseconds;
 }
