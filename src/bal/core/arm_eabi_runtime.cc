@@ -191,32 +191,50 @@ extern "C"
     // =========================================================================
 
     /**
-     * __aeabi_uldivmod - Unsigned 64-bit division with modulo
-     * Returns: {quotient, remainder} in r0:r1 and r2:r3
+     * Return type for 64-bit divmod operations
+     * Per ARM EABI: quotient in r0:r1, remainder in r2:r3
      */
-    struct uldivmod_return { UINT64 quot; UINT64 rem; };
+    typedef struct {
+        UINT64 quotient;
+        UINT64 remainder;
+    } ARM_64_uldivmod_return;
 
-    COMPILER_RUNTIME struct uldivmod_return __aeabi_uldivmod(UINT64 numerator, UINT64 denominator)
+    typedef struct {
+        INT64 quotient;
+        INT64 remainder;
+    } ARM_64_ldivmod_return;
+
+    /**
+     * __aeabi_uldivmod - Unsigned 64-bit division with modulo
+     * ARM EABI calling convention:
+     *   Input:  numerator in r0:r1, denominator in r2:r3
+     *   Output: quotient in r0:r1, remainder in r2:r3
+     */
+    COMPILER_RUNTIME
+    __attribute__((pcs("aapcs")))
+    ARM_64_uldivmod_return __aeabi_uldivmod(UINT64 numerator, UINT64 denominator)
     {
-        struct uldivmod_return result;
-        udiv64_internal(numerator, denominator, &result.quot, &result.rem);
+        ARM_64_uldivmod_return result;
+        udiv64_internal(numerator, denominator, &result.quotient, &result.remainder);
         return result;
     }
 
     /**
      * __aeabi_ldivmod - Signed 64-bit division with modulo
-     * Returns: {quotient, remainder} in r0:r1 and r2:r3
+     * ARM EABI calling convention:
+     *   Input:  numerator in r0:r1, denominator in r2:r3
+     *   Output: quotient in r0:r1, remainder in r2:r3
      */
-    struct ldivmod_return { INT64 quot; INT64 rem; };
-
-    COMPILER_RUNTIME struct ldivmod_return __aeabi_ldivmod(INT64 numerator, INT64 denominator)
+    COMPILER_RUNTIME
+    __attribute__((pcs("aapcs")))
+    ARM_64_ldivmod_return __aeabi_ldivmod(INT64 numerator, INT64 denominator)
     {
-        struct ldivmod_return result;
+        ARM_64_ldivmod_return result;
 
         if (denominator == 0)
         {
-            result.quot = 0;
-            result.rem = numerator;
+            result.quotient = 0;
+            result.remainder = numerator;
             return result;
         }
 
@@ -234,8 +252,8 @@ extern "C"
         udiv64_internal(abs_num, abs_den, &quotient, &remainder);
 
         // Apply signs (remainder takes sign of numerator)
-        result.quot = sign_quot < 0 ? -(INT64)quotient : (INT64)quotient;
-        result.rem = sign_num < 0 ? -(INT64)remainder : (INT64)remainder;
+        result.quotient = sign_quot < 0 ? -(INT64)quotient : (INT64)quotient;
+        result.remainder = sign_num < 0 ? -(INT64)remainder : (INT64)remainder;
 
         return result;
     }
