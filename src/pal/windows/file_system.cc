@@ -12,8 +12,10 @@ File::File(void *handle) : fileHandle(handle), fileSize(0)
 {
     if (IsValid())
     {
-        FILE_STANDARD_INFORMATION fileStandardInfo{};
+        FILE_STANDARD_INFORMATION fileStandardInfo;
         IO_STATUS_BLOCK ioStatusBlock;
+        Memory::Zero(&fileStandardInfo, sizeof(FILE_STANDARD_INFORMATION));
+        Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
 
         if (NTDLL::NtQueryInformationFile(fileHandle, &ioStatusBlock, &fileStandardInfo, sizeof(fileStandardInfo), FileStandardInformation) == 0)
         {
@@ -115,9 +117,11 @@ void File::SetOffset(USIZE absoluteOffset)
     if (!IsValid())
         return;
 
-    FILE_POSITION_INFORMATION posInfo{};
+    FILE_POSITION_INFORMATION posInfo;
+    IO_STATUS_BLOCK ioStatusBlock;
+    Memory::Zero(&posInfo, sizeof(FILE_POSITION_INFORMATION));
+    Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
     posInfo.CurrentByteOffset.QuadPart = INT64((signed long long)absoluteOffset);
-    IO_STATUS_BLOCK ioStatusBlock{};
     // Set the file pointer to the specified absolute offset using NtSetInformationFile
     NTDLL::NtSetInformationFile((PVOID)fileHandle, &ioStatusBlock, &posInfo, sizeof(posInfo), FilePositionInformation);
 }
@@ -128,9 +132,12 @@ void File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
     if (!IsValid())
         return;
 
-    IO_STATUS_BLOCK ioStatusBlock{};
-    FILE_POSITION_INFORMATION posInfo{};
-    FILE_STANDARD_INFORMATION fileStandardInfo{}; // Properly initialize EndOfFile
+    IO_STATUS_BLOCK ioStatusBlock;
+    FILE_POSITION_INFORMATION posInfo;
+    FILE_STANDARD_INFORMATION fileStandardInfo;
+    Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
+    Memory::Zero(&posInfo, sizeof(FILE_POSITION_INFORMATION));
+    Memory::Zero(&fileStandardInfo, sizeof(FILE_STANDARD_INFORMATION));
     INT64 distance = 0;
 
     if (NTDLL::NtQueryInformationFile((PVOID)fileHandle, &ioStatusBlock, &posInfo, sizeof(posInfo), FilePositionInformation) != 0)
@@ -312,10 +319,12 @@ BOOL FileSystem::CreateDirectroy(PCWCHAR path)
 BOOL FileSystem::DeleteDirectory(PCWCHAR path)
 {
     PVOID hDir;
-    FILE_DISPOSITION_INFORMATION disp = {TRUE};
+    FILE_DISPOSITION_INFORMATION disp;
     UNICODE_STRING uniName;
     OBJECT_ATTRIBUTES objAttr;
     IO_STATUS_BLOCK ioStatusBlock;
+    Memory::Zero(&disp, sizeof(FILE_DISPOSITION_INFORMATION));
+    disp.DeleteFile = TRUE;
 
     if (!NTDLL::RtlDosPathNameToNtPathName_U(path, &uniName, NULL, NULL))
     {

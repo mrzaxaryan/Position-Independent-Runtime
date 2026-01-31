@@ -6,7 +6,8 @@
 UINT32 Console::Write(const CHAR *text, USIZE length)
 {
 	PPEB peb = GetCurrentPEB();
-	IO_STATUS_BLOCK ioStatusBlock{};
+	IO_STATUS_BLOCK ioStatusBlock;
+	Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
 	NTDLL::NtWriteFile(peb->ProcessParameters->StandardOutput, NULL, NULL, NULL, &ioStatusBlock, (PVOID)text, length, NULL, NULL);
 	return (UINT32)ioStatusBlock.Information;
 }
@@ -75,7 +76,8 @@ UINT32 Console::Write(const WCHAR *text, USIZE length)
 		// Write the converted UTF-8 buffer
 		if (utf8Pos > 0)
 		{
-			IO_STATUS_BLOCK ioStatusBlock{};
+			IO_STATUS_BLOCK ioStatusBlock;
+			Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
 			NTDLL::NtWriteFile(peb->ProcessParameters->StandardOutput, NULL, NULL, NULL, &ioStatusBlock, (PVOID)utf8Buffer, utf8Pos, NULL, NULL);
 			if (ioStatusBlock.Information > 0)
 				totalWritten += (UINT32)ioStatusBlock.Information;
