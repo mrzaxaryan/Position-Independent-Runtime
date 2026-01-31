@@ -61,7 +61,7 @@ static BOOL InitializeNetworkInterface(EFI_BOOT_SERVICES *bs, EFI_HANDLE ImageHa
 	EFI_HANDLE *HandleBuffer = NULL;
 
 	EFI_STATUS Status = bs->LocateHandleBuffer(ByProtocol, &SnpGuid, NULL, &HandleCount, &HandleBuffer);
-	if (EFI_ERROR(Status) || HandleCount == 0)
+	if (EFI_ERROR_CHECK(Status) || HandleCount == 0)
 		return FALSE;
 
 	// Try to initialize each network interface
@@ -76,7 +76,7 @@ static BOOL InitializeNetworkInterface(EFI_BOOT_SERVICES *bs, EFI_HANDLE ImageHa
 			NULL,
 			EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 
-		if (EFI_ERROR(Status) || Snp == NULL)
+		if (EFI_ERROR_CHECK(Status) || Snp == NULL)
 			continue;
 
 		// Check current state and initialize if needed
@@ -85,17 +85,14 @@ static BOOL InitializeNetworkInterface(EFI_BOOT_SERVICES *bs, EFI_HANDLE ImageHa
 			if (Snp->Mode->State == EfiSimpleNetworkStopped)
 			{
 				Status = Snp->Start(Snp);
-				if (EFI_ERROR(Status))
+				if (EFI_ERROR_CHECK(Status))
 					continue;
 			}
 
 			if (Snp->Mode->State == EfiSimpleNetworkStarted)
 			{
 				Status = Snp->Initialize(Snp, 0, 0);
-				if (EFI_ERROR(Status))
-				{
-					// Try to continue anyway
-				}
+				// Continue even if init fails
 			}
 
 			g_NetworkInitialized = TRUE;
@@ -116,7 +113,7 @@ static BOOL ConfigureStaticIP4(EFI_BOOT_SERVICES *bs, EFI_HANDLE ImageHandle)
 	EFI_HANDLE *HandleBuffer = NULL;
 
 	EFI_STATUS Status = bs->LocateHandleBuffer(ByProtocol, &Ip4Config2Guid, NULL, &HandleCount, &HandleBuffer);
-	if (EFI_ERROR(Status) || HandleCount == 0)
+	if (EFI_ERROR_CHECK(Status) || HandleCount == 0)
 		return FALSE;
 
 	// Open the protocol on the first handle
@@ -131,13 +128,13 @@ static BOOL ConfigureStaticIP4(EFI_BOOT_SERVICES *bs, EFI_HANDLE ImageHandle)
 
 	bs->FreePool(HandleBuffer);
 
-	if (EFI_ERROR(Status) || Ip4Config2 == NULL)
+	if (EFI_ERROR_CHECK(Status) || Ip4Config2 == NULL)
 		return FALSE;
 
 	// Set policy to static
 	EFI_IP4_CONFIG2_POLICY Policy = Ip4Config2PolicyStatic;
 	Status = Ip4Config2->SetData(Ip4Config2, Ip4Config2DataTypePolicy, sizeof(Policy), &Policy);
-	if (EFI_ERROR(Status))
+	if (EFI_ERROR_CHECK(Status))
 		return FALSE;
 
 	// Set static IP address (10.0.2.15/255.255.255.0) for QEMU
@@ -152,7 +149,7 @@ static BOOL ConfigureStaticIP4(EFI_BOOT_SERVICES *bs, EFI_HANDLE ImageHandle)
 	ManualAddr.SubnetMask.Addr[3] = 0;
 
 	Status = Ip4Config2->SetData(Ip4Config2, Ip4Config2DataTypeManualAddress, sizeof(ManualAddr), &ManualAddr);
-	if (EFI_ERROR(Status))
+	if (EFI_ERROR_CHECK(Status))
 		return FALSE;
 
 	// Set gateway (10.0.2.2) for QEMU
@@ -168,37 +165,31 @@ static BOOL ConfigureStaticIP4(EFI_BOOT_SERVICES *bs, EFI_HANDLE ImageHandle)
 	return TRUE;
 }
 
-// Wait for an event with timeout (in 100ns units)
-static EFI_STATUS WaitForEventWithTimeout(EFI_BOOT_SERVICES *bs, EFI_EVENT Event, UINT64 Timeout100ns)
+// Wait for a completion token with timeout using polling
+static EFI_STATUS WaitForCompletionToken(EFI_BOOT_SERVICES *bs, EFI_STATUS *TokenStatus, UINT64 TimeoutMs)
 {
-	// Create a timer event
-	EFI_EVENT TimerEvent;
-	EFI_STATUS Status = bs->CreateEvent(EVT_TIMER, 0, NULL, NULL, &TimerEvent);
-	if (EFI_ERROR(Status))
-		return Status;
+	UINT64 PollIntervalMs = 50;  // Poll every 50ms
+	UINT64 ElapsedMs = 0;
 
-	// Set timer
-	Status = bs->SetTimer(TimerEvent, TimerRelative, Timeout100ns);
-	if (EFI_ERROR(Status))
+	while (ElapsedMs < TimeoutMs)
 	{
-		bs->CloseEvent(TimerEvent);
-		return Status;
+		if (*TokenStatus != EFI_NOT_READY)
+			return EFI_SUCCESS;
+
+		bs->Stall(PollIntervalMs * 1000);  // Stall takes microseconds
+		ElapsedMs += PollIntervalMs;
 	}
 
-	// Wait for either event
-	EFI_EVENT Events[2] = {Event, TimerEvent};
-	USIZE Index;
-	Status = bs->WaitForEvent(2, Events, &Index);
+	return EFI_TIMEOUT;
+}
 
-	bs->CloseEvent(TimerEvent);
-
-	if (EFI_ERROR(Status))
-		return Status;
-
-	// Index 1 means timer fired (timeout)
-	if (Index == 1)
-		return EFI_TIMEOUT;
-
+// Simple wait using Stall - used for Close where we don't need precise timing
+static EFI_STATUS WaitForEventWithTimeout(EFI_BOOT_SERVICES *bs, EFI_EVENT Event, UINT64 Timeout100ns)
+{
+	(void)Event;
+	UINT64 TimeoutMs = Timeout100ns / 10000;
+	if (TimeoutMs > 0)
+		bs->Stall(TimeoutMs * 1000);
 	return EFI_SUCCESS;
 }
 
@@ -218,7 +209,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 	// Allocate socket context
 	UefiSocketContext *sockCtx = NULL;
 	EFI_STATUS Status = bs->AllocatePool(EfiLoaderData, sizeof(UefiSocketContext), (PVOID *)&sockCtx);
-	if (EFI_ERROR(Status) || sockCtx == NULL)
+	if (EFI_ERROR_CHECK(Status) || sockCtx == NULL)
 		return;
 
 	Memory::Zero(sockCtx, sizeof(UefiSocketContext));
@@ -244,7 +235,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 	EFI_HANDLE *HandleBuffer = NULL;
 
 	Status = bs->LocateHandleBuffer(ByProtocol, &ServiceBindingGuid, NULL, &HandleCount, &HandleBuffer);
-	if (EFI_ERROR(Status) || HandleCount == 0)
+	if (EFI_ERROR_CHECK(Status) || HandleCount == 0)
 	{
 		bs->FreePool(sockCtx);
 		return;
@@ -264,7 +255,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 
 	bs->FreePool(HandleBuffer);
 
-	if (EFI_ERROR(Status))
+	if (EFI_ERROR_CHECK(Status))
 	{
 		bs->FreePool(sockCtx);
 		return;
@@ -273,7 +264,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 	// Create TCP child handle
 	sockCtx->TcpHandle = NULL;
 	Status = sockCtx->ServiceBinding->CreateChild(sockCtx->ServiceBinding, &sockCtx->TcpHandle);
-	if (EFI_ERROR(Status))
+	if (EFI_ERROR_CHECK(Status))
 	{
 		bs->FreePool(sockCtx);
 		return;
@@ -289,7 +280,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 		NULL,
 		EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 
-	if (EFI_ERROR(Status))
+	if (EFI_ERROR_CHECK(Status))
 	{
 		sockCtx->ServiceBinding->DestroyChild(sockCtx->ServiceBinding, sockCtx->TcpHandle);
 		bs->FreePool(sockCtx);
@@ -329,22 +320,18 @@ BOOL Socket::Open()
 
 		ConfigData.TrafficClass = 0;
 		ConfigData.HopLimit = 64;
-		ConfigData.AccessPoint.StationPort = 0; // Ephemeral port
+		ConfigData.AccessPoint.StationPort = 0;
 		ConfigData.AccessPoint.ActiveFlag = TRUE;
 
 		// Set remote IPv6 address
 		const UINT8 *ipv6Addr = ip.ToIPv6();
 		if (ipv6Addr != NULL)
-		{
 			Memory::Copy(ConfigData.AccessPoint.RemoteAddress.Addr, ipv6Addr, 16);
-		}
 		ConfigData.AccessPoint.RemotePort = port;
-
 		ConfigData.ControlOption = NULL;
 
-		// Configure the TCP6 protocol
 		Status = sockCtx->Tcp6->Configure(sockCtx->Tcp6, &ConfigData);
-		if (EFI_ERROR(Status))
+		if (EFI_ERROR_CHECK(Status))
 			return FALSE;
 
 		sockCtx->IsConfigured = TRUE;
@@ -352,7 +339,7 @@ BOOL Socket::Open()
 		// Create event for connection completion
 		EFI_EVENT ConnectEvent;
 		Status = bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, NULL, &ConnectEvent);
-		if (EFI_ERROR(Status))
+		if (EFI_ERROR_CHECK(Status))
 			return FALSE;
 
 		// Setup connection token
@@ -361,22 +348,19 @@ BOOL Socket::Open()
 		ConnectToken.CompletionToken.Event = ConnectEvent;
 		ConnectToken.CompletionToken.Status = EFI_NOT_READY;
 
-		// Initiate connection
 		Status = sockCtx->Tcp6->Connect(sockCtx->Tcp6, &ConnectToken);
-		if (EFI_ERROR(Status) && Status != EFI_NOT_READY)
+		if (EFI_ERROR_CHECK(Status) && Status != EFI_NOT_READY)
 		{
 			bs->CloseEvent(ConnectEvent);
 			return FALSE;
 		}
 
-		// Wait for connection (30 second timeout)
-		Status = WaitForEventWithTimeout(bs, ConnectEvent, 30ULL * 10000000ULL);
+		Status = WaitForCompletionToken(bs, &ConnectToken.CompletionToken.Status, 30000);
 		bs->CloseEvent(ConnectEvent);
 
-		if (EFI_ERROR(Status))
+		if (EFI_ERROR_CHECK(Status))
 			return FALSE;
-
-		if (EFI_ERROR(ConnectToken.CompletionToken.Status))
+		if (EFI_ERROR_CHECK(ConnectToken.CompletionToken.Status))
 			return FALSE;
 	}
 	else
@@ -387,7 +371,7 @@ BOOL Socket::Open()
 
 		ConfigData.TypeOfService = 0;
 		ConfigData.TimeToLive = 64;
-		ConfigData.AccessPoint.StationPort = 0; // Ephemeral port
+		ConfigData.AccessPoint.StationPort = 0;
 		ConfigData.AccessPoint.ActiveFlag = TRUE;
 		ConfigData.ControlOption = NULL;
 
@@ -403,19 +387,16 @@ BOOL Socket::Open()
 		ConfigData.AccessPoint.UseDefaultAddress = TRUE;
 		Status = sockCtx->Tcp4->Configure(sockCtx->Tcp4, &ConfigData);
 
-		if (EFI_ERROR(Status))
+		if (EFI_ERROR_CHECK(Status))
 		{
 			// Configure IP4 layer with static QEMU settings
 			ConfigureStaticIP4(bs, ctx->ImageHandle);
-
-			// Retry with default address (now uses our static config)
 			Status = sockCtx->Tcp4->Configure(sockCtx->Tcp4, &ConfigData);
 		}
 
-		if (EFI_ERROR(Status))
+		if (EFI_ERROR_CHECK(Status))
 		{
-			// Last resort: set address directly in TCP4 config
-			// QEMU uses: Guest=10.0.2.15, Gateway=10.0.2.2
+			// Last resort: set address directly in TCP4 config (QEMU: 10.0.2.15)
 			ConfigData.AccessPoint.UseDefaultAddress = FALSE;
 			ConfigData.AccessPoint.StationAddress.Addr[0] = 10;
 			ConfigData.AccessPoint.StationAddress.Addr[1] = 0;
@@ -427,10 +408,10 @@ BOOL Socket::Open()
 			ConfigData.AccessPoint.SubnetMask.Addr[3] = 0;
 
 			Status = sockCtx->Tcp4->Configure(sockCtx->Tcp4, &ConfigData);
-			if (EFI_ERROR(Status))
+			if (EFI_ERROR_CHECK(Status))
 				return FALSE;
 
-			// Add default route via QEMU gateway for external network access
+			// Add default route via QEMU gateway
 			EFI_IPv4_ADDRESS DefaultSubnet = {{0, 0, 0, 0}};
 			EFI_IPv4_ADDRESS DefaultMask = {{0, 0, 0, 0}};
 			EFI_IPv4_ADDRESS Gateway = {{10, 0, 2, 2}};
@@ -442,7 +423,7 @@ BOOL Socket::Open()
 		// Create event for connection completion
 		EFI_EVENT ConnectEvent;
 		Status = bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, NULL, &ConnectEvent);
-		if (EFI_ERROR(Status))
+		if (EFI_ERROR_CHECK(Status))
 			return FALSE;
 
 		// Setup connection token
@@ -451,22 +432,19 @@ BOOL Socket::Open()
 		ConnectToken.CompletionToken.Event = ConnectEvent;
 		ConnectToken.CompletionToken.Status = EFI_NOT_READY;
 
-		// Initiate connection
 		Status = sockCtx->Tcp4->Connect(sockCtx->Tcp4, &ConnectToken);
-		if (EFI_ERROR(Status) && Status != EFI_NOT_READY)
+		if (EFI_ERROR_CHECK(Status) && Status != EFI_NOT_READY)
 		{
 			bs->CloseEvent(ConnectEvent);
 			return FALSE;
 		}
 
-		// Wait for connection (30 second timeout)
-		Status = WaitForEventWithTimeout(bs, ConnectEvent, 30ULL * 10000000ULL);
+		Status = WaitForCompletionToken(bs, &ConnectToken.CompletionToken.Status, 30000);
 		bs->CloseEvent(ConnectEvent);
 
-		if (EFI_ERROR(Status))
+		if (EFI_ERROR_CHECK(Status))
 			return FALSE;
-
-		if (EFI_ERROR(ConnectToken.CompletionToken.Status))
+		if (EFI_ERROR_CHECK(ConnectToken.CompletionToken.Status))
 			return FALSE;
 	}
 
@@ -488,10 +466,9 @@ BOOL Socket::Close()
 
 	if (sockCtx->IsConfigured)
 	{
-		// Create close event
 		EFI_EVENT CloseEvent;
 		EFI_STATUS Status = bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, NULL, &CloseEvent);
-		if (!EFI_ERROR(Status))
+		if (!EFI_ERROR_CHECK(Status))
 		{
 			if (sockCtx->IsIPv6)
 			{
@@ -501,12 +478,9 @@ BOOL Socket::Close()
 				CloseToken.AbortOnClose = FALSE;
 
 				Status = sockCtx->Tcp6->Close(sockCtx->Tcp6, &CloseToken);
-				if (!EFI_ERROR(Status) || Status == EFI_NOT_READY)
-				{
+				if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 					WaitForEventWithTimeout(bs, CloseEvent, 5ULL * 10000000ULL);
-				}
 
-				// Reset configuration
 				sockCtx->Tcp6->Configure(sockCtx->Tcp6, NULL);
 			}
 			else
@@ -517,12 +491,9 @@ BOOL Socket::Close()
 				CloseToken.AbortOnClose = FALSE;
 
 				Status = sockCtx->Tcp4->Close(sockCtx->Tcp4, &CloseToken);
-				if (!EFI_ERROR(Status) || Status == EFI_NOT_READY)
-				{
+				if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 					WaitForEventWithTimeout(bs, CloseEvent, 5ULL * 10000000ULL);
-				}
 
-				// Reset configuration
 				sockCtx->Tcp4->Configure(sockCtx->Tcp4, NULL);
 			}
 
@@ -551,7 +522,6 @@ BOOL Socket::Close()
 
 	bs->CloseProtocol(sockCtx->ServiceHandle, &ServiceBindingGuid, ctx->ImageHandle, NULL);
 
-	// Free context
 	bs->FreePool(sockCtx);
 	m_socket = NULL;
 
@@ -566,7 +536,6 @@ BOOL Socket::Bind(SockAddr *SocketAddress, INT32 ShareType)
 {
 	(VOID)SocketAddress;
 	(VOID)ShareType;
-	// Bind is handled during Configure for UEFI TCP
 	return FALSE;
 }
 
@@ -585,18 +554,16 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferLength)
 	EFI_STATUS Status;
 	SSIZE bytesRead = -1;
 
-	// Create receive event
 	EFI_EVENT RxEvent;
 	Status = bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, NULL, &RxEvent);
-	if (EFI_ERROR(Status))
+	if (EFI_ERROR_CHECK(Status))
 		return -1;
 
 	if (sockCtx->IsIPv6)
 	{
-		// Allocate receive data structure
 		EFI_TCP6_RECEIVE_DATA *RxData = NULL;
 		Status = bs->AllocatePool(EfiLoaderData, sizeof(EFI_TCP6_RECEIVE_DATA), (PVOID *)&RxData);
-		if (EFI_ERROR(Status))
+		if (EFI_ERROR_CHECK(Status))
 		{
 			bs->CloseEvent(RxEvent);
 			return -1;
@@ -608,33 +575,27 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferLength)
 		RxData->FragmentTable[0].FragmentLength = bufferLength;
 		RxData->FragmentTable[0].FragmentBuffer = buffer;
 
-		// Setup I/O token
 		EFI_TCP6_IO_TOKEN RxToken;
 		Memory::Zero(&RxToken, sizeof(RxToken));
 		RxToken.CompletionToken.Event = RxEvent;
 		RxToken.CompletionToken.Status = EFI_NOT_READY;
 		RxToken.Packet.RxData = RxData;
 
-		// Initiate receive
 		Status = sockCtx->Tcp6->Receive(sockCtx->Tcp6, &RxToken);
-		if (!EFI_ERROR(Status) || Status == EFI_NOT_READY)
+		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			// Wait for receive (60 second timeout)
-			Status = WaitForEventWithTimeout(bs, RxEvent, 60ULL * 10000000ULL);
-			if (!EFI_ERROR(Status) && !EFI_ERROR(RxToken.CompletionToken.Status))
-			{
+			Status = WaitForCompletionToken(bs, &RxToken.CompletionToken.Status, 60000);
+			if (!EFI_ERROR_CHECK(Status) && !EFI_ERROR_CHECK(RxToken.CompletionToken.Status))
 				bytesRead = (SSIZE)RxData->DataLength;
-			}
 		}
 
 		bs->FreePool(RxData);
 	}
 	else
 	{
-		// Allocate receive data structure
 		EFI_TCP4_RECEIVE_DATA *RxData = NULL;
 		Status = bs->AllocatePool(EfiLoaderData, sizeof(EFI_TCP4_RECEIVE_DATA), (PVOID *)&RxData);
-		if (EFI_ERROR(Status))
+		if (EFI_ERROR_CHECK(Status))
 		{
 			bs->CloseEvent(RxEvent);
 			return -1;
@@ -646,23 +607,18 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferLength)
 		RxData->FragmentTable[0].FragmentLength = bufferLength;
 		RxData->FragmentTable[0].FragmentBuffer = buffer;
 
-		// Setup I/O token
 		EFI_TCP4_IO_TOKEN RxToken;
 		Memory::Zero(&RxToken, sizeof(RxToken));
 		RxToken.CompletionToken.Event = RxEvent;
 		RxToken.CompletionToken.Status = EFI_NOT_READY;
 		RxToken.Packet.RxData = RxData;
 
-		// Initiate receive
 		Status = sockCtx->Tcp4->Receive(sockCtx->Tcp4, &RxToken);
-		if (!EFI_ERROR(Status) || Status == EFI_NOT_READY)
+		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			// Wait for receive (60 second timeout)
-			Status = WaitForEventWithTimeout(bs, RxEvent, 60ULL * 10000000ULL);
-			if (!EFI_ERROR(Status) && !EFI_ERROR(RxToken.CompletionToken.Status))
-			{
+			Status = WaitForCompletionToken(bs, &RxToken.CompletionToken.Status, 60000);
+			if (!EFI_ERROR_CHECK(Status) && !EFI_ERROR_CHECK(RxToken.CompletionToken.Status))
 				bytesRead = (SSIZE)RxData->DataLength;
-			}
 		}
 
 		bs->FreePool(RxData);
@@ -687,18 +643,16 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 	EFI_STATUS Status;
 	UINT32 bytesSent = 0;
 
-	// Create transmit event
 	EFI_EVENT TxEvent;
 	Status = bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, NULL, &TxEvent);
-	if (EFI_ERROR(Status))
+	if (EFI_ERROR_CHECK(Status))
 		return 0;
 
 	if (sockCtx->IsIPv6)
 	{
-		// Allocate transmit data structure
 		EFI_TCP6_TRANSMIT_DATA *TxData = NULL;
 		Status = bs->AllocatePool(EfiLoaderData, sizeof(EFI_TCP6_TRANSMIT_DATA), (PVOID *)&TxData);
-		if (EFI_ERROR(Status))
+		if (EFI_ERROR_CHECK(Status))
 		{
 			bs->CloseEvent(TxEvent);
 			return 0;
@@ -712,33 +666,27 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 		TxData->FragmentTable[0].FragmentLength = bufferLength;
 		TxData->FragmentTable[0].FragmentBuffer = (PVOID)buffer;
 
-		// Setup I/O token
 		EFI_TCP6_IO_TOKEN TxToken;
 		Memory::Zero(&TxToken, sizeof(TxToken));
 		TxToken.CompletionToken.Event = TxEvent;
 		TxToken.CompletionToken.Status = EFI_NOT_READY;
 		TxToken.Packet.TxData = TxData;
 
-		// Initiate transmit
 		Status = sockCtx->Tcp6->Transmit(sockCtx->Tcp6, &TxToken);
-		if (!EFI_ERROR(Status) || Status == EFI_NOT_READY)
+		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			// Wait for transmit (30 second timeout)
-			Status = WaitForEventWithTimeout(bs, TxEvent, 30ULL * 10000000ULL);
-			if (!EFI_ERROR(Status) && !EFI_ERROR(TxToken.CompletionToken.Status))
-			{
+			Status = WaitForCompletionToken(bs, &TxToken.CompletionToken.Status, 30000);
+			if (!EFI_ERROR_CHECK(Status) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
 				bytesSent = bufferLength;
-			}
 		}
 
 		bs->FreePool(TxData);
 	}
 	else
 	{
-		// Allocate transmit data structure
 		EFI_TCP4_TRANSMIT_DATA *TxData = NULL;
 		Status = bs->AllocatePool(EfiLoaderData, sizeof(EFI_TCP4_TRANSMIT_DATA), (PVOID *)&TxData);
-		if (EFI_ERROR(Status))
+		if (EFI_ERROR_CHECK(Status))
 		{
 			bs->CloseEvent(TxEvent);
 			return 0;
@@ -752,23 +700,18 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 		TxData->FragmentTable[0].FragmentLength = bufferLength;
 		TxData->FragmentTable[0].FragmentBuffer = (PVOID)buffer;
 
-		// Setup I/O token
 		EFI_TCP4_IO_TOKEN TxToken;
 		Memory::Zero(&TxToken, sizeof(TxToken));
 		TxToken.CompletionToken.Event = TxEvent;
 		TxToken.CompletionToken.Status = EFI_NOT_READY;
 		TxToken.Packet.TxData = TxData;
 
-		// Initiate transmit
 		Status = sockCtx->Tcp4->Transmit(sockCtx->Tcp4, &TxToken);
-		if (!EFI_ERROR(Status) || Status == EFI_NOT_READY)
+		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			// Wait for transmit (30 second timeout)
-			Status = WaitForEventWithTimeout(bs, TxEvent, 30ULL * 10000000ULL);
-			if (!EFI_ERROR(Status) && !EFI_ERROR(TxToken.CompletionToken.Status))
-			{
+			Status = WaitForCompletionToken(bs, &TxToken.CompletionToken.Status, 30000);
+			if (!EFI_ERROR_CHECK(Status) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
 				bytesSent = bufferLength;
-			}
 		}
 
 		bs->FreePool(TxData);
