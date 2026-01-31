@@ -65,12 +65,32 @@ jobs:
           cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
           python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
 
+      - name: Upload artifacts -O0
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-O0
+          retention-days: 1
+          path: |
+            build/**
+            !build/**/cmake/**
+
       - name: Build and Test -O1
         shell: pwsh
         run: |
           cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O1
           cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
           python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
+
+      - name: Upload artifacts -O1
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-O1
+          retention-days: 1
+          path: |
+            build/**
+            !build/**/cmake/**
 
       - name: Build and Test -O2
         shell: pwsh
@@ -79,12 +99,32 @@ jobs:
           cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
           python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
 
+      - name: Upload artifacts -O2
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-O2
+          retention-days: 1
+          path: |
+            build/**
+            !build/**/cmake/**
+
       - name: Build and Test -O3
         shell: pwsh
         run: |
           cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O3
           cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
           python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
+
+      - name: Upload artifacts -O3
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-O3
+          retention-days: 1
+          path: |
+            build/**
+            !build/**/cmake/**
 
       - name: Build and Test -Os
         shell: pwsh
@@ -93,12 +133,32 @@ jobs:
           cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
           python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
 
+      - name: Upload artifacts -Os
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-Os
+          retention-days: 1
+          path: |
+            build/**
+            !build/**/cmake/**
+
       - name: Build and Test -Oz
         shell: pwsh
         run: |
           cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Oz
           cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
           python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
+
+      - name: Upload artifacts -Oz
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-Oz
+          retention-days: 1
+          path: |
+            build/**
+            !build/**/cmake/**
 
       - name: Build and Test -Og
         shell: pwsh
@@ -107,11 +167,11 @@ jobs:
           cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
           python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
 
-      - name: Upload build artifacts
+      - name: Upload artifacts -Og
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.arch }}-${{ matrix.platform }}-all-opts
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-Og
           retention-days: 1
           path: |
             build/**
@@ -199,6 +259,16 @@ jobs:
           chmod +x "$TEST_EXE"
           if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
 
+      - name: Upload artifacts -O0
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-O0
+          retention-days: 1
+          path: |
+            build/**
+            !build/**/cmake/**
+
       - name: Build and Test -O1
         run: |
           cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O1
@@ -206,6 +276,16 @@ jobs:
           TEST_EXE=$(find build -type f -name "*.elf" | head -n 1)
           chmod +x "$TEST_EXE"
           if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
+
+      - name: Upload artifacts -O1
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-O1
+          retention-days: 1
+          path: |
+            build/**
+            !build/**/cmake/**
 
       - name: Build and Test -O2
         run: |
@@ -215,6 +295,16 @@ jobs:
           chmod +x "$TEST_EXE"
           if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
 
+      - name: Upload artifacts -O2
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-O2
+          retention-days: 1
+          path: |
+            build/**
+            !build/**/cmake/**
+
       - name: Build and Test -O3
         run: |
           cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O3
@@ -222,6 +312,16 @@ jobs:
           TEST_EXE=$(find build -type f -name "*.elf" | head -n 1)
           chmod +x "$TEST_EXE"
           if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
+
+      - name: Upload artifacts -O3
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-O3
+          retention-days: 1
+          path: |
+            build/**
+            !build/**/cmake/**
 
       - name: Build and Test -Os
         run: |
@@ -231,6 +331,16 @@ jobs:
           chmod +x "$TEST_EXE"
           if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
 
+      - name: Upload artifacts -Os
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-Os
+          retention-days: 1
+          path: |
+            build/**
+            !build/**/cmake/**
+
       - name: Build and Test -Oz
         run: |
           cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Oz
@@ -238,6 +348,16 @@ jobs:
           TEST_EXE=$(find build -type f -name "*.elf" | head -n 1)
           chmod +x "$TEST_EXE"
           if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
+
+      - name: Upload artifacts -Oz
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-Oz
+          retention-days: 1
+          path: |
+            build/**
+            !build/**/cmake/**
 
       - name: Build and Test -Og
         run: |
@@ -247,11 +367,11 @@ jobs:
           chmod +x "$TEST_EXE"
           if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
 
-      - name: Upload build artifacts
+      - name: Upload artifacts -Og
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.arch }}-${{ matrix.platform }}-all-opts
+          name: build-${{ matrix.arch }}-${{ matrix.platform }}-Og
           retention-days: 1
           path: |
             build/**
