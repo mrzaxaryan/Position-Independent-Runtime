@@ -33,7 +33,6 @@ public:
     constexpr DOUBLE() noexcept : bits(0ULL) {}
     constexpr DOUBLE(const DOUBLE &) noexcept = default;
     constexpr explicit DOUBLE(UINT64 bitPattern) noexcept : bits(bitPattern) {}
-    constexpr DOUBLE(UINT32 high, UINT32 low) noexcept : bits((((UINT64)(high)) << 32) | ((UINT64)(low))) {}
 
     constexpr DOUBLE(double val) noexcept
     {

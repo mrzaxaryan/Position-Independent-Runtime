@@ -142,8 +142,8 @@ private:
 		if (native_c != (double)2.0_embed)
 			return FALSE;
 
-		// Construction from two 32-bit values
-		DOUBLE d(0x3FF00000, 0x00000000); // 1.0
+		// Construction from bit pattern (1.0 = 0x3FF0000000000000)
+		DOUBLE d(0x3FF0000000000000ULL); // 1.0
 		double native_d = (double)d;
 		if (native_d != (double)1.0_embed)
 			return FALSE;
