@@ -14,6 +14,27 @@
 
 #define EVEN(vli) (!(vli[0] & 1))
 
+/* Loop unrolling macros for common digit counts */
+#define VLI_UNROLL_2(op) \
+    op(0);               \
+    op(1)
+#define VLI_UNROLL_3(op) \
+    op(0);               \
+    op(1);               \
+    op(2)
+#define VLI_UNROLL_4(op) \
+    op(0);               \
+    op(1);               \
+    op(2);               \
+    op(3)
+#define VLI_UNROLL_6(op) \
+    op(0);               \
+    op(1);               \
+    op(2);               \
+    op(3);               \
+    op(4);               \
+    op(5)
+
 constexpr UINT64 Curve_P_16[] = {0xFFFFFFFFFFFFFFFF, 0xFFFFFFFDFFFFFFFF};
 constexpr UINT64 Curve_B_16[] = {0xD824993C2CEE5ED3, 0xE87579C11079F43D};
 constexpr EccPoint Curve_G_16 = {{0x0C28607CA52C5B86, 0x161FF7528B899B2D}, {0xC02DA292DDED7A83, 0xCF5AC8395BAFEB13}};
@@ -37,25 +58,44 @@ constexpr UINT64 Curve_N_48[] = {0xECEC196ACCC52973, 0x581A0DB248B0A77A, 0xC7634
 
 VOID Ecc::VliClear(UINT64 *pVli)
 {
-    UINT32 i;
-    for (i = 0; i < this->numEccDigits; ++i)
+    switch (this->numEccDigits)
     {
-        pVli[i] = 0;
+    case 6:
+        pVli[5] = 0;
+        pVli[4] = 0; /* fall through */
+    case 4:
+        pVli[3] = 0; /* fall through */
+    case 3:
+        pVli[2] = 0; /* fall through */
+    case 2:
+        pVli[1] = 0;
+        pVli[0] = 0;
+        break;
+    default:
+        for (UINT32 i = 0; i < this->numEccDigits; ++i)
+            pVli[i] = 0;
     }
 }
 
 /* Returns 1 if vli == 0, 0 otherwise. */
 INT32 Ecc::VliIsZero(UINT64 *pVli)
 {
-    UINT32 i;
-    for (i = 0; i < this->numEccDigits; ++i)
+    switch (this->numEccDigits)
     {
-        if (pVli[i])
-        {
-            return 0;
-        }
+    case 2:
+        return (pVli[0] | pVli[1]) == 0;
+    case 3:
+        return (pVli[0] | pVli[1] | pVli[2]) == 0;
+    case 4:
+        return (pVli[0] | pVli[1] | pVli[2] | pVli[3]) == 0;
+    case 6:
+        return (pVli[0] | pVli[1] | pVli[2] | pVli[3] | pVli[4] | pVli[5]) == 0;
+    default:
+        for (UINT32 i = 0; i < this->numEccDigits; ++i)
+            if (pVli[i])
+                return 0;
+        return 1;
     }
-    return 1;
 }
 
 /* Returns nonzero if bit bit of vli is set. */
@@ -80,31 +120,35 @@ UINT32 Ecc::VliNumDigits(UINT64 *pVli)
 /* Counts the number of bits required for vli. */
 UINT32 Ecc::VliNumBits(UINT64 *pVli)
 {
-    UINT32 i;
-    UINT64 l_digit;
-
     UINT32 l_numDigits = this->VliNumDigits(pVli);
     if (l_numDigits == 0)
     {
         return 0;
     }
 
-    l_digit = pVli[l_numDigits - 1];
-    for (i = 0; l_digit; ++i)
-    {
-        l_digit >>= 1;
-    }
-
-    return ((l_numDigits - 1) * 64 + i);
+    UINT64 l_digit = pVli[l_numDigits - 1];
+    return ((l_numDigits - 1) * 64 + (64 - __builtin_clzll(l_digit)));
 }
 
 /* Sets dest = src. */
 VOID Ecc::VliSet(UINT64 *pDest, UINT64 *pSrc)
 {
-    UINT32 i;
-    for (i = 0; i < this->numEccDigits; ++i)
+    switch (this->numEccDigits)
     {
-        pDest[i] = pSrc[i];
+    case 6:
+        pDest[5] = pSrc[5];
+        pDest[4] = pSrc[4]; /* fall through */
+    case 4:
+        pDest[3] = pSrc[3]; /* fall through */
+    case 3:
+        pDest[2] = pSrc[2]; /* fall through */
+    case 2:
+        pDest[1] = pSrc[1];
+        pDest[0] = pSrc[0];
+        break;
+    default:
+        for (UINT32 i = 0; i < this->numEccDigits; ++i)
+            pDest[i] = pSrc[i];
     }
 }
 
@@ -159,16 +203,10 @@ VOID Ecc::VliRShift1(UINT64 *pVli)
 /* Computes result = left + right, returning carry. Can modify in place. */
 UINT64 Ecc::VliAdd(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight)
 {
-    UINT64 l_carry = 0;
-    UINT32 i;
-    for (i = 0; i < this->numEccDigits; ++i)
+    unsigned long long l_carry = 0;
+    for (UINT32 i = 0; i < this->numEccDigits; ++i)
     {
-        UINT64 l_sum = pLeft[i] + pRight[i] + l_carry;
-        if (l_sum != pLeft[i])
-        {
-            l_carry = (l_sum < pLeft[i]);
-        }
-        pResult[i] = l_sum;
+        pResult[i] = __builtin_addcll(pLeft[i], pRight[i], l_carry, &l_carry);
     }
     return l_carry;
 }
@@ -176,44 +214,31 @@ UINT64 Ecc::VliAdd(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight)
 /* Computes result = left - right, returning borrow. Can modify in place. */
 UINT64 Ecc::VliSub(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight)
 {
-    UINT64 l_borrow = 0;
-    UINT32 i;
-    for (i = 0; i < this->numEccDigits; ++i)
+    unsigned long long l_borrow = 0;
+    for (UINT32 i = 0; i < this->numEccDigits; ++i)
     {
-        UINT64 l_diff = pLeft[i] - pRight[i] - l_borrow;
-        if (l_diff != pLeft[i])
-        {
-            l_borrow = (l_diff > pLeft[i]);
-        }
-        pResult[i] = l_diff;
+        pResult[i] = __builtin_subcll(pLeft[i], pRight[i], l_borrow, &l_borrow);
     }
     return l_borrow;
 }
 
 UINT128_ Ecc::Mul64_64(UINT64 left, UINT64 right)
 {
+    UINT32 a0 = (UINT32)left;
+    UINT32 a1 = (UINT32)(left >> 32);
+    UINT32 b0 = (UINT32)right;
+    UINT32 b1 = (UINT32)(right >> 32);
+
+    UINT64 m0 = (UINT64)a0 * b0;
+    UINT64 m1 = (UINT64)a0 * b1;
+    UINT64 m2 = (UINT64)a1 * b0;
+    UINT64 m3 = (UINT64)a1 * b1;
+
+    UINT64 mid = (m0 >> 32) + (UINT32)m1 + (UINT32)m2;
+
     UINT128_ result;
-
-    UINT64 a0 = left & 0xffffffffull;
-    UINT64 a1 = left >> 32;
-    UINT64 b0 = right & 0xffffffffull;
-    UINT64 b1 = right >> 32;
-
-    UINT64 m0 = a0 * b0;
-    UINT64 m1 = a0 * b1;
-    UINT64 m2 = a1 * b0;
-    UINT64 m3 = a1 * b1;
-
-    m2 += (m0 >> 32);
-    m2 += m1;
-    if (m2 < m1)
-    { // overflow
-        m3 += UINT64(0x100000000ull);
-    }
-
-    result.low = (m0 & 0xffffffffull) | (m2 << 32);
-    result.high = m3 + (m2 >> 32);
-
+    result.low = (m0 & 0xffffffffull) | (mid << 32);
+    result.high = m3 + (m1 >> 32) + (m2 >> 32) + (mid >> 32);
     return result;
 }
 
@@ -802,7 +827,8 @@ VOID Ecc::Mult(EccPoint *pResult, EccPoint *pPoint, UINT64 *pScalar, UINT64 *pIn
 
     this->XYcZInitialDouble(Rx[1], Ry[1], Rx[0], Ry[0], pInitialZ);
 
-    for (i = this->VliNumBits(pScalar) - 2; i > 0; --i)
+    /* Constant-time: always iterate over all bits to prevent timing leaks */
+    for (i = this->numEccDigits * 64 - 2; i > 0; --i)
     {
         nb = !(this->VliTestBit(pScalar, i));
         this->XYcZAddC(Rx[1 - nb], Ry[1 - nb], Rx[nb], Ry[nb]);
@@ -931,11 +957,11 @@ INT32 Ecc::ComputeSharedSecret(const UINT8 *publicKey, UINT32 publicKeySize, UIN
     return this->IsZero(&l_product) ? -1 : 0;
 }
 
-INT32 Ecc::Initialize(INT32 bytes)
+INT32 Ecc::Initialize(EccCurve curve)
 {
-    this->eccBytes = bytes;
-    this->numEccDigits = bytes >> 3;
-    if (bytes == secp128r1)
+    this->eccBytes = curve;
+    this->numEccDigits = curve >> 3;
+    if (curve == ECC_SECP128R1)
     {
         Memory::Copy(this->curveP, MakeEmbedArray(Curve_P_16), sizeof(Curve_P_16));
         Memory::Copy(this->curveB, MakeEmbedArray(Curve_B_16), sizeof(Curve_B_16));
@@ -943,7 +969,7 @@ INT32 Ecc::Initialize(INT32 bytes)
         Memory::Copy(this->curveG.y, MakeEmbedArray(Curve_G_16.y), sizeof(Curve_G_16.y));
         Memory::Copy(this->curveN, MakeEmbedArray(Curve_N_16), sizeof(Curve_N_16));
     }
-    else if (bytes == secp192r1)
+    else if (curve == ECC_SECP192R1)
     {
         Memory::Copy(this->curveP, MakeEmbedArray(Curve_P_24), sizeof(Curve_P_24));
         Memory::Copy(this->curveB, MakeEmbedArray(Curve_B_24), sizeof(Curve_B_24));
@@ -951,7 +977,7 @@ INT32 Ecc::Initialize(INT32 bytes)
         Memory::Copy(this->curveG.y, MakeEmbedArray(Curve_G_24.y), sizeof(Curve_G_24.y));
         Memory::Copy(this->curveN, MakeEmbedArray(Curve_N_24), sizeof(Curve_N_24));
     }
-    else if (bytes == secp256r1)
+    else if (curve == ECC_SECP256R1)
     {
         Memory::Copy(this->curveP, MakeEmbedArray(Curve_P_32), sizeof(Curve_P_32));
         Memory::Copy(this->curveB, MakeEmbedArray(Curve_B_32), sizeof(Curve_B_32));
@@ -959,7 +985,7 @@ INT32 Ecc::Initialize(INT32 bytes)
         Memory::Copy(this->curveG.y, MakeEmbedArray(Curve_G_32.y), sizeof(Curve_G_32.y));
         Memory::Copy(this->curveN, MakeEmbedArray(Curve_N_32), sizeof(Curve_N_32));
     }
-    else if (bytes == secp384r1)
+    else if (curve == ECC_SECP384R1)
     {
         Memory::Copy(this->curveP, MakeEmbedArray(Curve_P_48), sizeof(Curve_P_48));
         Memory::Copy(this->curveB, MakeEmbedArray(Curve_B_48), sizeof(Curve_B_48));
