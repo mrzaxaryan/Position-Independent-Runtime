@@ -26,7 +26,7 @@ code .
   ```bash
   sudo apt-get update && sudo apt-get install -y qemu-user-static
   ```
-  This is required by `scripts/loader.py` to run binaries for different architectures (e.g., running ARM code on x86_64).
+  This is required to run binaries for different architectures (e.g., running ARM code on x86_64).
 
 For more information, see the [VSCode WSL documentation](https://code.visualstudio.com/docs/remote/wsl).
 
