@@ -140,4 +140,10 @@ public:
 
     // Get monotonic timestamp in nanoseconds (for entropy/timing)
     static UINT64 GetMonotonicNanoseconds();
+
+    // Check if a year is a leap year
+    static FORCE_INLINE BOOL IsLeapYear(UINT64 year) noexcept
+    {
+        return (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0));
+    }
 };

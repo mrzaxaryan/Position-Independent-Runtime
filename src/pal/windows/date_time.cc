@@ -26,12 +26,6 @@ typedef struct _USER_SHARED_DATA
 // Macro to get the USER_SHARED_DATA structure
 #define GetUserSharedData() ((PUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA)
 
-// Check if a year is a leap year
-BOOL isLeapYear(UINT64 year)
-{
-    return (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0));
-}
-
 // Read KSYSTEM_TIME as UINT64
 UINT64 readKSystemTimeU64(volatile const KSYSTEM_TIME *t)
 {
@@ -86,7 +80,7 @@ DateTime DateTime::Now()
 
     while (1)
     {
-        UINT32 diy = isLeapYear(year) ? 366u : 365u;
+        UINT32 diy = DateTime::IsLeapYear(year) ? 366u : 365u;
         if (days >= diy)
         {
             days -= diy;
@@ -115,7 +109,7 @@ DateTime DateTime::Now()
         mdays[i] = mdays_norm[i];
 
     // Adjust for leap year
-    if (isLeapYear(year))
+    if (DateTime::IsLeapYear(year))
         mdays[1] = 29;
 
     UINT32 month = 0;

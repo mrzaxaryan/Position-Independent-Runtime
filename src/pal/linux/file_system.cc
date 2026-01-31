@@ -47,56 +47,6 @@ constexpr INT32 S_IROTH = 0x0004;  // Others read
 // Invalid file descriptor
 constexpr SSIZE INVALID_FD = -1;
 
-// Helper: Convert wide char path to UTF-8
-static BOOL WCharToUtf8(PCWCHAR wstr, CHAR* utf8, USIZE maxLen)
-{
-    USIZE pos = 0;
-    USIZE i = 0;
-
-    while (wstr[i] != L'\0' && pos < maxLen - 4)
-    {
-        UINT32 codepoint = wstr[i++];
-
-        // Handle UTF-16 surrogate pairs
-        if (codepoint >= 0xD800 && codepoint <= 0xDBFF && wstr[i] != L'\0')
-        {
-            UINT32 low = wstr[i];
-            if (low >= 0xDC00 && low <= 0xDFFF)
-            {
-                codepoint = 0x10000 + ((codepoint & 0x3FF) << 10) + (low & 0x3FF);
-                i++;
-            }
-        }
-
-        // Convert to UTF-8
-        if (codepoint < 0x80)
-        {
-            utf8[pos++] = (CHAR)codepoint;
-        }
-        else if (codepoint < 0x800)
-        {
-            utf8[pos++] = (CHAR)(0xC0 | (codepoint >> 6));
-            utf8[pos++] = (CHAR)(0x80 | (codepoint & 0x3F));
-        }
-        else if (codepoint < 0x10000)
-        {
-            utf8[pos++] = (CHAR)(0xE0 | (codepoint >> 12));
-            utf8[pos++] = (CHAR)(0x80 | ((codepoint >> 6) & 0x3F));
-            utf8[pos++] = (CHAR)(0x80 | (codepoint & 0x3F));
-        }
-        else if (codepoint < 0x110000)
-        {
-            utf8[pos++] = (CHAR)(0xF0 | (codepoint >> 18));
-            utf8[pos++] = (CHAR)(0x80 | ((codepoint >> 12) & 0x3F));
-            utf8[pos++] = (CHAR)(0x80 | ((codepoint >> 6) & 0x3F));
-            utf8[pos++] = (CHAR)(0x80 | (codepoint & 0x3F));
-        }
-    }
-
-    utf8[pos] = '\0';
-    return TRUE;
-}
-
 // --- File Implementation ---
 
 File::File(PVOID handle) : fileHandle(handle), fileSize(0)
@@ -191,8 +141,7 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
 {
     // Convert wide char path to UTF-8
     CHAR utf8Path[1024];
-    if (!WCharToUtf8(path, utf8Path, sizeof(utf8Path)))
-        return File();
+    String::WideToUtf8(path, utf8Path, sizeof(utf8Path));
 
     // Map FileSystem flags to Linux open flags
     INT32 openFlags = 0;
