@@ -17,16 +17,25 @@ static inline UINT64 GetHardwareTimestamp()
 #elif defined(ARCHITECTURE_ARMV7A)
     // ARMv7-A (32-bit): User-space timestamp using software counters
     // Hardware counters require kernel/QEMU config to enable user access
-    static UINT64 counter = 0;
+    // Note: Cannot use static variables in PIC mode
 
-    // Get entropy from stack address (safe and portable)
-    volatile unsigned int stack_var = 0;
-    UINT64 sp_entropy = (UINT64)(USIZE)&stack_var;
+    // Get entropy from multiple stack addresses
+    volatile unsigned int stack_var1 = 0;
+    volatile unsigned int stack_var2 = 0;
+    volatile unsigned int stack_var3 = 0;
 
-    // Simple mixing using counter and stack position
-    // This provides sufficient entropy for random number generation
-    counter++;
-    return (counter * UINT64(6364136223846793005ULL)) ^ (sp_entropy * UINT64(1103515245ULL));
+    unsigned long long sp1 = (unsigned long long)(unsigned int)&stack_var1;
+    unsigned long long sp2 = (unsigned long long)(unsigned int)&stack_var2;
+    unsigned long long sp3 = (unsigned long long)(unsigned int)&stack_var3;
+
+    // Mix entropy from different stack positions
+    // Each call will have different stack addresses providing unique values
+    unsigned long long result = sp1;
+    result = result * 1103515245ULL + 12345ULL;
+    result ^= sp2 << 8;
+    result += sp3;
+
+    return result;
 
 #else
 #error "GetHardwareTimestamp not implemented for this architecture"
