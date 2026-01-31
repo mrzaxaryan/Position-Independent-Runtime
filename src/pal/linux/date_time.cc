@@ -22,12 +22,6 @@ struct timespec
     SSIZE tv_nsec;  // nanoseconds
 };
 
-// Helper: check if a year is a leap year
-static BOOL isLeapYear(UINT64 year)
-{
-    return (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0));
-}
-
 DateTime DateTime::Now()
 {
     DateTime dt;
@@ -73,7 +67,7 @@ DateTime DateTime::Now()
     // Fast-forward through years
     while (TRUE)
     {
-        UINT32 daysInYear = isLeapYear(year) ? 366 : 365;
+        UINT32 daysInYear = DateTime::IsLeapYear(year) ? 366 : 365;
         if (days >= daysInYear)
         {
             days -= daysInYear;
@@ -89,7 +83,7 @@ DateTime DateTime::Now()
     UINT32 daysInMonth[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
     // Adjust February for leap year
-    if (isLeapYear(year))
+    if (DateTime::IsLeapYear(year))
         daysInMonth[1] = 29;
 
     // Find the month
