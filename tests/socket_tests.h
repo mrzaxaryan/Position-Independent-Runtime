@@ -11,8 +11,7 @@ class SocketTests
 {
 private:
 	// Test server IP address: 1.1.1.1 (one.one.one.one)
-	static constexpr UINT32 TEST_SERVER_IP = 0x01010101;
-
+	#define TEST_SERVER_IP 0x01010101
 	// Test 1: Socket creation
 	static BOOL TestSocketCreation()
 	{
@@ -59,11 +58,11 @@ private:
 
 		// Send HTTP GET request
 		auto request = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n"_embed;
-		UINT32 bytesSent = sock.Write((PCVOID)(PCCHAR)request, request.Length);
+		UINT32 bytesSent = sock.Write((PCVOID)(PCCHAR)request, request.Length());
 
-		if (bytesSent != request.Length)
+		if (bytesSent != request.Length())
 		{
-			LOG_ERROR("Failed to send complete HTTP request (sent %d/%d bytes)", bytesSent, request.Length);
+			LOG_ERROR("Failed to send complete HTTP request (sent %d/%d bytes)", bytesSent, request.Length());
 			sock.Close();
 			return FALSE;
 		}
@@ -101,9 +100,9 @@ private:
 
 			// Send minimal HTTP request
 			auto request = "GET / HTTP/1.0\r\n\r\n"_embed;
-			UINT32 bytesSent = sock.Write((PCVOID)(PCCHAR)request, request.Length);
+			UINT32 bytesSent = sock.Write((PCVOID)(PCCHAR)request, request.Length());
 
-			if (bytesSent != request.Length)
+			if (bytesSent != request.Length())
 			{
 				LOG_ERROR("Connection %d: failed to send request", i + 1);
 				sock.Close();
@@ -219,11 +218,11 @@ private:
 
 		// Send minimal HTTP request
 		auto request = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n"_embed;
-		UINT32 bytesSent = sock.Write((PCVOID)(PCCHAR)request, request.Length);
+		UINT32 bytesSent = sock.Write((PCVOID)(PCCHAR)request, request.Length());
 
-		if (bytesSent != request.Length)
+		if (bytesSent != request.Length())
 		{
-			LOG_ERROR("Failed to send complete HTTP request over IPv6 (sent %d/%d bytes)", bytesSent, request.Length);
+			LOG_ERROR("Failed to send complete HTTP request over IPv6 (sent %d/%d bytes)", bytesSent, request.Length());
 			sock.Close();
 			return FALSE;
 		}

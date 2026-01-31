@@ -64,13 +64,13 @@ public:
      */
     static DOUBLE Parse(const char *s) noexcept
     {
-        // Initialize result variables
-        DOUBLE sign = 1.0;
-        DOUBLE result = 0.0;
-        DOUBLE frac = 0.0;
-        DOUBLE base = 1.0;
-        DOUBLE tenDouble = 10.0;
-        DOUBLE minusOne = -1.0;
+        // Initialize result variables (use INT32 constructor to avoid .rdata)
+        DOUBLE sign = DOUBLE(INT32(1));
+        DOUBLE result = DOUBLE(INT32(0));
+        DOUBLE frac = DOUBLE(INT32(0));
+        DOUBLE base = DOUBLE(INT32(1));
+        DOUBLE tenDouble = DOUBLE(INT32(10));
+        DOUBLE minusOne = DOUBLE(INT32(-1));
         // sign
         if (*s == '-')
         {
