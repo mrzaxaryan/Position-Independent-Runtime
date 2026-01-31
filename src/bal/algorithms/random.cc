@@ -26,7 +26,7 @@ static inline UINT64 GetHardwareTimestamp()
     // Simple mixing using counter and stack position
     // This provides sufficient entropy for random number generation
     counter++;
-    return (counter * 6364136223846793005ULL) ^ (sp_entropy * 1103515245ULL);
+    return (counter * UINT64(6364136223846793005ULL)) ^ (sp_entropy * UINT64(1103515245ULL));
 
 #else
 #error "GetHardwareTimestamp not implemented for this architecture"
