@@ -3,30 +3,29 @@
 PIC Shellcode Loader
 
 Loads position-independent code into executable memory and runs it.
-Auto-detects the current platform.
+Auto-detects platform. Reads entry point from corresponding .elf file.
 
 Usage:
-    python loader.py --arch x86_64 shellcode.bin
-    python loader.py --arch i386 shellcode.bin
+    python loader.py --arch x86_64 output.bin
+    python loader.py --arch i386 output.bin
 """
 
 import argparse
 import ctypes
 import mmap
+import os
 import platform
 import struct
 import sys
 
-# Entry offsets match cpp-pic linker script
 ARCH = {
-    'i386':    {'bits': 32, 'family': 'x86', 'entry': 0x70},
-    'x86_64':  {'bits': 64, 'family': 'x86', 'entry': 0x1e0},
-    'aarch64': {'bits': 64, 'family': 'arm', 'entry': 0x78},
+    'i386':    {'bits': 32, 'family': 'x86'},
+    'x86_64':  {'bits': 64, 'family': 'x86'},
+    'aarch64': {'bits': 64, 'family': 'arm'},
 }
 
 
 def get_host():
-    """Detect host OS, CPU family, and bitness."""
     os_name = platform.system().lower()
     machine = platform.machine().lower()
 
@@ -39,8 +38,35 @@ def get_host():
     return os_name, machine, 64
 
 
+def read_elf_entry(path):
+    """Read entry point from ELF file."""
+    with open(path, 'rb') as f:
+        if f.read(4) != b'\x7fELF':
+            return None
+        ei_class = struct.unpack('B', f.read(1))[0]
+        f.seek(0x18)
+        if ei_class == 1:  # 32-bit
+            return struct.unpack('<I', f.read(4))[0]
+        else:  # 64-bit
+            return struct.unpack('<Q', f.read(8))[0]
+
+
+def get_entry_offset(bin_path):
+    """Get entry offset from .elf file next to .bin."""
+    elf_path = bin_path.rsplit('.', 1)[0] + '.elf'
+    if os.path.exists(elf_path):
+        entry = read_elf_entry(elf_path)
+        if entry:
+            return entry
+    # Try .exe for Windows builds
+    exe_path = bin_path.rsplit('.', 1)[0] + '.exe'
+    if os.path.exists(exe_path):
+        # PE entry point reading would go here
+        pass
+    sys.exit(f"[-] Cannot find .elf file to read entry point: {elf_path}")
+
+
 def run_mmap(shellcode, entry_offset):
-    """Execute via mmap (Linux/macOS)."""
     mem = mmap.mmap(-1, len(shellcode), prot=mmap.PROT_READ | mmap.PROT_WRITE | mmap.PROT_EXEC)
     mem.write(shellcode)
 
@@ -55,7 +81,6 @@ def run_mmap(shellcode, entry_offset):
 
 
 def run_virtualalloc(shellcode, entry_offset):
-    """Execute via VirtualAlloc (Windows)."""
     from ctypes import wintypes
 
     k32 = ctypes.windll.kernel32
@@ -99,14 +124,17 @@ def main():
     if host_bits != target['bits']:
         sys.exit(f"[-] Bitness mismatch: host={host_bits}bit, target={target['bits']}bit")
 
+    entry_offset = get_entry_offset(args.shellcode)
+    print(f"[+] Entry offset: 0x{entry_offset:x}")
+
     with open(args.shellcode, 'rb') as f:
         shellcode = f.read()
     print(f"[+] Loaded: {len(shellcode)} bytes")
 
     if host_os == 'windows':
-        code = run_virtualalloc(shellcode, target['entry'])
+        code = run_virtualalloc(shellcode, entry_offset)
     else:
-        code = run_mmap(shellcode, target['entry'])
+        code = run_mmap(shellcode, entry_offset)
 
     print(f"[+] Exit: {code}")
     sys.exit(code)
