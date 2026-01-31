@@ -170,6 +170,41 @@ extern "C"
         return result;
     }
 
+    // ARM EABI: 64-bit signed division with modulo
+    // Returns {quotient, remainder} as a struct in r0:r1 and r2:r3
+    struct ldivmod_return { long long quot; long long rem; };
+
+    AEABI_FUNC struct ldivmod_return __aeabi_ldivmod(long long numerator, long long denominator)
+    {
+        struct ldivmod_return result;
+
+        if (denominator == 0)
+        {
+            result.quot = 0;
+            result.rem = numerator;
+            return result;
+        }
+
+        // Handle signs
+        int sign_num = numerator < 0 ? -1 : 1;
+        int sign_den = denominator < 0 ? -1 : 1;
+        int sign_quot = sign_num * sign_den;
+
+        // Work with absolute values
+        unsigned long long abs_num = (unsigned long long)(numerator < 0 ? -numerator : numerator);
+        unsigned long long abs_den = (unsigned long long)(denominator < 0 ? -denominator : denominator);
+
+        // Perform unsigned division
+        unsigned long long quotient, remainder;
+        udiv64_internal(abs_num, abs_den, &quotient, &remainder);
+
+        // Apply signs to results
+        result.quot = sign_quot < 0 ? -(long long)quotient : (long long)quotient;
+        result.rem = sign_num < 0 ? -(long long)remainder : (long long)remainder;
+
+        return result;
+    }
+
     // ARM EABI: 64-bit logical shift right
     AEABI_FUNC unsigned long long __aeabi_llsr(unsigned long long value, int shift)
     {
