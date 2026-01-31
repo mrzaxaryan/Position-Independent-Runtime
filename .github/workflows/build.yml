@@ -58,61 +58,54 @@ jobs:
 
           "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
-      - name: Build and Test All Optimization Levels
+      - name: Build and Test -O0
         shell: pwsh
         run: |
-          $arch = "${{ matrix.arch }}"
-          $platform = "${{ matrix.platform }}"
-          $opt_levels = @("O0", "O1", "O2", "O3", "Os", "Oz", "Og")
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O0
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
 
-          foreach ($opt in $opt_levels) {
-            Write-Host "::group::Build and Test Optimization Level -$opt"
-            Write-Host ""
-            Write-Host "=========================================="
-            Write-Host "=== BUILD: arch=$arch platform=$platform type=release opt=$opt ==="
-            Write-Host "=========================================="
-            cmake -B "build/release/$platform/$arch/cmake" `
-                  -G Ninja `
-                  "-DARCHITECTURE=$arch" `
-                  "-DPLATFORM=$platform" `
-                  "-DBUILD_TYPE=release" `
-                  "-DOPTIMIZATION_LEVEL=$opt"
-            cmake --build "build/release/$platform/$arch/cmake"
+      - name: Build and Test -O1
+        shell: pwsh
+        run: |
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O1
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
 
-            Write-Host ""
-            Write-Host "=========================================="
-            Write-Host "=== TEST: arch=$arch platform=$platform opt=$opt ==="
-            Write-Host "Note: ${{ matrix.note }}"
-            Write-Host "=========================================="
+      - name: Build and Test -O2
+        shell: pwsh
+        run: |
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O2
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
 
-            # Find output.bin in build directory
-            $binFile = Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1
+      - name: Build and Test -O3
+        shell: pwsh
+        run: |
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O3
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
 
-            if (-not $binFile) {
-              Write-Host "ERROR: No output.bin found in build/"
-              exit 1
-            }
+      - name: Build and Test -Os
+        shell: pwsh
+        run: |
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Os
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
 
-            Write-Host "=== Executing via loader.py: $($binFile.FullName) ==="
-            Write-Host ""
+      - name: Build and Test -Oz
+        shell: pwsh
+        run: |
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Oz
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
 
-            python scripts/loader.py --arch $arch $binFile.FullName
-            $exitCode = $LASTEXITCODE
-
-            Write-Host ""
-            if ($exitCode -eq 0) {
-              Write-Host "TEST PASSED for $opt (exit code: ${exitCode})"
-            } else {
-              Write-Host "TEST FAILED for $opt - exit code ${exitCode} (expected 0)"
-              exit $exitCode
-            }
-            Write-Host "::endgroup::"
-          }
-
-          Write-Host ""
-          Write-Host "=========================================="
-          Write-Host "=== ALL OPTIMIZATION LEVELS PASSED for $arch-$platform ==="
-          Write-Host "=========================================="
+      - name: Build and Test -Og
+        shell: pwsh
+        run: |
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Og
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
 
       - name: Upload build artifacts
         if: always()
@@ -198,72 +191,61 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y qemu-user-static
 
-      - name: Build and Test All Optimization Levels
+      - name: Build and Test -O0
         run: |
-          set -euo pipefail
-          ARCH="${{ matrix.arch }}"
-          PLATFORM="${{ matrix.platform }}"
-          QEMU="${{ matrix.qemu }}"
-          OPT_LEVELS=("O0" "O1" "O2" "O3" "Os" "Oz" "Og")
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O0
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          TEST_EXE=$(find build -type f -name "*.elf" | head -n 1)
+          chmod +x "$TEST_EXE"
+          if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
 
-          for OPT in "${OPT_LEVELS[@]}"; do
-            echo "::group::Build and Test Optimization Level -$OPT"
-            echo ""
-            echo "=========================================="
-            echo "=== BUILD: arch=$ARCH platform=$PLATFORM type=release opt=$OPT ==="
-            echo "=========================================="
-            cmake -B "build/release/$PLATFORM/$ARCH/cmake" \
-                  -G Ninja \
-                  "-DARCHITECTURE=$ARCH" \
-                  "-DPLATFORM=$PLATFORM" \
-                  "-DBUILD_TYPE=release" \
-                  "-DOPTIMIZATION_LEVEL=$OPT"
-            cmake --build "build/release/$PLATFORM/$ARCH/cmake"
+      - name: Build and Test -O1
+        run: |
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O1
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          TEST_EXE=$(find build -type f -name "*.elf" | head -n 1)
+          chmod +x "$TEST_EXE"
+          if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
 
-            echo ""
-            echo "=========================================="
-            echo "=== TEST: arch=$ARCH platform=$PLATFORM opt=$OPT ==="
-            echo "Note: ${{ matrix.note }}"
-            echo "=========================================="
+      - name: Build and Test -O2
+        run: |
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O2
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          TEST_EXE=$(find build -type f -name "*.elf" | head -n 1)
+          chmod +x "$TEST_EXE"
+          if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
 
-            # Find the executable (*.elf on Linux)
-            TEST_EXE=$(find build -type f -name "*.elf" | head -n 1)
+      - name: Build and Test -O3
+        run: |
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O3
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          TEST_EXE=$(find build -type f -name "*.elf" | head -n 1)
+          chmod +x "$TEST_EXE"
+          if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
 
-            if [ -z "$TEST_EXE" ]; then
-              echo "ERROR: No executable found in build/"
-              exit 1
-            fi
+      - name: Build and Test -Os
+        run: |
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Os
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          TEST_EXE=$(find build -type f -name "*.elf" | head -n 1)
+          chmod +x "$TEST_EXE"
+          if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
 
-            # Make it executable
-            chmod +x "$TEST_EXE"
+      - name: Build and Test -Oz
+        run: |
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Oz
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          TEST_EXE=$(find build -type f -name "*.elf" | head -n 1)
+          chmod +x "$TEST_EXE"
+          if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
 
-            echo "=== Executing: $TEST_EXE ==="
-            echo ""
-
-            # Run the test
-            set +e
-            if [ -n "$QEMU" ]; then
-              $QEMU "$TEST_EXE"
-            else
-              "$TEST_EXE"
-            fi
-            EXIT_CODE=$?
-            set -e
-
-            echo ""
-            if [ $EXIT_CODE -eq 0 ]; then
-              echo "TEST PASSED for $OPT (exit code: $EXIT_CODE)"
-            else
-              echo "TEST FAILED for $OPT: exit code $EXIT_CODE (expected 0)"
-              exit $EXIT_CODE
-            fi
-            echo "::endgroup::"
-          done
-
-          echo ""
-          echo "=========================================="
-          echo "=== ALL OPTIMIZATION LEVELS PASSED for $ARCH-$PLATFORM ==="
-          echo "=========================================="
+      - name: Build and Test -Og
+        run: |
+          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Og
+          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          TEST_EXE=$(find build -type f -name "*.elf" | head -n 1)
+          chmod +x "$TEST_EXE"
+          if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_EXE"; else "$TEST_EXE"; fi
 
       - name: Upload build artifacts
         if: always()
