@@ -100,9 +100,9 @@ jobs:
 
             Write-Host ""
             if ($exitCode -eq 0) {
-              Write-Host "TEST PASSED for $opt (exit code: $exitCode)"
+              Write-Host "TEST PASSED for $opt (exit code: ${exitCode})"
             } else {
-              Write-Host "TEST FAILED for $opt: exit code $exitCode (expected 0)"
+              Write-Host "TEST FAILED for $opt - exit code ${exitCode} (expected 0)"
               exit $exitCode
             }
           }
