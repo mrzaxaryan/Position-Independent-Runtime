@@ -161,62 +161,6 @@
             "cwd": "${workspaceFolder}",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "aarch64-linux-debug"
-        },
-        {
-            "name": "x86_64-uefi-release (WSL QEMU)",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/scripts/run_uefi.py",
-            "args": [
-                "--arch", "x86_64",
-                "--build", "release",
-                "--workdir", "${workspaceFolder}"
-            ],
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}",
-            "preLaunchTask": "x86_64-uefi-release"
-        },
-        {
-            "name": "x86_64-uefi-debug (WSL QEMU)",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/scripts/run_uefi.py",
-            "args": [
-                "--arch", "x86_64",
-                "--build", "debug",
-                "--workdir", "${workspaceFolder}"
-            ],
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}",
-            "preLaunchTask": "x86_64-uefi-debug"
-        },
-        {
-            "name": "aarch64-uefi-release (WSL QEMU)",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/scripts/run_uefi.py",
-            "args": [
-                "--arch", "aarch64",
-                "--build", "release",
-                "--workdir", "${workspaceFolder}"
-            ],
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}",
-            "preLaunchTask": "aarch64-uefi-release"
-        },
-        {
-            "name": "aarch64-uefi-debug (WSL QEMU)",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/scripts/run_uefi.py",
-            "args": [
-                "--arch", "aarch64",
-                "--build", "debug",
-                "--workdir", "${workspaceFolder}"
-            ],
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}",
-            "preLaunchTask": "aarch64-uefi-debug"
         }
     ]
 }
