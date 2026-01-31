@@ -11,7 +11,7 @@ INT32 TlsHKDF::Label(const CHAR *label, UCHAR labelLen, const UCHAR *data, UCHAR
 
     LOG_DEBUG("Creating HKDF label with label: %s, label_len: %d, data_len: %d, length: %d", label, labelLen, dataLen, length);
     *(PUINT16)hkdflabel = UINT16SwapByteOrder(length);
-    INT32 prefix_len = prefix.Length;
+    INT32 prefix_len = prefix.Length();
     LOG_DEBUG("HKDF label prefix length: %d", prefix_len);
     Memory::Copy(&hkdflabel[3], (PCCHAR)prefix, prefix_len);
 

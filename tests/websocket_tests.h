@@ -102,11 +102,11 @@ private:
 
 		// Send text message
 		auto testMessage = "Hello, WebSocket!"_embed;
-		UINT32 bytesSent = wsClient.Write((PCVOID)(PCCHAR)testMessage, testMessage.Length, OPCODE_TEXT);
+		UINT32 bytesSent = wsClient.Write((PCVOID)(PCCHAR)testMessage, testMessage.Length(), OPCODE_TEXT);
 
-		if (bytesSent != testMessage.Length)
+		if (bytesSent != testMessage.Length())
 		{
-			LOG_ERROR("Failed to send complete message (sent %d/%d bytes)", bytesSent, testMessage.Length);
+			LOG_ERROR("Failed to send complete message (sent %d/%d bytes)", bytesSent, testMessage.Length());
 			wsClient.Close();
 			return FALSE;
 		}
@@ -132,8 +132,8 @@ private:
 		}
 
 		// Verify echo matches sent message
-		BOOL matches = (responseLength == testMessage.Length) &&
-		               (Memory::Compare(response, (PCVOID)(PCCHAR)testMessage, testMessage.Length) == 0);
+		BOOL matches = (responseLength == testMessage.Length()) &&
+		               (Memory::Compare(response, (PCVOID)(PCCHAR)testMessage, testMessage.Length()) == 0);
 
 		delete[] (PCHAR)response;
 		wsClient.Close();
@@ -264,8 +264,8 @@ private:
 		auto msg3 = "Third message"_embed;
 
 		// Send and receive message 1
-		UINT32 sent1 = wsClient.Write((PCVOID)(PCCHAR)msg1, msg1.Length, OPCODE_TEXT);
-		if (sent1 != msg1.Length)
+		UINT32 sent1 = wsClient.Write((PCVOID)(PCCHAR)msg1, msg1.Length(), OPCODE_TEXT);
+		if (sent1 != msg1.Length())
 		{
 			LOG_ERROR("Failed to send message 1");
 			wsClient.Close();
@@ -275,7 +275,7 @@ private:
 		USIZE len1 = 0;
 		INT8 op1 = 0;
 		PVOID resp1 = wsClient.Read(&len1, &op1);
-		if (resp1 == NULL || len1 != msg1.Length)
+		if (resp1 == NULL || len1 != msg1.Length())
 		{
 			LOG_ERROR("Failed to receive echo for message 1");
 			if (resp1) delete[] (PCHAR)resp1;
@@ -285,8 +285,8 @@ private:
 		delete[] (PCHAR)resp1;
 
 		// Send and receive message 2
-		UINT32 sent2 = wsClient.Write((PCVOID)(PCCHAR)msg2, msg2.Length, OPCODE_TEXT);
-		if (sent2 != msg2.Length)
+		UINT32 sent2 = wsClient.Write((PCVOID)(PCCHAR)msg2, msg2.Length(), OPCODE_TEXT);
+		if (sent2 != msg2.Length())
 		{
 			LOG_ERROR("Failed to send message 2");
 			wsClient.Close();
@@ -296,7 +296,7 @@ private:
 		USIZE len2 = 0;
 		INT8 op2 = 0;
 		PVOID resp2 = wsClient.Read(&len2, &op2);
-		if (resp2 == NULL || len2 != msg2.Length)
+		if (resp2 == NULL || len2 != msg2.Length())
 		{
 			LOG_ERROR("Failed to receive echo for message 2");
 			if (resp2) delete[] (PCHAR)resp2;
@@ -306,8 +306,8 @@ private:
 		delete[] (PCHAR)resp2;
 
 		// Send and receive message 3
-		UINT32 sent3 = wsClient.Write((PCVOID)(PCCHAR)msg3, msg3.Length, OPCODE_TEXT);
-		if (sent3 != msg3.Length)
+		UINT32 sent3 = wsClient.Write((PCVOID)(PCCHAR)msg3, msg3.Length(), OPCODE_TEXT);
+		if (sent3 != msg3.Length())
 		{
 			LOG_ERROR("Failed to send message 3");
 			wsClient.Close();
@@ -317,7 +317,7 @@ private:
 		USIZE len3 = 0;
 		INT8 op3 = 0;
 		PVOID resp3 = wsClient.Read(&len3, &op3);
-		if (resp3 == NULL || len3 != msg3.Length)
+		if (resp3 == NULL || len3 != msg3.Length())
 		{
 			LOG_ERROR("Failed to receive echo for message 3");
 			if (resp3) delete[] (PCHAR)resp3;

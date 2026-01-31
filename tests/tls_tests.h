@@ -5,8 +5,8 @@
 class TlsTests
 {
 private:
-	static constexpr UINT32 TEST_SERVER_IP = 0x01010101; // 1.1.1.1
-	static constexpr UINT16 TLS_PORT = 443;
+	#define TEST_SERVER_IP 0x01010101
+	#define TLS_PORT 443
 
 	// Test 1: TLS handshake and connection
 	static BOOL TestTlsHandshake()
@@ -44,11 +44,11 @@ private:
 					   "Host: one.one.one.one\r\n"_embed
 					   "Connection: close\r\n"_embed
 					   "\r\n"_embed;
-		UINT32 bytesSent = tlsClient.Write((PCVOID)(PCCHAR)message, message.Length);
+		UINT32 bytesSent = tlsClient.Write((PCVOID)(PCCHAR)message, message.Length());
 
-		if (bytesSent != message.Length)
+		if (bytesSent != message.Length())
 		{
-			LOG_ERROR("Failed to send complete message (sent %d/%d bytes)", bytesSent, message.Length);
+			LOG_ERROR("Failed to send complete message (sent %d/%d bytes)", bytesSent, message.Length());
 			tlsClient.Close();
 			return FALSE;
 		}
@@ -96,8 +96,8 @@ private:
 					"\r\n"_embed;
 
 		// Send and receive message 1
-		UINT32 sent1 = tlsClient.Write((PCVOID)(PCCHAR)msg1, msg1.Length);
-		if (sent1 != msg1.Length)
+		UINT32 sent1 = tlsClient.Write((PCVOID)(PCCHAR)msg1, msg1.Length());
+		if (sent1 != msg1.Length())
 		{
 			LOG_ERROR("Failed to send message 1");
 			tlsClient.Close();
@@ -115,8 +115,8 @@ private:
 		}
 
 		// Send and receive message 2
-		UINT32 sent2 = tlsClient.Write((PCVOID)(PCCHAR)msg2, msg2.Length);
-		if (sent2 != msg2.Length)
+		UINT32 sent2 = tlsClient.Write((PCVOID)(PCCHAR)msg2, msg2.Length());
+		if (sent2 != msg2.Length())
 		{
 			LOG_ERROR("Failed to send message 2");
 			tlsClient.Close();
@@ -134,8 +134,8 @@ private:
 		}
 
 		// Send and receive message 3
-		UINT32 sent3 = tlsClient.Write((PCVOID)(PCCHAR)msg3, msg3.Length);
-		if (sent3 != msg3.Length)
+		UINT32 sent3 = tlsClient.Write((PCVOID)(PCCHAR)msg3, msg3.Length());
+		if (sent3 != msg3.Length())
 		{
 			LOG_ERROR("Failed to send message 3");
 			tlsClient.Close();

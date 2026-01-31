@@ -464,8 +464,8 @@ Socket::Socket(const IPAddress& ipAddress, UINT16 port) : ip(ipAddress), port(po
     UNICODE_STRING AfdName;
     auto afdNameSource = L"\\Device\\Afd\\Endpoint"_embed;
     AfdName.Buffer = (PWCHAR)(PCWCHAR)afdNameSource;
-    AfdName.Length = afdNameSource.Length * sizeof(WCHAR);
-    AfdName.MaximumLength = afdNameSource.Length + sizeof(WCHAR);
+    AfdName.Length = afdNameSource.Length() * sizeof(WCHAR);
+    AfdName.MaximumLength = afdNameSource.Length() * sizeof(WCHAR);
 
     OBJECT_ATTRIBUTES Object;
     IO_STATUS_BLOCK IOSB;

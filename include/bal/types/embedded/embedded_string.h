@@ -64,7 +64,7 @@ private:
     TChar data[N];
 
 public:
-    static constexpr USIZE Length = N - 1; // Excludes null terminator
+    static constexpr USIZE Length() noexcept { return N - 1; } // Excludes null terminator
 
     /**
      * Runtime Constructor - Forces string materialization on stack

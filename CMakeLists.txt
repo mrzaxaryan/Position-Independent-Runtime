@@ -114,12 +114,12 @@ if(BUILD_TYPE_LC STREQUAL "debug")
     # Debug optimization flags:
     #   -Og              - Optimize for debugging experience (minimal optimizations)
     #   -ferror-limit=200 - Show up to 200 errors before stopping
-    set(OPTIMIZATION_FLAGS "-Og" "-ferror-limit=200")
+    set(OPTIMIZATION_FLAGS "-O0" "-ferror-limit=200")
     list(APPEND ARCH_DEFINES DEBUG)
 else()
     # Release optimization flag:
     #   -O3 - Maximum optimization (aggressive inlining, vectorization, loop opts)
-    set(OPTIMIZATION_FLAGS "-O3")
+    set(OPTIMIZATION_FLAGS "-O0")
 endif()
 
 
@@ -161,6 +161,13 @@ endif()
 
 # Collect all source files from src/ directory
 file(GLOB_RECURSE SOURCES ${CMAKE_SOURCE_DIR}/src/*.cc)
+
+# Collect header files for dependency tracking
+# CMake doesn't auto-track headers with Generic system, so add them explicitly
+file(GLOB_RECURSE HEADERS
+    ${CMAKE_SOURCE_DIR}/include/*.h
+    ${CMAKE_SOURCE_DIR}/tests/*.h
+)
 
 # Exclude platform-specific files for non-target platforms
 if(PLATFORM_LC STREQUAL "windows")
@@ -329,7 +336,7 @@ endforeach()
 # =============================================================================
 # Create Executable Target
 # =============================================================================
-add_executable(${TARGET_TRIPLE} ${SOURCES})
+add_executable(${TARGET_TRIPLE} ${SOURCES} ${HEADERS})
 
 # Set target properties - use simple "output" name (directory provides context)
 set_target_properties(${TARGET_TRIPLE} PROPERTIES
