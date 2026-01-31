@@ -330,6 +330,88 @@
                     "${workspaceFolder}/include"
                 ]
             }
+        },
+        {
+            "name": "x86_64-uefi",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "windows-clang-x64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_X86_64",
+                "PLATFORM_UEFI",
+                "PLATFORM_UEFI_X86_64"
+            ],
+            "includePath": [
+                "${workspaceFolder}",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/include/bal",
+                "${workspaceFolder}/include/bal/core",
+                "${workspaceFolder}/include/bal/algorithms",
+                "${workspaceFolder}/include/bal/string",
+                "${workspaceFolder}/include/bal/types",
+                "${workspaceFolder}/include/bal/types/embedded",
+                "${workspaceFolder}/include/bal/types/network",
+                "${workspaceFolder}/include/bal/types/numeric",
+                "${workspaceFolder}/include/pal",
+                "${workspaceFolder}/include/pal/memory",
+                "${workspaceFolder}/include/pal/io",
+                "${workspaceFolder}/include/pal/network",
+                "${workspaceFolder}/include/pal/system",
+                "${workspaceFolder}/include/pal/uefi",
+                "${workspaceFolder}/include/ral",
+                "${workspaceFolder}/include/ral/crypt",
+                "${workspaceFolder}/include/ral/network",
+                "${workspaceFolder}/include/ral/network/tls",
+                "${workspaceFolder}/tests"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/src",
+                    "${workspaceFolder}/include"
+                ]
+            }
+        },
+        {
+            "name": "aarch64-uefi",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "windows-clang-arm64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_AARCH64",
+                "PLATFORM_UEFI",
+                "PLATFORM_UEFI_AARCH64"
+            ],
+            "includePath": [
+                "${workspaceFolder}",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/include/bal",
+                "${workspaceFolder}/include/bal/core",
+                "${workspaceFolder}/include/bal/algorithms",
+                "${workspaceFolder}/include/bal/string",
+                "${workspaceFolder}/include/bal/types",
+                "${workspaceFolder}/include/bal/types/embedded",
+                "${workspaceFolder}/include/bal/types/network",
+                "${workspaceFolder}/include/bal/types/numeric",
+                "${workspaceFolder}/include/pal",
+                "${workspaceFolder}/include/pal/memory",
+                "${workspaceFolder}/include/pal/io",
+                "${workspaceFolder}/include/pal/network",
+                "${workspaceFolder}/include/pal/system",
+                "${workspaceFolder}/include/pal/uefi",
+                "${workspaceFolder}/include/ral",
+                "${workspaceFolder}/include/ral/crypt",
+                "${workspaceFolder}/include/ral/network",
+                "${workspaceFolder}/include/ral/network/tls",
+                "${workspaceFolder}/tests"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/src",
+                    "${workspaceFolder}/include"
+                ]
+            }
         }
     ]
 }
