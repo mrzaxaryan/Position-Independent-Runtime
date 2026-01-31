@@ -62,15 +62,6 @@
             "preLaunchTask": "x86_64-windows-debug"
         },
         {
-            "name": "armv7a-windows-debug",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/debug/windows/armv7a/output.exe",
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "preLaunchTask": "armv7a-windows-debug"
-        },
-        {
             "name": "aarch64-windows-debug",
             "type": "cppvsdbg",
             "request": "launch",

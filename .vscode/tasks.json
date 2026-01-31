@@ -70,24 +70,6 @@
       "group": "build"
     },
     {
-      "label": "armv7a-windows-debug",
-      "type": "shell",
-      "command": "cmake -B build/debug/windows/armv7a/cmake -DARCHITECTURE=armv7a -DPLATFORM=windows -DBUILD_TYPE=debug -DOPTIMIZATION_LEVEL=Og -G Ninja && cmake --build build/debug/windows/armv7a/cmake",
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "group": "build"
-    },
-    {
-      "label": "armv7a-windows-release",
-      "type": "shell",
-      "command": "cmake -B build/release/windows/armv7a/cmake -DARCHITECTURE=armv7a -DPLATFORM=windows -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O3 -G Ninja && cmake --build build/release/windows/armv7a/cmake",
-      "problemMatcher": [
-        "$gcc"
-      ],
-      "group": "build"
-    },
-    {
       "label": "aarch64-windows-debug",
       "type": "shell",
       "command": "cmake -B build/debug/windows/aarch64/cmake -DARCHITECTURE=aarch64 -DPLATFORM=windows -DBUILD_TYPE=debug -DOPTIMIZATION_LEVEL=Og -G Ninja && cmake --build build/debug/windows/aarch64/cmake",
@@ -183,7 +165,6 @@
       "dependsOn": [
         "i386-windows-release",
         "x86_64-windows-release",
-        "armv7a-windows-release",
         "aarch64-windows-release"
       ],
       "group": "build",
