@@ -1,8 +1,6 @@
 #pragma once
 
 #include "primitives.h"
-#include "uint64.h"
-#include "int64.h"
 #include "double.h"
 #include "embedded_string.h"
 

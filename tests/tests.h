@@ -8,8 +8,6 @@
  *   Djb2Tests              - Hash function tests
  *   MemoryTests            - Memory operations tests
  *   StringTests            - String utility tests
- *   Uint64Tests            - Unsigned 64-bit integer tests
- *   Int64Tests             - Signed 64-bit integer tests
  *   DoubleTests            - Floating-point tests
  *   StringFormatterTests   - Printf-style formatting tests
  *   RandomTests            - Random number generation tests
@@ -44,8 +42,6 @@
 #include "djb2_tests.h"
 #include "memory_tests.h"
 #include "string_tests.h"
-#include "uint64_tests.h"
-#include "int64_tests.h"
 #include "double_tests.h"
 #include "string_formatter_tests.h"
 #include "random_tests.h"

@@ -16,8 +16,6 @@
 #include "types/primitives.h"
 
 // Numeric types
-#include "types/numeric/uint64.h"
-#include "types/numeric/int64.h"
 #include "types/numeric/double.h"
 
 // Embedded types (EMBEDDED_DOUBLE is now in double.h)

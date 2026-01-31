@@ -584,7 +584,7 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, RequestType dnstype)
     }
 
     dnsResponse[digitIdx] = '\0';                             // Null-terminate the content length value
-    INT64 contentLength = INT64::Parse(dnsResponse); // Convert the content length value to an integer
+    INT64 contentLength = ParseINT64(dnsResponse); // Convert the content length value to an integer
     LOG_DEBUG("Content length: %d", contentLength);
 
     // Read the DNS response from the TLS server
@@ -739,7 +739,7 @@ IPAddress DNS::ResloveOverHttpPost(PCCHAR host, const IPAddress& DNSServerIp, PC
     offsetOfContentLength += contentLengthHeaderSize;
 
     // dnsResponse[totalBytesRead] = '\0';                          // Null-terminate the content length value
-    INT64 contentLength = INT64::Parse((PCHAR)dnsResponse + offsetOfContentLength); // Convert the content length value to an integer
+    INT64 contentLength = ParseINT64((PCHAR)dnsResponse + offsetOfContentLength); // Convert the content length value to an integer
     LOG_DEBUG("Content length: %d", contentLength);
 
     delete[] dnsResponseStart;

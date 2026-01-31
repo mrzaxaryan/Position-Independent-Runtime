@@ -8,10 +8,7 @@
  */
 #pragma once
 
-#include "uint64.h"
-
-// Forward declaration
-class INT64;
+#include "primitives.h"
 
 /**
  * Position-independent IEEE-754 double precision floating-point
@@ -28,20 +25,20 @@ private:
     static constexpr int SIGN_SHIFT = 63;
     static constexpr int EXP_SHIFT = 52;
 
-    static constexpr UINT64 GetSignMask() noexcept { return UINT64(0x80000000U, 0x00000000U); }
-    static constexpr UINT64 GetExpMask() noexcept { return UINT64(0x7FF00000U, 0x00000000U); }
-    static constexpr UINT64 GetMantissaMask() noexcept { return UINT64(0x000FFFFFU, 0xFFFFFFFFU); }
+    static constexpr UINT64 GetSignMask() noexcept { return MAKE_UINT64(0x80000000U, 0x00000000U); }
+    static constexpr UINT64 GetExpMask() noexcept { return MAKE_UINT64(0x7FF00000U, 0x00000000U); }
+    static constexpr UINT64 GetMantissaMask() noexcept { return MAKE_UINT64(0x000FFFFFU, 0xFFFFFFFFU); }
 
 public:
-    constexpr DOUBLE() noexcept : bits(0, 0) {}
+    constexpr DOUBLE() noexcept : bits(0ULL) {}
     constexpr DOUBLE(const DOUBLE &) noexcept = default;
     constexpr explicit DOUBLE(UINT64 bitPattern) noexcept : bits(bitPattern) {}
-    constexpr DOUBLE(UINT32 high, UINT32 low) noexcept : bits(high, low) {}
+    constexpr DOUBLE(UINT32 high, UINT32 low) noexcept : bits(MAKE_UINT64(high, low)) {}
 
     constexpr DOUBLE(double val) noexcept
     {
         unsigned long long ull = __builtin_bit_cast(unsigned long long, val);
-        bits = UINT64(ull);
+        bits = (UINT64)ull;
     }
 
 private:
@@ -50,7 +47,7 @@ private:
     consteval DOUBLE(double val, CompileTimeLiteral) noexcept
     {
         unsigned long long ull = __builtin_bit_cast(unsigned long long, val);
-        bits = UINT64(ull);
+        bits = (UINT64)ull;
     }
 
     friend consteval DOUBLE operator""_embed(long double v);
@@ -108,7 +105,7 @@ public:
     {
         if (val == 0)
         {
-            bits = UINT64(0, 0);
+            bits = 0ULL;
             return;
         }
 
@@ -121,7 +118,7 @@ public:
 
         int exponent = 1023 + msb;
 
-        UINT64 mantissa = UINT64(absVal);
+        UINT64 mantissa = (UINT64)absVal;
         if (msb >= 52)
             mantissa = mantissa >> (msb - 52);
         else
@@ -129,8 +126,8 @@ public:
 
         mantissa = mantissa & GetMantissaMask();
 
-        UINT64 sign = negative ? GetSignMask() : UINT64(0, 0);
-        UINT64 exp = UINT64((UINT32)exponent << 20, 0);
+        UINT64 sign = negative ? GetSignMask() : 0ULL;
+        UINT64 exp = MAKE_UINT64((UINT32)exponent << 20, 0);
         bits = sign | exp | mantissa;
     }
 
@@ -138,36 +135,36 @@ public:
 
     NOINLINE DISABLE_OPTIMIZATION operator INT32() const noexcept
     {
-        INT64 val64 = (INT64)(*this);
-        return (INT32)(val64.Low());
+        signed long long val64 = (signed long long)(*this);
+        return (INT32)INT64_LOW(val64);
     }
 
     NOINLINE DISABLE_OPTIMIZATION operator UINT32() const noexcept
     {
-        UINT64 val64 = (UINT64)(*this);
-        return val64.Low();
+        unsigned long long val64 = (unsigned long long)(*this);
+        return UINT64_LOW(val64);
     }
 
-    NOINLINE DISABLE_OPTIMIZATION operator INT64() const noexcept
+    NOINLINE DISABLE_OPTIMIZATION operator signed long long() const noexcept
     {
         UINT64 sign_bit = bits & GetSignMask();
         UINT64 exp_bits = bits & GetExpMask();
         UINT64 mantissa_bits = bits & GetMantissaMask();
 
-        int exponent = (int)((exp_bits >> EXP_SHIFT).Low()) - 1023;
+        int exponent = (int)UINT64_LOW(exp_bits >> EXP_SHIFT) - 1023;
 
         if (exponent < 0)
-            return INT64(0, 0);
+            return 0LL;
 
         if (exponent >= 63)
         {
-            if (sign_bit.High() != 0)
-                return INT64((INT32)0x80000000, 0);
+            if (UINT64_HIGH(sign_bit) != 0)
+                return MAKE_INT64((INT32)0x80000000, 0);
             else
-                return INT64((INT32)0x7FFFFFFF, 0xFFFFFFFF);
+                return MAKE_INT64((INT32)0x7FFFFFFF, 0xFFFFFFFF);
         }
 
-        UINT64 mantissa_with_implicit_one = mantissa_bits | UINT64(0x00100000U, 0x00000000U);
+        UINT64 mantissa_with_implicit_one = mantissa_bits | MAKE_UINT64(0x00100000U, 0x00000000U);
 
         UINT64 int_value;
         if (exponent <= 52)
@@ -175,31 +172,31 @@ public:
         else
             int_value = mantissa_with_implicit_one << (exponent - 52);
 
-        INT64 result = INT64((INT32)int_value.High(), int_value.Low());
-        if (sign_bit.High() != 0)
+        INT64 result = MAKE_INT64((INT32)UINT64_HIGH(int_value), UINT64_LOW(int_value));
+        if (UINT64_HIGH(sign_bit) != 0)
             result = -result;
 
         return result;
     }
 
-    NOINLINE DISABLE_OPTIMIZATION operator UINT64() const noexcept
+    NOINLINE DISABLE_OPTIMIZATION operator unsigned long long() const noexcept
     {
         UINT64 sign_bit = bits & GetSignMask();
         UINT64 exp_bits = bits & GetExpMask();
         UINT64 mantissa_bits = bits & GetMantissaMask();
 
-        int exponent = (int)((exp_bits >> EXP_SHIFT).Low()) - 1023;
+        int exponent = (int)UINT64_LOW(exp_bits >> EXP_SHIFT) - 1023;
 
-        if (sign_bit.High() != 0)
-            return UINT64(0, 0);
+        if (UINT64_HIGH(sign_bit) != 0)
+            return 0ULL;
 
         if (exponent < 0)
-            return UINT64(0, 0);
+            return 0ULL;
 
         if (exponent >= 64)
-            return UINT64(0xFFFFFFFF, 0xFFFFFFFF);
+            return MAKE_UINT64(0xFFFFFFFF, 0xFFFFFFFF);
 
-        UINT64 mantissa_with_implicit_one = mantissa_bits | UINT64(0x00100000U, 0x00000000U);
+        UINT64 mantissa_with_implicit_one = mantissa_bits | MAKE_UINT64(0x00100000U, 0x00000000U);
 
         UINT64 int_value;
         if (exponent <= 52)
@@ -208,16 +205,6 @@ public:
             int_value = mantissa_with_implicit_one << (exponent - 52);
 
         return int_value;
-    }
-
-    NOINLINE DISABLE_OPTIMIZATION operator unsigned long long() const noexcept
-    {
-        return (unsigned long long)((UINT64)(*this));
-    }
-
-    NOINLINE DISABLE_OPTIMIZATION operator signed long long() const noexcept
-    {
-        return (signed long long)((INT64)(*this));
     }
 
     NOINLINE DISABLE_OPTIMIZATION operator unsigned long() const noexcept
@@ -245,7 +232,7 @@ public:
     constexpr DOUBLE &operator=(double val) noexcept
     {
         unsigned long long ull = __builtin_bit_cast(unsigned long long, val);
-        bits = UINT64(ull);
+        bits = (UINT64)ull;
         return *this;
     }
 
@@ -307,7 +294,7 @@ public:
         double b = __builtin_bit_cast(double, ull_b);
         double result = a + b;
         unsigned long long result_ull = __builtin_bit_cast(unsigned long long, result);
-        return DOUBLE(UINT64(result_ull));
+        return DOUBLE((UINT64)result_ull);
     }
 
     NOINLINE DISABLE_OPTIMIZATION DOUBLE operator-(const DOUBLE &other) const noexcept
@@ -318,7 +305,7 @@ public:
         double b = __builtin_bit_cast(double, ull_b);
         double result = a - b;
         unsigned long long result_ull = __builtin_bit_cast(unsigned long long, result);
-        return DOUBLE(UINT64(result_ull));
+        return DOUBLE((UINT64)result_ull);
     }
 
     NOINLINE DISABLE_OPTIMIZATION DOUBLE operator*(const DOUBLE &other) const noexcept
@@ -329,7 +316,7 @@ public:
         double b = __builtin_bit_cast(double, ull_b);
         double result = a * b;
         unsigned long long result_ull = __builtin_bit_cast(unsigned long long, result);
-        return DOUBLE(UINT64(result_ull));
+        return DOUBLE((UINT64)result_ull);
     }
 
     NOINLINE DISABLE_OPTIMIZATION DOUBLE operator/(const DOUBLE &other) const noexcept
@@ -340,7 +327,7 @@ public:
         double b = __builtin_bit_cast(double, ull_b);
         double result = a / b;
         unsigned long long result_ull = __builtin_bit_cast(unsigned long long, result);
-        return DOUBLE(UINT64(result_ull));
+        return DOUBLE((UINT64)result_ull);
     }
 
     NOINLINE DISABLE_OPTIMIZATION DOUBLE operator-() const noexcept
@@ -376,13 +363,6 @@ public:
     NOINLINE DISABLE_OPTIMIZATION bool operator<(INT32 val) const noexcept
     {
         return *this < DOUBLE(val);
-    }
-
-    NOINLINE DISABLE_OPTIMIZATION DOUBLE operator-(UINT64 val) const noexcept
-    {
-        unsigned long long ull_val = (unsigned long long)val;
-        DOUBLE d_val = DOUBLE((INT32)ull_val);
-        return *this - d_val;
     }
 
     NOINLINE DISABLE_OPTIMIZATION DOUBLE operator-(unsigned long long val) const noexcept

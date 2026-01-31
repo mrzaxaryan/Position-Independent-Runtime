@@ -123,6 +123,184 @@ extern "C"
         // Apply sign to result
         return sign_quot < 0 ? -(INT32)quotient : (INT32)quotient;
     }
+
+    // Helper for 64-bit unsigned division
+    static void udiv64_internal(unsigned long long numerator, unsigned long long denominator,
+                                 unsigned long long *quotient, unsigned long long *remainder)
+    {
+        if (denominator == 0)
+        {
+            *quotient = 0;
+            *remainder = numerator;
+            return;
+        }
+
+        // Software 64-bit division algorithm
+        unsigned long long q = 0;
+        unsigned long long r = 0;
+
+        for (int i = 63; i >= 0; i--)
+        {
+            // Shift remainder left by 1
+            r <<= 1;
+
+            // Set the lowest bit of remainder to bit i of numerator
+            if ((numerator >> i) & 1ULL)
+                r |= 1ULL;
+
+            if (r >= denominator)
+            {
+                r -= denominator;
+                q |= (1ULL << i);
+            }
+        }
+
+        *quotient = q;
+        *remainder = r;
+    }
+
+    // ARM EABI: 64-bit unsigned division with modulo
+    // Returns {quotient, remainder} as a struct in r0:r1 and r2:r3
+    struct uldivmod_return { unsigned long long quot; unsigned long long rem; };
+
+    AEABI_FUNC struct uldivmod_return __aeabi_uldivmod(unsigned long long numerator, unsigned long long denominator)
+    {
+        struct uldivmod_return result;
+        udiv64_internal(numerator, denominator, &result.quot, &result.rem);
+        return result;
+    }
+
+    // ARM EABI: 64-bit logical shift right
+    AEABI_FUNC unsigned long long __aeabi_llsr(unsigned long long value, int shift)
+    {
+        if (shift < 0 || shift >= 64)
+            return 0;
+        return value >> shift;
+    }
+
+    // ARM EABI: 64-bit logical shift left
+    AEABI_FUNC unsigned long long __aeabi_llsl(unsigned long long value, int shift)
+    {
+        if (shift < 0 || shift >= 64)
+            return 0;
+        return value << shift;
+    }
 }
 
-#endif // ARCHITECTURE_ARMV7A 
+#endif // ARCHITECTURE_ARMV7A
+
+#if defined(ARCHITECTURE_I386)
+
+// x86 compiler runtime support for 64-bit division on 32-bit platform
+// Required when building with -nostdlib on i386
+#define X86_RUNTIME_FUNC __attribute__((noinline, used, optnone))
+
+extern "C"
+{
+    // Helper for 64-bit unsigned division
+    static void udiv64_internal(unsigned long long numerator, unsigned long long denominator,
+                                 unsigned long long *quotient, unsigned long long *remainder)
+    {
+        if (denominator == 0)
+        {
+            *quotient = 0;
+            *remainder = numerator;
+            return;
+        }
+
+        // Software 64-bit division algorithm
+        unsigned long long q = 0;
+        unsigned long long r = 0;
+
+        for (int i = 63; i >= 0; i--)
+        {
+            // Shift remainder left by 1
+            r <<= 1;
+
+            // Set the lowest bit of remainder to bit i of numerator
+            if ((numerator >> i) & 1ULL)
+                r |= 1ULL;
+
+            if (r >= denominator)
+            {
+                r -= denominator;
+                q |= (1ULL << i);
+            }
+        }
+
+        *quotient = q;
+        *remainder = r;
+    }
+
+    // x86: 64-bit unsigned division - returns quotient
+    X86_RUNTIME_FUNC unsigned long long __udivdi3(unsigned long long numerator, unsigned long long denominator)
+    {
+        unsigned long long quotient, remainder;
+        udiv64_internal(numerator, denominator, &quotient, &remainder);
+        return quotient;
+    }
+
+    // x86: 64-bit unsigned modulo - returns remainder
+    X86_RUNTIME_FUNC unsigned long long __umoddi3(unsigned long long numerator, unsigned long long denominator)
+    {
+        unsigned long long quotient, remainder;
+        udiv64_internal(numerator, denominator, &quotient, &remainder);
+        return remainder;
+    }
+}
+
+#endif // ARCHITECTURE_I386
+
+#if defined(ARCHITECTURE_ARMV7A) && defined(PLATFORM_WINDOWS)
+
+// Windows ARM runtime support
+// Required when building with -nostdlib on Windows ARM platforms
+#define WIN_ARM_RUNTIME_FUNC __attribute__((noinline, used, optnone))
+
+extern "C"
+{
+    // __chkstk: Stack probing function required by Windows ARM ABI
+    // Called before large stack allocations to ensure stack pages are committed
+    // Input: r4 = size to probe (in bytes)
+    // Must preserve all registers except r4, r5, r12
+    WIN_ARM_RUNTIME_FUNC void __chkstk(void)
+    {
+        // Stub implementation - in a real embedded environment without
+        // virtual memory, stack probing is not needed. We just return.
+        // The compiler will inline this to essentially a no-op.
+        return;
+    }
+
+    // Helper for 64-bit unsigned division (Windows ARM specific)
+    static unsigned long long rt_udiv64_internal(unsigned long long numerator, unsigned long long denominator)
+    {
+        if (denominator == 0)
+            return 0;
+
+        // Software 64-bit division algorithm
+        unsigned long long q = 0;
+        unsigned long long r = 0;
+
+        for (int i = 63; i >= 0; i--)
+        {
+            r <<= 1;
+            if ((numerator >> i) & 1ULL)
+                r |= 1ULL;
+            if (r >= denominator)
+            {
+                r -= denominator;
+                q |= (1ULL << i);
+            }
+        }
+
+        return q;
+    }
+
+    // Windows ARM: 64-bit unsigned division - returns quotient
+    WIN_ARM_RUNTIME_FUNC unsigned long long __rt_udiv64(unsigned long long numerator, unsigned long long denominator)
+    {
+        return rt_udiv64_internal(numerator, denominator);
+    }
+}
+
+#endif // ARCHITECTURE_ARMV7A && PLATFORM_WINDOWS
