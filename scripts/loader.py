@@ -1,297 +1,115 @@
 #!/usr/bin/env python3
 """
-PIC Shellcode Loader for Windows and Linux
+PIC Shellcode Loader
 
 Loads position-independent code into executable memory and runs it.
-The shellcode must be fully self-contained with no external dependencies.
+Auto-detects the current platform.
 
 Usage:
-    python loader.py -windows --arch x86_64 shellcode.bin
-    python loader.py -linux --arch x86_64 shellcode.bin
-    python loader.py -linux --arch i386 shellcode.bin
+    python loader.py --arch x86_64 shellcode.bin
+    python loader.py --arch i386 shellcode.bin
 """
 
 import argparse
 import ctypes
 import mmap
-import os
 import platform
 import struct
-import subprocess
 import sys
-import tempfile
 
-ARCH_INFO = {
-    'i386': {'bits': 32, 'family': 'x86', 'entry': 0x70},
-    'x86_64': {'bits': 64, 'family': 'x86', 'entry': 0x1e0},
+# Entry offsets match cpp-pic linker script
+ARCH = {
+    'i386':    {'bits': 32, 'family': 'x86', 'entry': 0x70},
+    'x86_64':  {'bits': 64, 'family': 'x86', 'entry': 0x1e0},
     'aarch64': {'bits': 64, 'family': 'arm', 'entry': 0x78},
 }
 
 
-def get_host_info():
+def get_host():
+    """Detect host OS, CPU family, and bitness."""
+    os_name = platform.system().lower()
     machine = platform.machine().lower()
+
     if machine in ('amd64', 'x86_64'):
-        return 'x86', 64
+        return os_name, 'x86', 64
     elif machine in ('arm64', 'aarch64'):
-        return 'arm', 64
+        return os_name, 'arm', 64
     elif machine in ('i386', 'i686', 'x86'):
-        return 'x86', 32
-    return machine, 64
+        return os_name, 'x86', 32
+    return os_name, machine, 64
 
 
-def load_shellcode(filepath):
-    with open(filepath, 'rb') as f:
-        return f.read()
-
-
-# =============================================================================
-# LINUX
-# =============================================================================
-
-def build_elf32(shellcode, entry_offset=0):
-    """Build minimal ELF32 executable with shellcode."""
-    load_addr = 0x10000
-    header_size = 52 + 32  # ELF header + 1 program header
-
-    # ELF32 Header
-    elf_header = struct.pack(
-        '<4sBBBBB7sHHIIIIIHHHHHH',
-        b'\x7fELF',     # magic
-        1,              # 32-bit
-        1,              # little endian
-        1,              # ELF version
-        0,              # OS/ABI (SYSV)
-        0,              # ABI version
-        b'\x00' * 7,    # padding
-        2,              # ET_EXEC
-        3,              # EM_386
-        1,              # ELF version
-        load_addr + header_size + entry_offset,  # entry point
-        52,             # program header offset
-        0,              # section header offset
-        0,              # flags
-        52,             # ELF header size
-        32,             # program header size
-        1,              # program header count
-        0,              # section header size
-        0,              # section header count
-        0,              # section name string table index
-    )
-
-    # Program Header (PT_LOAD)
-    file_size = header_size + len(shellcode)
-    program_header = struct.pack(
-        '<IIIIIIII',
-        1,              # PT_LOAD
-        0,              # offset
-        load_addr,      # vaddr
-        load_addr,      # paddr
-        file_size,      # file size
-        file_size,      # memory size
-        7,              # flags: PF_R | PF_W | PF_X
-        0x1000,         # alignment
-    )
-
-    return elf_header + program_header + shellcode
-
-
-def build_elf64(shellcode, entry_offset=0):
-    """Build minimal ELF64 executable with shellcode."""
-    load_addr = 0x10000
-    header_size = 64 + 56  # ELF header + 1 program header
-
-    # ELF64 Header
-    elf_header = struct.pack(
-        '<4sBBBBB7sHHIQQQIHHHHHH',
-        b'\x7fELF',     # magic
-        2,              # 64-bit
-        1,              # little endian
-        1,              # ELF version
-        0,              # OS/ABI
-        0,              # ABI version
-        b'\x00' * 7,    # padding
-        2,              # ET_EXEC
-        62,             # EM_X86_64
-        1,              # ELF version
-        load_addr + header_size + entry_offset,  # entry point
-        64,             # program header offset
-        0,              # section header offset
-        0,              # flags
-        64,             # ELF header size
-        56,             # program header size
-        1,              # program header count
-        0,              # section header size
-        0,              # section header count
-        0,              # section name string table index
-    )
-
-    # Program Header (PT_LOAD)
-    file_size = header_size + len(shellcode)
-    program_header = struct.pack(
-        '<IIQQQQQQ',
-        1,              # PT_LOAD
-        7,              # flags: PF_R | PF_W | PF_X
-        0,              # offset
-        load_addr,      # vaddr
-        load_addr,      # paddr
-        file_size,      # file size
-        file_size,      # memory size
-        0x1000,         # alignment
-    )
-
-    return elf_header + program_header + shellcode
-
-
-def run_linux_native(shellcode, entry_offset=0x70):
-    """Run shellcode natively using mmap."""
-    size = len(shellcode)
-
-    mem = mmap.mmap(-1, size, prot=mmap.PROT_READ | mmap.PROT_WRITE | mmap.PROT_EXEC)
+def run_mmap(shellcode, entry_offset):
+    """Execute via mmap (Linux/macOS)."""
+    mem = mmap.mmap(-1, len(shellcode), prot=mmap.PROT_READ | mmap.PROT_WRITE | mmap.PROT_EXEC)
     mem.write(shellcode)
 
-    addr = ctypes.addressof(ctypes.c_char.from_buffer(mem))
-    entry = addr + entry_offset
-    print(f"[+] Loaded at: 0x{addr:x}")
-    print(f"[+] Entry at: 0x{entry:x}")
+    base = ctypes.addressof(ctypes.c_char.from_buffer(mem))
+    entry = base + entry_offset
 
-    func = ctypes.CFUNCTYPE(ctypes.c_int)(entry)
-
+    print(f"[+] Base: 0x{base:x}, Entry: 0x{entry:x}")
     print("[*] Executing...")
     sys.stdout.flush()
 
-    return func()
+    return ctypes.CFUNCTYPE(ctypes.c_int)(entry)()
 
 
-def run_linux_elf(shellcode, bits, entry_offset=0):
-    """Run shellcode by wrapping in minimal ELF and executing."""
-    if bits == 32:
-        elf = build_elf32(shellcode, entry_offset)
-    else:
-        elf = build_elf64(shellcode, entry_offset)
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.elf') as f:
-        f.write(elf)
-        elf_path = f.name
-
-    try:
-        os.chmod(elf_path, 0o755)
-        print(f"[+] Created ELF{bits}: {elf_path}")
-        print("[*] Executing...")
-        sys.stdout.flush()
-
-        result = subprocess.run([elf_path])
-        return result.returncode
-    finally:
-        os.unlink(elf_path)
-
-
-def run_linux(shellcode, target_arch):
-    """Execute shellcode on Linux."""
-    host_family, host_bits = get_host_info()
-    target_bits = ARCH_INFO[target_arch]['bits']
-    entry_offset = ARCH_INFO[target_arch]['entry']
-
-    if ARCH_INFO[target_arch]['family'] != host_family:
-        print(f"[-] Cannot run {target_arch} on {host_family} CPU")
-        return 1
-
-    # Same bitness: can run directly via mmap
-    if host_bits == target_bits:
-        return run_linux_native(shellcode, entry_offset)
-
-    # Cross-bitness: wrap in ELF and execute (kernel handles it)
-    if host_bits == 64 and target_bits == 32:
-        return run_linux_elf(shellcode, 32, entry_offset)
-
-    print(f"[-] Cannot run 64-bit code on 32-bit host")
-    return 1
-
-
-# =============================================================================
-# WINDOWS
-# =============================================================================
-
-def run_windows(shellcode, target_arch):
-    """Execute shellcode on Windows."""
+def run_virtualalloc(shellcode, entry_offset):
+    """Execute via VirtualAlloc (Windows)."""
     from ctypes import wintypes
 
-    kernel32 = ctypes.windll.kernel32
-
-    MEM_COMMIT = 0x1000
-    MEM_RESERVE = 0x2000
-    PAGE_EXECUTE_READWRITE = 0x40
-    INFINITE = 0xFFFFFFFF
-
-    host_bits = struct.calcsize("P") * 8
-    target_bits = ARCH_INFO[target_arch]['bits']
-
-    if host_bits != target_bits:
-        print(f"[-] Cross-bitness not supported on Windows")
-        return 1
-
-    size = len(shellcode)
-    ptr = kernel32.VirtualAlloc(None, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE)
+    k32 = ctypes.windll.kernel32
+    ptr = k32.VirtualAlloc(None, len(shellcode), 0x3000, 0x40)
     if not ptr:
-        print(f"[-] VirtualAlloc failed")
-        return 1
+        raise OSError("VirtualAlloc failed")
 
-    print(f"[+] Loaded at: 0x{ptr:x}")
-    ctypes.memmove(ptr, shellcode, size)
+    ctypes.memmove(ptr, shellcode, len(shellcode))
+    entry = ptr + entry_offset
 
+    print(f"[+] Base: 0x{ptr:x}, Entry: 0x{entry:x}")
     print("[*] Executing...")
     sys.stdout.flush()
 
-    thread = kernel32.CreateThread(None, 0, ptr, None, 0, None)
+    thread = k32.CreateThread(None, 0, entry, None, 0, None)
     if not thread:
-        print(f"[-] CreateThread failed")
-        return 1
+        raise OSError("CreateThread failed")
 
-    kernel32.WaitForSingleObject(thread, INFINITE)
+    k32.WaitForSingleObject(thread, 0xFFFFFFFF)
+    code = wintypes.DWORD()
+    k32.GetExitCodeThread(thread, ctypes.byref(code))
+    k32.CloseHandle(thread)
+    return code.value
 
-    exit_code = wintypes.DWORD()
-    kernel32.GetExitCodeThread(thread, ctypes.byref(exit_code))
-    kernel32.CloseHandle(thread)
-
-    return exit_code.value
-
-
-# =============================================================================
-# MAIN
-# =============================================================================
 
 def main():
     parser = argparse.ArgumentParser(description='PIC Shellcode Loader')
-
-    os_group = parser.add_mutually_exclusive_group(required=True)
-    os_group.add_argument('-windows', action='store_true')
-    os_group.add_argument('-linux', action='store_true')
-
     parser.add_argument('--arch', required=True, choices=['i386', 'x86_64', 'aarch64'])
-    parser.add_argument('shellcode', help='Path to shellcode binary')
-
+    parser.add_argument('shellcode')
     args = parser.parse_args()
 
-    target_os = 'windows' if args.windows else 'linux'
-    host_os = platform.system().lower()
+    host_os, host_family, host_bits = get_host()
+    target = ARCH[args.arch]
 
-    print(f"[*] Target: {target_os}/{args.arch}")
-    print(f"[*] Host: {platform.system()}/{platform.machine()}")
-    print(f"[*] File: {args.shellcode}")
+    print(f"[*] Host: {host_os}/{host_family}/{host_bits}bit")
+    print(f"[*] Target: {args.arch}")
 
-    if target_os != host_os:
-        print(f"[-] Cannot run {target_os} shellcode on {host_os}")
-        sys.exit(1)
+    if target['family'] != host_family:
+        sys.exit(f"[-] Cannot run {target['family']} on {host_family}")
 
-    shellcode = load_shellcode(args.shellcode)
-    print(f"[+] Size: {len(shellcode)} bytes")
+    if host_bits != target['bits']:
+        sys.exit(f"[-] Bitness mismatch: host={host_bits}bit, target={target['bits']}bit")
 
-    if target_os == 'linux':
-        exit_code = run_linux(shellcode, args.arch)
+    with open(args.shellcode, 'rb') as f:
+        shellcode = f.read()
+    print(f"[+] Loaded: {len(shellcode)} bytes")
+
+    if host_os == 'windows':
+        code = run_virtualalloc(shellcode, target['entry'])
     else:
-        exit_code = run_windows(shellcode, args.arch)
+        code = run_mmap(shellcode, target['entry'])
 
-    print(f"[+] Exit code: {exit_code}")
-    sys.exit(exit_code)
+    print(f"[+] Exit: {code}")
+    sys.exit(code)
 
 
 if __name__ == '__main__':
