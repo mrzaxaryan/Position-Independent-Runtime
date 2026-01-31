@@ -18,14 +18,14 @@ static inline UINT64 GetHardwareTimestamp()
     // ARMv7-A (32-bit): User-space timestamp using software counters
     // Hardware counters require kernel/QEMU config to enable user access
     static UINT64 counter = 0;
-    unsigned int sp, lr;
 
-    // Read stack pointer and link register for entropy
-    __asm__ __volatile__(
-        "mov %0, sp\n\t"
-        "mov %1, lr"
-        : "=r"(sp), "=r"(lr)
-    );
+    // Get entropy from stack address and return address
+    // Use local variable address for stack pointer value (more portable than inline asm)
+    volatile unsigned int stack_var;
+    unsigned int sp = (unsigned int)&stack_var;
+
+    // Use builtin to get return address (more portable than reading lr register)
+    unsigned int lr = (unsigned int)__builtin_return_address(0);
 
     // Combine: incrementing counter + stack pointer + return address
     counter++;
