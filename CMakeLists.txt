@@ -232,6 +232,12 @@ if(ARCHITECTURE_LC STREQUAL "armv7a" OR ARCHITECTURE_LC STREQUAL "aarch64")
     list(APPEND BASE_COMPILER_FLAGS
         -mno-implicit-float                 # No implicit FP instructions
     )
+    # Disable stack probing on Windows ARM to prevent __chkstk calls
+    if(PLATFORM_LC STREQUAL "windows")
+        list(APPEND BASE_COMPILER_FLAGS
+            -mno-stack-probe                # Disable __chkstk calls (ARM on Windows)
+        )
+    endif()
 endif()
 
 # =============================================================================
