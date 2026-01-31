@@ -36,11 +36,8 @@ static BOOL RunAllTests()
 {
 	BOOL allPassed = TRUE;
 
-#if defined(PLATFORM_UEFI)
-	Logger::Info<WCHAR>(L"=== CPP-PIC Test Suite (UEFI) ==="_embed);
-#else
 	Logger::Info<WCHAR>(L"=== CPP-PIC Test Suite ==="_embed);
-#endif
+
 	Logger::Info<WCHAR>(L""_embed);
 
 	// BAL - Embedded Types and Numeric Primitives
@@ -87,16 +84,6 @@ static BOOL RunAllTests()
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
 
-#if defined(PLATFORM_UEFI)
-	// Skip network tests - UEFI socket is not implemented
-	Logger::Info<WCHAR>(L"[SKIP] Socket tests (UEFI networking not implemented)"_embed);
-	Logger::Info<WCHAR>(L""_embed);
-	Logger::Info<WCHAR>(L"[SKIP] TLS tests (requires socket)"_embed);
-	Logger::Info<WCHAR>(L""_embed);
-	Logger::Info<WCHAR>(L"[SKIP] DNS tests (requires socket)"_embed);
-	Logger::Info<WCHAR>(L""_embed);
-	Logger::Info<WCHAR>(L"[SKIP] WebSocket tests (requires socket)"_embed);
-#else
 	// RAL - Network
 	if (!SocketTests::RunAll())
 		allPassed = FALSE;
@@ -112,7 +99,6 @@ static BOOL RunAllTests()
 
 	if (!WebSocketTests::RunAll())
 		allPassed = FALSE;
-#endif
 
 	// Final summary
 	Logger::Info<WCHAR>(L"=== Test Suite Complete ==="_embed);
