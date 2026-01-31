@@ -1,5 +1,5 @@
 #include "date_time.h"
-#include "syscall.h"
+#include "system.h"
 
 // Linux syscall numbers for clock_gettime
 #if defined(ARCHITECTURE_X86_64)
@@ -34,7 +34,7 @@ DateTime DateTime::Now()
     timespec ts;
 
     // Get current time using clock_gettime syscall
-    SSIZE result = Syscall::syscall2(SYS_CLOCK_GETTIME, CLOCK_REALTIME, (USIZE)&ts);
+    SSIZE result = System::Call(SYS_CLOCK_GETTIME, CLOCK_REALTIME, (USIZE)&ts);
     if (result != 0)
     {
         // If syscall fails, return epoch time (1970-01-01 00:00:00)
@@ -112,7 +112,7 @@ UINT64 DateTime::GetMonotonicNanoseconds()
     timespec ts;
 
     // Get monotonic time (not affected by system clock changes)
-    SSIZE result = Syscall::syscall2(SYS_CLOCK_GETTIME, CLOCK_MONOTONIC, (USIZE)&ts);
+    SSIZE result = System::Call(SYS_CLOCK_GETTIME, CLOCK_MONOTONIC, (USIZE)&ts);
     if (result != 0)
     {
         // Fallback: return 0 if syscall fails
