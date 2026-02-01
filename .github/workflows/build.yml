@@ -510,10 +510,20 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - arch: i386
+            platform: uefi
+            ovmf_pkg: ovmf-ia32
+            bios_opt: -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF32_CODE_4M.fd
+            qemu_cmd: qemu-system-i386 -machine q35
+            boot_file: BOOTIA32.EFI
+            nic_model: e1000
+            drive_if: ide,index=0
+            debug_exit: -device isa-debug-exit,iobase=0xf4,iosize=0x04
+            success_code: 1
           - arch: x86_64
             platform: uefi
             ovmf_pkg: ovmf
-            ovmf_path: /usr/share/ovmf/OVMF.fd
+            bios_opt: -bios /usr/share/ovmf/OVMF.fd
             qemu_cmd: qemu-system-x86_64
             boot_file: BOOTX64.EFI
             nic_model: e1000
@@ -523,7 +533,7 @@ jobs:
           - arch: aarch64
             platform: uefi
             ovmf_pkg: qemu-efi-aarch64
-            ovmf_path: /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+            bios_opt: -bios /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
             qemu_cmd: qemu-system-aarch64 -M virt -cpu cortex-a72
             boot_file: BOOTAA64.EFI
             nic_model: virtio
@@ -595,7 +605,7 @@ jobs:
           echo "Running UEFI application in QEMU with networking..."
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
-            -bios "${{ matrix.ovmf_path }}" \
+            ${{ matrix.bios_opt }} \
             -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
@@ -636,7 +646,7 @@ jobs:
           echo "Running UEFI application in QEMU with networking..."
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
-            -bios "${{ matrix.ovmf_path }}" \
+            ${{ matrix.bios_opt }} \
             -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
@@ -677,7 +687,7 @@ jobs:
           echo "Running UEFI application in QEMU with networking..."
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
-            -bios "${{ matrix.ovmf_path }}" \
+            ${{ matrix.bios_opt }} \
             -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
@@ -718,7 +728,7 @@ jobs:
           echo "Running UEFI application in QEMU with networking..."
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
-            -bios "${{ matrix.ovmf_path }}" \
+            ${{ matrix.bios_opt }} \
             -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
@@ -759,7 +769,7 @@ jobs:
           echo "Running UEFI application in QEMU with networking..."
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
-            -bios "${{ matrix.ovmf_path }}" \
+            ${{ matrix.bios_opt }} \
             -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
@@ -800,7 +810,7 @@ jobs:
           echo "Running UEFI application in QEMU with networking..."
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
-            -bios "${{ matrix.ovmf_path }}" \
+            ${{ matrix.bios_opt }} \
             -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
@@ -841,7 +851,7 @@ jobs:
           echo "Running UEFI application in QEMU with networking..."
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
-            -bios "${{ matrix.ovmf_path }}" \
+            ${{ matrix.bios_opt }} \
             -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \

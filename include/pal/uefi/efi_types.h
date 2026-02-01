@@ -13,7 +13,10 @@
 // UEFI Calling Convention
 // =============================================================================
 
-#if defined(ARCHITECTURE_X86_64)
+#if defined(ARCHITECTURE_I386)
+// i386 UEFI uses cdecl calling convention (explicitly specified for safety)
+#define EFIAPI __attribute__((cdecl))
+#elif defined(ARCHITECTURE_X86_64)
 // x86_64 UEFI uses Microsoft x64 ABI
 #define EFIAPI __attribute__((ms_abi))
 #elif defined(ARCHITECTURE_AARCH64)

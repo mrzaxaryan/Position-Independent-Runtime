@@ -26,6 +26,9 @@ static VOID QemuDebugExit(UINT32 code)
 #if defined(__x86_64__)
 	// x86_64: Use outb instruction to write to I/O port
 	__asm__ volatile("outb %0, %1" : : "a"((UINT8)code), "Nd"((UINT16)QEMU_DEBUG_EXIT_PORT));
+#elif defined(__i386__)
+	// i386: Use outb instruction (same as x86_64)
+	__asm__ volatile("outb %0, %1" : : "a"((UINT8)code), "Nd"((UINT16)QEMU_DEBUG_EXIT_PORT));
 #elif defined(__aarch64__)
 	// aarch64: Use semihosting to exit
 	// SYS_EXIT (0x18) with ADP_Stopped_ApplicationExit (0x20026)

@@ -64,8 +64,8 @@ DateTime DateTime::Now()
  */
 UINT64 DateTime::GetMonotonicNanoseconds()
 {
-#if defined(ARCHITECTURE_X86_64)
-	// Use RDTSC instruction for x86_64
+#if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_I386)
+	// Use RDTSC instruction for x86 architectures
 	UINT32 lo, hi;
 	__asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
 	return ((UINT64)hi << 32) | lo;
