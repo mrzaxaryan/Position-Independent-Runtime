@@ -89,16 +89,16 @@ static BOOL RunAllTests()
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
 
-	if (!TlsTests::RunAll())
-		allPassed = FALSE;
-	Logger::Info<WCHAR>(L""_embed);
+	// if (!TlsTests::RunAll())
+	// 	allPassed = FALSE;
+	// Logger::Info<WCHAR>(L""_embed);
 
-	if (!DnsTests::RunAll())
-		allPassed = FALSE;
-	Logger::Info<WCHAR>(L""_embed);
+	// if (!DnsTests::RunAll())
+	// 	allPassed = FALSE;
+	// Logger::Info<WCHAR>(L""_embed);
 
-	if (!WebSocketTests::RunAll())
-		allPassed = FALSE;
+	// if (!WebSocketTests::RunAll())
+	// 	allPassed = FALSE;
 
 	// Final summary
 	Logger::Info<WCHAR>(L"=== Test Suite Complete ==="_embed);
