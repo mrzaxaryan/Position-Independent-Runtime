@@ -612,5 +612,5 @@ jobs:
             -nographic \
             -serial mon:stdio \
             -nic user,model=${{ matrix.nic_model }} \
-            -no-reboot 2>&1 | sed 's/\x1b\[[0-9;]*m//g' || true
+            -no-reboot 2>&1 | sed 's/?\[[0-9;]*m//g' || true
           echo "QEMU test completed"
