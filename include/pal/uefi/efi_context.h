@@ -20,6 +20,7 @@ struct EFI_CONTEXT
 	EFI_SYSTEM_TABLE *SystemTable;
 	BOOL NetworkInitialized;
 	BOOL DhcpConfigured;
+	BOOL TcpStackReady;
 };
 
 // =============================================================================
