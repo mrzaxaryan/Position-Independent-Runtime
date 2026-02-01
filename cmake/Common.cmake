@@ -177,31 +177,28 @@ endmacro()
 function(cpppic_add_postbuild target_name)
     set(_out "${CPPPIC_OUTPUT_DIR}/output")
 
-    # Configure shell and path separators based on host OS
-    if(CMAKE_HOST_WIN32)
-        set(_shell cmd /c)
-        set(_quote "\"")
-    else()
-        set(_shell sh -c)
-        set(_quote "'")
-    endif()
-
     # Configure objcopy based on target platform
     # Windows .exe: Use binary output with section filter (LLVM 21+ compatible)
     # UEFI .efi: Use dump-section (binary output has issues with debug directory)
     # Linux .elf: Use dump-section (traditional approach)
     if(CPPPIC_PLATFORM STREQUAL "windows")
-        set(_objcopy_cmd "llvm-objcopy --output-target=binary -j .text")
+        set(_objcopy_cmd llvm-objcopy --output-target=binary -j .text "${_out}${CPPPIC_EXT}" "${_out}.bin")
     else()
-        set(_objcopy_cmd "llvm-objcopy --dump-section=.text=${_quote}${_out}.bin${_quote}")
+        set(_objcopy_cmd llvm-objcopy --dump-section=.text="${_out}.bin" "${_out}${CPPPIC_EXT}" "${_out}.bin")
     endif()
 
     add_custom_command(TARGET ${target_name} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "${CPPPIC_OUTPUT_DIR}"
         COMMAND ${CMAKE_COMMAND} -E echo "Build complete: ${_out}${CPPPIC_EXT}"
-        COMMAND ${_shell} "llvm-objdump -d -s -h -j .text ${_quote}${_out}${CPPPIC_EXT}${_quote} > ${_quote}${_out}.txt${_quote}"
-        COMMAND ${_shell} "${_objcopy_cmd} ${_quote}${_out}${CPPPIC_EXT}${_quote} ${_quote}${_out}.bin${_quote}"
-        COMMAND ${_shell} "llvm-strings ${_quote}${_out}${CPPPIC_EXT}${_quote} > ${_quote}${_out}.strings.txt${_quote}"
+        COMMAND ${CMAKE_COMMAND}
+            -DINPUT_FILE="${_out}${CPPPIC_EXT}"
+            -DOUTPUT_FILE="${_out}.txt"
+            -P "${CMAKE_SOURCE_DIR}/cmake/RunObjdump.cmake"
+        COMMAND ${_objcopy_cmd}
+        COMMAND ${CMAKE_COMMAND}
+            -DINPUT_FILE="${_out}${CPPPIC_EXT}"
+            -DOUTPUT_FILE="${_out}.strings.txt"
+            -P "${CMAKE_SOURCE_DIR}/cmake/RunStrings.cmake"
         COMMAND ${CMAKE_COMMAND}
             -DPIC_FILE="${_out}.bin"
             -DBASE64_FILE="${_out}.b64.txt"
