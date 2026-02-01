@@ -197,6 +197,7 @@ function(cpppic_add_postbuild target_name)
     endif()
 
     add_custom_command(TARGET ${target_name} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CPPPIC_OUTPUT_DIR}"
         COMMAND ${CMAKE_COMMAND} -E echo "Build complete: ${_out}${CPPPIC_EXT}"
         COMMAND ${_shell} "llvm-objdump -d -s -h -j .text ${_quote}${_out}${CPPPIC_EXT}${_quote} > ${_quote}${_out}.txt${_quote}"
         COMMAND ${_shell} "${_objcopy_cmd} ${_quote}${_out}${CPPPIC_EXT}${_quote} ${_quote}${_out}.bin${_quote}"
