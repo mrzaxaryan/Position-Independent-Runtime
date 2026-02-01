@@ -40,7 +40,7 @@ enum class LogLevels : UINT8
 };
 
 // Global log level - modify this to control logging at compile-time
-inline constexpr LogLevels LogLevel = LogLevels::Debug;
+inline constexpr LogLevels LogLevel = LogLevels::Default;
 /**
  * Logger - Static logging utility class
  *
