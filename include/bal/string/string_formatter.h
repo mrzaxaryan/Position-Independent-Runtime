@@ -764,6 +764,22 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
                     j += StringFormatter::FormatUInt64(writer, context, num, fieldWidth, zeroPad, leftAlign); // Convert the unsigned long long int to string with specified formatting
                     continue;
                 }
+                else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'x')
+                {                                                                            // long hex (%lx)
+                    i += 2;                                                                  // Skip over "lx"
+                    if (currentArg >= argCount) continue;
+                    UINT64 num = args[currentArg++].u64;                                     // Get the next argument as UINT64
+                    j += StringFormatter::FormatUInt64AsHex(writer, context, num);           // Convert to hex
+                    continue;
+                }
+                else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'l' && String::ToLowerCase<TChar>(format[i + 2]) == (TChar)'x')
+                {                                                                            // long long hex (%llx)
+                    i += 3;                                                                  // Skip over "llx"
+                    if (currentArg >= argCount) continue;
+                    UINT64 num = args[currentArg++].u64;                                     // Get the next argument as UINT64
+                    j += StringFormatter::FormatUInt64AsHex(writer, context, num);           // Convert to hex
+                    continue;
+                }
                 else
                 {
                     writer(context, format[i++]); // If it's not recognized, just copy the character as is.
