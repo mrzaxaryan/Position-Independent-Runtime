@@ -596,7 +596,7 @@ jobs:
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
             ${{ matrix.bios_opt }} \
-            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
+            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},format=raw,if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
             -serial mon:stdio \
@@ -637,7 +637,7 @@ jobs:
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
             ${{ matrix.bios_opt }} \
-            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
+            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},format=raw,if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
             -serial mon:stdio \
@@ -678,7 +678,7 @@ jobs:
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
             ${{ matrix.bios_opt }} \
-            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
+            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},format=raw,if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
             -serial mon:stdio \
@@ -719,7 +719,7 @@ jobs:
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
             ${{ matrix.bios_opt }} \
-            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
+            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},format=raw,if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
             -serial mon:stdio \
@@ -760,7 +760,7 @@ jobs:
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
             ${{ matrix.bios_opt }} \
-            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
+            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},format=raw,if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
             -serial mon:stdio \
@@ -801,7 +801,7 @@ jobs:
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
             ${{ matrix.bios_opt }} \
-            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
+            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},format=raw,if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
             -serial mon:stdio \
@@ -842,7 +842,7 @@ jobs:
           set +e
           timeout 180s ${{ matrix.qemu_cmd }} \
             ${{ matrix.bios_opt }} \
-            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},if=${{ matrix.drive_if }} \
+            -drive file=fat:rw:build/release/${{ matrix.platform }}/${{ matrix.arch }},format=raw,if=${{ matrix.drive_if }} \
             -m 512 \
             -nographic \
             -serial mon:stdio \
