@@ -1,18 +1,16 @@
 # =============================================================================
-# Base64Encode.cmake - Cross-platform base64 encoding script
+# Base64Encode.cmake - Cross-platform base64 encoding (run via cmake -P)
 # =============================================================================
-# Encodes a binary file to base64 format.
-#
-# Required parameters:
-#   PIC_FILE    - Path to input binary file
-#   BASE64_FILE - Path to output base64 file
+# Usage: cmake -DPIC_FILE=<input> -DBASE64_FILE=<output> -P Base64Encode.cmake
 # =============================================================================
 
-include_guard(GLOBAL)
+cmake_minimum_required(VERSION 3.20)
 
-if(NOT DEFINED PIC_FILE OR NOT DEFINED BASE64_FILE)
-    message(FATAL_ERROR "PIC_FILE and BASE64_FILE required")
-endif()
+foreach(_var PIC_FILE BASE64_FILE)
+    if(NOT DEFINED ${_var})
+        message(FATAL_ERROR "${_var} is required")
+    endif()
+endforeach()
 
 if(NOT EXISTS "${PIC_FILE}")
     message(FATAL_ERROR "Input file not found: ${PIC_FILE}")
@@ -21,28 +19,28 @@ endif()
 if(WIN32)
     execute_process(
         COMMAND certutil -encodehex -f "${PIC_FILE}" "${BASE64_FILE}" 0x40000001
-        RESULT_VARIABLE RES
+        RESULT_VARIABLE _result
     )
 else()
-    # Try GNU base64 first, fallback to BSD
+    # GNU base64 uses -w, BSD base64 does not
     execute_process(
         COMMAND base64 -w 0 "${PIC_FILE}"
         OUTPUT_FILE "${BASE64_FILE}"
         ERROR_QUIET
-        RESULT_VARIABLE RES
+        RESULT_VARIABLE _result
     )
-    if(NOT RES EQUAL 0)
+    if(NOT _result EQUAL 0)
         execute_process(
             COMMAND base64 "${PIC_FILE}"
-            OUTPUT_VARIABLE B64
-            RESULT_VARIABLE RES
+            OUTPUT_VARIABLE _b64
+            RESULT_VARIABLE _result
         )
-        string(REPLACE "\n" "" B64 "${B64}")
-        file(WRITE "${BASE64_FILE}" "${B64}")
+        string(REPLACE "\n" "" _b64 "${_b64}")
+        file(WRITE "${BASE64_FILE}" "${_b64}")
     endif()
     file(APPEND "${BASE64_FILE}" "\n")
 endif()
 
-if(NOT RES EQUAL 0)
-    message(WARNING "Base64 encoding may have failed: ${RES}")
+if(NOT _result EQUAL 0)
+    message(WARNING "Base64 encoding failed with code: ${_result}")
 endif()

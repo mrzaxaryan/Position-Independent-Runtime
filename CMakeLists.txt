@@ -4,66 +4,91 @@
 
 cmake_minimum_required(VERSION 3.20)
 
-# Toolchain (before project)
+# =============================================================================
+# Toolchain Setup (must precede project())
+# =============================================================================
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
-set(CMAKE_C_COMPILER "$ENV{CC}" CACHE STRING "" FORCE)
-set(CMAKE_CXX_COMPILER "$ENV{CXX}" CACHE STRING "" FORCE)
-if(NOT CMAKE_C_COMPILER)
-    set(CMAKE_C_COMPILER clang)
+
+# Compiler detection
+if(DEFINED ENV{CC})
+    set(CMAKE_C_COMPILER "$ENV{CC}" CACHE STRING "" FORCE)
+else()
+    set(CMAKE_C_COMPILER clang CACHE STRING "" FORCE)
 endif()
-if(NOT CMAKE_CXX_COMPILER)
-    set(CMAKE_CXX_COMPILER clang++)
+if(DEFINED ENV{CXX})
+    set(CMAKE_CXX_COMPILER "$ENV{CXX}" CACHE STRING "" FORCE)
+else()
+    set(CMAKE_CXX_COMPILER clang++ CACHE STRING "" FORCE)
 endif()
-foreach(lang C CXX)
-    set(CMAKE_${lang}_COMPILER_FORCED TRUE)
-    set(CMAKE_${lang}_COMPILER_WORKS TRUE)
-    set(CMAKE_${lang}_STANDARD_LIBRARIES "")
+
+# Skip compiler tests (freestanding environment)
+foreach(_lang C CXX)
+    set(CMAKE_${_lang}_COMPILER_FORCED TRUE)
+    set(CMAKE_${_lang}_COMPILER_WORKS TRUE)
+    set(CMAKE_${_lang}_STANDARD_LIBRARIES "")
 endforeach()
+
 set(CMAKE_LINKER lld)
 set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> -fuse-ld=lld <LINK_FLAGS> <OBJECTS> -o <TARGET>")
 
+# =============================================================================
+# Project
+# =============================================================================
 project(cpp-pic LANGUAGES CXX)
 
-# Load common config
 include(${CMAKE_SOURCE_DIR}/cmake/Common.cmake)
 
-# Load platform-specific config
-if(CPPPIC_PLATFORM STREQUAL "windows")
-    include(${CMAKE_SOURCE_DIR}/cmake/Windows.cmake)
-elseif(CPPPIC_PLATFORM STREQUAL "linux")
-    include(${CMAKE_SOURCE_DIR}/cmake/Linux.cmake)
-elseif(CPPPIC_PLATFORM STREQUAL "uefi")
-    include(${CMAKE_SOURCE_DIR}/cmake/UEFI.cmake)
-endif()
+# Platform modules (windows->Windows, linux->Linux, uefi->UEFI)
+set(_platform_map_windows Windows)
+set(_platform_map_linux Linux)
+set(_platform_map_uefi UEFI)
+include(${CMAKE_SOURCE_DIR}/cmake/${_platform_map_${CPPPIC_PLATFORM}}.cmake)
 
-# Create output directory
+# =============================================================================
+# Output Configuration
+# =============================================================================
 file(MAKE_DIRECTORY "${CPPPIC_OUTPUT_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CPPPIC_OUTPUT_DIR}")
 set(CMAKE_PDB_OUTPUT_DIRECTORY "${CPPPIC_OUTPUT_DIR}")
 
-# Create target
+# =============================================================================
+# Target
+# =============================================================================
 add_executable(${CPPPIC_TRIPLE} ${CPPPIC_SOURCES} ${CPPPIC_HEADERS})
-set_target_properties(${CPPPIC_TRIPLE} PROPERTIES OUTPUT_NAME "output" SUFFIX "${CPPPIC_EXT}")
+
+set_target_properties(${CPPPIC_TRIPLE} PROPERTIES
+    OUTPUT_NAME "output"
+    SUFFIX "${CPPPIC_EXT}"
+)
+
 target_include_directories(${CPPPIC_TRIPLE} PRIVATE ${CPPPIC_INCLUDE_PATHS})
 target_compile_definitions(${CPPPIC_TRIPLE} PRIVATE ${CPPPIC_DEFINES})
 target_compile_options(${CPPPIC_TRIPLE} PRIVATE ${CPPPIC_BASE_FLAGS})
 target_link_options(${CPPPIC_TRIPLE} PRIVATE ${CPPPIC_BASE_LINK_FLAGS})
 
-# Post-build
+# =============================================================================
+# Post-Build
+# =============================================================================
 cpppic_add_postbuild(${CPPPIC_TRIPLE})
+
 if(CPPPIC_PLATFORM STREQUAL "uefi")
     cpppic_add_uefi_boot(${CPPPIC_TRIPLE})
 endif()
 
-# Summary
+# =============================================================================
+# Build Summary
+# =============================================================================
 message(STATUS "")
-message(STATUS "=== Build Configuration ===")
-message(STATUS "BUILD_TYPE:    ${CPPPIC_BUILD_TYPE}")
-message(STATUS "PLATFORM:      ${CPPPIC_PLATFORM}")
-message(STATUS "ARCHITECTURE:  ${CPPPIC_ARCH}")
-message(STATUS "OPTIMIZATION:  -${CPPPIC_OPT_LEVEL}")
-message(STATUS "TARGET_TRIPLE: ${CPPPIC_TRIPLE}")
-message(STATUS "OUTPUT:        ${CPPPIC_OUTPUT_DIR}/output${CPPPIC_EXT}")
-message(STATUS "===========================")
+message(STATUS "┌─────────────────────────────────────┐")
+message(STATUS "│      Build Configuration            │")
+message(STATUS "├─────────────────────────────────────┤")
+message(STATUS "│ Platform:     ${CPPPIC_PLATFORM}")
+message(STATUS "│ Architecture: ${CPPPIC_ARCH}")
+message(STATUS "│ Build Type:   ${CPPPIC_BUILD_TYPE}")
+message(STATUS "│ Optimization: -${CPPPIC_OPT_LEVEL}")
+message(STATUS "│ Triple:       ${CPPPIC_TRIPLE}")
+message(STATUS "├─────────────────────────────────────┤")
+message(STATUS "│ Output: ${CPPPIC_OUTPUT_DIR}/output${CPPPIC_EXT}")
+message(STATUS "└─────────────────────────────────────┘")
 message(STATUS "")

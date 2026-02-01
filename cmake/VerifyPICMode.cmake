@@ -1,62 +1,45 @@
 # =============================================================================
-# VerifyNoRdata.cmake - Verify no .rdata/.rodata/.data/.bss sections exist
+# VerifyPICMode.cmake - Verify no data sections exist (run via cmake -P)
 # =============================================================================
-# This script checks the linker map file to ensure no data sections exist
-# that would break position-independence.
-#
-# Required parameters:
-#   MAP_FILE - Path to the linker map file
+# Usage: cmake -DMAP_FILE=<path> -P VerifyPICMode.cmake
 # =============================================================================
 
-include_guard(GLOBAL)
+cmake_minimum_required(VERSION 3.20)
 
 if(NOT DEFINED MAP_FILE)
-    message(FATAL_ERROR "MAP_FILE must be defined")
+    message(FATAL_ERROR "MAP_FILE is required")
 endif()
 
-# Map file may not exist for debug builds
 if(NOT EXISTS "${MAP_FILE}")
-    message(STATUS "Map file not found (expected for debug): ${MAP_FILE}")
+    message(STATUS "Map file not found (expected for debug builds): ${MAP_FILE}")
     return()
 endif()
 
-file(READ "${MAP_FILE}" MAP_CONTENT)
+file(READ "${MAP_FILE}" _content)
 
-# Check for .rdata/.rodata/.data/.bss sections (both input and output)
-# Windows PE format uses .rdata/.data/.bss
-# Linux ELF uses .rodata/.data/.bss
-string(REGEX MATCH "[ \t]+[0-9a-fA-F]+:[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+H[ \t]+\\.rdata[ \t]" RDATA_IN "${MAP_CONTENT}")
-string(REGEX MATCH "[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9]+[ \t]+\\.rdata[ \t]" RDATA_OUT "${MAP_CONTENT}")
-string(REGEX MATCH "[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9]+[ \t]+\\.rodata[^.]" RODATA_OUT "${MAP_CONTENT}")
-string(REGEX MATCH "[ \t]+[0-9a-fA-F]+:[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+H[ \t]+\\.data[ \t]" DATA_IN "${MAP_CONTENT}")
-string(REGEX MATCH "[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9]+[ \t]+\\.data[ \t]" DATA_OUT "${MAP_CONTENT}")
-string(REGEX MATCH "[ \t]+[0-9a-fA-F]+:[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+H[ \t]+\\.bss[ \t]" BSS_IN "${MAP_CONTENT}")
-string(REGEX MATCH "[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9a-fA-F]+[ \t]+[0-9]+[ \t]+\\.bss[ \t]" BSS_OUT "${MAP_CONTENT}")
+# Forbidden sections: .rdata (PE), .rodata (ELF), .data, .bss
+set(_sections rdata rodata data bss)
+set(_found)
 
-if(RDATA_IN OR RDATA_OUT OR RODATA_OUT OR DATA_IN OR DATA_OUT OR BSS_IN OR BSS_OUT)
-    set(ERROR_MSG "CRITICAL: Data section detected that breaks position-independence!\n")
-    if(RDATA_IN OR RDATA_OUT)
-        set(ERROR_MSG "${ERROR_MSG}  - .rdata section found (Windows PE read-only data)\n")
+foreach(_sec ${_sections})
+    # Match both input sections (addr:offset sizeH) and output sections (vma size)
+    if(_content MATCHES "[ \t]+[0-9a-fA-F]+[:\t ]+[0-9a-fA-F]+[H\t ]+[0-9a-fA-F]*[ \t]+\\.${_sec}[ \t\n]")
+        list(APPEND _found ".${_sec}")
     endif()
-    if(RODATA_OUT)
-        set(ERROR_MSG "${ERROR_MSG}  - .rodata section found (Linux ELF read-only data)\n")
-    endif()
-    if(DATA_IN OR DATA_OUT)
-        set(ERROR_MSG "${ERROR_MSG}  - .data section found (initialized writable data)\n")
-    endif()
-    if(BSS_IN OR BSS_OUT)
-        set(ERROR_MSG "${ERROR_MSG}  - .bss section found (uninitialized writable data)\n")
-    endif()
+endforeach()
+
+if(_found)
+    list(JOIN _found ", " _list)
     message(FATAL_ERROR
-        "${ERROR_MSG}"
-        "This breaks position-independence. Check for:\n"
-        "  - Static/global variables (use stack allocation or EMBEDDED_* types)\n"
-        "  - Uninitialized static/global variables (causes .bss section)\n"
-        "  - Floating-point constants not using EMBEDDED_DOUBLE\n"
-        "  - String literals not using EMBEDDED_STRING\n"
-        "  - Array literals not using EMBEDDED_ARRAY\n"
+        "CRITICAL: Data sections break position-independence!\n"
+        "Found: ${_list}\n\n"
+        "Common causes:\n"
+        "  - Static/global variables (use stack or EMBEDDED_* types)\n"
+        "  - String literals (use EMBEDDED_STRING)\n"
+        "  - Floating-point constants (use EMBEDDED_DOUBLE)\n"
+        "  - Array literals (use EMBEDDED_ARRAY)\n\n"
         "Map file: ${MAP_FILE}"
     )
 endif()
 
-message(STATUS "Verification PASSED: No .rdata/.rodata/.data/.bss sections found")
+message(STATUS "PIC verification passed: no forbidden sections")
