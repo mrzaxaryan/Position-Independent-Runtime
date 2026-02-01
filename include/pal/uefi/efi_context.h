@@ -18,6 +18,8 @@ struct EFI_CONTEXT
 {
 	EFI_HANDLE ImageHandle;
 	EFI_SYSTEM_TABLE *SystemTable;
+	BOOL NetworkInitialized;
+	BOOL DhcpConfigured;
 };
 
 // =============================================================================
