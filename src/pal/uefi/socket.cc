@@ -50,7 +50,20 @@ static BOOL InitializeNetworkInterface(EFI_CONTEXT *ctx)
 	LOG_DEBUG("Socket: InitializeNetworkInterface starting...");
 
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
-	EFI_GUID SnpGuid = EFI_SIMPLE_NETWORK_PROTOCOL_GUID;
+	// Initialize GUID field-by-field to avoid .rdata section on aarch64
+	// {A19832B9-AC25-11D3-9A2D-0090273FC14D}
+	EFI_GUID SnpGuid;
+	SnpGuid.Data1 = 0xA19832B9;
+	SnpGuid.Data2 = 0xAC25;
+	SnpGuid.Data3 = 0x11D3;
+	SnpGuid.Data4[0] = 0x9A;
+	SnpGuid.Data4[1] = 0x2D;
+	SnpGuid.Data4[2] = 0x00;
+	SnpGuid.Data4[3] = 0x90;
+	SnpGuid.Data4[4] = 0x27;
+	SnpGuid.Data4[5] = 0x3F;
+	SnpGuid.Data4[6] = 0xC1;
+	SnpGuid.Data4[7] = 0x4D;
 	USIZE HandleCount = 0;
 	EFI_HANDLE *HandleBuffer = NULL;
 
@@ -102,7 +115,20 @@ static BOOL InitializeDhcp(EFI_CONTEXT *ctx)
 	LOG_DEBUG("Socket: InitializeDhcp starting...");
 
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
-	EFI_GUID Ip4Config2Guid = EFI_IP4_CONFIG2_PROTOCOL_GUID;
+	// Initialize GUID field-by-field to avoid .rdata section on aarch64
+	// {5B446ED1-E30B-4FAA-871A-3654ECA36080}
+	EFI_GUID Ip4Config2Guid;
+	Ip4Config2Guid.Data1 = 0x5B446ED1;
+	Ip4Config2Guid.Data2 = 0xE30B;
+	Ip4Config2Guid.Data3 = 0x4FAA;
+	Ip4Config2Guid.Data4[0] = 0x87;
+	Ip4Config2Guid.Data4[1] = 0x1A;
+	Ip4Config2Guid.Data4[2] = 0x36;
+	Ip4Config2Guid.Data4[3] = 0x54;
+	Ip4Config2Guid.Data4[4] = 0xEC;
+	Ip4Config2Guid.Data4[5] = 0xA3;
+	Ip4Config2Guid.Data4[6] = 0x60;
+	Ip4Config2Guid.Data4[7] = 0x80;
 	USIZE HandleCount = 0;
 	EFI_HANDLE *HandleBuffer = NULL;
 
