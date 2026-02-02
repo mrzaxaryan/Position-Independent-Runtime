@@ -7,7 +7,6 @@
 #include "logger.h"
 #include "math.h"
 
-
 #define TLS_CHACHA20_POLY1305_SHA256 0x1303
 
 // The following defines SSL 3.0 content types
@@ -51,7 +50,6 @@ typedef enum
 
     EXT_LAST = 0x7FFF
 } SSL_EXTENTION;
-
 
 BOOL TLSClient::SendPacket(INT32 packetType, INT32 ver, TlsBuffer *buf)
 {
@@ -519,8 +517,8 @@ BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBufferReader *TlsRe
             LOG_DEBUG("Processing Alert for client: %p", this);
             if (reader_sig.GetSize() >= 2)
             {
-                INT32 level = reader_sig.Read<INT8>();
-                INT32 code = reader_sig.Read<INT8>();
+                [[maybe_unused]] INT32 level = reader_sig.Read<INT8>();
+                [[maybe_unused]] INT32 code = reader_sig.Read<INT8>();
                 LOG_ERROR("TLS Alert received for client: %p, level: %d, code: %d", this, level, code);
                 return FALSE;
             }
@@ -698,7 +696,7 @@ SSIZE TLSClient::Read(PVOID buffer, UINT32 bufferLength)
 
     return ReadChannel((PCHAR)buffer, bufferLength);
 }
-TLSClient::TLSClient(PCCHAR host, const IPAddress& ipAddress, UINT16 port)
+TLSClient::TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port)
     : host(host), ip(ipAddress), port(port), context(ipAddress, port)
 {
     stateIndex = 0;

@@ -18,7 +18,7 @@ class TLSClient final
 private:
     PCCHAR host;
     IPAddress ip;
-    UINT16 port;
+    [[maybe_unused]] UINT16 port;
     Socket context;
     TlsCipher crypto;
     INT32 stateIndex;        // Current state index
@@ -43,7 +43,7 @@ public:
     VOID *operator new(USIZE) = delete;
     VOID operator delete(VOID *) = delete;
     TLSClient() : host(nullptr), ip(), port(0), stateIndex(0), channelBytesRead(0) {}
-    TLSClient(PCCHAR host, const IPAddress& ipAddress, UINT16 port);
+    TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port);
     BOOL Open();
     BOOL Close();
     SSIZE Read(PVOID buffer, UINT32 bufferLength);
