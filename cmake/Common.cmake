@@ -177,29 +177,19 @@ endmacro()
 function(cpppic_add_postbuild target_name)
     set(_out "${CPPPIC_OUTPUT_DIR}/output")
 
-    # Extract raw .text section bytes using --dump-section for all platforms
-    # This produces pure section content that the loader script expects
-    set(_objcopy_cmd llvm-objcopy --dump-section=.text="${_out}.bin" "${_out}${CPPPIC_EXT}")
-
     add_custom_command(TARGET ${target_name} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "${CPPPIC_OUTPUT_DIR}"
         COMMAND ${CMAKE_COMMAND} -E echo "Build complete: ${_out}${CPPPIC_EXT}"
         COMMAND ${CMAKE_COMMAND}
             -DINPUT_FILE="${_out}${CPPPIC_EXT}"
-            -DOUTPUT_FILE="${_out}.txt"
-            -P "${CMAKE_SOURCE_DIR}/cmake/RunObjdump.cmake"
-        COMMAND ${_objcopy_cmd}
-        COMMAND ${CMAKE_COMMAND}
-            -DINPUT_FILE="${_out}${CPPPIC_EXT}"
-            -DOUTPUT_FILE="${_out}.strings.txt"
-            -P "${CMAKE_SOURCE_DIR}/cmake/RunStrings.cmake"
+            -DOUTPUT_DIR="${CPPPIC_OUTPUT_DIR}"
+            -P "${CMAKE_SOURCE_DIR}/cmake/ExtractBinary.cmake"
         COMMAND ${CMAKE_COMMAND}
             -DPIC_FILE="${_out}.bin"
             -DBASE64_FILE="${_out}.b64.txt"
             -P "${CMAKE_SOURCE_DIR}/cmake/Base64Encode.cmake"
         COMMAND ${CMAKE_COMMAND}
             -DMAP_FILE="${CPPPIC_MAP_FILE}"
-            -DPLATFORM="${CPPPIC_PLATFORM}"
             -P "${CMAKE_SOURCE_DIR}/cmake/VerifyPICMode.cmake"
         COMMENT "Generating PIC artifacts..."
     )
