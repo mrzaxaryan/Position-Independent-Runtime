@@ -286,7 +286,7 @@ BOOL FileSystem::Exists(PCWCHAR path)
 }
 
 // --- FileSystem Directory Management ---
-BOOL FileSystem::CreateDirectroy(PCWCHAR path)
+BOOL FileSystem::CreateDirectory(PCWCHAR path)
 {
     // Returns non-zero on success
     PVOID hDir;
@@ -299,20 +299,28 @@ BOOL FileSystem::CreateDirectroy(PCWCHAR path)
 
     InitializeObjectAttributes(&objAttr, &uniName, 0, NULL, NULL);
 
+    NTSTATUS status = NTDLL::NtCreateFile(
+        &hDir,
+        FILE_LIST_DIRECTORY | SYNCHRONIZE,
+        &objAttr,
+        &ioStatusBlock,
+        NULL,
+        FILE_ATTRIBUTE_DIRECTORY,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        FILE_CREATE,
+        FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
+        NULL,
+        0);
+
     NTDLL::RtlFreeUnicodeString(&uniName);
 
-    return NTDLL::NtCreateFile(
-               &hDir,
-               FILE_LIST_DIRECTORY | SYNCHRONIZE,
-               &objAttr,
-               &ioStatusBlock,
-               NULL,
-               FILE_ATTRIBUTE_DIRECTORY,
-               FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-               FILE_CREATE,
-               FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
-               NULL,
-               0) == 0;
+    if (status == 0 && hDir && hDir != INVALID_HANDLE_VALUE)
+    {
+        NTDLL::NtClose(hDir);
+        return TRUE;
+    }
+    LOG_ERROR("CreateDirectory failed: status=0x%08X path=%ls", status, path);
+    return FALSE;
 }
 
 // Delete a directory at the specified path
