@@ -161,7 +161,7 @@ BOOL FileSystem::Exists(PCWCHAR path)
 #endif
 }
 
-BOOL FileSystem::CreateDirectroy(PCWCHAR path)
+BOOL FileSystem::CreateDirectory(PCWCHAR path)
 {
     CHAR utf8Path[1024];
     String::WideToUtf8(path, utf8Path, sizeof(utf8Path));

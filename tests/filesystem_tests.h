@@ -112,27 +112,27 @@ private:
 		//       └── level2_dir5/
        
 		// Create root directory
-		if (!FileSystem::CreateDirectroy(Path::NormalizePath(L"test_io_root"_embed)))
+		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root"_embed)))
 			return FALSE;
 
 		// Create first level directories
-		if (!FileSystem::CreateDirectroy(Path::NormalizePath(L"test_io_root\\level1_dir1"_embed)))
+		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir1"_embed)))
 			return FALSE;
-		if (!FileSystem::CreateDirectroy(Path::NormalizePath(L"test_io_root\\level1_dir2"_embed)))
+		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir2"_embed)))
 			return FALSE;
-		if (!FileSystem::CreateDirectroy(Path::NormalizePath(L"test_io_root\\level1_dir3"_embed)))
+		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir3"_embed)))
 			return FALSE;
 
 		// Create second level directories (nested inside first level)
-		if (!FileSystem::CreateDirectroy(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1"_embed)))
+		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1"_embed)))
 			return FALSE;
-		if (!FileSystem::CreateDirectroy(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir2"_embed)))
+		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir2"_embed)))
 			return FALSE;
-		if (!FileSystem::CreateDirectroy(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir3"_embed)))
+		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir3"_embed)))
 			return FALSE;
-		if (!FileSystem::CreateDirectroy(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir4"_embed)))
+		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir4"_embed)))
 			return FALSE;
-		if (!FileSystem::CreateDirectroy(Path::NormalizePath(L"test_io_root\\level1_dir3\\level2_dir5"_embed)))
+		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir3\\level2_dir5"_embed)))
 			return FALSE;
 
 		// Verify all directories exist

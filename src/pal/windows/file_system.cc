@@ -286,7 +286,7 @@ BOOL FileSystem::Exists(PCWCHAR path)
 }
 
 // --- FileSystem Directory Management ---
-BOOL FileSystem::CreateDirectroy(PCWCHAR path)
+BOOL FileSystem::CreateDirectory(PCWCHAR path)
 {
     // Returns non-zero on success
     PVOID hDir;
@@ -319,7 +319,7 @@ BOOL FileSystem::CreateDirectroy(PCWCHAR path)
         NTDLL::NtClose(hDir);
         return TRUE;
     }
-    LOG_ERROR("CreateDirectroy failed: status=0x%08X path=%ls", status, path);
+    LOG_ERROR("CreateDirectory failed: status=0x%08X path=%ls", status, path);
     return FALSE;
 }
 

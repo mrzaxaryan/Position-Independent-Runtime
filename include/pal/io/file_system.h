@@ -120,6 +120,6 @@ public:
     static BOOL Exists(PCWCHAR path);
 
     // New Directory Methods
-    static BOOL CreateDirectroy(PCWCHAR path);
+    static BOOL CreateDirectory(PCWCHAR path);
     static BOOL DeleteDirectory(PCWCHAR path);
 };

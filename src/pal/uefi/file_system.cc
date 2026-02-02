@@ -30,7 +30,7 @@ BOOL FileSystem::Exists(PCWCHAR path)
 	return FALSE;
 }
 
-BOOL FileSystem::CreateDirectroy(PCWCHAR path)
+BOOL FileSystem::CreateDirectory(PCWCHAR path)
 {
 	(VOID)path;
 	return FALSE;
