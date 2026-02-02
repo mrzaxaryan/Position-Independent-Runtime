@@ -480,6 +480,10 @@ IPAddress DNS::ResolveOverTls(PCCHAR host, RequestType dnstype)
 IPAddress DNS::ResolveOverHttp(PCCHAR host, RequestType dnstype)
 {
     LOG_DEBUG("DNS_OVER_HTTPS_resolve(host: %s, dnstype: %d) called", host, dnstype);
+
+    // temp solution until I implement full HTTP client 
+    (VOID)dnstype;
+
     // Validate the input parameters
 
     // Check for localhost
