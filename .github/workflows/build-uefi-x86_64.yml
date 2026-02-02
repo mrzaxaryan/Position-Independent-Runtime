@@ -1,4 +1,4 @@
-name: Linux
+name: UEFI x86_64
 
 on:
   pull_request:
@@ -16,21 +16,8 @@ env:
 
 jobs:
   build-and-test:
-    name: ${{ matrix.arch }}
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [i386, x86_64, armv7a, aarch64]
-        include:
-          - arch: i386
-            qemu: qemu-i386-static
-          - arch: x86_64
-            qemu: ""
-          - arch: armv7a
-            qemu: qemu-arm-static
-          - arch: aarch64
-            qemu: qemu-aarch64-static
+    timeout-minutes: 35
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,7 +29,6 @@ jobs:
 
           sudo apt-get update
           sudo apt-get install -y ninja-build wget lsb-release ca-certificates gnupg cmake
-          ninja --version
 
           sudo mkdir -p /etc/apt/keyrings
           wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/apt.llvm.org.gpg >/dev/null
@@ -69,22 +55,21 @@ jobs:
 
           clang --version
 
-      - name: Install QEMU
-        if: matrix.qemu != ''
+      - name: Install QEMU and OVMF
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-user-static
+          sudo apt-get install -y qemu-system-x86 qemu-system-arm ovmf libslirp0 qemu-system-common
 
       - name: Build, Upload, and Test all optimization levels
         run: |
-          set -e
+          set -o pipefail
           OPTS="O0 O1 O2 O3 Os Oz Og"
           FAILED=""
           for opt in $OPTS; do
             echo "========== Building -$opt =========="
             rm -rf build
-            cmake --preset linux-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=$opt
-            cmake --build --preset linux-${{ matrix.arch }}-release
+            cmake --preset uefi-x86_64-release -DOPTIMIZATION_LEVEL=$opt
+            cmake --build --preset uefi-x86_64-release
             if [ $? -ne 0 ]; then FAILED="$FAILED $opt-build"; continue; fi
 
             echo "========== Saving -$opt =========="
@@ -95,15 +80,24 @@ jobs:
               cp "$f" "$dest"
             done
 
-            echo "========== Testing ELF -$opt =========="
-            TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
-            chmod +x "$TEST_ELF"
-            if [ -n "${{ matrix.qemu }}" ]; then ${{ matrix.qemu }} "$TEST_ELF"; else "$TEST_ELF"; fi
-            if [ $? -ne 0 ]; then FAILED="$FAILED $opt-elf"; continue; fi
-
-            echo "========== Testing PIC -$opt =========="
-            python3 scripts/loader.py --arch ${{ matrix.arch }} $(find build -type f -name "output.bin" | head -n 1)
-            if [ $? -ne 0 ]; then FAILED="$FAILED $opt-pic"; continue; fi
+            echo "========== Testing UEFI -$opt =========="
+            set +e
+            timeout 180s qemu-system-x86_64 \
+              -bios /usr/share/ovmf/OVMF.fd \
+              -drive file=fat:rw:build/release/uefi/x86_64,format=raw,if=ide,index=0 \
+              -m 512 \
+              -nographic \
+              -serial mon:stdio \
+              -nic user,model=e1000 \
+              -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
+              -no-reboot 2>&1 | sed -u 's/?\[[0-9;]*m//g'
+            ret=${PIPESTATUS[0]}
+            set -e
+            echo "QEMU exit code: $ret (expected 1 for success)"
+            if [ "$ret" -ne "1" ]; then
+              FAILED="$FAILED $opt-uefi"
+              continue
+            fi
 
             echo "========== $opt passed =========="
           done
@@ -116,6 +110,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-linux-${{ matrix.arch }}
+          name: build-uefi-x86_64
           retention-days: 1
           path: artifacts/

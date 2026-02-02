@@ -1,4 +1,4 @@
-name: Windows
+name: Windows x86_64
 
 on:
   pull_request:
@@ -16,19 +16,7 @@ env:
 
 jobs:
   build-and-test:
-    name: ${{ matrix.arch }}
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [i386, x86_64, aarch64]
-        include:
-          - arch: i386
-            runner: windows-2022
-          - arch: x86_64
-            runner: windows-2022
-          - arch: aarch64
-            runner: windows-11-arm
+    runs-on: windows-2022
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,7 +26,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:\Program Files\LLVM
-          key: llvm-${{ env.LLVM_VERSION }}-${{ matrix.runner }}
+          key: llvm-${{ env.LLVM_VERSION }}-windows-2022
 
       - name: Install Ninja
         shell: pwsh
@@ -72,8 +60,8 @@ jobs:
           foreach ($opt in $opts) {
             Write-Host "========== Building -$opt ==========" -ForegroundColor Cyan
             Remove-Item -Recurse -Force build -ErrorAction SilentlyContinue
-            cmake --preset windows-${{ matrix.arch }}-release "-DOPTIMIZATION_LEVEL=$opt"
-            cmake --build --preset windows-${{ matrix.arch }}-release
+            cmake --preset windows-x86_64-release "-DOPTIMIZATION_LEVEL=$opt"
+            cmake --build --preset windows-x86_64-release
             if ($LASTEXITCODE -ne 0) { $failed += "$opt-build"; continue }
 
             Write-Host "========== Uploading -$opt ==========" -ForegroundColor Cyan
@@ -86,7 +74,7 @@ jobs:
             if ($LASTEXITCODE -ne 0) { $failed += "$opt-exe"; continue }
 
             Write-Host "========== Testing PIC -$opt ==========" -ForegroundColor Cyan
-            python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
+            python scripts/loader.py --arch x86_64 (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
             if ($LASTEXITCODE -ne 0) { $failed += "$opt-pic"; continue }
 
             Write-Host "========== $opt passed ==========" -ForegroundColor Green
@@ -100,6 +88,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-windows-${{ matrix.arch }}
+          name: build-windows-x86_64
           retention-days: 1
           path: artifacts/

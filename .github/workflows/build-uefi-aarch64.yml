@@ -1,4 +1,4 @@
-name: UEFI
+name: UEFI aarch64
 
 on:
   pull_request:
@@ -16,30 +16,8 @@ env:
 
 jobs:
   build-and-test:
-    name: ${{ matrix.arch }}
     runs-on: ubuntu-22.04
     timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [x86_64, aarch64]
-        include:
-          - arch: x86_64
-            ovmf_pkg: ovmf
-            bios_opt: -bios /usr/share/ovmf/OVMF.fd
-            qemu_cmd: qemu-system-x86_64
-            nic_model: e1000
-            drive_if: ide,index=0
-            debug_exit: -device isa-debug-exit,iobase=0xf4,iosize=0x04
-            success_code: 1
-          - arch: aarch64
-            ovmf_pkg: qemu-efi-aarch64
-            bios_opt: -bios /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
-            qemu_cmd: qemu-system-aarch64 -M virt -cpu cortex-a72
-            nic_model: virtio
-            drive_if: virtio
-            debug_exit: -semihosting
-            success_code: 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -80,7 +58,7 @@ jobs:
       - name: Install QEMU and OVMF
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 qemu-system-arm ${{ matrix.ovmf_pkg }} libslirp0 qemu-system-common
+          sudo apt-get install -y qemu-system-x86 qemu-system-arm qemu-efi-aarch64 libslirp0 qemu-system-common
 
       - name: Build, Upload, and Test all optimization levels
         run: |
@@ -90,8 +68,8 @@ jobs:
           for opt in $OPTS; do
             echo "========== Building -$opt =========="
             rm -rf build
-            cmake --preset uefi-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=$opt
-            cmake --build --preset uefi-${{ matrix.arch }}-release
+            cmake --preset uefi-aarch64-release -DOPTIMIZATION_LEVEL=$opt
+            cmake --build --preset uefi-aarch64-release
             if [ $? -ne 0 ]; then FAILED="$FAILED $opt-build"; continue; fi
 
             echo "========== Saving -$opt =========="
@@ -104,19 +82,19 @@ jobs:
 
             echo "========== Testing UEFI -$opt =========="
             set +e
-            timeout 180s ${{ matrix.qemu_cmd }} \
-              ${{ matrix.bios_opt }} \
-              -drive file=fat:rw:build/release/uefi/${{ matrix.arch }},format=raw,if=${{ matrix.drive_if }} \
+            timeout 180s qemu-system-aarch64 -M virt -cpu cortex-a72 \
+              -bios /usr/share/qemu-efi-aarch64/QEMU_EFI.fd \
+              -drive file=fat:rw:build/release/uefi/aarch64,format=raw,if=virtio \
               -m 512 \
               -nographic \
               -serial mon:stdio \
-              -nic user,model=${{ matrix.nic_model }} \
-              ${{ matrix.debug_exit }} \
+              -nic user,model=virtio \
+              -semihosting \
               -no-reboot 2>&1 | sed -u 's/?\[[0-9;]*m//g'
             ret=${PIPESTATUS[0]}
             set -e
-            echo "QEMU exit code: $ret (expected ${{ matrix.success_code }} for success)"
-            if [ "$ret" -ne "${{ matrix.success_code }}" ]; then
+            echo "QEMU exit code: $ret (expected 0 for success)"
+            if [ "$ret" -ne "0" ]; then
               FAILED="$FAILED $opt-uefi"
               continue
             fi
@@ -132,6 +110,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-uefi-${{ matrix.arch }}
+          name: build-uefi-aarch64
           retention-days: 1
           path: artifacts/
