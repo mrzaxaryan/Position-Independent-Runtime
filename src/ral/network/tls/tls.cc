@@ -604,14 +604,14 @@ INT32 TLSClient::ReadChannel(PCHAR out, INT32 size)
 
 BOOL TLSClient::Open()
 {
-    LOG_DEBUG("Connecting to host: %s, Port: %d for client: %p", host, port, this);
+    LOG_DEBUG("Connecting to host: %s for client: %p", host, this);
 
     if (!context.Open())
     {
-        LOG_DEBUG("Failed to connect to host: %s, Port: %d for client: %p", host, port, this);
+        LOG_DEBUG("Failed to connect to host: %s, for client: %p", host, this);
         return FALSE;
     }
-    LOG_DEBUG("Connected to host: %s, Port: %d for client: %p", host, port, this);
+    LOG_DEBUG("Connected to host: %s,  for client: %p", host,this);
 
     if (!(SendClientHello(host)))
     {
@@ -697,7 +697,7 @@ SSIZE TLSClient::Read(PVOID buffer, UINT32 bufferLength)
     return ReadChannel((PCHAR)buffer, bufferLength);
 }
 TLSClient::TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port)
-    : host(host), ip(ipAddress), port(port), context(ipAddress, port)
+    : host(host), ip(ipAddress), context(ipAddress, port)
 {
     stateIndex = 0;
     channelBytesRead = 0;
