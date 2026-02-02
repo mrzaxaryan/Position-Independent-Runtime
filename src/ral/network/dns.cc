@@ -182,8 +182,8 @@ static INT32 DNS_parseAnswer(PUINT8 ptr, PUINT8 buffer, INT32 cnt, IPAddress *pI
         else if (a.type == AAAA)
         {
             LOG_DEBUG("Processing AAAA record with TTL: %d", a.ttl);
-            PUINT8 ipv6Data = p + sizeof(Answer);          // Pointer to the IPv6 address (16 bytes)
-            *pIpAddress = IPAddress::FromIPv6(ipv6Data);   // Create IPAddress from IPv6
+            PUINT8 ipv6Data = p + sizeof(Answer);        // Pointer to the IPv6 address (16 bytes)
+            *pIpAddress = IPAddress::FromIPv6(ipv6Data); // Create IPAddress from IPv6
             return 0;
         }
         else
@@ -481,9 +481,6 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, RequestType dnstype)
 {
     LOG_DEBUG("DNS_OVER_HTTPS_resolve(host: %s, dnstype: %d) called", host, dnstype);
 
-    // temp solution until I implement full HTTP client 
-    (VOID)dnstype;
-
     // Validate the input parameters
 
     // Check for localhost
@@ -495,6 +492,7 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, RequestType dnstype)
     }
     // Variables for DNS server address and port
     auto dnsHostName = "one.one.one.one"_embed;
+
     IPAddress dnsIPAddress = IPAddress::FromIPv4(0x01010101); // 1.1.1.1
     UINT16 dnsPort = 443;
 
@@ -506,13 +504,13 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, RequestType dnstype)
         return IPAddress::Invalid();
     }
 
-    auto format = "GET /dns-query?name=%s HTTP/1.1\r\n"_embed
+    auto format = "GET /dns-query?name=%s&type=%d HTTP/1.1\r\n"_embed
                   "Host: %s\r\n"_embed
                   "accept: application"_embed
                   "/dns-json\r\n\r\n"_embed;
 
     auto fixed = EMBED_FUNC(FormatterCallback);
-    StringFormatter::Format<CHAR>(fixed, &tlsClient, (PCCHAR)format, host, (PCCHAR)dnsHostName); // Format the path with the hostname
+    StringFormatter::Format<CHAR>(fixed, &tlsClient, (PCCHAR)format, host, (INT32)dnstype, (PCCHAR)dnsHostName); // Format the path with the hostname
 
     UINT16 handshakeResponseBufferSize = 4096;                 // Buffer size for the handshake response
     PCHAR dnsResponse = new CHAR[handshakeResponseBufferSize]; // Allocate memory for the handshake response
@@ -578,7 +576,7 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, RequestType dnstype)
 
     // Move the pointer to the start of the content length value
     totalBytesRead += contentLengthHeaderSize;
-    dnsResponse += totalBytesRead;                 // Move the pointer to the start of the content length value
+    dnsResponse += totalBytesRead; // Move the pointer to the start of the content length value
 
     // Find the end of the content length digits
     USIZE digitIdx = 0;
@@ -587,7 +585,7 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, RequestType dnstype)
         digitIdx++;
     }
 
-    dnsResponse[digitIdx] = '\0';                             // Null-terminate the content length value
+    dnsResponse[digitIdx] = '\0';                  // Null-terminate the content length value
     INT64 contentLength = ParseINT64(dnsResponse); // Convert the content length value to an integer
     LOG_DEBUG("Content length: %d", contentLength);
 
@@ -630,7 +628,7 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, RequestType dnstype)
         ipAddressEnd++;
     }
 
-    *ipAddressEnd = '\0';                    // Null-terminate the IP address value
+    *ipAddressEnd = '\0';                                     // Null-terminate the IP address value
     IPAddress ipAddress = IPAddress::FromString(dnsResponse); // Convert the IP address value to an IPv4 address
 
     LOG_DEBUG("DNS resolved %s to %s", host, (PCCHAR)dnsResponse);
@@ -642,7 +640,7 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, RequestType dnstype)
     return ipAddress;
 }
 
-IPAddress DNS::ResloveOverHttpPost(PCCHAR host, const IPAddress& DNSServerIp, PCCHAR DNSServerName, RequestType dnstype)
+IPAddress DNS::ResloveOverHttpPost(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR DNSServerName, RequestType dnstype)
 {
     // Use DNS over HTTPS Post
     // Check for localhost
