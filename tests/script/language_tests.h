@@ -1,0 +1,340 @@
+#pragma once
+
+#include "ral/script/script.h"
+#include "pal/io/logger.h"
+
+// ============================================================================
+// LANGUAGE TESTS CLASS
+// ============================================================================
+
+class LanguageTests
+{
+public:
+    static BOOL RunAll()
+    {
+        BOOL allPassed = TRUE;
+
+        LOG_INFO("Running Language Tests...");
+
+        // Test 1: FizzBuzz (for loop, if/else, modulo)
+        if (!TestFizzBuzz())
+        {
+            allPassed = FALSE;
+            LOG_ERROR("  FAILED: FizzBuzz");
+        }
+        else
+        {
+            LOG_INFO("  PASSED: FizzBuzz");
+        }
+
+        // Test 2: Recursive functions
+        if (!TestRecursion())
+        {
+            allPassed = FALSE;
+            LOG_ERROR("  FAILED: Recursive functions");
+        }
+        else
+        {
+            LOG_INFO("  PASSED: Recursive functions");
+        }
+
+        // Test 3: Arithmetic operators
+        if (!TestArithmeticOperators())
+        {
+            allPassed = FALSE;
+            LOG_ERROR("  FAILED: Arithmetic operators");
+        }
+        else
+        {
+            LOG_INFO("  PASSED: Arithmetic operators");
+        }
+
+        // Test 4: Comparison operators
+        if (!TestComparisonOperators())
+        {
+            allPassed = FALSE;
+            LOG_ERROR("  FAILED: Comparison operators");
+        }
+        else
+        {
+            LOG_INFO("  PASSED: Comparison operators");
+        }
+
+        // Test 5: Logical operators
+        if (!TestLogicalOperators())
+        {
+            allPassed = FALSE;
+            LOG_ERROR("  FAILED: Logical operators");
+        }
+        else
+        {
+            LOG_INFO("  PASSED: Logical operators");
+        }
+
+        // Test 6: While loop
+        if (!TestWhileLoop())
+        {
+            allPassed = FALSE;
+            LOG_ERROR("  FAILED: While loop");
+        }
+        else
+        {
+            LOG_INFO("  PASSED: While loop");
+        }
+
+        // Test 7: Variable assignment operators
+        if (!TestAssignmentOperators())
+        {
+            allPassed = FALSE;
+            LOG_ERROR("  FAILED: Assignment operators");
+        }
+        else
+        {
+            LOG_INFO("  PASSED: Assignment operators");
+        }
+
+        // Test 8: String concatenation
+        if (!TestStringConcatenation())
+        {
+            allPassed = FALSE;
+            LOG_ERROR("  FAILED: String concatenation");
+        }
+        else
+        {
+            LOG_INFO("  PASSED: String concatenation");
+        }
+
+        // Test 9: Nested functions
+        if (!TestNestedFunctions())
+        {
+            allPassed = FALSE;
+            LOG_ERROR("  FAILED: Nested functions");
+        }
+        else
+        {
+            LOG_INFO("  PASSED: Nested functions");
+        }
+
+        // Test 10: First-class functions
+        if (!TestFirstClassFunctions())
+        {
+            allPassed = FALSE;
+            LOG_ERROR("  FAILED: First-class functions");
+        }
+        else
+        {
+            LOG_INFO("  PASSED: First-class functions");
+        }
+
+        if (allPassed)
+        {
+            LOG_INFO("All Language tests passed!");
+        }
+        else
+        {
+            LOG_ERROR("Some Language tests failed!");
+        }
+
+        return allPassed;
+    }
+
+private:
+    static BOOL TestFizzBuzz()
+    {
+        script::State* L = new script::State();
+        script::OpenStdLib(*L);
+
+        auto source = R"(fn fizzbuzz(n) {
+    for (var i = 1; i <= n; i = i + 1) {
+        if (i % 15 == 0) {
+            print("FizzBuzz");
+        } else if (i % 3 == 0) {
+            print("Fizz");
+        } else if (i % 5 == 0) {
+            print("Buzz");
+        } else {
+            print(i);
+        }
+    }
+}
+fizzbuzz(15);
+)"_embed;
+
+        BOOL result = L->DoString(source);
+        delete L;
+        return result;
+    }
+
+    static BOOL TestRecursion()
+    {
+        script::State* L = new script::State();
+        script::OpenStdLib(*L);
+
+        auto source = R"(fn factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+for (var i = 1; i <= 10; i = i + 1) {
+    print("factorial(", i, ") =", factorial(i));
+}
+)"_embed;
+
+        BOOL result = L->DoString(source);
+        delete L;
+        return result;
+    }
+
+    static BOOL TestArithmeticOperators()
+    {
+        script::State* L = new script::State();
+        script::OpenStdLib(*L);
+
+        auto source = R"(print("5 + 3 =", 5 + 3);
+print("10 - 4 =", 10 - 4);
+print("6 * 7 =", 6 * 7);
+print("20 / 4 =", 20 / 4);
+print("17 % 5 =", 17 % 5);
+print("-5 =", -5);
+print("-(3 + 2) =", -(3 + 2));
+)"_embed;
+
+        BOOL result = L->DoString(source);
+        delete L;
+        return result;
+    }
+
+    static BOOL TestComparisonOperators()
+    {
+        script::State* L = new script::State();
+        script::OpenStdLib(*L);
+
+        auto source = R"(print("5 == 5:", 5 == 5);
+print("5 != 3:", 5 != 3);
+print("5 < 10:", 5 < 10);
+print("5 > 3:", 5 > 3);
+print("5 <= 5:", 5 <= 5);
+print("5 >= 5:", 5 >= 5);
+print("hello == hello:", "hello" == "hello");
+print("hello != world:", "hello" != "world");
+)"_embed;
+
+        BOOL result = L->DoString(source);
+        delete L;
+        return result;
+    }
+
+    static BOOL TestLogicalOperators()
+    {
+        script::State* L = new script::State();
+        script::OpenStdLib(*L);
+
+        auto source = R"(print("true && true:", true && true);
+print("true && false:", true && false);
+print("true || false:", true || false);
+print("false || false:", false || false);
+print("!true:", !true);
+print("!false:", !false);
+print("(5 > 3) && (2 < 4):", (5 > 3) && (2 < 4));
+)"_embed;
+
+        BOOL result = L->DoString(source);
+        delete L;
+        return result;
+    }
+
+    static BOOL TestWhileLoop()
+    {
+        script::State* L = new script::State();
+        script::OpenStdLib(*L);
+
+        auto source = R"(var i = 0;
+var sum = 0;
+while (i < 5) {
+    sum = sum + i;
+    i = i + 1;
+}
+print("Sum of 0..4 =", sum);
+)"_embed;
+
+        BOOL result = L->DoString(source);
+        delete L;
+        return result;
+    }
+
+    static BOOL TestAssignmentOperators()
+    {
+        script::State* L = new script::State();
+        script::OpenStdLib(*L);
+
+        auto source = R"(var x = 10;
+print("x =", x);
+x += 5;
+print("x += 5:", x);
+x -= 3;
+print("x -= 3:", x);
+x *= 2;
+print("x *= 2:", x);
+x /= 4;
+print("x /= 4:", x);
+)"_embed;
+
+        BOOL result = L->DoString(source);
+        delete L;
+        return result;
+    }
+
+    static BOOL TestStringConcatenation()
+    {
+        script::State* L = new script::State();
+        script::OpenStdLib(*L);
+
+        auto source = R"(var greeting = "Hello";
+var name = "World";
+print(greeting + ", " + name + "!");
+)"_embed;
+
+        BOOL result = L->DoString(source);
+        delete L;
+        return result;
+    }
+
+    static BOOL TestNestedFunctions()
+    {
+        script::State* L = new script::State();
+        script::OpenStdLib(*L);
+
+        auto source = R"(fn outer(x) {
+    fn inner(y) {
+        return y * 2;
+    }
+    return inner(x) + 1;
+}
+print("outer(5) =", outer(5));
+)"_embed;
+
+        BOOL result = L->DoString(source);
+        delete L;
+        return result;
+    }
+
+    static BOOL TestFirstClassFunctions()
+    {
+        script::State* L = new script::State();
+        script::OpenStdLib(*L);
+
+        auto source = R"(fn apply(f, x) {
+    return f(x);
+}
+fn double(n) {
+    return n * 2;
+}
+print("apply(double, 5) =", apply(double, 5));
+)"_embed;
+
+        BOOL result = L->DoString(source);
+        delete L;
+        return result;
+    }
+};
