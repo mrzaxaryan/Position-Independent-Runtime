@@ -30,7 +30,7 @@
 <td align="center"><a href="https://github.com/mrzaxaryan/cpp-pic/actions/workflows/build-uefi-aarch64.yml"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/cpp-pic/build-uefi-aarch64.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
 </tr>
 <tr>
-<td colspan="5"><img width="800" height="1" src=""></td>
+<td colspan="5"><img width="800" height="1"></td>
 </tr>
 </table>
 
@@ -79,7 +79,7 @@
 <td align="center"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrzaxaryan%2Fcpp-pic%2Fmain%2Fsizes.json&query=%24.uefi_aarch64_bin&label=&style=for-the-badge&color=blue" alt="Bin"></td>
 </tr>
 <tr>
-<td colspan="9"><img width="800" height="1" src=""></td>
+<td colspan="9"><img width="800" height="1"></td>
 </tr>
 </table>
 
