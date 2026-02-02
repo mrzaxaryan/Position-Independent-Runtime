@@ -179,7 +179,7 @@ function(cpppic_add_postbuild target_name)
 
     # Extract raw .text section bytes using --dump-section for all platforms
     # This produces pure section content that the loader script expects
-    set(_objcopy_cmd llvm-objcopy --dump-section=.text="${_out}.bin" "${_out}${CPPPIC_EXT}" "${_out}.bin")
+    set(_objcopy_cmd llvm-objcopy --dump-section=.text="${_out}.bin" "${_out}${CPPPIC_EXT}")
 
     add_custom_command(TARGET ${target_name} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "${CPPPIC_OUTPUT_DIR}"
