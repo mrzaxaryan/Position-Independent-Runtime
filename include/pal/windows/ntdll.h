@@ -64,6 +64,52 @@ typedef struct _FILE_FS_DEVICE_INFORMATION
     UINT32 Characteristics; // Bitmask of device characteristics (see FILE_DEVICE_* flags)
 } FILE_FS_DEVICE_INFORMATION, *PFILE_FS_DEVICE_INFORMATION;
 
+typedef struct _FILE_DIRECTORY_INFORMATION
+{
+    UINT32 NextEntryOffset;
+    UINT32 FileIndex;
+    LARGE_INTEGER CreationTime;
+    LARGE_INTEGER LastAccessTime;
+    LARGE_INTEGER LastWriteTime;
+    LARGE_INTEGER ChangeTime;
+    LARGE_INTEGER EndOfFile;
+    LARGE_INTEGER AllocationSize;
+    UINT32 FileAttributes;
+    UINT32 FileNameLength;
+    WCHAR FileName[1];
+} FILE_DIRECTORY_INFORMATION, *PFILE_DIRECTORY_INFORMATION;
+
+typedef struct _FILE_BOTH_DIR_INFORMATION
+{
+    UINT32 NextEntryOffset;
+    UINT32 FileIndex;
+    LARGE_INTEGER CreationTime;
+    LARGE_INTEGER LastAccessTime;
+    LARGE_INTEGER LastWriteTime;
+    LARGE_INTEGER ChangeTime;
+    LARGE_INTEGER EndOfFile;
+    LARGE_INTEGER AllocationSize;
+    UINT32 FileAttributes;
+    UINT32 FileNameLength;
+    UINT32 EaSize;
+    INT8 ShortNameLength;
+    WCHAR ShortName[12];
+    WCHAR FileName[1];
+} FILE_BOTH_DIR_INFORMATION, *PFILE_BOTH_DIR_INFORMATION;
+
+typedef enum _FILE_INFORMATION_CLASS_DIR
+{
+    FileDirectoryInformation = 1,
+    FileFullDirectoryInformation = 2,
+    FileBothDirectoryInformation = 3,
+    FileNamesInformation = 12,
+    FileIdBothDirectoryInformation = 37,
+    FileIdFullDirectoryInformation = 38,
+    FileIdGlobalTxDirectoryInformation = 50,
+    FileIdExtdDirectoryInformation = 60,
+    FileIdExtdBothDirectoryInformation = 63
+} FILE_INFORMATION_CLASS_DIR;
+
 
 class NTDLL
 {
@@ -128,6 +174,24 @@ public:
     static NTSTATUS NtQueryInformationProcess(PVOID ProcessHandle, UINT32 ProcessInformationClass, PVOID ProcessInformation, UINT32 ProcessInformationLength, PUINT32 ReturnLength);
     // This function returns a handle to the current process.
     // All target platforms.
-    static PVOID NtCurrentProcess() { return (PVOID)(USIZE)-1L; }
-    static PVOID NtCurrentThread() { return (PVOID)(USIZE)-2L; }
+    static inline PVOID NtCurrentProcess() { return (PVOID)(USIZE)-1L; }
+    static inline PVOID NtCurrentThread() { return (PVOID)(USIZE)-2L; }
+    // This function creates a named pipe.
+    // Minimum supported client Windows 2000.
+    static NTSTATUS NtCreateNamedPipeFile(PPVOID FileHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, UINT32 ShareAccess, UINT32 CreateDisposition, UINT32 CreateOptions, UINT32 NamedPipeType, UINT32 ReadMode, UINT32 CompletionMode, UINT32 MaximumInstances, UINT32 InboundQuota, UINT32 OutboundQuota, PLARGE_INTEGER DefaultTimeout);
+    // This function sets information for an object.
+    // Minimum supported client Windows 2000.
+    static NTSTATUS NtSetInformationObject(PVOID Handle, UINT32 ObjectInformationClass, PVOID ObjectInformation, UINT32 ObjectInformationLength);
+    // This function creates a user process.
+    // Minimum supported client Windows Vista.
+    static NTSTATUS NtCreateUserProcess(PPVOID ProcessHandle, PPVOID ThreadHandle, UINT32 ProcessDesiredAccess, UINT32 ThreadDesiredAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, UINT32 ProcessFlags, UINT32 ThreadFlags, PVOID ProcessParameters, PVOID CreateInfo, PVOID AttributeList);
+    // This function creates process parameters.
+    // Minimum supported client Windows 2000.
+    static NTSTATUS RtlCreateProcessParametersEx(PVOID* ProcessParameters, PUNICODE_STRING ImagePathName, PUNICODE_STRING DllPath, PUNICODE_STRING CurrentDirectory, PUNICODE_STRING CommandLine, PVOID Environment, PUNICODE_STRING WindowTitle, PUNICODE_STRING DesktopInfo, PUNICODE_STRING ShellInfo, PUNICODE_STRING RuntimeData, UINT32 Flags);
+    // This function destroys process parameters.
+    // Minimum supported client Windows 2000.
+    static NTSTATUS RtlDestroyProcessParameters(PVOID ProcessParameters);
+    // This function queries directory information for a file.
+    // Minimum supported client Windows 2000.
+    static NTSTATUS NtQueryDirectoryFile(PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass, BOOL ReturnSingleEntry, PUNICODE_STRING FileName, BOOL RestartScan);
 };
