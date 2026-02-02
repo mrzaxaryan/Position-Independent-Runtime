@@ -15,8 +15,8 @@ env:
   LLVM_VERSION: "20.1.6"
 
 jobs:
-  build-windows:
-    name: Build windows-${{ matrix.arch }}-${{ matrix.opt }}
+  build-and-test-windows:
+    name: windows-${{ matrix.arch }}-${{ matrix.opt }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -80,32 +80,6 @@ jobs:
             build/**
             !build/**/cmake/**
 
-  test-windows:
-    name: Test windows-${{ matrix.arch }}-${{ matrix.opt }}
-    needs: build-windows
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [i386, x86_64, aarch64]
-        opt: [O0, O1, O2, O3, Os, Oz, Og]
-        include:
-          - arch: i386
-            runner: windows-2022
-          - arch: x86_64
-            runner: windows-2022
-          - arch: aarch64
-            runner: windows-11-arm
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-windows-${{ matrix.arch }}-${{ matrix.opt }}
-          path: build
-
       - name: Test EXE
         shell: pwsh
         run: |
@@ -116,14 +90,23 @@ jobs:
         run: |
           python scripts/loader.py --arch ${{ matrix.arch }} (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
 
-  build-linux:
-    name: Build linux-${{ matrix.arch }}-${{ matrix.opt }}
+  build-and-test-linux:
+    name: linux-${{ matrix.arch }}-${{ matrix.opt }}
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         arch: [i386, x86_64, armv7a, aarch64]
         opt: [O0, O1, O2, O3, Os, Oz, Og]
+        include:
+          - arch: i386
+            qemu: qemu-i386-static
+          - arch: x86_64
+            qemu: ""
+          - arch: armv7a
+            qemu: qemu-arm-static
+          - arch: aarch64
+            qemu: qemu-aarch64-static
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -162,6 +145,12 @@ jobs:
 
           clang --version
 
+      - name: Install QEMU
+        if: matrix.qemu != ''
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
       - name: Build
         run: |
           cmake --preset linux-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=${{ matrix.opt }}
@@ -176,40 +165,6 @@ jobs:
             build/**
             !build/**/cmake/**
 
-  test-linux:
-    name: Test linux-${{ matrix.arch }}-${{ matrix.opt }}
-    needs: build-linux
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [i386, x86_64, armv7a, aarch64]
-        opt: [O0, O1, O2, O3, Os, Oz, Og]
-        include:
-          - arch: i386
-            qemu: qemu-i386-static
-          - arch: x86_64
-            qemu: ""
-          - arch: armv7a
-            qemu: qemu-arm-static
-          - arch: aarch64
-            qemu: qemu-aarch64-static
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-linux-${{ matrix.arch }}-${{ matrix.opt }}
-          path: build
-
-      - name: Install QEMU
-        if: matrix.qemu != ''
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-user-static
-
       - name: Test ELF
         run: |
           TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
@@ -220,14 +175,32 @@ jobs:
         run: |
           python3 scripts/loader.py --arch ${{ matrix.arch }} $(find build -type f -name "output.bin" | head -n 1)
 
-  build-uefi:
-    name: Build uefi-${{ matrix.arch }}-${{ matrix.opt }}
+  build-and-test-uefi:
+    name: uefi-${{ matrix.arch }}-${{ matrix.opt }}
     runs-on: ubuntu-22.04
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         arch: [x86_64, aarch64]
         opt: [O0, O1, O2, O3, Os, Oz, Og]
+        include:
+          - arch: x86_64
+            ovmf_pkg: ovmf
+            bios_opt: -bios /usr/share/ovmf/OVMF.fd
+            qemu_cmd: qemu-system-x86_64
+            nic_model: e1000
+            drive_if: ide,index=0
+            debug_exit: -device isa-debug-exit,iobase=0xf4,iosize=0x04
+            success_code: 1
+          - arch: aarch64
+            ovmf_pkg: qemu-efi-aarch64
+            bios_opt: -bios /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
+            qemu_cmd: qemu-system-aarch64 -M virt -cpu cortex-a72
+            nic_model: virtio
+            drive_if: virtio
+            debug_exit: -semihosting
+            success_code: 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -265,6 +238,11 @@ jobs:
 
           clang --version
 
+      - name: Install QEMU and OVMF
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-system-arm ${{ matrix.ovmf_pkg }} libslirp0 qemu-system-common
+
       - name: Build
         run: |
           cmake --preset uefi-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=${{ matrix.opt }}
@@ -278,45 +256,6 @@ jobs:
           path: |
             build/**
             !build/**/cmake/**
-
-  test-uefi:
-    name: Test uefi-${{ matrix.arch }}-${{ matrix.opt }}
-    needs: build-uefi
-    runs-on: ubuntu-22.04
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [x86_64, aarch64]
-        opt: [O0, O1, O2, O3, Os, Oz, Og]
-        include:
-          - arch: x86_64
-            ovmf_pkg: ovmf
-            bios_opt: -bios /usr/share/ovmf/OVMF.fd
-            qemu_cmd: qemu-system-x86_64
-            nic_model: e1000
-            drive_if: ide,index=0
-            debug_exit: -device isa-debug-exit,iobase=0xf4,iosize=0x04
-            success_code: 1
-          - arch: aarch64
-            ovmf_pkg: qemu-efi-aarch64
-            bios_opt: -bios /usr/share/qemu-efi-aarch64/QEMU_EFI.fd
-            qemu_cmd: qemu-system-aarch64 -M virt -cpu cortex-a72
-            nic_model: virtio
-            drive_if: virtio
-            debug_exit: -semihosting
-            success_code: 0
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-uefi-${{ matrix.arch }}-${{ matrix.opt }}
-          path: build
-
-      - name: Install QEMU and OVMF
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 qemu-system-arm ${{ matrix.ovmf_pkg }} libslirp0 qemu-system-common
 
       - name: Test UEFI
         run: |
