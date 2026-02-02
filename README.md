@@ -1,12 +1,18 @@
 # NOSTDLIB-RUNTIME: A Modern C++ Approach to Zero-Dependency, Position-Independent Code Generation
 
+<style>
+table {
+    width: 100%;
+}
+</style>
+
 <table>
 <tr>
-<th><img width="170" height="1" alt=""><br>Platform</th>
-<th><img width="170" height="1" alt=""><br>i386</th>
-<th><img width="170" height="1" alt=""><br>x86_64</th>
-<th><img width="170" height="1" alt=""><br>armv7a</th>
-<th><img width="170" height="1" alt=""><br>aarch64</th>
+<th>Platform</th>
+<th>i386</th>
+<th>x86_64</th>
+<th>armv7a</th>
+<th>aarch64</th>
 </tr>
 <tr>
 <td>Windows</td>
