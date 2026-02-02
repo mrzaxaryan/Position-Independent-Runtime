@@ -122,7 +122,7 @@ if(CPPPIC_BUILD_TYPE STREQUAL "debug")
     )
 else()
     list(APPEND CPPPIC_BASE_FLAGS
-        -fno-omit-frame-pointer
+        -fomit-frame-pointer
         -fno-asynchronous-unwind-tables
         -fno-unwind-tables
         -flto=full
