@@ -79,11 +79,11 @@ NOINLINE void Example_WithStdLib()
     // Register standard library (print, len, str, num, type, abs, min, max)
     script::OpenStdLib(L);
 
-    CHAR source[] =
+    auto source =
         "print(\"Hello from PICScript!\");\n"
         "print(\"1 + 2 =\", 1 + 2);\n"
         "print(\"Type of 42:\", type(42));\n"
-        "print(\"len(hello):\", len(\"hello\"));\n";
+        "print(\"len(hello):\", len(\"hello\"));\n"_embed;
 
     L.DoString(source);
     Console::Write<CHAR>("\n"_embed);
@@ -105,10 +105,10 @@ NOINLINE void Example_ManualRegistration()
     L.Register("square"_embed, Func_Square);
 
     // Note: len, str, num, type are NOT available - not registered
-    CHAR source[] =
+    auto source =
         "print(\"Only print, double, square are available\");\n"
         "print(\"double(5) =\", double(5));\n"
-        "print(\"square(4) =\", square(4));\n";
+        "print(\"square(4) =\", square(4));\n"_embed;
 
     L.DoString(source);
     Console::Write<CHAR>("\n"_embed);
@@ -129,9 +129,9 @@ NOINLINE void Example_CustomFunctions()
     L.Register("greet"_embed, Func_Greet);
     L.Register("sum"_embed, Func_Sum);
 
-    CHAR source[] =
+    auto source =
         "greet(\"PICScript User\");\n"
-        "print(\"sum(1,2,3,4,5) =\", sum(1,2,3,4,5));\n";
+        "print(\"sum(1,2,3,4,5) =\", sum(1,2,3,4,5));\n"_embed;
 
     L.DoString(source);
     Console::Write<CHAR>("\n"_embed);
@@ -153,12 +153,12 @@ NOINLINE void Example_GlobalVariables()
     L.SetGlobalString("version"_embed, 7, "1.0.0"_embed, 5);
     L.SetGlobalBool("debug"_embed, 5, TRUE);
 
-    CHAR source[] =
+    auto source =
         "print(\"PI (x100) =\", PI);\n"
         "print(\"Version:\", version);\n"
         "if (debug) {\n"
         "    print(\"Debug mode is ON\");\n"
-        "}\n";
+        "}\n"_embed;
 
     L.DoString(source);
     Console::Write<CHAR>("\n"_embed);
@@ -175,7 +175,7 @@ NOINLINE void Example_FizzBuzz()
     script::State L;
     script::OpenStdLib(L);
 
-    CHAR source[] =
+    auto source =
         "fn fizzbuzz(n) {\n"
         "    for (var i = 1; i <= n; i = i + 1) {\n"
         "        if (i % 15 == 0) {\n"
@@ -190,7 +190,7 @@ NOINLINE void Example_FizzBuzz()
         "    }\n"
         "}\n"
         "\n"
-        "fizzbuzz(15);\n";
+        "fizzbuzz(15);\n"_embed;
 
     L.DoString(source);
     Console::Write<CHAR>("\n"_embed);
@@ -207,7 +207,7 @@ NOINLINE void Example_Recursion()
     script::State L;
     script::OpenStdLib(L);
 
-    CHAR source[] =
+    auto source =
         "fn factorial(n) {\n"
         "    if (n <= 1) {\n"
         "        return 1;\n"
@@ -217,7 +217,7 @@ NOINLINE void Example_Recursion()
         "\n"
         "for (var i = 1; i <= 10; i = i + 1) {\n"
         "    print(\"factorial(\", i, \") =\", factorial(i));\n"
-        "}\n";
+        "}\n"_embed;
 
     L.DoString(source);
     Console::Write<CHAR>("\n"_embed);
@@ -235,9 +235,9 @@ NOINLINE void Example_ErrorHandling()
     script::OpenStdLib(L);
 
     // Script with syntax error (missing semicolon)
-    CHAR source[] =
+    auto source =
         "var x = 10\n"
-        "print(x);\n";
+        "print(x);\n"_embed;
 
     if (!L.DoString(source))
     {
@@ -262,11 +262,11 @@ NOINLINE void Example_MinimalSetup()
     // Register ONLY print - absolutely minimal
     L.Register("print"_embed, script::StdLib_Print);
 
-    CHAR source[] =
+    auto source =
         "var x = 10;\n"
         "var y = 20;\n"
         "print(\"x + y =\", x + y);\n"
-        "print(\"x * y =\", x * y);\n";
+        "print(\"x * y =\", x * y);\n"_embed;
 
     L.DoString(source);
     Console::Write<CHAR>("\n"_embed);
