@@ -113,7 +113,7 @@ static BOOL RunAllTests()
 /**
  * efi_main - UEFI application entry point
  */
-extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+ENTRYPOINT EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
 {
 	// Allocate context on stack and store pointer in CPU register (GS/TPIDR_EL0)
 	// This eliminates the need for a global variable in .data section
@@ -129,7 +129,6 @@ extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *
 	BOOL allPassed = RunAllTests();
 	ExitProcess(allPassed ? 0 : 1);
 
-	return EFI_SUCCESS;
 }
 
 #else
