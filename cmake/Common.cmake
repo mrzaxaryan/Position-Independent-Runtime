@@ -5,12 +5,21 @@
 include_guard(GLOBAL)
 
 # =============================================================================
+# Dependency Scanning
+# =============================================================================
+# Required because CMAKE_CXX_COMPILER_FORCED skips compiler detection,
+# which includes dependency scanning setup. This ensures header changes
+# trigger rebuilds.
+set(CMAKE_DEPENDS_USE_COMPILER TRUE)
+
+# =============================================================================
 # Build Options
 # =============================================================================
 set(ARCHITECTURE "x86_64" CACHE STRING "Target: i386, x86_64, armv7a, aarch64")
 set(PLATFORM "windows" CACHE STRING "Target: windows, linux, uefi")
 set(BUILD_TYPE "release" CACHE STRING "Build type: debug, release")
 set(OPTIMIZATION_LEVEL "" CACHE STRING "Override optimization level (e.g., O2, Os)")
+option(ENABLE_LOGGING "Enable logging macros" ON)
 
 # Normalize inputs
 string(TOLOWER "${ARCHITECTURE}" CPPPIC_ARCH)
@@ -43,7 +52,7 @@ if(OPTIMIZATION_LEVEL)
 elseif(CPPPIC_BUILD_TYPE STREQUAL "debug")
     set(CPPPIC_OPT_LEVEL "Og")
 else()
-    set(CPPPIC_OPT_LEVEL "O3")
+    set(CPPPIC_OPT_LEVEL "Oz")
 endif()
 
 # =============================================================================
@@ -87,6 +96,9 @@ set(CPPPIC_DEFINES
 if(CPPPIC_BUILD_TYPE STREQUAL "debug")
     list(APPEND CPPPIC_DEFINES DEBUG)
 endif()
+if(ENABLE_LOGGING)
+    list(APPEND CPPPIC_DEFINES ENABLE_LOGGING)
+endif()
 
 # =============================================================================
 # Base Compiler Flags
@@ -122,7 +134,7 @@ if(CPPPIC_BUILD_TYPE STREQUAL "debug")
     )
 else()
     list(APPEND CPPPIC_BASE_FLAGS
-        -fno-omit-frame-pointer
+        -fomit-frame-pointer
         -fno-asynchronous-unwind-tables
         -fno-unwind-tables
         -flto=full

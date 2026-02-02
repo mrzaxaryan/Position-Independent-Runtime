@@ -17,30 +17,25 @@
 
 #pragma once
 
-#include "pal.h"  // Includes bal.h (with string_formatter.h), console.h, date_time.h
-
+#include "pal.h" // Includes bal.h (with string_formatter.h), console.h, date_time.h
+#if defined(ENABLE_LOGGING)
 // Convenience macros that automatically embed wide strings
 #define LOG_INFO(format, ...) Logger::Info<WCHAR>(L##format##_embed, ##__VA_ARGS__)
 #define LOG_ERROR(format, ...) Logger::Error<WCHAR>(L##format##_embed, ##__VA_ARGS__)
-#define LOG_DEBUG(format, ...) Logger::Debug<WCHAR>(L##format##_embed, ##__VA_ARGS__)
 #define LOG_WARNING(format, ...) Logger::Warning<WCHAR>(L##format##_embed, ##__VA_ARGS__)
+#if defined(ENABLE_DEBUG_LOGGING)
+#define LOG_DEBUG(format, ...) Logger::Debug<WCHAR>(L##format##_embed, ##__VA_ARGS__)
+#else
+#define LOG_DEBUG(format, ...)
+#endif // ENABLE_DEBUG_LOGGING
+#else
+// Define empty macros when logging is disabled
+#define LOG_INFO(format, ...)
+#define LOG_ERROR(format, ...)
+#define LOG_DEBUG(format, ...)
+#define LOG_WARNING(format, ...)
+#endif // ENABLE_LOGGING
 
-/**
- * LogLevels - Compile-time log filtering levels
- *
- * None:    Disable all logging (code eliminated by optimizer)
- * Default: Info, Error, Warning (production)
- * Debug:   All messages including Debug (development)
- */
-enum class LogLevels : UINT8
-{
-	None = 0,	 // No logging
-	Default = 1, // Info, Error, Warning
-	Debug = 2	 // All messages
-};
-
-// Global log level - modify this to control logging at compile-time
-inline constexpr LogLevels LogLevel = LogLevels::Default;
 /**
  * Logger - Static logging utility class
  *
@@ -74,7 +69,7 @@ private:
 	 *   Args  - Variadic template arguments (deduced automatically)
 	 */
 	template <TCHAR TChar, typename... Args>
-	FORCE_INLINE static VOID TimestampedLogOutput(const WCHAR *colorPrefix, const TChar *format, Args&&... args)
+	FORCE_INLINE static VOID TimestampedLogOutput(const WCHAR *colorPrefix, const TChar *format, Args &&...args)
 	{
 		// Get current time
 		DateTime now = DateTime::Now();
@@ -84,7 +79,7 @@ private:
 		auto consoleT = EMBED_FUNC(ConsoleCallback<TChar>);
 
 		StringFormatter::Format<WCHAR>(consoleW, NULL, L"%ls[%ls] "_embed, colorPrefix, (const WCHAR *)timeStr);
-		StringFormatter::Format<TChar>(consoleT, NULL, format, static_cast<Args&&>(args)...);
+		StringFormatter::Format<TChar>(consoleT, NULL, format, static_cast<Args &&>(args)...);
 		StringFormatter::Format<WCHAR>(consoleW, NULL, L"\033[0m\n"_embed);
 	}
 
@@ -100,7 +95,7 @@ public:
 	 *   LOG_INFO("Temperature: %.2f degrees", 98.6_embed);
 	 */
 	template <TCHAR TChar, typename... Args>
-	static VOID Info(const TChar *format, Args&&... args);
+	static VOID Info(const TChar *format, Args &&...args);
 
 	/**
 	 * Error - Error messages (red)
@@ -113,7 +108,7 @@ public:
 	 *   LOG_ERROR("Failed with code %d, value %.3f", errorCode, 1.234_embed);
 	 */
 	template <TCHAR TChar, typename... Args>
-	static VOID Error(const TChar *format, Args&&... args);
+	static VOID Error(const TChar *format, Args &&...args);
 
 	/**
 	 * Warning - Warning messages (yellow)
@@ -126,7 +121,7 @@ public:
 	 *   LOG_WARNING("CPU usage at %.1f%%", 85.5_embed);
 	 */
 	template <TCHAR TChar, typename... Args>
-	static VOID Warning(const TChar *format, Args&&... args);
+	static VOID Warning(const TChar *format, Args &&...args);
 
 	/**
 	 * Debug - Debug messages (yellow)
@@ -139,14 +134,7 @@ public:
 	 *   LOG_DEBUG("Calculated value: %.6f", 3.141592_embed);
 	 */
 	template <TCHAR TChar, typename... Args>
-	static VOID Debug(const TChar *format, Args&&... args);
-
-	/**
-	 * Clear - Clear console output
-	 *
-	 * Clears the console screen.
-	 */
-	static VOID Clear();
+	static VOID Debug(const TChar *format, Args &&...args);
 };
 
 // ============================================================================
@@ -162,17 +150,9 @@ public:
  *   - Type-safe variadic templates (no VA_LIST)
  */
 template <TCHAR TChar, typename... Args>
-VOID Logger::Info(const TChar *format, Args&&... args)
+VOID Logger::Info(const TChar *format, Args &&...args)
 {
-	if constexpr (LogLevel != LogLevels::None)
-	{
-		TimestampedLogOutput<TChar>(L"\033[0;32m[INF] "_embed, format, static_cast<Args&&>(args)...);
-	}
-	else
-	{
-		(VOID) format; // Suppress unused parameter warning
-		((VOID) args, ...); // Suppress unused parameter warnings for all args
-	}
+	TimestampedLogOutput<TChar>(L"\033[0;32m[INF] "_embed, format, static_cast<Args &&>(args)...);
 }
 
 /**
@@ -183,17 +163,9 @@ VOID Logger::Info(const TChar *format, Args&&... args)
  * Type-safe variadic templates (no VA_LIST).
  */
 template <TCHAR TChar, typename... Args>
-VOID Logger::Error(const TChar *format, Args&&... args)
+VOID Logger::Error(const TChar *format, Args &&...args)
 {
-	if constexpr (LogLevel != LogLevels::None)
-	{
-		TimestampedLogOutput<TChar>(L"\033[0;31m[ERR] "_embed, format, static_cast<Args&&>(args)...);
-	}
-	else
-	{
-		(VOID) format; // Suppress unused parameter warning
-		((VOID) args, ...); // Suppress unused parameter warnings for all args
-	}
+	TimestampedLogOutput<TChar>(L"\033[0;31m[ERR] "_embed, format, static_cast<Args &&>(args)...);
 }
 
 /**
@@ -204,17 +176,9 @@ VOID Logger::Error(const TChar *format, Args&&... args)
  * Type-safe variadic templates (no VA_LIST).
  */
 template <TCHAR TChar, typename... Args>
-VOID Logger::Warning(const TChar *format, Args&&... args)
+VOID Logger::Warning(const TChar *format, Args &&...args)
 {
-	if constexpr (LogLevel != LogLevels::None)
-	{
-		TimestampedLogOutput<TChar>(L"\033[0;33m[WRN] "_embed, format, static_cast<Args&&>(args)...);
-	}
-	else
-	{
-		(VOID) format; // Suppress unused parameter warning
-		((VOID) args, ...); // Suppress unused parameter warnings for all args
-	}
+	TimestampedLogOutput<TChar>(L"\033[0;33m[WRN] "_embed, format, static_cast<Args &&>(args)...);
 }
 
 /**
@@ -225,15 +189,7 @@ VOID Logger::Warning(const TChar *format, Args&&... args)
  * Type-safe variadic templates (no VA_LIST).
  */
 template <TCHAR TChar, typename... Args>
-VOID Logger::Debug(const TChar *format, Args&&... args)
+VOID Logger::Debug(const TChar *format, Args &&...args)
 {
-	if constexpr (LogLevel == LogLevels::Debug)
-	{
-		TimestampedLogOutput<TChar>(L"\033[0;33m[DBG] "_embed, format, static_cast<Args&&>(args)...);
-	}
-	else
-	{
-		(VOID) format; // Suppress unused parameter warning
-		((VOID) args, ...); // Suppress unused parameter warnings for all args
-	}
+	TimestampedLogOutput<TChar>(L"\033[0;33m[DBG] "_embed, format, static_cast<Args &&>(args)...);
 }

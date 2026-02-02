@@ -40,7 +40,7 @@
         "ARCHITECTURE": "i386",
         "PLATFORM": "windows",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "O3"
+        "OPTIMIZATION_LEVEL": "Oz"
       }
     },
     {
@@ -66,7 +66,7 @@
         "ARCHITECTURE": "x86_64",
         "PLATFORM": "windows",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "O3"
+        "OPTIMIZATION_LEVEL": "Oz"
       }
     },
     {
@@ -92,7 +92,7 @@
         "ARCHITECTURE": "aarch64",
         "PLATFORM": "windows",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "O3"
+        "OPTIMIZATION_LEVEL": "Oz"
       }
     },
     {
@@ -118,7 +118,7 @@
         "ARCHITECTURE": "i386",
         "PLATFORM": "linux",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "O3"
+        "OPTIMIZATION_LEVEL": "Oz"
       }
     },
     {
@@ -144,7 +144,7 @@
         "ARCHITECTURE": "x86_64",
         "PLATFORM": "linux",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "O3"
+        "OPTIMIZATION_LEVEL": "Oz"
       }
     },
     {
@@ -170,7 +170,7 @@
         "ARCHITECTURE": "armv7a",
         "PLATFORM": "linux",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "O3"
+        "OPTIMIZATION_LEVEL": "Oz"
       }
     },
     {
@@ -196,7 +196,7 @@
         "ARCHITECTURE": "aarch64",
         "PLATFORM": "linux",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "O3"
+        "OPTIMIZATION_LEVEL": "Oz"
       }
     },
     {
@@ -222,7 +222,7 @@
         "ARCHITECTURE": "x86_64",
         "PLATFORM": "uefi",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "O3"
+        "OPTIMIZATION_LEVEL": "Oz"
       }
     },
     {
@@ -248,7 +248,7 @@
         "ARCHITECTURE": "aarch64",
         "PLATFORM": "uefi",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "O3"
+        "OPTIMIZATION_LEVEL": "Oz"
       }
     }
   ],

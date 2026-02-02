@@ -13,6 +13,7 @@
 #define MAX_KEY_SIZE 32
 #define MAX_IV_SIZE 12
 #define CIPHER_KEY_SIZE 32
+#define CIPHER_HASH_SIZE 32
 #define CONTENT_APPLICATION_DATA 0x17
 
 // https://tools.ietf.org/html/rfc4492#section-5.1.1
@@ -71,7 +72,7 @@ public:
     BOOL ComputeKey(ECC_GROUP ecc, const CHAR *serverKey, INT32 serverKeyLen, PCHAR finishedHash);
     VOID ComputeVerify(TlsBuffer *out, INT32 verifySize, INT32 localOrRemote);
     VOID Encode(TlsBuffer *sendbuf, const CHAR *packet, INT32 packetSize, BOOL keepOriginal);
-    BOOL Decode(TlsBufferReader *inout, INT32 version);
+    BOOL Decode(TlsBuffer *inout, INT32 version);
     VOID SetEncoding(BOOL encoding);
     VOID ResetSequenceNumber();
     BOOL GetEncoding() { return isEncoding; };

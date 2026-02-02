@@ -7,7 +7,6 @@
 #include "logger.h"
 #include "math.h"
 
-
 #define TLS_CHACHA20_POLY1305_SHA256 0x1303
 
 // The following defines SSL 3.0 content types
@@ -51,7 +50,6 @@ typedef enum
 
     EXT_LAST = 0x7FFF
 } SSL_EXTENTION;
-
 
 BOOL TLSClient::SendPacket(INT32 packetType, INT32 ver, TlsBuffer *buf)
 {
@@ -238,7 +236,7 @@ BOOL TLSClient::SendChangeCipherSpec()
     return SendPacket(CONTENT_CHANGECIPHERSPEC, 0x303, &sendBuffer);
 }
 
-BOOL TLSClient::OnServerHello(TlsBufferReader *reader)
+BOOL TLSClient::OnServerHello(TlsBuffer *reader)
 {
     CHAR server_rand[RAND_SIZE];
 
@@ -353,7 +351,7 @@ BOOL TLSClient::OnServerHelloDone()
     return TRUE;
 }
 
-BOOL TLSClient::VerifyFinished(TlsBufferReader *reader)
+BOOL TLSClient::VerifyFinished(TlsBuffer *reader)
 {
     INT32 server_finished_size = UINT32SwapByteOrder(reader->Read<INT8>() << 8 | reader->Read<INT16>() << 16);
     LOG_DEBUG("Verifying Finished for client: %p, size: %d bytes", this, server_finished_size);
@@ -403,7 +401,7 @@ BOOL TLSClient::OnServerFinished()
     return TRUE;
 }
 
-BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBufferReader *TlsReader)
+BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBuffer *TlsReader)
 {
     BOOL ret = 0;
     if (packetType != CONTENT_CHANGECIPHERSPEC && packetType != CONTENT_ALERT)
@@ -429,7 +427,7 @@ BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBufferReader *TlsRe
     while (TlsReader->GetReaded() < TlsReader->GetSize())
     {
         INT32 seg_size = packetType == CONTENT_HANDSHAKE ? 1 + 3 + UINT32SwapByteOrder(TlsReader->GetBuffer()[TlsReader->GetReaded() + 1] << 8 | *(PUINT16)(TlsReader->GetBuffer() + TlsReader->GetReaded() + 2) << 16) : TlsReader->GetSize();
-        TlsBufferReader reader_sig(TlsReader->GetBuffer() + TlsReader->GetReaded(), seg_size);
+        TlsBuffer reader_sig(TlsReader->GetBuffer() + TlsReader->GetReaded(), seg_size);
 
         tlsstate state_seq[6]{};
 
@@ -519,8 +517,8 @@ BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBufferReader *TlsRe
             LOG_DEBUG("Processing Alert for client: %p", this);
             if (reader_sig.GetSize() >= 2)
             {
-                INT32 level = reader_sig.Read<INT8>();
-                INT32 code = reader_sig.Read<INT8>();
+                [[maybe_unused]] INT32 level = reader_sig.Read<INT8>();
+                [[maybe_unused]] INT32 code = reader_sig.Read<INT8>();
                 LOG_ERROR("TLS Alert received for client: %p, level: %d, code: %d", this, level, code);
                 return FALSE;
             }
@@ -561,7 +559,7 @@ BOOL TLSClient::ProcessReceive()
 
         LOG_DEBUG("Processing packet for client: %p, current index: %d, packet size: %d", this, cur_index, packet_size);
 
-        TlsBufferReader unnamed(recvBuffer.GetBuffer() + cur_index + 5, packet_size);
+        TlsBuffer unnamed(recvBuffer.GetBuffer() + cur_index + 5, packet_size);
 
         BOOL ret = OnPacket(*(UINT8 *)(recvBuffer.GetBuffer() + cur_index), *(UINT16 *)(recvBuffer.GetBuffer() + cur_index + 1), &unnamed);
         if (!ret)
@@ -606,14 +604,14 @@ INT32 TLSClient::ReadChannel(PCHAR out, INT32 size)
 
 BOOL TLSClient::Open()
 {
-    LOG_DEBUG("Connecting to host: %s, Port: %d for client: %p", host, port, this);
+    LOG_DEBUG("Connecting to host: %s for client: %p", host, this);
 
     if (!context.Open())
     {
-        LOG_DEBUG("Failed to connect to host: %s, Port: %d for client: %p", host, port, this);
+        LOG_DEBUG("Failed to connect to host: %s, for client: %p", host, this);
         return FALSE;
     }
-    LOG_DEBUG("Connected to host: %s, Port: %d for client: %p", host, port, this);
+    LOG_DEBUG("Connected to host: %s,  for client: %p", host,this);
 
     if (!(SendClientHello(host)))
     {
@@ -698,8 +696,8 @@ SSIZE TLSClient::Read(PVOID buffer, UINT32 bufferLength)
 
     return ReadChannel((PCHAR)buffer, bufferLength);
 }
-TLSClient::TLSClient(PCCHAR host, const IPAddress& ipAddress, UINT16 port)
-    : host(host), ip(ipAddress), port(port), context(ipAddress, port)
+TLSClient::TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port)
+    : host(host), ip(ipAddress), context(ipAddress, port)
 {
     stateIndex = 0;
     channelBytesRead = 0;
