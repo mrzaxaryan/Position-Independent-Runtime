@@ -9,24 +9,45 @@ constexpr USIZE SYS_CLOSE = 3;
 constexpr USIZE SYS_READ = 0;
 constexpr USIZE SYS_WRITE = 1;
 constexpr USIZE SYS_LSEEK = 8;
+constexpr USIZE SYS_STAT = 4;
+constexpr USIZE SYS_UNLINK = 87;
+constexpr USIZE SYS_MKDIR = 83;
+constexpr USIZE SYS_RMDIR = 84;
+constexpr USIZE SYS_GETDENTS64 = 217;
 #elif defined(ARCHITECTURE_I386)
 constexpr USIZE SYS_OPEN = 5;
 constexpr USIZE SYS_CLOSE = 6;
 constexpr USIZE SYS_READ = 3;
 constexpr USIZE SYS_WRITE = 4;
 constexpr USIZE SYS_LSEEK = 19;
+constexpr USIZE SYS_STAT = 106;
+constexpr USIZE SYS_UNLINK = 10;
+constexpr USIZE SYS_MKDIR = 39;
+constexpr USIZE SYS_RMDIR = 40;
+constexpr USIZE SYS_GETDENTS64 = 220;
 #elif defined(ARCHITECTURE_AARCH64)
 constexpr USIZE SYS_OPENAT = 56;
 constexpr USIZE SYS_CLOSE = 57;
 constexpr USIZE SYS_READ = 63;
 constexpr USIZE SYS_WRITE = 64;
 constexpr USIZE SYS_LSEEK = 62;
+constexpr USIZE SYS_FSTATAT = 79;
+constexpr USIZE SYS_UNLINKAT = 35;
+constexpr USIZE SYS_MKDIRAT = 34;
+constexpr USIZE SYS_GETDENTS64 = 61;
+constexpr SSIZE AT_FDCWD = -100;
+constexpr INT32 AT_REMOVEDIR = 0x200;
 #elif defined(ARCHITECTURE_ARMV7A)
 constexpr USIZE SYS_OPEN = 5;
 constexpr USIZE SYS_CLOSE = 6;
 constexpr USIZE SYS_READ = 3;
 constexpr USIZE SYS_WRITE = 4;
 constexpr USIZE SYS_LSEEK = 19;
+constexpr USIZE SYS_STAT = 106;
+constexpr USIZE SYS_UNLINK = 10;
+constexpr USIZE SYS_MKDIR = 39;
+constexpr USIZE SYS_RMDIR = 40;
+constexpr USIZE SYS_GETDENTS64 = 220;
 #endif
 
 // Linux open flags
@@ -36,6 +57,11 @@ constexpr INT32 O_RDWR = 0x0002;
 constexpr INT32 O_CREAT = 0x0040;
 constexpr INT32 O_TRUNC = 0x0200;
 constexpr INT32 O_APPEND = 0x0400;
+#if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_I386)
+constexpr INT32 O_DIRECTORY = 0x10000;
+#elif defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_ARMV7A)
+constexpr INT32 O_DIRECTORY = 0x4000;
+#endif
 
 // Linux file modes
 constexpr INT32 S_IRUSR = 0x0100;  // User read
@@ -43,9 +69,25 @@ constexpr INT32 S_IWUSR = 0x0080;  // User write
 constexpr INT32 S_IRGRP = 0x0020;  // Group read
 constexpr INT32 S_IWGRP = 0x0010;  // Group write
 constexpr INT32 S_IROTH = 0x0004;  // Others read
+constexpr INT32 S_IXUSR = 0x0040;  // User execute
+constexpr INT32 S_IXGRP = 0x0008;  // Group execute
+constexpr INT32 S_IXOTH = 0x0001;  // Others execute
+
+// Directory entry types
+constexpr UINT8 DT_DIR = 4;
 
 // Invalid file descriptor
 constexpr SSIZE INVALID_FD = -1;
+
+// Linux dirent64 structure
+struct linux_dirent64
+{
+    UINT64 d_ino;
+    INT64 d_off;
+    UINT16 d_reclen;
+    UINT8 d_type;
+    CHAR d_name[];
+};
 
 // --- File Implementation ---
 
@@ -169,7 +211,6 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
     fd = System::Call(SYS_OPEN, (USIZE)utf8Path, openFlags, mode);
 #else
     // ARM64 uses openat instead of open
-    constexpr SSIZE AT_FDCWD = -100;
     fd = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)utf8Path, openFlags, mode);
 #endif
 
@@ -181,43 +222,89 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
 
 BOOL FileSystem::Delete(PCWCHAR path)
 {
-    // TODO: Implement using unlink syscall
-    (VOID)path;
-    return FALSE;
+    CHAR utf8Path[1024];
+    String::WideToUtf8(path, utf8Path, sizeof(utf8Path));
+
+#if defined(ARCHITECTURE_AARCH64)
+    return System::Call(SYS_UNLINKAT, AT_FDCWD, (USIZE)utf8Path, 0) == 0;
+#else
+    return System::Call(SYS_UNLINK, (USIZE)utf8Path) == 0;
+#endif
 }
 
 BOOL FileSystem::Exists(PCWCHAR path)
 {
-    // TODO: Implement using stat syscall
-    (VOID)path;
-    return FALSE;
+    CHAR utf8Path[1024];
+    String::WideToUtf8(path, utf8Path, sizeof(utf8Path));
+
+    // stat buffer - we don't need the contents, just check if stat succeeds
+    UINT8 statbuf[144];
+
+#if defined(ARCHITECTURE_AARCH64)
+    return System::Call(SYS_FSTATAT, AT_FDCWD, (USIZE)utf8Path, (USIZE)statbuf, 0) == 0;
+#else
+    return System::Call(SYS_STAT, (USIZE)utf8Path, (USIZE)statbuf) == 0;
+#endif
 }
 
 BOOL FileSystem::CreateDirectroy(PCWCHAR path)
 {
-    // TODO: Implement using mkdir syscall
-    (VOID)path;
-    return FALSE;
+    CHAR utf8Path[1024];
+    String::WideToUtf8(path, utf8Path, sizeof(utf8Path));
+
+    // Mode 0755 (rwxr-xr-x)
+    INT32 mode = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
+
+#if defined(ARCHITECTURE_AARCH64)
+    return System::Call(SYS_MKDIRAT, AT_FDCWD, (USIZE)utf8Path, mode) == 0;
+#else
+    return System::Call(SYS_MKDIR, (USIZE)utf8Path, mode) == 0;
+#endif
 }
 
 BOOL FileSystem::DeleteDirectory(PCWCHAR path)
 {
-    // TODO: Implement using rmdir syscall
-    (VOID)path;
-    return FALSE;
+    CHAR utf8Path[1024];
+    String::WideToUtf8(path, utf8Path, sizeof(utf8Path));
+
+#if defined(ARCHITECTURE_AARCH64)
+    return System::Call(SYS_UNLINKAT, AT_FDCWD, (USIZE)utf8Path, AT_REMOVEDIR) == 0;
+#else
+    return System::Call(SYS_RMDIR, (USIZE)utf8Path) == 0;
+#endif
 }
 
 // --- DirectoryIterator Implementation ---
 
 DirectoryIterator::DirectoryIterator(PCWCHAR path)
-    : handle((PVOID)INVALID_FD), nread(0), bpos(0)
+    : handle((PVOID)INVALID_FD), first(FALSE), nread(0), bpos(0)
 {
-    // TODO: Implement directory iteration using getdents syscall
-    (VOID)path;
-    (VOID)buffer;  // Suppress unused warning
-    (VOID)nread;   // Suppress unused warning
-    (VOID)bpos;    // Suppress unused warning
-    first = TRUE;
+    CHAR utf8Path[1024];
+
+    // On Linux, if path is empty, we default to the current directory
+    if (path && path[0] != L'\0')
+    {
+        String::WideToUtf8(path, utf8Path, sizeof(utf8Path));
+    }
+    else
+    {
+        utf8Path[0] = '.';
+        utf8Path[1] = '\0';
+    }
+
+    // Open the directory with O_RDONLY | O_DIRECTORY
+    SSIZE fd;
+#if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A)
+    fd = System::Call(SYS_OPEN, (USIZE)utf8Path, O_RDONLY | O_DIRECTORY);
+#else
+    fd = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)utf8Path, O_RDONLY | O_DIRECTORY);
+#endif
+
+    if (fd >= 0)
+    {
+        handle = (PVOID)fd;
+        first = TRUE;
+    }
 }
 
 DirectoryIterator::~DirectoryIterator()
@@ -231,8 +318,39 @@ DirectoryIterator::~DirectoryIterator()
 
 BOOL DirectoryIterator::Next()
 {
-    // TODO: Implement directory iteration
-    return FALSE;
+    if (!IsValid())
+        return FALSE;
+
+    // If bpos >= nread, we need to ask the kernel for more entries
+    if (first || bpos >= nread)
+    {
+        first = FALSE;
+        nread = (INT32)System::Call(SYS_GETDENTS64, (USIZE)handle, (USIZE)buffer, sizeof(buffer));
+
+        if (nread <= 0)
+            return FALSE;  // End of directory or error
+        bpos = 0;
+    }
+
+    linux_dirent64* d = (linux_dirent64*)(buffer + bpos);
+
+    // Convert UTF-8 filename to wide string (UTF-16)
+    String::Utf8ToWide(d->d_name, currentEntry.name, 256);
+
+    // d_type 4 is directory
+    currentEntry.isDirectory = (d->d_type == DT_DIR);
+    currentEntry.isDrive = FALSE;  // Linux uses mount points, not drive letters
+    currentEntry.type = (UINT32)d->d_type;
+    currentEntry.isHidden = (d->d_name[0] == '.');
+    currentEntry.isSystem = FALSE;
+    currentEntry.isReadOnly = FALSE;
+    currentEntry.size = 0;
+    currentEntry.creationTime = 0;
+
+    // Update buffer position for next call
+    bpos += d->d_reclen;
+
+    return TRUE;
 }
 
 BOOL DirectoryIterator::IsValid() const
