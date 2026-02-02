@@ -53,3 +53,86 @@
 #include "ecc_tests.h"
 #include "dns_tests.h"
 #include "websocket_tests.h"
+
+static BOOL RunAllTests()
+{
+	BOOL allPassed = TRUE;
+
+	Logger::Info<WCHAR>(L"=== CPP-PIC Test Suite ==="_embed);
+
+	Logger::Info<WCHAR>(L""_embed);
+
+	// BAL - Embedded Types and Numeric Primitives
+	if (!DoubleTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	if (!StringTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	// BAL - Data Structures, String Utilities, and Algorithms
+	if (!ArrayStorageTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	if (!StringFormatterTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	if (!Djb2Tests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	if (!Base64Tests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	// PAL - Memory and System
+	if (!MemoryTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	if (!RandomTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	// RAL - Cryptography
+	if (!ShaTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	if (!EccTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	// RAL - Network
+	if (!SocketTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	if (!TlsTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	if (!DnsTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	if (!WebSocketTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	// Final summary
+	Logger::Info<WCHAR>(L"=== Test Suite Complete ==="_embed);
+	if (allPassed)
+	{
+		Logger::Info<WCHAR>(L"ALL TESTS PASSED!"_embed);
+	}
+	else
+	{
+		Logger::Error<WCHAR>(L"SOME TESTS FAILED!"_embed);
+	}
+
+	return allPassed;
+}

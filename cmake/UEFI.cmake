@@ -24,7 +24,7 @@ endif()
 
 # Linker configuration (PE/COFF for UEFI)
 cpppic_add_link_flags(
-    /Entry:efi_main
+    /Entry:_start
     /SUBSYSTEM:EFI_APPLICATION
     /NODEFAULTLIB
     /MAP:${CPPPIC_MAP_FILE}
