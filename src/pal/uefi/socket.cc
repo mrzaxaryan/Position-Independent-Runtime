@@ -12,7 +12,6 @@
 #include "efi_ip4_config2_protocol.h"
 #include "logger.h"
 
-
 // =============================================================================
 // Internal Socket Context
 // =============================================================================
@@ -38,8 +37,8 @@ struct UefiSocketContext
 
 static VOID EFIAPI EmptyNotify(EFI_EVENT Event, PVOID Context)
 {
-	(VOID)Event;
-	(VOID)Context;
+	(VOID) Event;
+	(VOID) Context;
 }
 
 static BOOL InitializeNetworkInterface(EFI_CONTEXT *ctx)
@@ -207,7 +206,7 @@ static BOOL InitializeDhcp(EFI_CONTEXT *ctx)
 template <typename TCP_PROTOCOL>
 static EFI_STATUS WaitForCompletion(EFI_BOOT_SERVICES *bs, TCP_PROTOCOL *Tcp, EFI_EVENT Event, volatile EFI_STATUS *TokenStatus, UINT64 TimeoutMs)
 {
-	(VOID)Event;
+	(VOID) Event;
 
 	// Check immediately - fast path
 	Tcp->Poll(Tcp);
@@ -463,11 +462,11 @@ BOOL Socket::Open()
 		ConfigData.AccessPoint.RemoteAddress.Addr[3] = (UINT8)((ipv4Addr >> 24) & 0xFF);
 
 		LOG_DEBUG("Socket: TCP4 remote %u.%u.%u.%u:%u",
-			ConfigData.AccessPoint.RemoteAddress.Addr[0],
-			ConfigData.AccessPoint.RemoteAddress.Addr[1],
-			ConfigData.AccessPoint.RemoteAddress.Addr[2],
-			ConfigData.AccessPoint.RemoteAddress.Addr[3],
-			(UINT32)port);
+				  ConfigData.AccessPoint.RemoteAddress.Addr[0],
+				  ConfigData.AccessPoint.RemoteAddress.Addr[1],
+				  ConfigData.AccessPoint.RemoteAddress.Addr[2],
+				  ConfigData.AccessPoint.RemoteAddress.Addr[3],
+				  (UINT32)port);
 
 		Status = sockCtx->Tcp4->Configure(sockCtx->Tcp4, &ConfigData);
 		if (EFI_ERROR_CHECK(Status))
@@ -556,7 +555,7 @@ BOOL Socket::Close()
 		if (sockCtx->IsConfigured)
 		{
 			LOG_DEBUG("Socket: TCP6 unconfiguring...");
-			EFI_STATUS cfgStatus = sockCtx->Tcp6->Configure(sockCtx->Tcp6, NULL);
+			[[maybe_unused]] EFI_STATUS cfgStatus = sockCtx->Tcp6->Configure(sockCtx->Tcp6, NULL);
 			LOG_DEBUG("Socket: TCP6 Configure(NULL) returned 0x%lx", (UINT64)cfgStatus);
 		}
 	}
@@ -589,7 +588,7 @@ BOOL Socket::Close()
 		if (sockCtx->IsConfigured)
 		{
 			LOG_DEBUG("Socket: TCP4 unconfiguring...");
-			EFI_STATUS cfgStatus = sockCtx->Tcp4->Configure(sockCtx->Tcp4, NULL);
+			[[maybe_unused]] EFI_STATUS cfgStatus = sockCtx->Tcp4->Configure(sockCtx->Tcp4, NULL);
 			LOG_DEBUG("Socket: TCP4 Configure(NULL) returned 0x%lx", (UINT64)cfgStatus);
 		}
 	}
@@ -652,11 +651,11 @@ BOOL Socket::Close()
 		ServiceBindingGuid.Data4[6] = 0x7C;
 		ServiceBindingGuid.Data4[7] = 0xC9;
 	}
-	EFI_STATUS closeStatus = bs->CloseProtocol(sockCtx->TcpHandle, &ProtocolGuid, ctx->ImageHandle, NULL);
+	[[maybe_unused]] EFI_STATUS closeStatus = bs->CloseProtocol(sockCtx->TcpHandle, &ProtocolGuid, ctx->ImageHandle, NULL);
 	LOG_DEBUG("Socket: CloseProtocol returned 0x%lx", (UINT64)closeStatus);
 
 	LOG_DEBUG("Socket: DestroyChild...");
-	EFI_STATUS destroyStatus = sockCtx->ServiceBinding->DestroyChild(sockCtx->ServiceBinding, sockCtx->TcpHandle);
+	[[maybe_unused]] EFI_STATUS destroyStatus = sockCtx->ServiceBinding->DestroyChild(sockCtx->ServiceBinding, sockCtx->TcpHandle);
 	LOG_DEBUG("Socket: DestroyChild returned 0x%lx", (UINT64)destroyStatus);
 
 	LOG_DEBUG("Socket: CloseProtocol on ServiceHandle...");
@@ -675,8 +674,8 @@ BOOL Socket::Close()
 
 BOOL Socket::Bind(SockAddr *SocketAddress, INT32 ShareType)
 {
-	(VOID)SocketAddress;
-	(VOID)ShareType;
+	(VOID) SocketAddress;
+	(VOID) ShareType;
 	return FALSE;
 }
 
