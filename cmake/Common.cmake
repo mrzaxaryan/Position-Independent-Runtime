@@ -199,6 +199,7 @@ function(cpppic_add_postbuild target_name)
             -P "${CMAKE_SOURCE_DIR}/cmake/Base64Encode.cmake"
         COMMAND ${CMAKE_COMMAND}
             -DMAP_FILE="${CPPPIC_MAP_FILE}"
+            -DPLATFORM="${CPPPIC_PLATFORM}"
             -P "${CMAKE_SOURCE_DIR}/cmake/VerifyPICMode.cmake"
         COMMENT "Generating PIC artifacts..."
     )
