@@ -5,6 +5,14 @@
 include_guard(GLOBAL)
 
 # =============================================================================
+# Dependency Scanning
+# =============================================================================
+# Required because CMAKE_CXX_COMPILER_FORCED skips compiler detection,
+# which includes dependency scanning setup. This ensures header changes
+# trigger rebuilds.
+set(CMAKE_DEPENDS_USE_COMPILER TRUE)
+
+# =============================================================================
 # Build Options
 # =============================================================================
 set(ARCHITECTURE "x86_64" CACHE STRING "Target: i386, x86_64, armv7a, aarch64")
