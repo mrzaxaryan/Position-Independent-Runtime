@@ -1,7 +1,6 @@
 #include "file_system.h"
 #include "logger.h"
 #include "primitives.h"
-#include "kernel32.h"
 #include "string.h"
 #include "windows_types.h"
 #include "ntdll.h"
@@ -358,36 +357,36 @@ BOOL FileSystem::DeleteDirectory(PCWCHAR path)
 }
 // --- DirectoryIterator Implementation ---
 
-// Helper to fill the entry from WIN32_FIND_DATAA
-static void FillEntry(DirectoryEntry &entry, const WIN32_FIND_DATAW &data)
+// Helper to fill the entry from FILE_BOTH_DIR_INFORMATION
+static void FillEntry(DirectoryEntry &entry, const FILE_BOTH_DIR_INFORMATION *data)
 {
-    // 1. Copy Name
-    for (INT32 j = 0; j < 260; j++)
+    // 1. Copy Name (FileNameLength is in bytes, divide by sizeof(WCHAR))
+    UINT32 nameLen = data->FileNameLength / sizeof(WCHAR);
+    if (nameLen > 259)
+        nameLen = 259;
+    for (UINT32 j = 0; j < nameLen; j++)
     {
-        entry.name[j] = data.cFileName[j];
-        if (data.cFileName[j] == L'\0')
-            break;
+        entry.name[j] = data->FileName[j];
     }
+    entry.name[nameLen] = L'\0';
 
     // 2. Size
-    entry.size = (INT64)(((UINT64)(UINT32)data.nFileSizeHigh << 32) | (UINT64)data.nFileSizeLow);
+    entry.size = data->EndOfFile.QuadPart;
 
     // 3. Attributes
-    UINT32 attr = data.dwFileAttributes;
+    UINT32 attr = data->FileAttributes;
     entry.isDirectory = (attr & 0x10); // FILE_ATTRIBUTE_DIRECTORY
     entry.isHidden = (attr & 0x02);    // FILE_ATTRIBUTE_HIDDEN
     entry.isSystem = (attr & 0x04);    // FILE_ATTRIBUTE_SYSTEM
     entry.isReadOnly = (attr & 0x01);  // FILE_ATTRIBUTE_READONLY
 
-    // 4. Timestamps (Convert 2xUINT32 to UINT64)
-    entry.creationTime = (((UINT64)data.ftCreationTime.dwHighDateTime) << 32) | ((UINT64)data.ftCreationTime.dwLowDateTime);
+    // 4. Timestamps
+    entry.creationTime = data->CreationTime.QuadPart;
 
     // 5. IsDrive
-    // Usually false in an iterator unless you are at the "This PC" level.
-    // We can check if the name looks like "C:"
     entry.isDrive = (entry.name[1] == ':' && entry.name[2] == L'\0');
 
-    entry.type = 3; // Default to Fixed (or 0 for 'Unknown/Generic')
+    entry.type = 3; // Default to Fixed
 }
 
 // DirectoryIterator Constructor
@@ -419,31 +418,59 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path) : handle((PVOID)-1), first(TR
         return;
     }
 
-    WCHAR searchPath[260];
-
-    // 1. Prepare search string (Path + "\*")
-    // Note: You'll need a simple string copy/cat utility
-    INT32 i = 0;
-    while (path[i] != L'\0' && i < 255)
+    // Convert path to NT path and open directory handle
+    UNICODE_STRING uniPath;
+    if (!NT_SUCCESS(NTDLL::RtlDosPathNameToNtPathName_U(path, &uniPath, NULL, NULL)))
     {
-        searchPath[i] = path[i];
-        i++;
+        return;
     }
-    searchPath[i++] = L'\\';
-    searchPath[i++] = L'*';
-    searchPath[i] = L'\0';
 
-    WIN32_FIND_DATAW findData;
-    handle = Kernel32::FindFirstFileW(searchPath, &findData);
+    OBJECT_ATTRIBUTES objAttr;
+    InitializeObjectAttributes(&objAttr, &uniPath, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-    if (IsValid())
+    IO_STATUS_BLOCK ioStatusBlock;
+    NTSTATUS status = NTDLL::NtOpenFile(
+        &handle,
+        FILE_LIST_DIRECTORY | SYNCHRONIZE,
+        &objAttr,
+        &ioStatusBlock,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT);
+
+    NTDLL::RtlFreeUnicodeString(&uniPath);
+
+    if (!NT_SUCCESS(status))
     {
-        // FindFirstFile actually finds the first entry (usually "." or "..")
-        // We store it so the first call to Next() returns it.
-        // Or we can fill currentEntry now.
-        String::Copy(currentEntry.name, findData.cFileName);
-        currentEntry.size = (INT64)(((UINT64)(UINT32)findData.nFileSizeHigh << 32) | (UINT64)findData.nFileSizeLow);
-        currentEntry.isDirectory = (findData.dwFileAttributes & 0x10); // FILE_ATTRIBUTE_DIRECTORY
+        handle = (PVOID)-1;
+        return;
+    }
+
+    // Query the first entry
+    UINT8 buffer[sizeof(FILE_BOTH_DIR_INFORMATION) + 260 * sizeof(WCHAR)];
+    Memory::Zero(buffer, sizeof(buffer));
+
+    status = NTDLL::NtQueryDirectoryFile(
+        handle,
+        NULL,
+        NULL,
+        NULL,
+        &ioStatusBlock,
+        buffer,
+        sizeof(buffer),
+        FileBothDirectoryInformation,
+        TRUE,
+        NULL,
+        TRUE);
+
+    if (NT_SUCCESS(status))
+    {
+        FILE_BOTH_DIR_INFORMATION *info = (FILE_BOTH_DIR_INFORMATION *)buffer;
+        FillEntry(currentEntry, info);
+    }
+    else
+    {
+        NTDLL::NtClose(handle);
+        handle = (PVOID)-1;
     }
 }
 
@@ -530,10 +557,26 @@ BOOL DirectoryIterator::Next()
         return TRUE;
     }
 
-    WIN32_FIND_DATAW findData;
-    if (Kernel32::FindNextFileW(handle, &findData))
+    UINT8 buffer[sizeof(FILE_BOTH_DIR_INFORMATION) + 260 * sizeof(WCHAR)];
+    Memory::Zero(buffer, sizeof(buffer));
+
+    NTSTATUS status = NTDLL::NtQueryDirectoryFile(
+        handle,
+        NULL,
+        NULL,
+        NULL,
+        &ioStatusBlock,
+        buffer,
+        sizeof(buffer),
+        FileBothDirectoryInformation,
+        TRUE,
+        NULL,
+        FALSE);
+
+    if (NT_SUCCESS(status))
     {
-        FillEntry(currentEntry, findData);
+        FILE_BOTH_DIR_INFORMATION *dirInfo = (FILE_BOTH_DIR_INFORMATION *)buffer;
+        FillEntry(currentEntry, dirInfo);
         return TRUE;
     }
 
@@ -548,7 +591,7 @@ DirectoryIterator::~DirectoryIterator()
     {
         if (!isBitMaskMode)
         {
-            Kernel32::FindClose(handle);
+            NTDLL::NtClose(handle);
         }
         // If it's a bitmask, we do nothing. No memory was allocated!
         handle = (PVOID)-1;
