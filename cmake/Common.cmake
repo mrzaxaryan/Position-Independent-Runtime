@@ -52,7 +52,7 @@ if(OPTIMIZATION_LEVEL)
 elseif(CPPPIC_BUILD_TYPE STREQUAL "debug")
     set(CPPPIC_OPT_LEVEL "Og")
 else()
-    set(CPPPIC_OPT_LEVEL "O3")
+    set(CPPPIC_OPT_LEVEL "Oz")
 endif()
 
 # =============================================================================
