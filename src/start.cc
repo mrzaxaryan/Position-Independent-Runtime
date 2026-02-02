@@ -7,6 +7,9 @@
 #include "ral.h"
 #include "tests.h"
 
+// Forward declaration for script examples
+extern void RunAllScriptTests();
+
 /**
  * _start - Entry point for all platforms
  */
@@ -26,6 +29,9 @@ ENTRYPOINT INT32 _start(VOID)
 	// Disable watchdog timer (default is 5 minutes)
 	SystemTable->BootServices->SetWatchdogTimer(0, 0, 0, NULL);
 #endif
+
+	// Run script examples
+	RunAllScriptTests();
 
 	// Run tests and exit
 	BOOL allPassed = RunAllTests();

@@ -1,0 +1,571 @@
+/**
+ * ast.h - Abstract Syntax Tree for PICScript
+ *
+ * Defines AST node types for expressions and statements.
+ * Position-independent, no .rdata dependencies, no dynamic allocation.
+ *
+ * Part of RAL (Runtime Abstraction Layer).
+ */
+
+#pragma once
+
+#include "token.h"
+#include "bal/core/memory.h"
+
+namespace script
+{
+
+// ============================================================================
+// FORWARD DECLARATIONS
+// ============================================================================
+
+struct Expr;
+struct Stmt;
+
+// ============================================================================
+// AST NODE TYPES
+// ============================================================================
+
+enum class ExprType : UINT8
+{
+    NUMBER_LITERAL,     // 42, 3.14
+    STRING_LITERAL,     // "hello"
+    BOOL_LITERAL,       // true, false
+    NIL_LITERAL,        // nil
+    IDENTIFIER,         // foo
+    BINARY,             // a + b
+    UNARY,              // -a, !b
+    CALL,               // foo(a, b)
+    ASSIGN,             // a = b
+    INDEX,              // arr[i]
+    LOGICAL,            // a && b, a || b
+};
+
+enum class StmtType : UINT8
+{
+    EXPRESSION,         // expression;
+    VAR_DECL,           // var x = expr;
+    BLOCK,              // { ... }
+    IF,                 // if (cond) { } else { }
+    WHILE,              // while (cond) { }
+    FOR,                // for (init; cond; incr) { }
+    FUNCTION,           // fn name(params) { }
+    RETURN,             // return expr;
+};
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+constexpr USIZE MAX_STRING_VALUE = 256;
+constexpr USIZE MAX_CALL_ARGS = 16;
+constexpr USIZE MAX_FUNCTION_PARAMS = 16;
+constexpr USIZE MAX_BLOCK_STMTS = 128;
+constexpr USIZE MAX_IDENTIFIER_LENGTH = 64;
+
+// ============================================================================
+// EXPRESSION NODES
+// ============================================================================
+
+// Number literal: 42, 3.14
+struct NumberLiteralExpr
+{
+    INT64 intValue;
+    BOOL isFloat;
+    CHAR floatStr[32]; // For floating-point (parsed later)
+};
+
+// String literal: "hello"
+struct StringLiteralExpr
+{
+    CHAR value[MAX_STRING_VALUE];
+    USIZE length;
+};
+
+// Bool literal: true, false
+struct BoolLiteralExpr
+{
+    BOOL value;
+};
+
+// Identifier: foo
+struct IdentifierExpr
+{
+    CHAR name[MAX_IDENTIFIER_LENGTH];
+    USIZE length;
+};
+
+// Binary expression: a + b, a < b
+struct BinaryExpr
+{
+    Expr* left;
+    Expr* right;
+    TokenType op;
+};
+
+// Unary expression: -a, !b
+struct UnaryExpr
+{
+    Expr* operand;
+    TokenType op;
+};
+
+// Call expression: foo(a, b)
+struct CallExpr
+{
+    Expr* callee;
+    Expr* args[MAX_CALL_ARGS];
+    UINT8 argCount;
+};
+
+// Assignment expression: a = b
+struct AssignExpr
+{
+    CHAR name[MAX_IDENTIFIER_LENGTH];
+    USIZE nameLength;
+    Expr* value;
+};
+
+// Index expression: arr[i]
+struct IndexExpr
+{
+    Expr* object;
+    Expr* index;
+};
+
+// Logical expression: a && b, a || b
+struct LogicalExpr
+{
+    Expr* left;
+    Expr* right;
+    TokenType op; // AND_AND or OR_OR
+};
+
+// ============================================================================
+// EXPRESSION UNION
+// ============================================================================
+
+struct Expr
+{
+    ExprType type;
+    UINT32 line;
+    UINT32 column;
+
+    union
+    {
+        NumberLiteralExpr number;
+        StringLiteralExpr string;
+        BoolLiteralExpr boolean;
+        IdentifierExpr identifier;
+        BinaryExpr binary;
+        UnaryExpr unary;
+        CallExpr call;
+        AssignExpr assign;
+        IndexExpr index;
+        LogicalExpr logical;
+    };
+
+    Expr() noexcept : type(ExprType::NIL_LITERAL), line(0), column(0) {}
+};
+
+// ============================================================================
+// STATEMENT NODES
+// ============================================================================
+
+// Expression statement: expr;
+struct ExpressionStmt
+{
+    Expr* expression;
+};
+
+// Variable declaration: var x = expr;
+struct VarDeclStmt
+{
+    CHAR name[MAX_IDENTIFIER_LENGTH];
+    USIZE nameLength;
+    Expr* initializer; // Can be nullptr
+};
+
+// Block statement: { ... }
+struct BlockStmt
+{
+    Stmt* statements[MAX_BLOCK_STMTS];
+    USIZE count;
+};
+
+// If statement: if (cond) { } else { }
+struct IfStmt
+{
+    Expr* condition;
+    Stmt* thenBranch;
+    Stmt* elseBranch; // Can be nullptr
+};
+
+// While statement: while (cond) { }
+struct WhileStmt
+{
+    Expr* condition;
+    Stmt* body;
+};
+
+// For statement: for (init; cond; incr) { }
+struct ForStmt
+{
+    Stmt* initializer; // Can be nullptr (var decl or expr stmt)
+    Expr* condition;   // Can be nullptr
+    Expr* increment;   // Can be nullptr
+    Stmt* body;
+};
+
+// Function declaration: fn name(params) { }
+struct FunctionStmt
+{
+    CHAR name[MAX_IDENTIFIER_LENGTH];
+    USIZE nameLength;
+    CHAR params[MAX_FUNCTION_PARAMS][MAX_IDENTIFIER_LENGTH];
+    USIZE paramLengths[MAX_FUNCTION_PARAMS];
+    UINT8 paramCount;
+    Stmt* body; // BlockStmt
+};
+
+// Return statement: return expr;
+struct ReturnStmt
+{
+    Expr* value; // Can be nullptr
+};
+
+// ============================================================================
+// STATEMENT UNION
+// ============================================================================
+
+struct Stmt
+{
+    StmtType type;
+    UINT32 line;
+    UINT32 column;
+
+    union
+    {
+        ExpressionStmt expression;
+        VarDeclStmt varDecl;
+        BlockStmt block;
+        IfStmt ifStmt;
+        WhileStmt whileStmt;
+        ForStmt forStmt;
+        FunctionStmt function;
+        ReturnStmt returnStmt;
+    };
+
+    Stmt() noexcept : type(StmtType::EXPRESSION), line(0), column(0) {}
+};
+
+// ============================================================================
+// AST ALLOCATOR (Stack-based, fixed-size pool)
+// ============================================================================
+
+constexpr USIZE MAX_AST_EXPRS = 512;
+constexpr USIZE MAX_AST_STMTS = 256;
+
+class ASTAllocator
+{
+private:
+    Expr m_exprPool[MAX_AST_EXPRS];
+    Stmt m_stmtPool[MAX_AST_STMTS];
+    USIZE m_exprIndex;
+    USIZE m_stmtIndex;
+
+public:
+    ASTAllocator() noexcept
+        : m_exprIndex(0)
+        , m_stmtIndex(0)
+    {
+    }
+
+    // Reset allocator for reuse
+    void Reset() noexcept
+    {
+        m_exprIndex = 0;
+        m_stmtIndex = 0;
+    }
+
+    // Allocate a new expression node
+    Expr* AllocExpr() noexcept
+    {
+        if (m_exprIndex >= MAX_AST_EXPRS)
+        {
+            return nullptr; // Out of memory
+        }
+        Expr* expr = &m_exprPool[m_exprIndex++];
+        Memory::Zero(expr, sizeof(Expr));
+        return expr;
+    }
+
+    // Allocate a new statement node
+    Stmt* AllocStmt() noexcept
+    {
+        if (m_stmtIndex >= MAX_AST_STMTS)
+        {
+            return nullptr; // Out of memory
+        }
+        Stmt* stmt = &m_stmtPool[m_stmtIndex++];
+        Memory::Zero(stmt, sizeof(Stmt));
+        return stmt;
+    }
+
+    // Get usage statistics
+    USIZE GetExprCount() const noexcept { return m_exprIndex; }
+    USIZE GetStmtCount() const noexcept { return m_stmtIndex; }
+};
+
+// ============================================================================
+// AST HELPER FUNCTIONS
+// ============================================================================
+
+// Create number literal expression
+FORCE_INLINE Expr* MakeNumberExpr(ASTAllocator& alloc, INT64 value, UINT32 line, UINT32 col) noexcept
+{
+    Expr* expr = alloc.AllocExpr();
+    if (!expr) return nullptr;
+    expr->type = ExprType::NUMBER_LITERAL;
+    expr->line = line;
+    expr->column = col;
+    expr->number.intValue = value;
+    expr->number.isFloat = FALSE;
+    return expr;
+}
+
+// Create string literal expression
+FORCE_INLINE Expr* MakeStringExpr(ASTAllocator& alloc, const CHAR* value, USIZE length, UINT32 line, UINT32 col) noexcept
+{
+    Expr* expr = alloc.AllocExpr();
+    if (!expr) return nullptr;
+    expr->type = ExprType::STRING_LITERAL;
+    expr->line = line;
+    expr->column = col;
+    USIZE copyLen = length < MAX_STRING_VALUE - 1 ? length : MAX_STRING_VALUE - 1;
+    for (USIZE i = 0; i < copyLen; i++)
+    {
+        expr->string.value[i] = value[i];
+    }
+    expr->string.value[copyLen] = '\0';
+    expr->string.length = copyLen;
+    return expr;
+}
+
+// Create bool literal expression
+FORCE_INLINE Expr* MakeBoolExpr(ASTAllocator& alloc, BOOL value, UINT32 line, UINT32 col) noexcept
+{
+    Expr* expr = alloc.AllocExpr();
+    if (!expr) return nullptr;
+    expr->type = ExprType::BOOL_LITERAL;
+    expr->line = line;
+    expr->column = col;
+    expr->boolean.value = value;
+    return expr;
+}
+
+// Create nil literal expression
+FORCE_INLINE Expr* MakeNilExpr(ASTAllocator& alloc, UINT32 line, UINT32 col) noexcept
+{
+    Expr* expr = alloc.AllocExpr();
+    if (!expr) return nullptr;
+    expr->type = ExprType::NIL_LITERAL;
+    expr->line = line;
+    expr->column = col;
+    return expr;
+}
+
+// Create identifier expression
+FORCE_INLINE Expr* MakeIdentifierExpr(ASTAllocator& alloc, const CHAR* name, USIZE length, UINT32 line, UINT32 col) noexcept
+{
+    Expr* expr = alloc.AllocExpr();
+    if (!expr) return nullptr;
+    expr->type = ExprType::IDENTIFIER;
+    expr->line = line;
+    expr->column = col;
+    USIZE copyLen = length < MAX_IDENTIFIER_LENGTH - 1 ? length : MAX_IDENTIFIER_LENGTH - 1;
+    for (USIZE i = 0; i < copyLen; i++)
+    {
+        expr->identifier.name[i] = name[i];
+    }
+    expr->identifier.name[copyLen] = '\0';
+    expr->identifier.length = copyLen;
+    return expr;
+}
+
+// Create binary expression
+FORCE_INLINE Expr* MakeBinaryExpr(ASTAllocator& alloc, Expr* left, TokenType op, Expr* right, UINT32 line, UINT32 col) noexcept
+{
+    Expr* expr = alloc.AllocExpr();
+    if (!expr) return nullptr;
+    expr->type = ExprType::BINARY;
+    expr->line = line;
+    expr->column = col;
+    expr->binary.left = left;
+    expr->binary.op = op;
+    expr->binary.right = right;
+    return expr;
+}
+
+// Create unary expression
+FORCE_INLINE Expr* MakeUnaryExpr(ASTAllocator& alloc, TokenType op, Expr* operand, UINT32 line, UINT32 col) noexcept
+{
+    Expr* expr = alloc.AllocExpr();
+    if (!expr) return nullptr;
+    expr->type = ExprType::UNARY;
+    expr->line = line;
+    expr->column = col;
+    expr->unary.op = op;
+    expr->unary.operand = operand;
+    return expr;
+}
+
+// Create call expression
+FORCE_INLINE Expr* MakeCallExpr(ASTAllocator& alloc, Expr* callee, UINT32 line, UINT32 col) noexcept
+{
+    Expr* expr = alloc.AllocExpr();
+    if (!expr) return nullptr;
+    expr->type = ExprType::CALL;
+    expr->line = line;
+    expr->column = col;
+    expr->call.callee = callee;
+    expr->call.argCount = 0;
+    return expr;
+}
+
+// Create assignment expression
+FORCE_INLINE Expr* MakeAssignExpr(ASTAllocator& alloc, const CHAR* name, USIZE length, Expr* value, UINT32 line, UINT32 col) noexcept
+{
+    Expr* expr = alloc.AllocExpr();
+    if (!expr) return nullptr;
+    expr->type = ExprType::ASSIGN;
+    expr->line = line;
+    expr->column = col;
+    USIZE copyLen = length < MAX_IDENTIFIER_LENGTH - 1 ? length : MAX_IDENTIFIER_LENGTH - 1;
+    for (USIZE i = 0; i < copyLen; i++)
+    {
+        expr->assign.name[i] = name[i];
+    }
+    expr->assign.name[copyLen] = '\0';
+    expr->assign.nameLength = copyLen;
+    expr->assign.value = value;
+    return expr;
+}
+
+// Create logical expression
+FORCE_INLINE Expr* MakeLogicalExpr(ASTAllocator& alloc, Expr* left, TokenType op, Expr* right, UINT32 line, UINT32 col) noexcept
+{
+    Expr* expr = alloc.AllocExpr();
+    if (!expr) return nullptr;
+    expr->type = ExprType::LOGICAL;
+    expr->line = line;
+    expr->column = col;
+    expr->logical.left = left;
+    expr->logical.op = op;
+    expr->logical.right = right;
+    return expr;
+}
+
+// Create expression statement
+FORCE_INLINE Stmt* MakeExprStmt(ASTAllocator& alloc, Expr* expression, UINT32 line, UINT32 col) noexcept
+{
+    Stmt* stmt = alloc.AllocStmt();
+    if (!stmt) return nullptr;
+    stmt->type = StmtType::EXPRESSION;
+    stmt->line = line;
+    stmt->column = col;
+    stmt->expression.expression = expression;
+    return stmt;
+}
+
+// Create variable declaration statement
+FORCE_INLINE Stmt* MakeVarDeclStmt(ASTAllocator& alloc, const CHAR* name, USIZE length, Expr* init, UINT32 line, UINT32 col) noexcept
+{
+    Stmt* stmt = alloc.AllocStmt();
+    if (!stmt) return nullptr;
+    stmt->type = StmtType::VAR_DECL;
+    stmt->line = line;
+    stmt->column = col;
+    USIZE copyLen = length < MAX_IDENTIFIER_LENGTH - 1 ? length : MAX_IDENTIFIER_LENGTH - 1;
+    for (USIZE i = 0; i < copyLen; i++)
+    {
+        stmt->varDecl.name[i] = name[i];
+    }
+    stmt->varDecl.name[copyLen] = '\0';
+    stmt->varDecl.nameLength = copyLen;
+    stmt->varDecl.initializer = init;
+    return stmt;
+}
+
+// Create block statement
+FORCE_INLINE Stmt* MakeBlockStmt(ASTAllocator& alloc, UINT32 line, UINT32 col) noexcept
+{
+    Stmt* stmt = alloc.AllocStmt();
+    if (!stmt) return nullptr;
+    stmt->type = StmtType::BLOCK;
+    stmt->line = line;
+    stmt->column = col;
+    stmt->block.count = 0;
+    return stmt;
+}
+
+// Create if statement
+FORCE_INLINE Stmt* MakeIfStmt(ASTAllocator& alloc, Expr* cond, Stmt* thenBr, Stmt* elseBr, UINT32 line, UINT32 col) noexcept
+{
+    Stmt* stmt = alloc.AllocStmt();
+    if (!stmt) return nullptr;
+    stmt->type = StmtType::IF;
+    stmt->line = line;
+    stmt->column = col;
+    stmt->ifStmt.condition = cond;
+    stmt->ifStmt.thenBranch = thenBr;
+    stmt->ifStmt.elseBranch = elseBr;
+    return stmt;
+}
+
+// Create while statement
+FORCE_INLINE Stmt* MakeWhileStmt(ASTAllocator& alloc, Expr* cond, Stmt* body, UINT32 line, UINT32 col) noexcept
+{
+    Stmt* stmt = alloc.AllocStmt();
+    if (!stmt) return nullptr;
+    stmt->type = StmtType::WHILE;
+    stmt->line = line;
+    stmt->column = col;
+    stmt->whileStmt.condition = cond;
+    stmt->whileStmt.body = body;
+    return stmt;
+}
+
+// Create function declaration statement
+FORCE_INLINE Stmt* MakeFunctionStmt(ASTAllocator& alloc, const CHAR* name, USIZE length, UINT32 line, UINT32 col) noexcept
+{
+    Stmt* stmt = alloc.AllocStmt();
+    if (!stmt) return nullptr;
+    stmt->type = StmtType::FUNCTION;
+    stmt->line = line;
+    stmt->column = col;
+    USIZE copyLen = length < MAX_IDENTIFIER_LENGTH - 1 ? length : MAX_IDENTIFIER_LENGTH - 1;
+    for (USIZE i = 0; i < copyLen; i++)
+    {
+        stmt->function.name[i] = name[i];
+    }
+    stmt->function.name[copyLen] = '\0';
+    stmt->function.nameLength = copyLen;
+    stmt->function.paramCount = 0;
+    stmt->function.body = nullptr;
+    return stmt;
+}
+
+// Create return statement
+FORCE_INLINE Stmt* MakeReturnStmt(ASTAllocator& alloc, Expr* value, UINT32 line, UINT32 col) noexcept
+{
+    Stmt* stmt = alloc.AllocStmt();
+    if (!stmt) return nullptr;
+    stmt->type = StmtType::RETURN;
+    stmt->line = line;
+    stmt->column = col;
+    stmt->returnStmt.value = value;
+    return stmt;
+}
+
+} // namespace script
