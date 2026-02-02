@@ -4,7 +4,7 @@
     "env": {},
     "configurations": [
         {
-            "name": "i386-pc-windows-gnu",
+            "name": "windows-i386",
             "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
             "intelliSenseMode": "windows-clang-x86",
             "cStandard": "c17",
@@ -45,7 +45,7 @@
             }
         },
         {
-            "name": "x86_64-pc-windows-gnu",
+            "name": "windows-x86_64",
             "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
             "intelliSenseMode": "windows-clang-x64",
             "cStandard": "c17",
@@ -86,48 +86,7 @@
             }
         },
         {
-            "name": "arm7a-pc-windows-gnu",
-            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
-            "intelliSenseMode": "windows-clang-arm",
-            "cStandard": "c17",
-            "cppStandard": "c++23",
-            "defines": [
-                "ARCHITECTURE_ARMV7A",
-                "PLATFORM_WINDOWS",
-                "PLATFORM_WINDOWS_ARMV7A"
-            ],
-            "includePath": [
-                "${workspaceFolder}",
-                "${workspaceFolder}/include",
-                "${workspaceFolder}/include/bal",
-                "${workspaceFolder}/include/bal/core",
-                "${workspaceFolder}/include/bal/algorithms",
-                "${workspaceFolder}/include/bal/string",
-                "${workspaceFolder}/include/bal/types",
-                "${workspaceFolder}/include/bal/types/embedded",
-                "${workspaceFolder}/include/bal/types/network",
-                "${workspaceFolder}/include/bal/types/numeric",
-                "${workspaceFolder}/include/pal",
-                "${workspaceFolder}/include/pal/memory",
-                "${workspaceFolder}/include/pal/io",
-                "${workspaceFolder}/include/pal/network",
-                "${workspaceFolder}/include/pal/system",
-                "${workspaceFolder}/include/pal/windows",
-                "${workspaceFolder}/include/ral",
-                "${workspaceFolder}/include/ral/crypt",
-                "${workspaceFolder}/include/ral/network",
-                "${workspaceFolder}/include/ral/network/tls",
-                "${workspaceFolder}/tests"
-            ],
-            "browse": {
-                "path": [
-                    "${workspaceFolder}/src",
-                    "${workspaceFolder}/include"
-                ]
-            }
-        },
-        {
-            "name": "aarch64-pc-windows-gnu",
+            "name": "windows-aarch64",
             "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
             "intelliSenseMode": "windows-clang-arm64",
             "cStandard": "c17",
@@ -168,7 +127,7 @@
             }
         },
         {
-            "name": "i386-unknown-linux-gnu",
+            "name": "linux-i386",
             "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
             "intelliSenseMode": "linux-clang-x86",
             "cStandard": "c17",
@@ -209,7 +168,7 @@
             }
         },
         {
-            "name": "x86_64-unknown-linux-gnu",
+            "name": "linux-x86_64",
             "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
             "intelliSenseMode": "linux-clang-x64",
             "cStandard": "c17",
@@ -250,7 +209,7 @@
             }
         },
         {
-            "name": "armv7a-unknown-linux-gnueabihf",
+            "name": "linux-armv7a",
             "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
             "intelliSenseMode": "linux-clang-arm",
             "cStandard": "c17",
@@ -291,7 +250,7 @@
             }
         },
         {
-            "name": "aarch64-unknown-linux-gnu",
+            "name": "linux-aarch64",
             "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
             "intelliSenseMode": "linux-clang-arm64",
             "cStandard": "c17",
@@ -318,6 +277,88 @@
                 "${workspaceFolder}/include/pal/network",
                 "${workspaceFolder}/include/pal/system",
                 "${workspaceFolder}/include/pal/linux",
+                "${workspaceFolder}/include/ral",
+                "${workspaceFolder}/include/ral/crypt",
+                "${workspaceFolder}/include/ral/network",
+                "${workspaceFolder}/include/ral/network/tls",
+                "${workspaceFolder}/tests"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/src",
+                    "${workspaceFolder}/include"
+                ]
+            }
+        },
+        {
+            "name": "uefi-x86_64",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "windows-clang-x64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_X86_64",
+                "PLATFORM_UEFI",
+                "PLATFORM_UEFI_X86_64"
+            ],
+            "includePath": [
+                "${workspaceFolder}",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/include/bal",
+                "${workspaceFolder}/include/bal/core",
+                "${workspaceFolder}/include/bal/algorithms",
+                "${workspaceFolder}/include/bal/string",
+                "${workspaceFolder}/include/bal/types",
+                "${workspaceFolder}/include/bal/types/embedded",
+                "${workspaceFolder}/include/bal/types/network",
+                "${workspaceFolder}/include/bal/types/numeric",
+                "${workspaceFolder}/include/pal",
+                "${workspaceFolder}/include/pal/memory",
+                "${workspaceFolder}/include/pal/io",
+                "${workspaceFolder}/include/pal/network",
+                "${workspaceFolder}/include/pal/system",
+                "${workspaceFolder}/include/pal/uefi",
+                "${workspaceFolder}/include/ral",
+                "${workspaceFolder}/include/ral/crypt",
+                "${workspaceFolder}/include/ral/network",
+                "${workspaceFolder}/include/ral/network/tls",
+                "${workspaceFolder}/tests"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/src",
+                    "${workspaceFolder}/include"
+                ]
+            }
+        },
+        {
+            "name": "uefi-aarch64",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "windows-clang-arm64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+            "defines": [
+                "ARCHITECTURE_AARCH64",
+                "PLATFORM_UEFI",
+                "PLATFORM_UEFI_AARCH64"
+            ],
+            "includePath": [
+                "${workspaceFolder}",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/include/bal",
+                "${workspaceFolder}/include/bal/core",
+                "${workspaceFolder}/include/bal/algorithms",
+                "${workspaceFolder}/include/bal/string",
+                "${workspaceFolder}/include/bal/types",
+                "${workspaceFolder}/include/bal/types/embedded",
+                "${workspaceFolder}/include/bal/types/network",
+                "${workspaceFolder}/include/bal/types/numeric",
+                "${workspaceFolder}/include/pal",
+                "${workspaceFolder}/include/pal/memory",
+                "${workspaceFolder}/include/pal/io",
+                "${workspaceFolder}/include/pal/network",
+                "${workspaceFolder}/include/pal/system",
+                "${workspaceFolder}/include/pal/uefi",
                 "${workspaceFolder}/include/ral",
                 "${workspaceFolder}/include/ral/crypt",
                 "${workspaceFolder}/include/ral/network",

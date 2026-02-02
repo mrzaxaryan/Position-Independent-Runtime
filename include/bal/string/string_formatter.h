@@ -36,6 +36,7 @@ private:
         Argument(const WCHAR* v) : type(Type::WSTR), wstr(v) {}
         Argument(WCHAR* v) : type(Type::WSTR), wstr(v) {}
         Argument(PVOID v) : type(Type::PTR), ptr(v) {}
+        Argument(const void* v) : type(Type::PTR), ptr(const_cast<PVOID>(v)) {}
 
         // Native C++ type compatibility (INT64/UINT64 are typedefs)
         Argument(INT64 v) : type(Type::INT64), i64(v) {}
@@ -761,6 +762,22 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
                     // Now we can use UINT64 directly!
                     UINT64 num = args[currentArg++].u64;
                     j += StringFormatter::FormatUInt64(writer, context, num, fieldWidth, zeroPad, leftAlign); // Convert the unsigned long long int to string with specified formatting
+                    continue;
+                }
+                else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'x')
+                {                                                                            // long hex (%lx)
+                    i += 2;                                                                  // Skip over "lx"
+                    if (currentArg >= argCount) continue;
+                    UINT64 num = args[currentArg++].u64;                                     // Get the next argument as UINT64
+                    j += StringFormatter::FormatUInt64AsHex(writer, context, num);           // Convert to hex
+                    continue;
+                }
+                else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'l' && String::ToLowerCase<TChar>(format[i + 2]) == (TChar)'x')
+                {                                                                            // long long hex (%llx)
+                    i += 3;                                                                  // Skip over "llx"
+                    if (currentArg >= argCount) continue;
+                    UINT64 num = args[currentArg++].u64;                                     // Get the next argument as UINT64
+                    j += StringFormatter::FormatUInt64AsHex(writer, context, num);           // Convert to hex
                     continue;
                 }
                 else
