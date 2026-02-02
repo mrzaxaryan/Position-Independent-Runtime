@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ral/script/script.h"
-#include "pal/io/logger.h"
+#include "tests.h"
 
 // ============================================================================
 // CUSTOM C++ FUNCTIONS FOR STATE TESTS
@@ -41,58 +41,15 @@ public:
 
         LOG_INFO("Running State Tests...");
 
-        // Test 1: Manual function registration
-        if (!TestManualRegistration())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Manual function registration");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Manual function registration");
-        }
-
-        // Test 2: Global variables
-        if (!TestGlobalVariables())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Global variables");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Global variables");
-        }
-
-        // Test 3: Minimal setup (print only)
-        if (!TestMinimalSetup())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Minimal setup");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Minimal setup");
-        }
-
-        // Test 4: State creation and deletion
-        if (!TestStateLifecycle())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: State lifecycle");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: State lifecycle");
-        }
+        RUN_TEST(allPassed, TestManualRegistration, "Manual function registration");
+        RUN_TEST(allPassed, TestGlobalVariables, "Global variables");
+        RUN_TEST(allPassed, TestMinimalSetup, "Minimal setup");
+        RUN_TEST(allPassed, TestStateLifecycle, "State lifecycle");
 
         if (allPassed)
-        {
             LOG_INFO("All State tests passed!");
-        }
         else
-        {
             LOG_ERROR("Some State tests failed!");
-        }
 
         return allPassed;
     }

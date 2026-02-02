@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ral/script/script.h"
-#include "pal/io/logger.h"
+#include "tests.h"
 
 // ============================================================================
 // ERROR TESTS CLASS
@@ -16,80 +16,17 @@ public:
 
         LOG_INFO("Running Error Tests...");
 
-        // Test 1: Missing semicolon error
-        if (!TestMissingSemicolon())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Missing semicolon error detection");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Missing semicolon error detection");
-        }
-
-        // Test 2: Undefined variable error
-        if (!TestUndefinedVariable())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Undefined variable error detection");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Undefined variable error detection");
-        }
-
-        // Test 3: Undefined function error
-        if (!TestUndefinedFunction())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Undefined function error detection");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Undefined function error detection");
-        }
-
-        // Test 4: Syntax error in expression
-        if (!TestSyntaxErrorInExpression())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Syntax error in expression detection");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Syntax error in expression detection");
-        }
-
-        // Test 5: Valid script should succeed
-        if (!TestValidScript())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Valid script execution");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Valid script execution");
-        }
-
-        // Test 6: Error message retrieval
-        if (!TestErrorMessageRetrieval())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Error message retrieval");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Error message retrieval");
-        }
+        RUN_TEST(allPassed, TestMissingSemicolon, "Missing semicolon error detection");
+        RUN_TEST(allPassed, TestUndefinedVariable, "Undefined variable error detection");
+        RUN_TEST(allPassed, TestUndefinedFunction, "Undefined function error detection");
+        RUN_TEST(allPassed, TestSyntaxErrorInExpression, "Syntax error in expression detection");
+        RUN_TEST(allPassed, TestValidScript, "Valid script execution");
+        RUN_TEST(allPassed, TestErrorMessageRetrieval, "Error message retrieval");
 
         if (allPassed)
-        {
             LOG_INFO("All Error tests passed!");
-        }
         else
-        {
             LOG_ERROR("Some Error tests failed!");
-        }
 
         return allPassed;
     }

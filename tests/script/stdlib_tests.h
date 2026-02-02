@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ral/script/script.h"
-#include "pal/io/logger.h"
+#include "tests.h"
 
 // ============================================================================
 // CUSTOM C++ FUNCTIONS FOR STDLIB TESTS
@@ -10,16 +10,14 @@
 // Custom function: greet(name) - prints a greeting
 static script::Value StdLibTest_Func_Greet(script::FunctionContext& ctx)
 {
-    Console::Write<CHAR>("Hello, "_embed);
     if (ctx.CheckArgs(1) && ctx.IsString(0))
     {
-        Console::Write<CHAR>(ctx.ToString(0));
+        LOG_INFO("Hello, %s!", ctx.ToString(0));
     }
     else
     {
-        Console::Write<CHAR>("World"_embed);
+        LOG_INFO("Hello, World!");
     }
-    Console::Write<CHAR>("!\n"_embed);
 
     return script::Value::Nil();
 }
@@ -51,80 +49,17 @@ public:
 
         LOG_INFO("Running StdLib Tests...");
 
-        // Test 1: Standard library functions
-        if (!TestStdLibFunctions())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Standard library functions");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Standard library functions");
-        }
-
-        // Test 2: Custom functions with StdLib
-        if (!TestCustomFunctionsWithStdLib())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Custom functions with StdLib");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Custom functions with StdLib");
-        }
-
-        // Test 3: Print function
-        if (!TestPrintFunction())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Print function");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Print function");
-        }
-
-        // Test 4: Type function
-        if (!TestTypeFunction())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Type function");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Type function");
-        }
-
-        // Test 5: String functions
-        if (!TestStringFunctions())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: String functions");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: String functions");
-        }
-
-        // Test 6: Math functions
-        if (!TestMathFunctions())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Math functions");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Math functions");
-        }
+        RUN_TEST(allPassed, TestStdLibFunctions, "Standard library functions");
+        RUN_TEST(allPassed, TestCustomFunctionsWithStdLib, "Custom functions with StdLib");
+        RUN_TEST(allPassed, TestPrintFunction, "Print function");
+        RUN_TEST(allPassed, TestTypeFunction, "Type function");
+        RUN_TEST(allPassed, TestStringFunctions, "String functions");
+        RUN_TEST(allPassed, TestMathFunctions, "Math functions");
 
         if (allPassed)
-        {
             LOG_INFO("All StdLib tests passed!");
-        }
         else
-        {
             LOG_ERROR("Some StdLib tests failed!");
-        }
 
         return allPassed;
     }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ral/script/script.h"
-#include "pal/io/logger.h"
+#include "tests.h"
 
 // ============================================================================
 // LANGUAGE TESTS CLASS
@@ -16,124 +16,21 @@ public:
 
         LOG_INFO("Running Language Tests...");
 
-        // Test 1: FizzBuzz (for loop, if/else, modulo)
-        if (!TestFizzBuzz())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: FizzBuzz");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: FizzBuzz");
-        }
-
-        // Test 2: Recursive functions
-        if (!TestRecursion())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Recursive functions");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Recursive functions");
-        }
-
-        // Test 3: Arithmetic operators
-        if (!TestArithmeticOperators())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Arithmetic operators");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Arithmetic operators");
-        }
-
-        // Test 4: Comparison operators
-        if (!TestComparisonOperators())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Comparison operators");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Comparison operators");
-        }
-
-        // Test 5: Logical operators
-        if (!TestLogicalOperators())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Logical operators");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Logical operators");
-        }
-
-        // Test 6: While loop
-        if (!TestWhileLoop())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: While loop");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: While loop");
-        }
-
-        // Test 7: Variable assignment operators
-        if (!TestAssignmentOperators())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Assignment operators");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Assignment operators");
-        }
-
-        // Test 8: String concatenation
-        if (!TestStringConcatenation())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: String concatenation");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: String concatenation");
-        }
-
-        // Test 9: Nested functions
-        if (!TestNestedFunctions())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: Nested functions");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: Nested functions");
-        }
-
-        // Test 10: First-class functions
-        if (!TestFirstClassFunctions())
-        {
-            allPassed = FALSE;
-            LOG_ERROR("  FAILED: First-class functions");
-        }
-        else
-        {
-            LOG_INFO("  PASSED: First-class functions");
-        }
+        RUN_TEST(allPassed, TestFizzBuzz, "FizzBuzz");
+        RUN_TEST(allPassed, TestRecursion, "Recursive functions");
+        RUN_TEST(allPassed, TestArithmeticOperators, "Arithmetic operators");
+        RUN_TEST(allPassed, TestComparisonOperators, "Comparison operators");
+        RUN_TEST(allPassed, TestLogicalOperators, "Logical operators");
+        RUN_TEST(allPassed, TestWhileLoop, "While loop");
+        RUN_TEST(allPassed, TestAssignmentOperators, "Assignment operators");
+        RUN_TEST(allPassed, TestStringConcatenation, "String concatenation");
+        RUN_TEST(allPassed, TestNestedFunctions, "Nested functions");
+        RUN_TEST(allPassed, TestFirstClassFunctions, "First-class functions");
 
         if (allPassed)
-        {
             LOG_INFO("All Language tests passed!");
-        }
         else
-        {
             LOG_ERROR("Some Language tests failed!");
-        }
 
         return allPassed;
     }
