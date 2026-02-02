@@ -53,6 +53,7 @@
 #include "ecc_tests.h"
 #include "dns_tests.h"
 #include "websocket_tests.h"
+#include "filesystem_tests.h"
 
 static BOOL RunAllTests()
 {
@@ -120,6 +121,10 @@ static BOOL RunAllTests()
 	Logger::Info<WCHAR>(L""_embed);
 
 	if (!WebSocketTests::RunAll())
+		allPassed = FALSE;
+	Logger::Info<WCHAR>(L""_embed);
+
+	if(!FileSystemTests::RunAll())
 		allPassed = FALSE;
 	Logger::Info<WCHAR>(L""_embed);
 
