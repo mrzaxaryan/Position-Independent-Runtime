@@ -13,7 +13,7 @@ list(APPEND CPPPIC_BASE_FLAGS -target ${CPPPIC_TRIPLE})
 # Linker configuration
 cpppic_add_link_flags(
     -e,_start
-    -T,${CMAKE_SOURCE_DIR}/linker_script.txt
+    --symbol-ordering-file=${CMAKE_SOURCE_DIR}/orderfile.txt
     --build-id=none
     -Map,${CPPPIC_MAP_FILE}
 )
