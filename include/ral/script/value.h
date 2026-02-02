@@ -10,6 +10,7 @@
 #pragma once
 
 #include "ast.h"
+#include "bal/types/numeric/double.h"
 
 namespace script
 {
@@ -79,7 +80,7 @@ struct Value
     union
     {
         BOOL boolValue;
-        INT64 numberValue;
+        DOUBLE numberValue;    // Changed from INT64 to DOUBLE for float support
         struct
         {
             CHAR strValue[MAX_STRING_VALUE];
@@ -93,6 +94,77 @@ struct Value
     // Default constructor - nil
     Value() noexcept : type(ValueType::NIL) {}
 
+    // Copy constructor
+    Value(const Value& other) noexcept : type(other.type)
+    {
+        switch (type)
+        {
+            case ValueType::BOOL:
+                boolValue = other.boolValue;
+                break;
+            case ValueType::NUMBER:
+                numberValue = other.numberValue;
+                break;
+            case ValueType::STRING:
+                strLength = other.strLength;
+                for (USIZE i = 0; i < strLength && i < MAX_STRING_VALUE; i++)
+                {
+                    strValue[i] = other.strValue[i];
+                }
+                if (strLength < MAX_STRING_VALUE) strValue[strLength] = '\0';
+                break;
+            case ValueType::FUNCTION:
+                function = other.function;
+                break;
+            case ValueType::NATIVE_FUNCTION:
+                nativeFn = other.nativeFn;
+                break;
+            case ValueType::CFUNCTION:
+                cfunction = other.cfunction;
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Copy assignment operator
+    Value& operator=(const Value& other) noexcept
+    {
+        if (this != &other)
+        {
+            type = other.type;
+            switch (type)
+            {
+                case ValueType::BOOL:
+                    boolValue = other.boolValue;
+                    break;
+                case ValueType::NUMBER:
+                    numberValue = other.numberValue;
+                    break;
+                case ValueType::STRING:
+                    strLength = other.strLength;
+                    for (USIZE i = 0; i < strLength && i < MAX_STRING_VALUE; i++)
+                    {
+                        strValue[i] = other.strValue[i];
+                    }
+                    if (strLength < MAX_STRING_VALUE) strValue[strLength] = '\0';
+                    break;
+                case ValueType::FUNCTION:
+                    function = other.function;
+                    break;
+                case ValueType::NATIVE_FUNCTION:
+                    nativeFn = other.nativeFn;
+                    break;
+                case ValueType::CFUNCTION:
+                    cfunction = other.cfunction;
+                    break;
+                default:
+                    break;
+            }
+        }
+        return *this;
+    }
+
     // Bool constructor
     static Value Bool(BOOL b) noexcept
     {
@@ -102,12 +174,32 @@ struct Value
         return v;
     }
 
-    // Number constructor
+    // Number constructor (integer - converts to DOUBLE internally)
     static Value Number(INT64 n) noexcept
     {
         Value v;
         v.type = ValueType::NUMBER;
-        v.numberValue = n;
+        // For values that fit in INT32, use INT32 constructor (PIC-safe)
+        // For larger values, use double conversion
+        if (n >= -2147483647LL && n <= 2147483647LL)
+        {
+            v.numberValue = DOUBLE(INT32(n));
+        }
+        else
+        {
+            // Large INT64: convert via double (may lose precision for values > 2^53)
+            double d = (double)n;
+            v.numberValue = DOUBLE(d);
+        }
+        return v;
+    }
+
+    // Float constructor (DOUBLE - direct storage)
+    static Value Float(DOUBLE d) noexcept
+    {
+        Value v;
+        v.type = ValueType::NUMBER;
+        v.numberValue = d;
         return v;
     }
 
@@ -170,6 +262,27 @@ struct Value
     FORCE_INLINE BOOL IsNativeFunction() const noexcept { return type == ValueType::NATIVE_FUNCTION; }
     FORCE_INLINE BOOL IsCFunction() const noexcept { return type == ValueType::CFUNCTION; }
     FORCE_INLINE BOOL IsCallable() const noexcept { return IsFunction() || IsNativeFunction() || IsCFunction(); }
+
+    // Check if number is effectively an integer (no fractional part)
+    NOINLINE BOOL IsInteger() const noexcept
+    {
+        if (type != ValueType::NUMBER) return FALSE;
+        INT64 intPart = (INT64)numberValue;
+        DOUBLE reconstructed = DOUBLE(INT32(intPart));
+        return numberValue == reconstructed;
+    }
+
+    // Get as INT64 (truncates toward zero)
+    FORCE_INLINE INT64 AsInt() const noexcept
+    {
+        return (INT64)numberValue;
+    }
+
+    // Get as DOUBLE
+    FORCE_INLINE DOUBLE AsDouble() const noexcept
+    {
+        return numberValue;
+    }
 
     // Truthiness: nil and false are falsy, everything else is truthy
     FORCE_INLINE BOOL IsTruthy() const noexcept
@@ -464,7 +577,12 @@ struct FunctionContext
 
     FORCE_INLINE INT64 ToNumber(UINT8 index) const noexcept
     {
-        return index < argCount ? args[index].numberValue : 0;
+        return index < argCount ? (INT64)args[index].numberValue : 0;
+    }
+
+    FORCE_INLINE DOUBLE ToDouble(UINT8 index) const noexcept
+    {
+        return index < argCount ? args[index].numberValue : DOUBLE(INT32(0));
     }
 
     FORCE_INLINE const CHAR* ToString(UINT8 index) const noexcept

@@ -734,7 +734,22 @@ private:
 
         if (Match(TokenType::NUMBER))
         {
-            return MakeNumberExpr(*m_alloc, m_previous.value.intValue, line, col);
+            if (m_previous.isFloat)
+            {
+                // Parse float from string using DOUBLE::Parse()
+                DOUBLE value = DOUBLE::Parse(m_previous.value.strValue);
+                return MakeFloatExpr(*m_alloc, value, TRUE, line, col);
+            }
+            else
+            {
+                // Parse integer from string
+                INT64 value = 0;
+                for (USIZE i = 0; i < m_previous.length; i++)
+                {
+                    value = value * 10 + (m_previous.value.strValue[i] - '0');
+                }
+                return MakeNumberExpr(*m_alloc, value, line, col);
+            }
         }
 
         if (Match(TokenType::STRING))

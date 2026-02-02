@@ -9,6 +9,7 @@
  *   StdLibTests    - Standard library function tests (print, len, str, num, type, abs, min, max)
  *   LanguageTests  - Language feature tests (control flow, recursion, operators, functions)
  *   ErrorTests     - Error handling and detection tests
+ *   FloatTests     - Floating-point number tests
  *
  * USAGE:
  *   #include "script_tests.h"
@@ -21,6 +22,7 @@
  *   StdLibTests::RunAll();
  *   LanguageTests::RunAll();
  *   ErrorTests::RunAll();
+ *   FloatTests::RunAll();
  */
 
 #pragma once
@@ -29,6 +31,7 @@
 #include "stdlib_tests.h"
 #include "language_tests.h"
 #include "error_tests.h"
+#include "float_tests.h"
 
 static BOOL RunScriptTests()
 {
@@ -49,6 +52,9 @@ static BOOL RunScriptTests()
 
     // Error handling tests
     RUN_TEST_SUITE(allPassed, ErrorTests);
+
+    // Floating-point tests
+    RUN_TEST_SUITE(allPassed, FloatTests);
 
     // Final summary
     LOG_INFO("=== PICScript Test Suite Complete ===");

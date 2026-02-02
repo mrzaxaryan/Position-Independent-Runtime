@@ -244,7 +244,7 @@ private:
         switch (expr->type)
         {
             case ExprType::NUMBER_LITERAL:
-                return Value::Number(expr->number.intValue);
+                return Value::Float(expr->number.value);
 
             case ExprType::STRING_LITERAL:
                 return Value::String(expr->string.value, expr->string.length);
@@ -299,26 +299,61 @@ private:
         // Fast path: both operands are numbers (most common case)
         if (left.IsNumber() && right.IsNumber())
         {
-            INT64 l = left.numberValue;
-            INT64 r = right.numberValue;
+            DOUBLE l = left.numberValue;
+            DOUBLE r = right.numberValue;
+
+            // Check if both are effectively integers (for modulo)
+            BOOL bothIntegers = left.IsInteger() && right.IsInteger();
+
             switch (op)
             {
-                case TokenType::PLUS:          return Value::Number(l + r);
-                case TokenType::MINUS:         return Value::Number(l - r);
-                case TokenType::STAR:          return Value::Number(l * r);
+                case TokenType::PLUS:
+                    return Value::Float(l + r);
+                case TokenType::MINUS:
+                    return Value::Float(l - r);
+                case TokenType::STAR:
+                    return Value::Float(l * r);
                 case TokenType::SLASH:
-                    if (r == 0) { RuntimeError("Division by zero"_embed, expr->line); return Value::Nil(); }
-                    return Value::Number(l / r);
+                {
+                    DOUBLE zero = DOUBLE(INT32(0));
+                    if (r == zero)
+                    {
+                        RuntimeError("Division by zero"_embed, expr->line);
+                        return Value::Nil();
+                    }
+                    return Value::Float(l / r);
+                }
                 case TokenType::PERCENT:
-                    if (r == 0) { RuntimeError("Division by zero"_embed, expr->line); return Value::Nil(); }
-                    return Value::Number(l % r);
-                case TokenType::LESS:          return Value::Bool(l < r);
-                case TokenType::GREATER:       return Value::Bool(l > r);
-                case TokenType::LESS_EQUAL:    return Value::Bool(l <= r);
-                case TokenType::GREATER_EQUAL: return Value::Bool(l >= r);
-                case TokenType::EQUAL_EQUAL:   return Value::Bool(l == r);
-                case TokenType::BANG_EQUAL:    return Value::Bool(l != r);
-                default: break;
+                {
+                    // Modulo only works on integers
+                    if (!bothIntegers)
+                    {
+                        RuntimeError("Modulo requires integers"_embed, expr->line);
+                        return Value::Nil();
+                    }
+                    INT64 li = (INT64)l;
+                    INT64 ri = (INT64)r;
+                    if (ri == 0)
+                    {
+                        RuntimeError("Division by zero"_embed, expr->line);
+                        return Value::Nil();
+                    }
+                    return Value::Number(li % ri);
+                }
+                case TokenType::LESS:
+                    return Value::Bool(l < r);
+                case TokenType::GREATER:
+                    return Value::Bool(l > r);
+                case TokenType::LESS_EQUAL:
+                    return Value::Bool(l <= r);
+                case TokenType::GREATER_EQUAL:
+                    return Value::Bool(l >= r);
+                case TokenType::EQUAL_EQUAL:
+                    return Value::Bool(l == r);
+                case TokenType::BANG_EQUAL:
+                    return Value::Bool(l != r);
+                default:
+                    break;
             }
         }
 
@@ -353,7 +388,7 @@ private:
             case TokenType::MINUS:
                 if (operand.IsNumber())
                 {
-                    return Value::Number(-operand.numberValue);
+                    return Value::Float(-operand.numberValue);
                 }
                 RuntimeError("Operand must be a number"_embed, expr->line);
                 return Value::Nil();

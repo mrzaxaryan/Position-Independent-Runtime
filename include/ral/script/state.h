@@ -244,6 +244,14 @@ public:
     }
 
     /**
+     * Set a global float (DOUBLE).
+     */
+    void SetGlobalFloat(const CHAR* name, USIZE nameLen, DOUBLE value) noexcept
+    {
+        SetGlobal(name, nameLen, Value::Float(value));
+    }
+
+    /**
      * Get a global variable.
      * Similar to lua_getglobal().
      */

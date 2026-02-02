@@ -11,6 +11,7 @@
 
 #include "token.h"
 #include "bal/core/memory.h"
+#include "bal/types/numeric/double.h"
 
 namespace script
 {
@@ -70,9 +71,8 @@ constexpr USIZE MAX_IDENTIFIER_LENGTH = 64;
 // Number literal: 42, 3.14
 struct NumberLiteralExpr
 {
-    INT64 intValue;
-    BOOL isFloat;
-    CHAR floatStr[32]; // For floating-point (parsed later)
+    DOUBLE value;       // Stored as DOUBLE (works for both int and float)
+    BOOL isFloat;       // TRUE if original literal had decimal point
 };
 
 // String literal: "hello"
@@ -321,7 +321,7 @@ public:
 // AST HELPER FUNCTIONS
 // ============================================================================
 
-// Create number literal expression
+// Create number literal expression (integer)
 FORCE_INLINE Expr* MakeNumberExpr(ASTAllocator& alloc, INT64 value, UINT32 line, UINT32 col) noexcept
 {
     Expr* expr = alloc.AllocExpr();
@@ -329,8 +329,30 @@ FORCE_INLINE Expr* MakeNumberExpr(ASTAllocator& alloc, INT64 value, UINT32 line,
     expr->type = ExprType::NUMBER_LITERAL;
     expr->line = line;
     expr->column = col;
-    expr->number.intValue = value;
+    // Convert INT64 to DOUBLE
+    if (value >= -2147483647LL && value <= 2147483647LL)
+    {
+        expr->number.value = DOUBLE(INT32(value));
+    }
+    else
+    {
+        double d = (double)value;
+        expr->number.value = DOUBLE(d);
+    }
     expr->number.isFloat = FALSE;
+    return expr;
+}
+
+// Create number literal expression (DOUBLE)
+FORCE_INLINE Expr* MakeFloatExpr(ASTAllocator& alloc, DOUBLE value, BOOL isFloat, UINT32 line, UINT32 col) noexcept
+{
+    Expr* expr = alloc.AllocExpr();
+    if (!expr) return nullptr;
+    expr->type = ExprType::NUMBER_LITERAL;
+    expr->line = line;
+    expr->column = col;
+    expr->number.value = value;
+    expr->number.isFloat = isFloat;
     return expr;
 }
 

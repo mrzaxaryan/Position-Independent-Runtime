@@ -105,12 +105,14 @@ struct Token
     UINT32 line;
     UINT32 column;
     USIZE length;   // Length of string/identifier
+    BOOL isFloat;   // TRUE if number has decimal point
 
     Token() noexcept
         : type(TokenType::END_OF_FILE)
         , line(1)
         , column(1)
         , length(0)
+        , isFloat(FALSE)
     {
     }
 
@@ -119,6 +121,7 @@ struct Token
         , line(ln)
         , column(col)
         , length(0)
+        , isFloat(FALSE)
     {
     }
 

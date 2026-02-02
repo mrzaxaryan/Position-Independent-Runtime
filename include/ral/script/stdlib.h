@@ -65,38 +65,104 @@ NOINLINE USIZE ValueToString(const Value& value, CHAR* buffer, USIZE bufferSize)
 
         case ValueType::NUMBER:
             {
-                INT64 n = value.numberValue;
-                BOOL negative = FALSE;
-                if (n < 0)
-                {
-                    negative = TRUE;
-                    n = -n;
-                }
+                DOUBLE d = value.numberValue;
+                DOUBLE zero = DOUBLE(INT32(0));
 
-                // Build number string in reverse
-                CHAR temp[32];
-                USIZE tempLen = 0;
-                if (n == 0)
+                // Check if it's effectively an integer
+                INT64 intPart = (INT64)d;
+                DOUBLE reconstructed = DOUBLE(INT32(intPart));
+
+                if (d == reconstructed)
                 {
-                    temp[tempLen++] = '0';
+                    // Format as integer
+                    INT64 n = intPart;
+                    BOOL negative = FALSE;
+                    if (n < 0)
+                    {
+                        negative = TRUE;
+                        n = -n;
+                    }
+
+                    // Build number string in reverse
+                    CHAR temp[32];
+                    USIZE tempLen = 0;
+                    if (n == 0)
+                    {
+                        temp[tempLen++] = '0';
+                    }
+                    else
+                    {
+                        while (n > 0 && tempLen < 31)
+                        {
+                            temp[tempLen++] = '0' + (n % 10);
+                            n /= 10;
+                        }
+                    }
+
+                    // Add sign and reverse
+                    if (negative && len < bufferSize - 1)
+                    {
+                        buffer[len++] = '-';
+                    }
+                    for (SSIZE i = (SSIZE)tempLen - 1; i >= 0 && len < bufferSize - 1; i--)
+                    {
+                        buffer[len++] = temp[i];
+                    }
                 }
                 else
                 {
-                    while (n > 0 && tempLen < 31)
-                    {
-                        temp[tempLen++] = '0' + (n % 10);
-                        n /= 10;
-                    }
-                }
+                    // Format as float
+                    BOOL negative = d < zero;
+                    if (negative) d = -d;
 
-                // Add sign and reverse
-                if (negative && len < bufferSize - 1)
-                {
-                    buffer[len++] = '-';
-                }
-                for (SSIZE i = (SSIZE)tempLen - 1; i >= 0 && len < bufferSize - 1; i--)
-                {
-                    buffer[len++] = temp[i];
+                    INT64 wholePart = (INT64)d;
+                    DOUBLE fracPart = d - DOUBLE(INT32(wholePart));
+
+                    // Format whole part
+                    CHAR temp[32];
+                    USIZE tempLen = 0;
+                    if (wholePart == 0)
+                    {
+                        temp[tempLen++] = '0';
+                    }
+                    else
+                    {
+                        INT64 w = wholePart;
+                        while (w > 0 && tempLen < 31)
+                        {
+                            temp[tempLen++] = '0' + (w % 10);
+                            w /= 10;
+                        }
+                    }
+
+                    if (negative && len < bufferSize - 1)
+                    {
+                        buffer[len++] = '-';
+                    }
+                    for (SSIZE i = (SSIZE)tempLen - 1; i >= 0 && len < bufferSize - 1; i--)
+                    {
+                        buffer[len++] = temp[i];
+                    }
+
+                    // Add decimal point
+                    if (len < bufferSize - 1) buffer[len++] = '.';
+
+                    // Get up to 6 decimal digits
+                    DOUBLE ten = DOUBLE(INT32(10));
+                    USIZE decStart = len;
+                    for (INT32 digit = 0; digit < 6 && len < bufferSize - 1; digit++)
+                    {
+                        fracPart = fracPart * ten;
+                        INT32 dig = (INT32)fracPart;
+                        buffer[len++] = '0' + dig;
+                        fracPart = fracPart - DOUBLE(dig);
+                    }
+
+                    // Remove trailing zeros (but keep at least one decimal digit)
+                    while (len > decStart + 1 && buffer[len - 1] == '0')
+                    {
+                        len--;
+                    }
                 }
             }
             break;
@@ -263,36 +329,9 @@ NOINLINE Value StdLib_Num(FunctionContext& ctx) noexcept
 
         case ValueType::STRING:
             {
-                // Parse string to number
-                INT64 result = 0;
-                INT32 sign = 1;
-                USIZE i = 0;
-
-                // Skip whitespace
-                while (i < arg.strLength && arg.strValue[i] == ' ')
-                {
-                    i++;
-                }
-
-                // Check sign
-                if (i < arg.strLength && arg.strValue[i] == '-')
-                {
-                    sign = -1;
-                    i++;
-                }
-                else if (i < arg.strLength && arg.strValue[i] == '+')
-                {
-                    i++;
-                }
-
-                // Parse digits
-                while (i < arg.strLength && arg.strValue[i] >= '0' && arg.strValue[i] <= '9')
-                {
-                    result = result * 10 + (arg.strValue[i] - '0');
-                    i++;
-                }
-
-                return Value::Number(sign < 0 ? -result : result);
+                // Use DOUBLE::Parse which handles both integers and floats
+                DOUBLE result = DOUBLE::Parse(arg.strValue);
+                return Value::Float(result);
             }
 
         default:
@@ -340,8 +379,13 @@ NOINLINE Value StdLib_Abs(FunctionContext& ctx) noexcept
         return Value::Number(0);
     }
 
-    INT64 n = ctx.ToNumber(0);
-    return Value::Number(n < 0 ? -n : n);
+    DOUBLE n = ctx.ToDouble(0);
+    DOUBLE zero = DOUBLE(INT32(0));
+    if (n < zero)
+    {
+        return Value::Float(-n);
+    }
+    return ctx.Arg(0);
 }
 
 // ============================================================================
@@ -361,9 +405,9 @@ NOINLINE Value StdLib_Min(FunctionContext& ctx) noexcept
         return Value::Number(0);
     }
 
-    INT64 a = ctx.ToNumber(0);
-    INT64 b = ctx.ToNumber(1);
-    return Value::Number(a < b ? a : b);
+    DOUBLE a = ctx.ToDouble(0);
+    DOUBLE b = ctx.ToDouble(1);
+    return Value::Float(a < b ? a : b);
 }
 
 // ============================================================================
@@ -383,9 +427,100 @@ NOINLINE Value StdLib_Max(FunctionContext& ctx) noexcept
         return Value::Number(0);
     }
 
-    INT64 a = ctx.ToNumber(0);
-    INT64 b = ctx.ToNumber(1);
-    return Value::Number(a > b ? a : b);
+    DOUBLE a = ctx.ToDouble(0);
+    DOUBLE b = ctx.ToDouble(1);
+    return Value::Float(a > b ? a : b);
+}
+
+// ============================================================================
+// FLOOR FUNCTION
+// ============================================================================
+
+/**
+ * floor(x) - Round down to nearest integer
+ *
+ * Usage:
+ *   var n = floor(3.7);   // 3
+ *   var n = floor(-3.2);  // -4
+ */
+NOINLINE Value StdLib_Floor(FunctionContext& ctx) noexcept
+{
+    if (!ctx.CheckArgs(1) || !ctx.IsNumber(0))
+    {
+        return Value::Number(0);
+    }
+
+    DOUBLE d = ctx.ToDouble(0);
+    INT64 n = (INT64)d;  // Truncates toward zero
+    DOUBLE zero = DOUBLE(INT32(0));
+
+    // floor rounds toward -infinity, truncation rounds toward zero
+    // Adjust for negative numbers with fractional parts
+    if (d < zero)
+    {
+        DOUBLE reconstructed = DOUBLE(INT32(n));
+        if (d != reconstructed)
+        {
+            n = n - 1;
+        }
+    }
+    return Value::Number(n);
+}
+
+// ============================================================================
+// CEIL FUNCTION
+// ============================================================================
+
+/**
+ * ceil(x) - Round up to nearest integer
+ *
+ * Usage:
+ *   var n = ceil(3.2);   // 4
+ *   var n = ceil(-3.7);  // -3
+ */
+NOINLINE Value StdLib_Ceil(FunctionContext& ctx) noexcept
+{
+    if (!ctx.CheckArgs(1) || !ctx.IsNumber(0))
+    {
+        return Value::Number(0);
+    }
+
+    DOUBLE d = ctx.ToDouble(0);
+    INT64 n = (INT64)d;  // Truncates toward zero
+    DOUBLE zero = DOUBLE(INT32(0));
+
+    // ceil rounds toward +infinity
+    // Adjust for positive numbers with fractional parts
+    if (d > zero)
+    {
+        DOUBLE reconstructed = DOUBLE(INT32(n));
+        if (d != reconstructed)
+        {
+            n = n + 1;
+        }
+    }
+    return Value::Number(n);
+}
+
+// ============================================================================
+// INT FUNCTION
+// ============================================================================
+
+/**
+ * int(x) - Truncate to integer (toward zero)
+ *
+ * Usage:
+ *   var n = int(3.7);   // 3
+ *   var n = int(-3.7);  // -3
+ */
+NOINLINE Value StdLib_Int(FunctionContext& ctx) noexcept
+{
+    if (!ctx.CheckArgs(1) || !ctx.IsNumber(0))
+    {
+        return Value::Number(0);
+    }
+
+    return Value::Number(ctx.ToNumber(0));
 }
 
 // ============================================================================
@@ -404,6 +539,9 @@ NOINLINE Value StdLib_Max(FunctionContext& ctx) noexcept
  *   6. abs    - Absolute value
  *   7. min    - Minimum of two numbers
  *   8. max    - Maximum of two numbers
+ *   9. floor  - Round down to nearest integer
+ *  10. ceil   - Round up to nearest integer
+ *  11. int    - Truncate to integer (toward zero)
  */
 NOINLINE void OpenStdLib(State& L) noexcept
 {
@@ -416,6 +554,9 @@ NOINLINE void OpenStdLib(State& L) noexcept
     L.Register("abs"_embed, EMBED_FUNC(StdLib_Abs));
     L.Register("min"_embed, EMBED_FUNC(StdLib_Min));
     L.Register("max"_embed, EMBED_FUNC(StdLib_Max));
+    L.Register("floor"_embed, EMBED_FUNC(StdLib_Floor));
+    L.Register("ceil"_embed, EMBED_FUNC(StdLib_Ceil));
+    L.Register("int"_embed, EMBED_FUNC(StdLib_Int));
 }
 
 } // namespace script

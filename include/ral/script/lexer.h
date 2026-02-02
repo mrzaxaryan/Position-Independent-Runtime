@@ -460,28 +460,15 @@ private:
         }
 
         Token token(TokenType::NUMBER, m_line, m_tokenStartColumn);
+        token.isFloat = hasDecimal;
 
-        // Parse the number
-        if (!hasDecimal)
+        // Always store as string - parser will convert
+        for (USIZE i = 0; i < length && i < MAX_TOKEN_LENGTH - 1; i++)
         {
-            // Parse integer
-            INT64 value = 0;
-            for (USIZE i = start; i < m_current; i++)
-            {
-                value = value * 10 + (m_source[i] - '0');
-            }
-            token.value.intValue = value;
+            token.value.strValue[i] = m_source[start + i];
         }
-        else
-        {
-            // Store as string for floating point (to be parsed later)
-            for (USIZE i = 0; i < length && i < MAX_TOKEN_LENGTH - 1; i++)
-            {
-                token.value.strValue[i] = m_source[start + i];
-            }
-            token.value.strValue[length] = '\0';
-            token.length = length;
-        }
+        token.value.strValue[length] = '\0';
+        token.length = length;
 
         return token;
     }
