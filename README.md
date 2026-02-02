@@ -556,3 +556,171 @@ NOSTDLIB-RUNTIME is not merely a library—it is a proof of concept that challen
 The platform abstraction layer demonstrates that the same high-level C++23 codebase can target fundamentally different operating systems—Windows with its PEB walking and NTAPI interfaces, and Linux with its direct syscall approach—while maintaining identical position-independence guarantees. As demonstrated throughout this work, modern C++23 compile-time features and carefully selected compiler intrinsics play a key role in achieving these guarantees, allowing expressive high-level code while preserving strict low-level control.
 
 This project is intended for researchers, systems programmers, and security engineers who are willing to work beneath high-level abstractions and take full control of the machine. Any unauthorized or malicious use of this software is strictly prohibited and falls outside the scope of the project's design goals.
+
+## Appendix A: PICScript - Embedded Scripting Language
+
+NOSTDLIB-RUNTIME includes **PICScript**, a lightweight, position-independent scripting language designed for embedded and constrained environments. PICScript provides a Lua-like State API while maintaining full position-independence with no `.rdata` dependencies.
+
+### Design Philosophy
+
+- **No built-in functions**: All functions must be registered from C++, giving complete control over the runtime environment
+- **Position-independent**: Uses `_embed` strings throughout, ensuring no relocations are needed
+- **Minimal footprint**: Designed for shellcode and embedded contexts where size matters
+- **Lua-like API**: Familiar State-based interface for easy adoption
+
+### Language Syntax
+
+**Variables:**
+```
+var x = 10;
+var name = "hello";
+var flag = true;
+```
+
+**Functions:**
+```
+fn factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+```
+
+**Control Flow:**
+```
+if (condition) {
+    // ...
+} else if (other) {
+    // ...
+} else {
+    // ...
+}
+
+while (condition) {
+    // ...
+}
+
+for (var i = 0; i < 10; i = i + 1) {
+    // ...
+}
+```
+
+**Operators:**
+- Arithmetic: `+`, `-`, `*`, `/`, `%`
+- Comparison: `==`, `!=`, `<`, `>`, `<=`, `>=`
+- Logical: `&&`, `||`, `!`
+- Assignment: `=`, `+=`, `-=`, `*=`, `/=`
+
+**Data Types:**
+- Numbers (integers): `42`, `-17`
+- Strings: `"hello world"`
+- Booleans: `true`, `false`
+- Nil: `nil`
+- Functions (first-class)
+
+### C++ Integration
+
+**Basic Usage:**
+```cpp
+#include "ral/script/script.h"
+
+script::State* L = new script::State();
+
+// Option 1: Register standard library
+script::OpenStdLib(*L);  // Registers: print, len, str, num, type, abs, min, max
+
+// Option 2: Register only what you need
+L->Register("print"_embed, script::StdLib_Print);
+
+// Execute script
+L->DoString(R"(
+    print("Hello from PICScript!");
+)"_embed);
+
+delete L;
+```
+
+**Custom C++ Functions:**
+```cpp
+script::Value MyFunction(script::FunctionContext& ctx)
+{
+    if (ctx.CheckArgs(1) && ctx.IsNumber(0))
+    {
+        INT64 n = ctx.ToNumber(0);
+        return script::Value::Number(n * 2);
+    }
+    return script::Value::Nil();
+}
+
+// Register custom function
+L->Register("double"_embed, MyFunction);
+```
+
+**Setting Global Variables:**
+```cpp
+L->SetGlobalNumber("PI"_embed, 2, 314);           // PI = 314 (scaled)
+L->SetGlobalString("version"_embed, 7, "1.0.0"_embed, 5);
+L->SetGlobalBool("debug"_embed, 5, TRUE);
+```
+
+### Standard Library Functions
+
+When `OpenStdLib()` is called, the following functions are registered:
+
+| Function | Description | Example |
+|----------|-------------|---------|
+| `print(...)` | Print values to console | `print("x =", x);` |
+| `len(s)` | Get string length | `len("hello")` → `5` |
+| `str(v)` | Convert to string | `str(42)` → `"42"` |
+| `num(v)` | Convert to number | `num("123")` → `123` |
+| `type(v)` | Get type name | `type(42)` → `"number"` |
+| `abs(n)` | Absolute value | `abs(-5)` → `5` |
+| `min(a, b)` | Minimum of two | `min(3, 5)` → `3` |
+| `max(a, b)` | Maximum of two | `max(3, 5)` → `5` |
+
+### Example: FizzBuzz
+
+```cpp
+script::State* L = new script::State();
+script::OpenStdLib(*L);
+
+L->DoString(R"(
+fn fizzbuzz(n) {
+    for (var i = 1; i <= n; i = i + 1) {
+        if (i % 15 == 0) {
+            print("FizzBuzz");
+        } else if (i % 3 == 0) {
+            print("Fizz");
+        } else if (i % 5 == 0) {
+            print("Buzz");
+        } else {
+            print(i);
+        }
+    }
+}
+fizzbuzz(15);
+)"_embed);
+
+delete L;
+```
+
+### Error Handling
+
+```cpp
+if (!L->DoString(source))
+{
+    Console::Write<CHAR>("Error: "_embed);
+    Console::Write<CHAR>(L->GetError());
+}
+```
+
+### Architecture
+
+PICScript is implemented as part of the RAL (Runtime Abstraction Layer) and consists of:
+
+- **Lexer** ([lexer.h](include/ral/script/lexer.h)): Tokenizes source code
+- **Parser** ([parser.h](include/ral/script/parser.h)): Builds AST from tokens
+- **Interpreter** ([interpreter.h](include/ral/script/interpreter.h)): Tree-walking interpreter
+- **State** ([state.h](include/ral/script/state.h)): Lua-like API wrapper
+- **StdLib** ([stdlib.h](include/ral/script/stdlib.h)): Standard library functions

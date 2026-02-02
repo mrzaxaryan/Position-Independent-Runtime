@@ -7,6 +7,7 @@
  */
 
 #include "ral/script/script.h"
+#include "pal/io/logger.h"
 #include "pal/io/console.h"
 #include "bal/types/embedded/embedded_string.h"
 
@@ -72,12 +73,12 @@ script::Value Func_Sum(script::FunctionContext& ctx)
 
 NOINLINE void Example_WithStdLib()
 {
-    Console::Write<CHAR>("=== Example 1: With Standard Library ===\n"_embed);
-
-    script::State L;
+   LOG_INFO("=== Example 1: With Standard Library ===\n");
+   
+script::State* L = new script::State();
 
     // Register standard library (print, len, str, num, type, abs, min, max)
-    script::OpenStdLib(L);
+    script::OpenStdLib(*L);
 
     auto source = R"(print("Hello from PICScript!");
 print("1 + 2 =", 1 + 2);
@@ -85,8 +86,9 @@ print("Type of 42:", type(42));
 print("len(hello):", len("hello"));
 )"_embed;
 
-    L.DoString(source);
-    Console::Write<CHAR>("\n"_embed);
+    L->DoString(source);
+    delete L;
+    LOG_INFO("\n");
 }
 
 // ============================================================================
@@ -95,14 +97,14 @@ print("len(hello):", len("hello"));
 
 NOINLINE void Example_ManualRegistration()
 {
-    Console::Write<CHAR>("=== Example 2: Manual Registration Only ===\n"_embed);
+    LOG_INFO("=== Example 2: Manual Registration Only ===");
 
-    script::State L;
+    script::State* L = new script::State();
 
     // Register ONLY the functions we need - NO standard library
-    L.Register("print"_embed, script::StdLib_Print);
-    L.Register("double"_embed, Func_Double);
-    L.Register("square"_embed, Func_Square);
+    L->Register("print"_embed, script::StdLib_Print);
+    L->Register("double"_embed, Func_Double);
+    L->Register("square"_embed, Func_Square);
 
     // Note: len, str, num, type are NOT available - not registered
     auto source = R"(print("Only print, double, square are available");
@@ -110,8 +112,8 @@ print("double(5) =", double(5));
 print("square(4) =", square(4));
 )"_embed;
 
-    L.DoString(source);
-    Console::Write<CHAR>("\n"_embed);
+    L->DoString(source);
+    delete L;
 }
 
 // ============================================================================
@@ -120,21 +122,21 @@ print("square(4) =", square(4));
 
 NOINLINE void Example_CustomFunctions()
 {
-    Console::Write<CHAR>("=== Example 3: Custom Functions ===\n"_embed);
+    LOG_INFO("=== Example 3: Custom Functions ===");
 
-    script::State L;
-    script::OpenStdLib(L);
+    script::State* L = new script::State();
+    script::OpenStdLib(*L);
 
     // Register additional custom functions
-    L.Register("greet"_embed, Func_Greet);
-    L.Register("sum"_embed, Func_Sum);
+    L->Register("greet"_embed, Func_Greet);
+    L->Register("sum"_embed, Func_Sum);
 
     auto source = R"(greet("PICScript User");
 print("sum(1,2,3,4,5) =", sum(1,2,3,4,5));
 )"_embed;
 
-    L.DoString(source);
-    Console::Write<CHAR>("\n"_embed);
+    L->DoString(source);
+    delete L;
 }
 
 // ============================================================================
@@ -143,15 +145,15 @@ print("sum(1,2,3,4,5) =", sum(1,2,3,4,5));
 
 NOINLINE void Example_GlobalVariables()
 {
-    Console::Write<CHAR>("=== Example 4: Global Variables ===\n"_embed);
+    LOG_INFO("=== Example 4: Global Variables ===");
 
-    script::State L;
-    script::OpenStdLib(L);
+    script::State* L = new script::State();
+    script::OpenStdLib(*L);
 
     // Set global variables from C++
-    L.SetGlobalNumber("PI"_embed, 2, 314);
-    L.SetGlobalString("version"_embed, 7, "1.0.0"_embed, 5);
-    L.SetGlobalBool("debug"_embed, 5, TRUE);
+    L->SetGlobalNumber("PI"_embed, 2, 314);
+    L->SetGlobalString("version"_embed, 7, "1.0.0"_embed, 5);
+    L->SetGlobalBool("debug"_embed, 5, TRUE);
 
     auto source = R"(print("PI (x100) =", PI);
 print("Version:", version);
@@ -159,8 +161,8 @@ if (debug) {
     print("Debug mode is ON");
 }
 )"_embed;
-    L.DoString(source);
-    Console::Write<CHAR>("\n"_embed);
+    L->DoString(source);
+    delete L;
 }
 
 // ============================================================================
@@ -169,10 +171,10 @@ if (debug) {
 
 NOINLINE void Example_FizzBuzz()
 {
-    Console::Write<CHAR>("=== Example 5: FizzBuzz ===\n"_embed);
+    LOG_INFO("=== Example 5: FizzBuzz ===");
 
-    script::State L;
-    script::OpenStdLib(L);
+    script::State* L = new script::State();
+    script::OpenStdLib(*L);
 
     auto source = R"(fn fizzbuzz(n) {
     for (var i = 1; i <= n; i = i + 1) {
@@ -189,8 +191,8 @@ NOINLINE void Example_FizzBuzz()
 }
 fizzbuzz(15);
 )"_embed;
-    L.DoString(source);
-    Console::Write<CHAR>("\n"_embed);
+    L->DoString(source);
+    delete L;
 }
 
 // ============================================================================
@@ -199,10 +201,10 @@ fizzbuzz(15);
 
 NOINLINE void Example_Recursion()
 {
-    Console::Write<CHAR>("=== Example 6: Recursive Functions ===\n"_embed);
+    LOG_INFO("=== Example 6: Recursive Functions ===");
 
-    script::State L;
-    script::OpenStdLib(L);
+    script::State* L = new script::State();
+    script::OpenStdLib(*L);
 
     auto source = R"(fn factorial(n) {
     if (n <= 1) {
@@ -214,8 +216,8 @@ for (var i = 1; i <= 10; i = i + 1) {
     print("factorial(", i, ") =", factorial(i));
 }
 )"_embed;
-    L.DoString(source);
-    Console::Write<CHAR>("\n"_embed);
+    L->DoString(source);
+    delete L;
 }
 
 // ============================================================================
@@ -224,24 +226,22 @@ for (var i = 1; i <= 10; i = i + 1) {
 
 NOINLINE void Example_ErrorHandling()
 {
-    Console::Write<CHAR>("=== Example 7: Error Handling ===\n"_embed);
+    LOG_INFO("=== Example 7: Error Handling ===");
 
-    script::State L;
-    script::OpenStdLib(L);
+    script::State* L = new script::State();
+    script::OpenStdLib(*L);
 
     // Script with syntax error (missing semicolon)
     auto source = R"(var x = 10
 print(x);
 )"_embed;
 
-    if (!L.DoString(source))
+    if (!L->DoString(source))
     {
-        Console::Write<CHAR>("Error: "_embed);
-        Console::Write<CHAR>(L.GetError());
-        Console::Write<CHAR>("\n"_embed);
+        LOG_ERROR("Error: %s", L->GetError());
     }
 
-    Console::Write<CHAR>("\n"_embed);
+    delete L;
 }
 
 // ============================================================================
@@ -250,20 +250,20 @@ print(x);
 
 NOINLINE void Example_MinimalSetup()
 {
-    Console::Write<CHAR>("=== Example 8: Minimal Setup (print only) ===\n"_embed);
+    LOG_INFO("=== Example 8: Minimal Setup (print only) ===");
 
-    script::State L;
+    script::State* L = new script::State();
 
     // Register ONLY print - absolutely minimal
-    L.Register("print"_embed, script::StdLib_Print);
+    L->Register("print"_embed, script::StdLib_Print);
 
     auto source = R"(var x = 10;
 var y = 20;
 print("x + y =", x + y);
 print("x * y =", x * y);
 )"_embed;
-    L.DoString(source);
-    Console::Write<CHAR>("\n"_embed);
+    L->DoString(source);
+    delete L;
 }
 
 // ============================================================================
@@ -272,12 +272,11 @@ print("x * y =", x * y);
 
 NOINLINE void RunAllScriptTests()
 {
-    Console::Write<CHAR>("\n"_embed);
-    Console::Write<CHAR>("========================================\n"_embed);
-    Console::Write<CHAR>("   PICScript Test Suite\n"_embed);
-    Console::Write<CHAR>("   (No built-in functions)\n"_embed);
-    Console::Write<CHAR>("========================================\n\n"_embed);
-
+    LOG_INFO("\n");
+    LOG_INFO("========================================\n");
+    LOG_INFO("   PICScript Test Suite\n");
+    LOG_INFO("   (No built-in functions)\n");
+    LOG_INFO("========================================\n\n");
     Example_WithStdLib();
     Example_ManualRegistration();
     Example_CustomFunctions();
@@ -287,7 +286,7 @@ NOINLINE void RunAllScriptTests()
     Example_ErrorHandling();
     Example_MinimalSetup();
 
-    Console::Write<CHAR>("========================================\n"_embed);
-    Console::Write<CHAR>("   All Tests Complete!\n"_embed);
-    Console::Write<CHAR>("========================================\n"_embed);
+    LOG_INFO("========================================\n");
+    LOG_INFO("   All Tests Complete!\n");
+    LOG_INFO("========================================\n");
 }
