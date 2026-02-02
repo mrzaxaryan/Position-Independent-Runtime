@@ -62,8 +62,8 @@ jobs:
         id: build-o0
         shell: pwsh
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O0
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=O0
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -O0
         if: steps.build-o0.outcome == 'success'
@@ -89,8 +89,8 @@ jobs:
         id: build-o1
         shell: pwsh
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O1
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=O1
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -O1
         if: steps.build-o1.outcome == 'success'
@@ -116,8 +116,8 @@ jobs:
         id: build-o2
         shell: pwsh
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O2
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=O2
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -O2
         if: steps.build-o2.outcome == 'success'
@@ -143,8 +143,8 @@ jobs:
         id: build-o3
         shell: pwsh
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O3
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=O3
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -O3
         if: steps.build-o3.outcome == 'success'
@@ -170,8 +170,8 @@ jobs:
         id: build-os
         shell: pwsh
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Os
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Os
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -Os
         if: steps.build-os.outcome == 'success'
@@ -197,8 +197,8 @@ jobs:
         id: build-oz
         shell: pwsh
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Oz
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -Oz
         if: steps.build-oz.outcome == 'success'
@@ -224,8 +224,8 @@ jobs:
         id: build-og
         shell: pwsh
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Og
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Og
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -Og
         if: steps.build-og.outcome == 'success'
@@ -324,8 +324,8 @@ jobs:
       - name: Build -O0
         id: build-o0
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O0
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=O0
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -O0
         if: steps.build-o0.outcome == 'success'
@@ -350,8 +350,8 @@ jobs:
       - name: Build -O1
         id: build-o1
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O1
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=O1
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -O1
         if: steps.build-o1.outcome == 'success'
@@ -376,8 +376,8 @@ jobs:
       - name: Build -O2
         id: build-o2
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O2
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=O2
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -O2
         if: steps.build-o2.outcome == 'success'
@@ -402,8 +402,8 @@ jobs:
       - name: Build -O3
         id: build-o3
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O3
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=O3
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -O3
         if: steps.build-o3.outcome == 'success'
@@ -428,8 +428,8 @@ jobs:
       - name: Build -Os
         id: build-os
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Os
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Os
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -Os
         if: steps.build-os.outcome == 'success'
@@ -454,8 +454,8 @@ jobs:
       - name: Build -Oz
         id: build-oz
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Oz
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -Oz
         if: steps.build-oz.outcome == 'success'
@@ -480,8 +480,8 @@ jobs:
       - name: Build -Og
         id: build-og
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Og
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Og
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -Og
         if: steps.build-og.outcome == 'success'
@@ -575,8 +575,8 @@ jobs:
       - name: Build -O0
         id: build-o0
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O0
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=O0
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -O0
         if: steps.build-o0.outcome == 'success'
@@ -616,8 +616,8 @@ jobs:
       - name: Build -O1
         id: build-o1
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O1
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=O1
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -O1
         if: steps.build-o1.outcome == 'success'
@@ -657,8 +657,8 @@ jobs:
       - name: Build -O2
         id: build-o2
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O2
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=O2
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -O2
         if: steps.build-o2.outcome == 'success'
@@ -698,8 +698,8 @@ jobs:
       - name: Build -O3
         id: build-o3
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=O3
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=O3
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -O3
         if: steps.build-o3.outcome == 'success'
@@ -739,8 +739,8 @@ jobs:
       - name: Build -Os
         id: build-os
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Os
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Os
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -Os
         if: steps.build-os.outcome == 'success'
@@ -780,8 +780,8 @@ jobs:
       - name: Build -Oz
         id: build-oz
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Oz
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -Oz
         if: steps.build-oz.outcome == 'success'
@@ -821,8 +821,8 @@ jobs:
       - name: Build -Og
         id: build-og
         run: |
-          cmake -B "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake" -G Ninja -DARCHITECTURE=${{ matrix.arch }} -DPLATFORM=${{ matrix.platform }} -DBUILD_TYPE=release -DOPTIMIZATION_LEVEL=Og
-          cmake --build "build/release/${{ matrix.platform }}/${{ matrix.arch }}/cmake"
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Og
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Upload artifacts -Og
         if: steps.build-og.outcome == 'success'
