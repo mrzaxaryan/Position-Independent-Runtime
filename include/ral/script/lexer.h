@@ -334,124 +334,63 @@ private:
 
     NOINLINE TokenType CheckKeyword(USIZE start, USIZE length) const noexcept
     {
-        // Check keywords using first character dispatch and direct inline comparison
-        // IMPORTANT: Do NOT use local arrays like CHAR kw[] = {...} as they get
-        // optimized into .rodata by the compiler, breaking position-independence.
-        // Instead, compare characters directly inline.
+        // Check keywords using first character dispatch and _embed string comparison.
+        // Using _embed strings ensures position-independence (no .rodata dependencies).
         switch (m_source[start])
         {
             case 'b':
-                // break
-                if (length == 5 &&
-                    m_source[start + 1] == 'r' &&
-                    m_source[start + 2] == 'e' &&
-                    m_source[start + 3] == 'a' &&
-                    m_source[start + 4] == 'k')
+                if (length == 5 && Memory::Compare(&m_source[start], "break"_embed, 5) == 0)
                     return TokenType::BREAK;
                 break;
 
             case 'c':
-                // continue
-                if (length == 8 &&
-                    m_source[start + 1] == 'o' &&
-                    m_source[start + 2] == 'n' &&
-                    m_source[start + 3] == 't' &&
-                    m_source[start + 4] == 'i' &&
-                    m_source[start + 5] == 'n' &&
-                    m_source[start + 6] == 'u' &&
-                    m_source[start + 7] == 'e')
+                if (length == 8 && Memory::Compare(&m_source[start], "continue"_embed, 8) == 0)
                     return TokenType::CONTINUE;
                 break;
 
             case 'e':
-                // else
-                if (length == 4 &&
-                    m_source[start + 1] == 'l' &&
-                    m_source[start + 2] == 's' &&
-                    m_source[start + 3] == 'e')
+                if (length == 4 && Memory::Compare(&m_source[start], "else"_embed, 4) == 0)
                     return TokenType::ELSE;
                 break;
 
             case 'f':
-                if (length == 2)
-                {
-                    // fn
-                    if (m_source[start + 1] == 'n')
-                        return TokenType::FN;
-                }
-                else if (length == 3)
-                {
-                    // for
-                    if (m_source[start + 1] == 'o' &&
-                        m_source[start + 2] == 'r')
-                        return TokenType::FOR;
-                }
-                else if (length == 5)
-                {
-                    // false
-                    if (m_source[start + 1] == 'a' &&
-                        m_source[start + 2] == 'l' &&
-                        m_source[start + 3] == 's' &&
-                        m_source[start + 4] == 'e')
-                        return TokenType::FALSE_;
-                }
+                if (length == 2 && Memory::Compare(&m_source[start], "fn"_embed, 2) == 0)
+                    return TokenType::FN;
+                else if (length == 3 && Memory::Compare(&m_source[start], "for"_embed, 3) == 0)
+                    return TokenType::FOR;
+                else if (length == 5 && Memory::Compare(&m_source[start], "false"_embed, 5) == 0)
+                    return TokenType::FALSE_;
                 break;
 
             case 'i':
-                if (length == 2)
-                {
-                    // if
-                    if (m_source[start + 1] == 'f')
-                        return TokenType::IF;
-                    // in
-                    if (m_source[start + 1] == 'n')
-                        return TokenType::IN;
-                }
+                if (length == 2 && Memory::Compare(&m_source[start], "if"_embed, 2) == 0)
+                    return TokenType::IF;
+                else if (length == 2 && Memory::Compare(&m_source[start], "in"_embed, 2) == 0)
+                    return TokenType::IN;
                 break;
 
             case 'n':
-                // nil
-                if (length == 3 &&
-                    m_source[start + 1] == 'i' &&
-                    m_source[start + 2] == 'l')
+                if (length == 3 && Memory::Compare(&m_source[start], "nil"_embed, 3) == 0)
                     return TokenType::NIL;
                 break;
 
             case 'r':
-                // return
-                if (length == 6 &&
-                    m_source[start + 1] == 'e' &&
-                    m_source[start + 2] == 't' &&
-                    m_source[start + 3] == 'u' &&
-                    m_source[start + 4] == 'r' &&
-                    m_source[start + 5] == 'n')
+                if (length == 6 && Memory::Compare(&m_source[start], "return"_embed, 6) == 0)
                     return TokenType::RETURN;
                 break;
 
             case 't':
-                // true
-                if (length == 4 &&
-                    m_source[start + 1] == 'r' &&
-                    m_source[start + 2] == 'u' &&
-                    m_source[start + 3] == 'e')
+                if (length == 4 && Memory::Compare(&m_source[start], "true"_embed, 4) == 0)
                     return TokenType::TRUE_;
                 break;
 
             case 'v':
-                // var
-                if (length == 3 &&
-                    m_source[start + 1] == 'a' &&
-                    m_source[start + 2] == 'r')
+                if (length == 3 && Memory::Compare(&m_source[start], "var"_embed, 3) == 0)
                     return TokenType::VAR;
                 break;
 
             case 'w':
-                // while
-                if (length == 5 &&
-                    m_source[start + 1] == 'h' &&
-                    m_source[start + 2] == 'i' &&
-                    m_source[start + 3] == 'l' &&
-                    m_source[start + 4] == 'e')
+                if (length == 5 && Memory::Compare(&m_source[start], "while"_embed, 5) == 0)
                     return TokenType::WHILE;
                 break;
         }

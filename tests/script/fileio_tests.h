@@ -340,9 +340,7 @@ fdelete("test_append.txt");
         auto source = R"SCRIPT(
 // Create file with multiple lines
 var f = fopen("test_lines.txt", "w");
-fwrite(f, "Line 1
-Line 2
-Line 3");
+fwrite(f, "Line 1\nLine 2\nLine 3");
 fclose(f);
 
 // Read lines one by one
