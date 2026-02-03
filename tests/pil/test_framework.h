@@ -11,10 +11,11 @@
 // SCRIPT LOADING UTILITIES
 // ============================================================================
 
-static constexpr USIZE MAX_SCRIPT_SIZE = 8192;
+static constexpr USIZE SCRIPT_BUFFER_SIZE = 65536;  // 64KB buffer for script files
 
 /**
  * LoadScript - Load a PIL script from a file into a provided buffer
+ * Reads until EOF, allowing scripts of any size up to bufferSize-1
  */
 static inline const CHAR* LoadScript(PCWCHAR path, CHAR* buffer, USIZE bufferSize)
 {
@@ -25,24 +26,30 @@ static inline const CHAR* LoadScript(PCWCHAR path, CHAR* buffer, USIZE bufferSiz
         return nullptr;
     }
 
-    USIZE size = file.GetSize();
-    if (size == 0 || size >= bufferSize)
+    // Read until EOF or buffer full (leave room for null terminator)
+    USIZE totalRead = 0;
+    USIZE maxRead = bufferSize - 1;
+
+    while (totalRead < maxRead)
     {
-        LOG_ERROR("Script file too large or empty: %zu bytes", size);
-        file.Close();
-        return nullptr;
+        UINT32 chunkSize = (UINT32)((maxRead - totalRead > 4096) ? 4096 : (maxRead - totalRead));
+        UINT32 bytesRead = file.Read(buffer + totalRead, chunkSize);
+
+        if (bytesRead == 0)
+            break;  // EOF reached
+
+        totalRead += bytesRead;
     }
 
-    UINT32 bytesRead = file.Read(buffer, (UINT32)size);
     file.Close();
 
-    if (bytesRead != size)
+    if (totalRead == 0)
     {
-        LOG_ERROR("Failed to read script file: read %u of %zu bytes", bytesRead, size);
+        LOG_ERROR("Script file is empty");
         return nullptr;
     }
 
-    buffer[size] = '\0';
+    buffer[totalRead] = '\0';
     return buffer;
 }
 
@@ -51,8 +58,8 @@ static inline const CHAR* LoadScript(PCWCHAR path, CHAR* buffer, USIZE bufferSiz
  */
 static inline BOOL RunScriptFile(script::State* L, PCWCHAR path)
 {
-    CHAR scriptBuffer[MAX_SCRIPT_SIZE];
-    const CHAR* source = LoadScript(path, scriptBuffer, MAX_SCRIPT_SIZE);
+    CHAR scriptBuffer[SCRIPT_BUFFER_SIZE];
+    const CHAR* source = LoadScript(path, scriptBuffer, SCRIPT_BUFFER_SIZE);
     if (source == nullptr)
         return FALSE;
     return L->DoString(source);
