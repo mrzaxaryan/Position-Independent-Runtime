@@ -70,7 +70,6 @@ jobs:
             echo "========== Saving -$opt =========="
             mkdir -p "artifacts/$opt"
             cp -r build/* "artifacts/$opt/"
-            find "artifacts/$opt" -type d -name "cmake" -exec rm -rf {} + 2>/dev/null || true
 
             echo "========== Testing ELF -$opt =========="
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
@@ -95,4 +94,6 @@ jobs:
         with:
           name: build-linux-x86_64
           retention-days: 1
-          path: artifacts/
+          path: |
+            artifacts/
+            !artifacts/**/cmake/

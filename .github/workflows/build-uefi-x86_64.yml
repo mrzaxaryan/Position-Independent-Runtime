@@ -75,7 +75,6 @@ jobs:
             echo "========== Saving -$opt =========="
             mkdir -p "artifacts/$opt"
             cp -r build/* "artifacts/$opt/"
-            find "artifacts/$opt" -type d -name "cmake" -exec rm -rf {} + 2>/dev/null || true
 
             echo "========== Testing UEFI -$opt =========="
             DISK_IMG="uefi-disk-${opt}.img"
@@ -117,4 +116,6 @@ jobs:
         with:
           name: build-uefi-x86_64
           retention-days: 1
-          path: artifacts/
+          path: |
+            artifacts/
+            !artifacts/**/cmake/
