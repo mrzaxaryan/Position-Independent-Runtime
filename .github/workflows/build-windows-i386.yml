@@ -70,25 +70,8 @@ jobs:
             Copy-Item -Path "build/*" -Destination $artifactDir -Recurse
 
             Write-Host "========== Testing EXE -$opt ==========" -ForegroundColor Cyan
-            $exePath = (Get-ChildItem -Path build -Recurse -Filter "output.exe" | Select-Object -First 1).FullName
-            $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-            $pinfo.FileName = $exePath
-            $pinfo.RedirectStandardOutput = $true
-            $pinfo.RedirectStandardError = $true
-            $pinfo.UseShellExecute = $false
-            $p = New-Object System.Diagnostics.Process
-            $p.StartInfo = $pinfo
-            $p.Start() | Out-Null
-            $stdout = $p.StandardOutput.ReadToEnd()
-            $stderr = $p.StandardError.ReadToEnd()
-            $p.WaitForExit()
-            if ($stdout) { Write-Host $stdout }
-            if ($stderr) { Write-Host $stderr -ForegroundColor Yellow }
-            if ($p.ExitCode -ne 0) {
-              Write-Host "EXE test failed with exit code: $($p.ExitCode) (0x$($p.ExitCode.ToString('X')))" -ForegroundColor Red
-              $failed += "$opt-exe"
-              continue
-            }
+            & (Get-ChildItem -Path build -Recurse -Filter "output.exe" | Select-Object -First 1).FullName
+            if ($LASTEXITCODE -ne 0) { $failed += "$opt-exe"; continue }
 
             Write-Host "========== Testing PIC -$opt ==========" -ForegroundColor Cyan
             python scripts/loader.py --arch i386 (Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1).FullName
