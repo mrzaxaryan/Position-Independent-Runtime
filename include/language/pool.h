@@ -13,7 +13,7 @@
 
 #pragma once
 
-#include "pir/core/types/primitives.h"
+#include "primitives.h"
 
 // ============================================================================
 // PLACEMENT NEW OPERATORS (if not already defined)

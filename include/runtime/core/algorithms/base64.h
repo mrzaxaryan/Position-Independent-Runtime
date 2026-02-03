@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "pir/core/types/primitives.h"
+#include "primitives.h"
 
 // Class to handle Base64 encoding and decoding
 class Base64

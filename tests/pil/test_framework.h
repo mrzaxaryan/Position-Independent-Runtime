@@ -1,10 +1,10 @@
 #pragma once
 
-#include "pil/pil.h"
-#include "pil/fileio.h"
-#include "pil/networkio.h"
-#include "pir/platform/io/console.h"
-#include "pir/platform/io/file_system.h"
+#include "pil.h"
+#include "fileio.h"
+#include "networkio.h"
+#include "console.h"
+#include "file_system.h"
 #include "tests.h"
 
 // ============================================================================

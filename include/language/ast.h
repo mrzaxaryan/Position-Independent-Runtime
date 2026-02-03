@@ -10,8 +10,8 @@
 #pragma once
 
 #include "token.h"
-#include "pir/core/core/memory.h"
-#include "pir/core/types/numeric/double.h"
+#include "memory.h"
+#include "double.h"
 
 namespace script
 {

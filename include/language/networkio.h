@@ -45,11 +45,11 @@
 #pragma once
 
 #include "value.h"  // includes State forward declaration
-#include "pir/platform/network/socket.h"
-#include "pir/runtime/network/dns.h"
-#include "pir/runtime/network/http.h"
-#include "pir/runtime/network/websocket.h"
-#include "pir/core/types/embedded/embedded_function_pointer.h"
+#include "socket.h"
+#include "dns.h"
+#include "http.h"
+#include "websocket.h"
+#include "embedded_function_pointer.h"
 
 // ============================================================================
 // PLACEMENT NEW OPERATOR (no <new> header in no-stdlib environment)

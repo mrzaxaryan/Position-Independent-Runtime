@@ -15,8 +15,8 @@
  * Part of CORE (Core Abstraction Layer) - Core runtime support.
  */
 
-#include "pir/core/core/compiler.h"
-#include "pir/core/types/primitives.h"
+#include "compiler.h"
+#include "primitives.h"
 
 #if defined(ARCHITECTURE_ARMV7A)
 

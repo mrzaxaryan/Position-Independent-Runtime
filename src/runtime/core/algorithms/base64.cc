@@ -1,4 +1,4 @@
-#include "pir/core/algorithms/base64.h"
+#include "base64.h"
 
 #define BASE64_PAD '='                                                // Padding character for Base64
 #define BASE64_ENCODE_OUT_SIZE(s) ((UINT32)((((s) + 2) / 3) * 4 + 1)) // Calculate the output size for Base64 encoding
