@@ -32,8 +32,8 @@
 #pragma once
 
 #include "value.h"  // includes State forward declaration
-#include "platform/io/file_system.h"
-#include "core/types/embedded/embedded_function_pointer.h"
+#include "pir/platform/io/file_system.h"
+#include "pir/core/types/embedded/embedded_function_pointer.h"
 
 namespace script
 {

@@ -15,8 +15,8 @@
  * Part of CORE (Core Abstraction Layer) - Core runtime support.
  */
 
-#include "core/core/compiler.h"
-#include "core/types/primitives.h"
+#include "pir/core/core/compiler.h"
+#include "pir/core/types/primitives.h"
 
 #if defined(ARCHITECTURE_I386)
 
