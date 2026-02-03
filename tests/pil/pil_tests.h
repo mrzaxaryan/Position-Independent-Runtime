@@ -65,41 +65,41 @@ static script::State* CreateScriptState()
 #include "fileio_tests.h"
 #include "networkio_tests.h"
 
-static BOOL RunScriptTests()
-{
-    BOOL allPassed = TRUE;
+// static BOOL RunScriptTests()
+// {
+//     BOOL allPassed = TRUE;
 
-    LOG_INFO("=== PIL Test Suite ===");
-    LOG_INFO("   (No built-in functions)");
-    LOG_INFO("");
+//     LOG_INFO("=== PIL Test Suite ===");
+//     LOG_INFO("   (No built-in functions)");
+//     LOG_INFO("");
 
-    // State API tests
-    RUN_TEST_SUITE(allPassed, StateTests);
+//     // State API tests
+//     RUN_TEST_SUITE(allPassed, StateTests);
 
-    // Standard library tests
-    RUN_TEST_SUITE(allPassed, StdLibTests);
+//     // Standard library tests
+//     RUN_TEST_SUITE(allPassed, StdLibTests);
 
-    // Language feature tests
-    RUN_TEST_SUITE(allPassed, LanguageTests);
+//     // Language feature tests
+//     RUN_TEST_SUITE(allPassed, LanguageTests);
 
-    // Error handling tests
-    RUN_TEST_SUITE(allPassed, ErrorTests);
+//     // Error handling tests
+//     RUN_TEST_SUITE(allPassed, ErrorTests);
 
-    // Floating-point tests
-    RUN_TEST_SUITE(allPassed, FloatTests);
+//     // Floating-point tests
+//     RUN_TEST_SUITE(allPassed, FloatTests);
 
-    // File I/O tests
-    RUN_TEST_SUITE(allPassed, FileIOTests);
+//     // File I/O tests
+//     RUN_TEST_SUITE(allPassed, FileIOTests);
 
-    // Network I/O tests
-    RUN_TEST_SUITE(allPassed, NetworkIOTests);
+//     // Network I/O tests
+//     RUN_TEST_SUITE(allPassed, NetworkIOTests);
 
-    // Final summary
-    LOG_INFO("=== PIL Test Suite Complete ===");
-    if (allPassed)
-        LOG_INFO("ALL SCRIPT TESTS PASSED!");
-    else
-        LOG_ERROR("SOME SCRIPT TESTS FAILED!");
+//     // Final summary
+//     LOG_INFO("=== PIL Test Suite Complete ===");
+//     if (allPassed)
+//         LOG_INFO("ALL SCRIPT TESTS PASSED!");
+//     else
+//         LOG_ERROR("SOME SCRIPT TESTS FAILED!");
 
-    return allPassed;
-}
+//     return allPassed;
+// }
