@@ -29,6 +29,6 @@ ENTRYPOINT INT32 _start(VOID)
 #endif
 
 	// Run runtime and unit tests
-	BOOL allPassed = RunRuntimeTests();
+	BOOL allPassed = RunRuntimeTests() && RunScriptTests();
 	ExitProcess(allPassed ? 0 : 1);
 }
