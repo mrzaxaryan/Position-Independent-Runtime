@@ -358,101 +358,96 @@ private:
 
         Consume(TokenType::LEFT_PAREN, "Expected '(' after 'for'"_embed);
 
-        // Check for for-each: for (var x in collection) or for (var i, x in collection)
-        if (Check(TokenType::VAR))
+        // Check for for-each vs traditional for
+        // for-each: for (var x in collection) or for (var i, x in collection)
+        // traditional: for (init; cond; incr)
+        if (Match(TokenType::VAR))
         {
-            // Look ahead to detect for-each pattern
-            // Save current position to potentially restore
-            Token savedCurrent = m_current;
-            Token savedPrevious = m_previous;
+            // Must be followed by identifier
+            Consume(TokenType::IDENTIFIER, "Expected variable name"_embed);
 
-            Advance(); // consume 'var'
-
-            if (Check(TokenType::IDENTIFIER))
+            // Save the first identifier
+            CHAR firstName[MAX_IDENTIFIER_LENGTH];
+            USIZE firstLen = m_previous.length < MAX_IDENTIFIER_LENGTH - 1 ? m_previous.length : MAX_IDENTIFIER_LENGTH - 1;
+            for (USIZE i = 0; i < firstLen; i++)
             {
-                // Get first identifier
-                CHAR firstName[MAX_IDENTIFIER_LENGTH];
-                USIZE firstLen = m_current.length < MAX_IDENTIFIER_LENGTH - 1 ? m_current.length : MAX_IDENTIFIER_LENGTH - 1;
-                for (USIZE i = 0; i < firstLen; i++)
+                firstName[i] = m_previous.value.strValue[i];
+            }
+            firstName[firstLen] = '\0';
+            UINT32 varLine = m_previous.line;
+            UINT32 varCol = m_previous.column;
+
+            // Check what comes next to determine loop type
+            if (Check(TokenType::IN))
+            {
+                // for (var x in collection) - for-each without index
+                Advance(); // consume 'in'
+
+                Expr* collection = Expression();
+                Consume(TokenType::RIGHT_PAREN, "Expected ')' after for-each collection"_embed);
+                Stmt* body = Statement();
+
+                return MakeForEachStmt(*m_alloc, firstName, firstLen, nullptr, 0, FALSE, collection, body, line, col);
+            }
+            else if (Check(TokenType::COMMA))
+            {
+                // for (var i, x in collection) - for-each with index
+                Advance(); // consume ','
+
+                Consume(TokenType::IDENTIFIER, "Expected identifier after ','"_embed);
+
+                CHAR secondName[MAX_IDENTIFIER_LENGTH];
+                USIZE secondLen = m_previous.length < MAX_IDENTIFIER_LENGTH - 1 ? m_previous.length : MAX_IDENTIFIER_LENGTH - 1;
+                for (USIZE i = 0; i < secondLen; i++)
                 {
-                    firstName[i] = m_current.value.strValue[i];
+                    secondName[i] = m_previous.value.strValue[i];
                 }
-                firstName[firstLen] = '\0';
+                secondName[secondLen] = '\0';
 
-                Advance(); // consume first identifier
+                Consume(TokenType::IN, "Expected 'in' after loop variables"_embed);
 
-                // Check for comma (index, value pattern) or 'in' keyword
-                if (Check(TokenType::COMMA))
-                {
-                    // for (var i, x in collection)
-                    Advance(); // consume ','
+                Expr* collection = Expression();
+                Consume(TokenType::RIGHT_PAREN, "Expected ')' after for-each collection"_embed);
+                Stmt* body = Statement();
 
-                    if (!Check(TokenType::IDENTIFIER))
-                    {
-                        ErrorAtCurrent("Expected identifier after ','"_embed);
-                        return nullptr;
-                    }
-
-                    CHAR secondName[MAX_IDENTIFIER_LENGTH];
-                    USIZE secondLen = m_current.length < MAX_IDENTIFIER_LENGTH - 1 ? m_current.length : MAX_IDENTIFIER_LENGTH - 1;
-                    for (USIZE i = 0; i < secondLen; i++)
-                    {
-                        secondName[i] = m_current.value.strValue[i];
-                    }
-                    secondName[secondLen] = '\0';
-
-                    Advance(); // consume second identifier
-
-                    Consume(TokenType::IN, "Expected 'in' after loop variables"_embed);
-
-                    Expr* collection = Expression();
-                    Consume(TokenType::RIGHT_PAREN, "Expected ')' after for-each collection"_embed);
-                    Stmt* body = Statement();
-
-                    // firstName is index, secondName is value
-                    return MakeForEachStmt(*m_alloc, secondName, secondLen, firstName, firstLen, TRUE, collection, body, line, col);
-                }
-                else if (Check(TokenType::IN))
-                {
-                    // for (var x in collection)
-                    Advance(); // consume 'in'
-
-                    Expr* collection = Expression();
-                    Consume(TokenType::RIGHT_PAREN, "Expected ')' after for-each collection"_embed);
-                    Stmt* body = Statement();
-
-                    return MakeForEachStmt(*m_alloc, firstName, firstLen, nullptr, 0, FALSE, collection, body, line, col);
-                }
-                else
-                {
-                    // Not a for-each, restore and parse as traditional for
-                    m_current = savedCurrent;
-                    m_previous = savedPrevious;
-                }
+                // firstName is index, secondName is value
+                return MakeForEachStmt(*m_alloc, secondName, secondLen, firstName, firstLen, TRUE, collection, body, line, col);
             }
             else
             {
-                // Not a for-each, restore and parse as traditional for
-                m_current = savedCurrent;
-                m_previous = savedPrevious;
+                // Traditional for loop with var initializer: for (var i = expr; ...)
+                // We've already consumed 'var' and identifier, now parse the rest of var declaration
+                Expr* varInit = nullptr;
+                if (Match(TokenType::ASSIGN))
+                {
+                    varInit = Expression();
+                }
+                Consume(TokenType::SEMICOLON, "Expected ';' after variable declaration"_embed);
+
+                Stmt* initializer = MakeVarDeclStmt(*m_alloc, firstName, firstLen, varInit, varLine, varCol);
+
+                // Continue with condition and increment
+                return ParseTraditionalForBody(initializer, line, col);
             }
         }
 
-        // Traditional for loop: for (init; cond; incr) { }
+        // Traditional for loop without var initializer
         Stmt* initializer = nullptr;
         if (Match(TokenType::SEMICOLON))
         {
             // No initializer
-        }
-        else if (Match(TokenType::VAR))
-        {
-            initializer = VarDeclaration();
         }
         else
         {
             initializer = ExpressionStatement();
         }
 
+        return ParseTraditionalForBody(initializer, line, col);
+    }
+
+    // Helper to parse the rest of a traditional for loop (condition, increment, body)
+    NOINLINE Stmt* ParseTraditionalForBody(Stmt* initializer, UINT32 line, UINT32 col) noexcept
+    {
         // Condition
         Expr* condition = nullptr;
         if (!Check(TokenType::SEMICOLON))
