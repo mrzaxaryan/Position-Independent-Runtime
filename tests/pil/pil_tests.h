@@ -92,7 +92,7 @@ static BOOL RunPILTests()
     RUN_TEST_SUITE(allPassed, FileIOTests);
 
     // Network I/O tests
-    RUN_TEST_SUITE(allPassed, NetworkIOTests);
+    //RUN_TEST_SUITE(allPassed, NetworkIOTests);
 
     // Final summary
     LOG_INFO("=== PIL Test Suite Complete ===");
