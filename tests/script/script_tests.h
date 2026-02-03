@@ -1,7 +1,7 @@
 /**
- * script_tests.h - Unified PICScript Test Suite Header
+ * script_tests.h - Unified PIL Test Suite Header
  *
- * This header exposes all test suite classes for the PICScript language.
+ * This header exposes all test suite classes for the PIL language.
  * Include this single header to access all test functionality.
  *
  * TEST SUITES:
@@ -31,7 +31,7 @@
 
 #pragma once
 
-#include "ral/script/script.h"
+#include "pil/script.h"
 #include "pal/io/console.h"
 
 // ============================================================================
@@ -69,7 +69,7 @@ static BOOL RunScriptTests()
 {
     BOOL allPassed = TRUE;
 
-    LOG_INFO("=== PICScript Test Suite ===");
+    LOG_INFO("=== PIL Test Suite ===");
     LOG_INFO("   (No built-in functions)");
     LOG_INFO("");
 
@@ -95,7 +95,7 @@ static BOOL RunScriptTests()
     RUN_TEST_SUITE(allPassed, NetworkIOTests);
 
     // Final summary
-    LOG_INFO("=== PICScript Test Suite Complete ===");
+    LOG_INFO("=== PIL Test Suite Complete ===");
     if (allPassed)
         LOG_INFO("ALL SCRIPT TESTS PASSED!");
     else

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ral/script/script.h"
-#include "ral/script/networkio.h"
+#include "pil/script.h"
+#include "pil/networkio.h"
 #include "tests.h"
 
 // ============================================================================

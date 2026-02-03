@@ -1,5 +1,5 @@
 /**
- * parser.h - Recursive Descent Parser for PICScript
+ * parser.h - Recursive Descent Parser for PIL (Position Independent Language)
  *
  * Parses tokens into an AST.
  * Position-independent, no .rdata dependencies.

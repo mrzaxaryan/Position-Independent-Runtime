@@ -1,6 +1,6 @@
-# PICScript Language Specification
+# PIL (Position Independent Language) Specification
 
-PICScript is a lightweight, position-independent scripting language embedded in the NOSTDLIB-RUNTIME. It provides a Lua-like API while maintaining full position-independence with no `.rdata` dependencies.
+PIL (Position Independent Language) is a lightweight, position-independent scripting language embedded in the Position-Independent Runtime (PIR). It provides a State-based API while maintaining full position-independence with no `.rdata` dependencies.
 
 ## Table of Contents
 
@@ -25,7 +25,7 @@ PICScript is a lightweight, position-independent scripting language embedded in 
 
 | Property | Value |
 |----------|-------|
-| **Name** | PICScript |
+| **Name** | PIL |
 | **Type** | Dynamically typed, interpreted |
 | **Target** | Embedded in cpp-pic runtime |
 | **Dependencies** | None (no .rdata, no CRT) |
@@ -70,11 +70,14 @@ count123
 
 ### Literals
 
-**Numbers (integers):**
+**Numbers (integers and floats):**
 ```javascript
 42
 -17
 0
+3.14
+0.5
+-2.718
 ```
 
 **Strings:**
@@ -107,13 +110,13 @@ nil
 
 ## Data Types
 
-PICScript has six value types:
+PIL has six value types:
 
 | Type | Description | Example |
 |------|-------------|---------|
 | `nil` | Absence of value | `nil` |
 | `bool` | Boolean | `true`, `false` |
-| `number` | 64-bit integer | `42`, `-17` |
+| `number` | 64-bit floating point (DOUBLE) | `42`, `3.14`, `-2.5` |
 | `string` | Character sequence | `"hello"` |
 | `array` | Indexed collection | `[1, 2, 3]` |
 | `function` | Callable | `fn(x) { return x; }` |
@@ -194,9 +197,10 @@ Maximum scope depth: 32 levels.
 var a = 10 + 5;   // 15
 var b = 10 - 5;   // 5
 var c = 10 * 5;   // 50
-var d = 10 / 5;   // 2
+var d = 10 / 4;   // 2.5 (float division)
 var e = 10 % 3;   // 1
 var f = -a;       // -15
+var g = 3.14 * 2; // 6.28
 ```
 
 ### Comparison Operators
@@ -436,12 +440,15 @@ script::OpenStdLib(L);
 |----------|-------------|---------|--------|
 | `print(...)` | Print values to console | `print("x =", 42);` | Output: `x = 42` |
 | `len(v)` | Get length of string/array | `len("hello")` | `5` |
-| `str(v)` | Convert to string | `str(42)` | `"42"` |
-| `num(v)` | Convert to number | `num("123")` | `123` |
+| `str(v)` | Convert to string | `str(3.14)` | `"3.14"` |
+| `num(v)` | Convert to number | `num("3.14")` | `3.14` |
 | `type(v)` | Get type name | `type(42)` | `"number"` |
-| `abs(n)` | Absolute value | `abs(-5)` | `5` |
+| `abs(n)` | Absolute value | `abs(-5.5)` | `5.5` |
 | `min(a, b)` | Minimum of two values | `min(3, 5)` | `3` |
 | `max(a, b)` | Maximum of two values | `max(3, 5)` | `5` |
+| `floor(n)` | Round down to nearest integer | `floor(3.7)` | `3` |
+| `ceil(n)` | Round up to nearest integer | `ceil(3.2)` | `4` |
+| `int(n)` | Truncate to integer (toward zero) | `int(-3.7)` | `-3` |
 | `push(arr, v)` | Add element to array | `push(arr, 4)` | - |
 | `pop(arr)` | Remove last element | `pop(arr)` | Last element |
 
@@ -661,7 +668,7 @@ if (ws >= 0) {
 ### Basic Usage
 
 ```cpp
-#include "ral/script/script.h"
+#include "pil/script.h"
 
 script::State* L = new script::State();
 
@@ -670,7 +677,7 @@ script::OpenStdLib(*L);
 
 // Execute script
 L->DoString(R"(
-    print("Hello from PICScript!");
+    print("Hello from PIL!");
 )"_embed);
 
 delete L;
@@ -696,7 +703,8 @@ L->Register("double"_embed, MyFunction);
 ### Setting Global Variables
 
 ```cpp
-L->SetGlobalNumber("PI"_embed, 2, 314);
+L->SetGlobalNumber("count"_embed, 5, 42);
+L->SetGlobalFloat("PI"_embed, 2, DOUBLE::FromParts(3, 141592));  // 3.141592
 L->SetGlobalString("version"_embed, 7, "1.0.0"_embed, 5);
 L->SetGlobalBool("debug"_embed, 5, TRUE);
 ```
@@ -827,7 +835,21 @@ for (var n in numbers) {
 }
 
 print("Sum:", sum);           // Sum: 15
-print("Average:", sum / len(numbers));  // Average: 3
+print("Average:", sum / len(numbers));  // Average: 3.0
+```
+
+### Floating-Point Math
+
+```javascript
+var pi = 3.14159;
+var radius = 2.5;
+var area = pi * radius * radius;
+print("Area:", area);         // Area: 19.634...
+
+var x = 7.8;
+print("floor:", floor(x));    // floor: 7
+print("ceil:", ceil(x));      // ceil: 8
+print("int:", int(-3.9));     // int: -3 (truncates toward zero)
 ```
 
 ### File Processing
@@ -916,10 +938,10 @@ if (ws >= 0) {
 
 ## Architecture
 
-PICScript is implemented as part of the RAL (Runtime Abstraction Layer):
+PIL is implemented as a standalone module:
 
 ```
-include/ral/script/
+include/pil/
 ├── token.h          # Token types and struct
 ├── lexer.h          # Lexer class
 ├── ast.h            # AST node definitions + allocator

@@ -1,5 +1,5 @@
 /**
- * token.h - Token Types for PICScript
+ * token.h - Token Types for PIL (Position Independent Language)
  *
  * Defines token types and Token struct for the lexer.
  * Position-independent, no .rdata dependencies.

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ral/script/script.h"
+#include "pil/script.h"
 #include "tests.h"
 
 // ============================================================================
@@ -72,7 +72,7 @@ private:
         // Register standard library (print, len, str, num, type, abs, min, max)
         script::OpenStdLib(*L);
 
-        auto source = R"(print("Hello from PICScript!");
+        auto source = R"(print("Hello from PIL!");
 print("1 + 2 =", 1 + 2);
 print("Type of 42:", type(42));
 print("len(hello):", len("hello"));
@@ -92,7 +92,7 @@ print("len(hello):", len("hello"));
         L->Register("greet"_embed, EMBED_FUNC(StdLibTest_Func_Greet) );
         L->Register("sum"_embed, EMBED_FUNC(StdLibTest_Func_Sum) );
 
-        auto source = R"(greet("PICScript User");
+        auto source = R"(greet("PIL User");
 print("sum(1,2,3,4,5) =", sum(1,2,3,4,5));
 )"_embed;
 

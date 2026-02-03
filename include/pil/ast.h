@@ -1,5 +1,5 @@
 /**
- * ast.h - Abstract Syntax Tree for PICScript
+ * ast.h - Abstract Syntax Tree for PIL (Position Independent Language)
  *
  * Defines AST node types for expressions and statements.
  * Position-independent, no .rdata dependencies, no dynamic allocation.

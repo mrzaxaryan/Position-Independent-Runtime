@@ -1,6 +1,6 @@
 # Toolchain Installation Guide
 
-This guide provides step-by-step instructions for installing the required build toolchain (LLVM/Clang, CMake, Ninja) for NOSTDLIB-RUNTIME on Windows and Linux.
+This guide provides step-by-step instructions for installing the required build toolchain (LLVM/Clang, CMake, Ninja) for Position-Independent Runtime (PIR) on Windows and Linux.
 
 ## Windows Installation
 

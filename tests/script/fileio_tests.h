@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ral/script/script.h"
-#include "ral/script/fileio.h"
+#include "pil/script.h"
+#include "pil/fileio.h"
 #include "tests.h"
 
 // ============================================================================

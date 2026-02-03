@@ -1,7 +1,7 @@
 /**
- * script.h - PICScript Main Entry Point
+ * script.h - PIL (Position Independent Language) Main Entry Point
  *
- * Provides a Lua-like State API for script execution.
+ * Provides a State-based API for script execution.
  * NO built-in functions - all functions must be registered from C++.
  *
  * Position-independent, no .rdata dependencies.
@@ -29,7 +29,7 @@
 #include "value.h"
 #include "interpreter.h"
 
-// Lua-like API
+// State-based API
 #include "state.h"
 #include "stdlib.h"
 
@@ -40,7 +40,7 @@ namespace script
 // NO BUILT-IN FUNCTIONS
 // ============================================================================
 //
-// PICScript has NO built-in functions by default.
+// PIL has NO built-in functions by default.
 // All functions must be registered manually from C++.
 //
 // Use OpenStdLib(L) to register the standard library:

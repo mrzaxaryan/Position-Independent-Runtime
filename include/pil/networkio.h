@@ -1,5 +1,5 @@
 /**
- * networkio.h - Network I/O Functions for PICScript (via PAL/RAL)
+ * networkio.h - Network I/O Functions for PIL (via PAL/RAL)
  *
  * Provides network access through the Platform/Runtime Abstraction Layers.
  * Functions use handle-based resource management with fixed-size pools.

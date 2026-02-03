@@ -1,5 +1,5 @@
 /**
- * fileio.h - File I/O Functions for PICScript (via PAL)
+ * fileio.h - File I/O Functions for PIL (via PAL)
  *
  * Provides file system access through the Platform Abstraction Layer.
  * Functions use handle-based file management with a fixed-size pool.

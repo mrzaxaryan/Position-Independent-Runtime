@@ -1,7 +1,7 @@
 /**
- * stdlib.h - Standard Library for PICScript (Lua-like API)
+ * stdlib.h - Standard Library for PIL (Position Independent Language)
  *
- * Native functions using the new CFunction API.
+ * Native functions using the CFunction API.
  * print() outputs via State.SetOutput() callback.
  *
  * Position-independent, no .rdata dependencies.

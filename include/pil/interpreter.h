@@ -1,5 +1,5 @@
 /**
- * interpreter.h - Tree-Walking Interpreter for PICScript
+ * interpreter.h - Tree-Walking Interpreter for PIL
  *
  * Executes the AST directly.
  * Position-independent, no .rdata dependencies.
@@ -78,7 +78,7 @@ public:
         m_globals.Define(name, nameLen, Value::NativeFunction(fn));
     }
 
-    // Register a C++ function with state (Lua-like)
+    // Register a C++ function with state
     NOINLINE void RegisterCFunction(const CHAR* name, USIZE nameLen, CFunction fn, State* state) noexcept
     {
         m_globals.Define(name, nameLen, Value::CFunc(fn, state));

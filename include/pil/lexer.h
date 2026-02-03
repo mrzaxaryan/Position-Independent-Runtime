@@ -1,5 +1,5 @@
 /**
- * lexer.h - Lexer for PICScript
+ * lexer.h - Lexer for PIL (Position Independent Language)
  *
  * Tokenizes source code into a stream of tokens.
  * Position-independent, no .rdata dependencies.

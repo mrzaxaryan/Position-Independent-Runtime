@@ -1,7 +1,7 @@
 /**
- * state.h - Lua-like State Management for PICScript
+ * state.h - State Management for PIL (Position Independent Language)
  *
- * Provides a Lua-style API for managing script state and registering
+ * Provides a State-based API for managing script state and registering
  * native C++ functions.
  *
  * Position-independent, no .rdata dependencies.
@@ -23,7 +23,7 @@ namespace script
 {
 
 // ============================================================================
-// STATE CLASS (Lua-like)
+// STATE CLASS
 // ============================================================================
 
 class State
@@ -67,7 +67,6 @@ public:
 
     /**
      * Set output callback for print and other output functions.
-     * Similar to redirecting stdout in Lua.
      */
     void SetOutput(OutputFn fn) noexcept
     {
@@ -112,12 +111,11 @@ public:
     }
 
     // ========================================================================
-    // FUNCTION REGISTRATION (Lua-like API)
+    // FUNCTION REGISTRATION
     // ========================================================================
 
     /**
      * Register a C++ function with the script state.
-     * Similar to lua_register().
      *
      * The function will be callable from scripts by the given name.
      *
@@ -163,7 +161,6 @@ public:
 
     /**
      * Execute a script string.
-     * Similar to luaL_dostring().
      *
      * @param source Script source code
      * @param length Length of source code
@@ -216,7 +213,6 @@ public:
 
     /**
      * Set a global variable.
-     * Similar to lua_setglobal().
      */
     NOINLINE void SetGlobal(const CHAR* name, USIZE nameLen, const Value& value) noexcept
     {
@@ -257,7 +253,6 @@ public:
 
     /**
      * Get a global variable.
-     * Similar to lua_getglobal().
      */
     NOINLINE BOOL GetGlobal(const CHAR* name, USIZE nameLen, Value& outValue) noexcept
     {

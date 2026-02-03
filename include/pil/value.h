@@ -1,5 +1,5 @@
 /**
- * value.h - Value System for PICScript
+ * value.h - Value System for PIL (Position Independent Language)
  *
  * Runtime value representation with stack-based storage.
  * Position-independent, no .rdata dependencies.
@@ -28,7 +28,7 @@ enum class ValueType : UINT8
     ARRAY,              // Fixed-size array
     FUNCTION,
     NATIVE_FUNCTION,
-    CFUNCTION,          // C++ function with state (Lua-like)
+    CFUNCTION,          // C++ function with state
 };
 
 // ============================================================================
@@ -48,7 +48,7 @@ struct ArrayStorage;  // Forward declaration for array storage
 // Legacy native function signature (for backwards compatibility)
 typedef Value (*NativeFn)(Value* args, UINT8 argCount, Environment* env);
 
-// New C++ function signature with context (Lua-like)
+// C++ function signature with context
 typedef Value (*CFunction)(FunctionContext& ctx);
 
 // ============================================================================
@@ -237,7 +237,7 @@ struct Value
         return v;
     }
 
-    // CFunction constructor (Lua-like, with state)
+    // CFunction constructor (with state)
     static Value CFunc(CFunction fn, State* state) noexcept
     {
         Value v;
