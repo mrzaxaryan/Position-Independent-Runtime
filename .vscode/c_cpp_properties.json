@@ -12,26 +12,40 @@
             "defines": [
                 "ARCHITECTURE_I386",
                 "PLATFORM_WINDOWS",
-                "PLATFORM_WINDOWS_I386"
+                "PLATFORM_WINDOWS_I386",
+                "ENABLE_LOGGING"
             ],
             "includePath": [
                 "${workspaceFolder}",
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/include/core/**",
+                "${workspaceFolder}/tests",
+                "${workspaceFolder}/include/core",
+                "${workspaceFolder}/include/core/algorithms",
+                "${workspaceFolder}/include/core/core",
+                "${workspaceFolder}/include/core/string",
+                "${workspaceFolder}/include/core/types",
+                "${workspaceFolder}/include/core/types/embedded",
+                "${workspaceFolder}/include/core/types/network",
+                "${workspaceFolder}/include/core/types/numeric",
                 "${workspaceFolder}/include/platform",
                 "${workspaceFolder}/include/platform/io",
                 "${workspaceFolder}/include/platform/memory",
                 "${workspaceFolder}/include/platform/network",
                 "${workspaceFolder}/include/platform/system",
                 "${workspaceFolder}/include/platform/windows",
-                "${workspaceFolder}/include/runtime/**",
                 "${workspaceFolder}/include/pil",
-                "${workspaceFolder}/tests/**"
+                "${workspaceFolder}/include/runtime",
+                "${workspaceFolder}/include/runtime/crypt",
+                "${workspaceFolder}/include/runtime/network",
+                "${workspaceFolder}/include/runtime/network/tls",
+                "${workspaceFolder}/tests/pil",
+                "${workspaceFolder}/tests/pir"
             ],
             "browse": {
                 "path": [
                     "${workspaceFolder}/src",
-                    "${workspaceFolder}/include"
+                    "${workspaceFolder}/include",
+                    "${workspaceFolder}/tests"
                 ]
             }
         },
@@ -44,26 +58,40 @@
             "defines": [
                 "ARCHITECTURE_X86_64",
                 "PLATFORM_WINDOWS",
-                "PLATFORM_WINDOWS_X86_64"
+                "PLATFORM_WINDOWS_X86_64",
+                "ENABLE_LOGGING"
             ],
             "includePath": [
                 "${workspaceFolder}",
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/include/core/**",
+                "${workspaceFolder}/tests",
+                "${workspaceFolder}/include/core",
+                "${workspaceFolder}/include/core/algorithms",
+                "${workspaceFolder}/include/core/core",
+                "${workspaceFolder}/include/core/string",
+                "${workspaceFolder}/include/core/types",
+                "${workspaceFolder}/include/core/types/embedded",
+                "${workspaceFolder}/include/core/types/network",
+                "${workspaceFolder}/include/core/types/numeric",
                 "${workspaceFolder}/include/platform",
                 "${workspaceFolder}/include/platform/io",
                 "${workspaceFolder}/include/platform/memory",
                 "${workspaceFolder}/include/platform/network",
                 "${workspaceFolder}/include/platform/system",
                 "${workspaceFolder}/include/platform/windows",
-                "${workspaceFolder}/include/runtime/**",
                 "${workspaceFolder}/include/pil",
-                "${workspaceFolder}/tests/**"
+                "${workspaceFolder}/include/runtime",
+                "${workspaceFolder}/include/runtime/crypt",
+                "${workspaceFolder}/include/runtime/network",
+                "${workspaceFolder}/include/runtime/network/tls",
+                "${workspaceFolder}/tests/pil",
+                "${workspaceFolder}/tests/pir"
             ],
             "browse": {
                 "path": [
                     "${workspaceFolder}/src",
-                    "${workspaceFolder}/include"
+                    "${workspaceFolder}/include",
+                    "${workspaceFolder}/tests"
                 ]
             }
         },
@@ -76,26 +104,40 @@
             "defines": [
                 "ARCHITECTURE_AARCH64",
                 "PLATFORM_WINDOWS",
-                "PLATFORM_WINDOWS_AARCH64"
+                "PLATFORM_WINDOWS_AARCH64",
+                "ENABLE_LOGGING"
             ],
             "includePath": [
                 "${workspaceFolder}",
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/include/core/**",
+                "${workspaceFolder}/tests",
+                "${workspaceFolder}/include/core",
+                "${workspaceFolder}/include/core/algorithms",
+                "${workspaceFolder}/include/core/core",
+                "${workspaceFolder}/include/core/string",
+                "${workspaceFolder}/include/core/types",
+                "${workspaceFolder}/include/core/types/embedded",
+                "${workspaceFolder}/include/core/types/network",
+                "${workspaceFolder}/include/core/types/numeric",
                 "${workspaceFolder}/include/platform",
                 "${workspaceFolder}/include/platform/io",
                 "${workspaceFolder}/include/platform/memory",
                 "${workspaceFolder}/include/platform/network",
                 "${workspaceFolder}/include/platform/system",
                 "${workspaceFolder}/include/platform/windows",
-                "${workspaceFolder}/include/runtime/**",
                 "${workspaceFolder}/include/pil",
-                "${workspaceFolder}/tests/**"
+                "${workspaceFolder}/include/runtime",
+                "${workspaceFolder}/include/runtime/crypt",
+                "${workspaceFolder}/include/runtime/network",
+                "${workspaceFolder}/include/runtime/network/tls",
+                "${workspaceFolder}/tests/pil",
+                "${workspaceFolder}/tests/pir"
             ],
             "browse": {
                 "path": [
                     "${workspaceFolder}/src",
-                    "${workspaceFolder}/include"
+                    "${workspaceFolder}/include",
+                    "${workspaceFolder}/tests"
                 ]
             }
         },
@@ -108,26 +150,40 @@
             "defines": [
                 "ARCHITECTURE_I386",
                 "PLATFORM_LINUX",
-                "PLATFORM_LINUX_I386"
+                "PLATFORM_LINUX_I386",
+                "ENABLE_LOGGING"
             ],
             "includePath": [
                 "${workspaceFolder}",
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/include/core/**",
+                "${workspaceFolder}/tests",
+                "${workspaceFolder}/include/core",
+                "${workspaceFolder}/include/core/algorithms",
+                "${workspaceFolder}/include/core/core",
+                "${workspaceFolder}/include/core/string",
+                "${workspaceFolder}/include/core/types",
+                "${workspaceFolder}/include/core/types/embedded",
+                "${workspaceFolder}/include/core/types/network",
+                "${workspaceFolder}/include/core/types/numeric",
                 "${workspaceFolder}/include/platform",
                 "${workspaceFolder}/include/platform/io",
                 "${workspaceFolder}/include/platform/memory",
                 "${workspaceFolder}/include/platform/network",
                 "${workspaceFolder}/include/platform/system",
                 "${workspaceFolder}/include/platform/linux",
-                "${workspaceFolder}/include/runtime/**",
                 "${workspaceFolder}/include/pil",
-                "${workspaceFolder}/tests/**"
+                "${workspaceFolder}/include/runtime",
+                "${workspaceFolder}/include/runtime/crypt",
+                "${workspaceFolder}/include/runtime/network",
+                "${workspaceFolder}/include/runtime/network/tls",
+                "${workspaceFolder}/tests/pil",
+                "${workspaceFolder}/tests/pir"
             ],
             "browse": {
                 "path": [
                     "${workspaceFolder}/src",
-                    "${workspaceFolder}/include"
+                    "${workspaceFolder}/include",
+                    "${workspaceFolder}/tests"
                 ]
             }
         },
@@ -140,26 +196,40 @@
             "defines": [
                 "ARCHITECTURE_X86_64",
                 "PLATFORM_LINUX",
-                "PLATFORM_LINUX_X86_64"
+                "PLATFORM_LINUX_X86_64",
+                "ENABLE_LOGGING"
             ],
             "includePath": [
                 "${workspaceFolder}",
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/include/core/**",
+                "${workspaceFolder}/tests",
+                "${workspaceFolder}/include/core",
+                "${workspaceFolder}/include/core/algorithms",
+                "${workspaceFolder}/include/core/core",
+                "${workspaceFolder}/include/core/string",
+                "${workspaceFolder}/include/core/types",
+                "${workspaceFolder}/include/core/types/embedded",
+                "${workspaceFolder}/include/core/types/network",
+                "${workspaceFolder}/include/core/types/numeric",
                 "${workspaceFolder}/include/platform",
                 "${workspaceFolder}/include/platform/io",
                 "${workspaceFolder}/include/platform/memory",
                 "${workspaceFolder}/include/platform/network",
                 "${workspaceFolder}/include/platform/system",
                 "${workspaceFolder}/include/platform/linux",
-                "${workspaceFolder}/include/runtime/**",
                 "${workspaceFolder}/include/pil",
-                "${workspaceFolder}/tests/**"
+                "${workspaceFolder}/include/runtime",
+                "${workspaceFolder}/include/runtime/crypt",
+                "${workspaceFolder}/include/runtime/network",
+                "${workspaceFolder}/include/runtime/network/tls",
+                "${workspaceFolder}/tests/pil",
+                "${workspaceFolder}/tests/pir"
             ],
             "browse": {
                 "path": [
                     "${workspaceFolder}/src",
-                    "${workspaceFolder}/include"
+                    "${workspaceFolder}/include",
+                    "${workspaceFolder}/tests"
                 ]
             }
         },
@@ -172,26 +242,40 @@
             "defines": [
                 "ARCHITECTURE_ARMV7A",
                 "PLATFORM_LINUX",
-                "PLATFORM_LINUX_ARMV7A"
+                "PLATFORM_LINUX_ARMV7A",
+                "ENABLE_LOGGING"
             ],
             "includePath": [
                 "${workspaceFolder}",
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/include/core/**",
+                "${workspaceFolder}/tests",
+                "${workspaceFolder}/include/core",
+                "${workspaceFolder}/include/core/algorithms",
+                "${workspaceFolder}/include/core/core",
+                "${workspaceFolder}/include/core/string",
+                "${workspaceFolder}/include/core/types",
+                "${workspaceFolder}/include/core/types/embedded",
+                "${workspaceFolder}/include/core/types/network",
+                "${workspaceFolder}/include/core/types/numeric",
                 "${workspaceFolder}/include/platform",
                 "${workspaceFolder}/include/platform/io",
                 "${workspaceFolder}/include/platform/memory",
                 "${workspaceFolder}/include/platform/network",
                 "${workspaceFolder}/include/platform/system",
                 "${workspaceFolder}/include/platform/linux",
-                "${workspaceFolder}/include/runtime/**",
                 "${workspaceFolder}/include/pil",
-                "${workspaceFolder}/tests/**"
+                "${workspaceFolder}/include/runtime",
+                "${workspaceFolder}/include/runtime/crypt",
+                "${workspaceFolder}/include/runtime/network",
+                "${workspaceFolder}/include/runtime/network/tls",
+                "${workspaceFolder}/tests/pil",
+                "${workspaceFolder}/tests/pir"
             ],
             "browse": {
                 "path": [
                     "${workspaceFolder}/src",
-                    "${workspaceFolder}/include"
+                    "${workspaceFolder}/include",
+                    "${workspaceFolder}/tests"
                 ]
             }
         },
@@ -204,26 +288,40 @@
             "defines": [
                 "ARCHITECTURE_AARCH64",
                 "PLATFORM_LINUX",
-                "PLATFORM_LINUX_AARCH64"
+                "PLATFORM_LINUX_AARCH64",
+                "ENABLE_LOGGING"
             ],
             "includePath": [
                 "${workspaceFolder}",
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/include/core/**",
+                "${workspaceFolder}/tests",
+                "${workspaceFolder}/include/core",
+                "${workspaceFolder}/include/core/algorithms",
+                "${workspaceFolder}/include/core/core",
+                "${workspaceFolder}/include/core/string",
+                "${workspaceFolder}/include/core/types",
+                "${workspaceFolder}/include/core/types/embedded",
+                "${workspaceFolder}/include/core/types/network",
+                "${workspaceFolder}/include/core/types/numeric",
                 "${workspaceFolder}/include/platform",
                 "${workspaceFolder}/include/platform/io",
                 "${workspaceFolder}/include/platform/memory",
                 "${workspaceFolder}/include/platform/network",
                 "${workspaceFolder}/include/platform/system",
                 "${workspaceFolder}/include/platform/linux",
-                "${workspaceFolder}/include/runtime/**",
                 "${workspaceFolder}/include/pil",
-                "${workspaceFolder}/tests/**"
+                "${workspaceFolder}/include/runtime",
+                "${workspaceFolder}/include/runtime/crypt",
+                "${workspaceFolder}/include/runtime/network",
+                "${workspaceFolder}/include/runtime/network/tls",
+                "${workspaceFolder}/tests/pil",
+                "${workspaceFolder}/tests/pir"
             ],
             "browse": {
                 "path": [
                     "${workspaceFolder}/src",
-                    "${workspaceFolder}/include"
+                    "${workspaceFolder}/include",
+                    "${workspaceFolder}/tests"
                 ]
             }
         },
@@ -236,26 +334,40 @@
             "defines": [
                 "ARCHITECTURE_X86_64",
                 "PLATFORM_UEFI",
-                "PLATFORM_UEFI_X86_64"
+                "PLATFORM_UEFI_X86_64",
+                "ENABLE_LOGGING"
             ],
             "includePath": [
                 "${workspaceFolder}",
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/include/core/**",
+                "${workspaceFolder}/tests",
+                "${workspaceFolder}/include/core",
+                "${workspaceFolder}/include/core/algorithms",
+                "${workspaceFolder}/include/core/core",
+                "${workspaceFolder}/include/core/string",
+                "${workspaceFolder}/include/core/types",
+                "${workspaceFolder}/include/core/types/embedded",
+                "${workspaceFolder}/include/core/types/network",
+                "${workspaceFolder}/include/core/types/numeric",
                 "${workspaceFolder}/include/platform",
                 "${workspaceFolder}/include/platform/io",
                 "${workspaceFolder}/include/platform/memory",
                 "${workspaceFolder}/include/platform/network",
                 "${workspaceFolder}/include/platform/system",
                 "${workspaceFolder}/include/platform/uefi",
-                "${workspaceFolder}/include/runtime/**",
                 "${workspaceFolder}/include/pil",
-                "${workspaceFolder}/tests/**"
+                "${workspaceFolder}/include/runtime",
+                "${workspaceFolder}/include/runtime/crypt",
+                "${workspaceFolder}/include/runtime/network",
+                "${workspaceFolder}/include/runtime/network/tls",
+                "${workspaceFolder}/tests/pil",
+                "${workspaceFolder}/tests/pir"
             ],
             "browse": {
                 "path": [
                     "${workspaceFolder}/src",
-                    "${workspaceFolder}/include"
+                    "${workspaceFolder}/include",
+                    "${workspaceFolder}/tests"
                 ]
             }
         },
@@ -268,26 +380,40 @@
             "defines": [
                 "ARCHITECTURE_AARCH64",
                 "PLATFORM_UEFI",
-                "PLATFORM_UEFI_AARCH64"
+                "PLATFORM_UEFI_AARCH64",
+                "ENABLE_LOGGING"
             ],
             "includePath": [
                 "${workspaceFolder}",
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/include/core/**",
+                "${workspaceFolder}/tests",
+                "${workspaceFolder}/include/core",
+                "${workspaceFolder}/include/core/algorithms",
+                "${workspaceFolder}/include/core/core",
+                "${workspaceFolder}/include/core/string",
+                "${workspaceFolder}/include/core/types",
+                "${workspaceFolder}/include/core/types/embedded",
+                "${workspaceFolder}/include/core/types/network",
+                "${workspaceFolder}/include/core/types/numeric",
                 "${workspaceFolder}/include/platform",
                 "${workspaceFolder}/include/platform/io",
                 "${workspaceFolder}/include/platform/memory",
                 "${workspaceFolder}/include/platform/network",
                 "${workspaceFolder}/include/platform/system",
                 "${workspaceFolder}/include/platform/uefi",
-                "${workspaceFolder}/include/runtime/**",
                 "${workspaceFolder}/include/pil",
-                "${workspaceFolder}/tests/**"
+                "${workspaceFolder}/include/runtime",
+                "${workspaceFolder}/include/runtime/crypt",
+                "${workspaceFolder}/include/runtime/network",
+                "${workspaceFolder}/include/runtime/network/tls",
+                "${workspaceFolder}/tests/pil",
+                "${workspaceFolder}/tests/pir"
             ],
             "browse": {
                 "path": [
                     "${workspaceFolder}/src",
-                    "${workspaceFolder}/include"
+                    "${workspaceFolder}/include",
+                    "${workspaceFolder}/tests"
                 ]
             }
         }
