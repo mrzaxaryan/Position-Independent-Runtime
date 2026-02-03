@@ -68,11 +68,8 @@ private:
     static BOOL TestStdLibFunctions()
     {
         script::State* L = CreateScriptState();
-
-        // Register standard library (print, len, str, num, type, abs, min, max)
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/stdlib/stdlib_functions.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/stdlib/stdlib_functions.pil");
         delete L;
         return result;
     }
@@ -81,12 +78,9 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        // Register additional custom functions
-        L->Register("greet"_embed, EMBED_FUNC(StdLibTest_Func_Greet) );
-        L->Register("sum"_embed, EMBED_FUNC(StdLibTest_Func_Sum) );
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/stdlib/custom_functions.pil");
+        L->Register("greet"_embed, EMBED_FUNC(StdLibTest_Func_Greet));
+        L->Register("sum"_embed, EMBED_FUNC(StdLibTest_Func_Sum));
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/stdlib/custom_functions.pil");
         delete L;
         return result;
     }
@@ -95,8 +89,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/stdlib/print_function.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/stdlib/print_function.pil");
         delete L;
         return result;
     }
@@ -105,8 +98,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/stdlib/type_function.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/stdlib/type_function.pil");
         delete L;
         return result;
     }
@@ -115,8 +107,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/stdlib/string_functions.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/stdlib/string_functions.pil");
         delete L;
         return result;
     }
@@ -125,8 +116,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/stdlib/math_functions.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/stdlib/math_functions.pil");
         delete L;
         return result;
     }

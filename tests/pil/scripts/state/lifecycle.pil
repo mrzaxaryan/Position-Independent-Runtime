@@ -1,2 +1,3 @@
+// Test state lifecycle - verify basic variable operations
 var x = 42;
-print("State test iteration");
+var result = x == 42;

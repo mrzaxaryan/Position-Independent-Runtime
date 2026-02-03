@@ -106,9 +106,8 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        // Valid script should succeed
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/error/valid_script.pil");
+        // Valid script should succeed and set result=true
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/error/valid_script.pil");
         delete L;
         return result;
     }

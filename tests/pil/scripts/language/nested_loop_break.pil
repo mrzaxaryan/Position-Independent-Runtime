@@ -1,3 +1,4 @@
+// Test break in nested loops
 var count = 0;
 for (var i in [1, 2, 3]) {
     for (var j in [1, 2, 3, 4, 5]) {
@@ -7,7 +8,8 @@ for (var i in [1, 2, 3]) {
         count = count + 1;
     }
 }
-print("Nested loop count (3 outer * 2 inner):", count);
+// 3 outer iterations * 2 inner iterations (j=1,2) = 6
+var ok1 = count == 6;
 
 // Break only affects innermost loop
 var outer = 0;
@@ -25,5 +27,7 @@ while (x < 3) {
     }
     x = x + 1;
 }
-print("Outer iterations:", outer);
-print("Inner iterations:", inner);
+// outer = 3, inner = 3 * 2 = 6
+var ok2 = outer == 3 && inner == 6;
+
+var result = ok1 && ok2;

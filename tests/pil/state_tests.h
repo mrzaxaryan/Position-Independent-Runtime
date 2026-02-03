@@ -58,13 +58,11 @@ private:
     static BOOL TestManualRegistration()
     {
         script::State* L = CreateScriptState();
-
         // Register ONLY the functions we need - NO standard library
-        L->Register("print"_embed, EMBED_FUNC(script::StdLib_Print) );
-        L->Register("double"_embed, EMBED_FUNC(StateTest_Func_Double) );
-        L->Register("square"_embed, EMBED_FUNC(StateTest_Func_Square) );
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/state/manual_registration.pil");
+        L->Register("print"_embed, EMBED_FUNC(script::StdLib_Print));
+        L->Register("double"_embed, EMBED_FUNC(StateTest_Func_Double));
+        L->Register("square"_embed, EMBED_FUNC(StateTest_Func_Square));
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/state/manual_registration.pil");
         delete L;
         return result;
     }
@@ -73,13 +71,11 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
         // Set global variables from C++
         L->SetGlobalNumber("PI"_embed, 2, 314);
         L->SetGlobalString("version"_embed, 7, "1.0.0"_embed, 5);
         L->SetGlobalBool("debug"_embed, 5, TRUE);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/state/global_variables.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/state/global_variables.pil");
         delete L;
         return result;
     }
@@ -87,11 +83,9 @@ private:
     static BOOL TestMinimalSetup()
     {
         script::State* L = CreateScriptState();
-
         // Register ONLY print - absolutely minimal
-        L->Register("print"_embed, EMBED_FUNC(script::StdLib_Print) );
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/state/minimal_setup.pil");
+        L->Register("print"_embed, EMBED_FUNC(script::StdLib_Print));
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/state/minimal_setup.pil");
         delete L;
         return result;
     }
@@ -102,9 +96,8 @@ private:
         for (INT32 i = 0; i < 3; i++)
         {
             script::State* L = CreateScriptState();
-            L->Register("print"_embed, EMBED_FUNC(script::StdLib_Print) );
-
-            if (!RunScriptFile(L, L"tests/pil/scripts/state/lifecycle.pil"))
+            L->Register("print"_embed, EMBED_FUNC(script::StdLib_Print));
+            if (!RunScriptAndCheckResult(L, L"tests/pil/scripts/state/lifecycle.pil"))
             {
                 delete L;
                 return FALSE;

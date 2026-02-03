@@ -1,4 +1,5 @@
-print("len(hello) =", len("hello"));
-print("len(empty) =", len(""));
-print("str(123) =", str(123));
-print("str(true) =", str(true));
+// Test string functions
+var result = (len("hello") == 5) &&
+             (len("") == 0) &&
+             (str(123) == "123") &&
+             (str(true) == "true");

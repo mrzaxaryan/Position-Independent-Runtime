@@ -40,8 +40,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/float/float_literals.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/float/float_literals.pil");
         delete L;
         return result;
     }
@@ -50,8 +49,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/float/mixed_arithmetic.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/float/mixed_arithmetic.pil");
         delete L;
         return result;
     }
@@ -60,8 +58,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/float/float_comparisons.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/float/float_comparisons.pil");
         delete L;
         return result;
     }
@@ -70,8 +67,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/float/division.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/float/division.pil");
         delete L;
         return result;
     }
@@ -81,23 +77,21 @@ private:
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
 
-        // Modulo with integers should work
-        BOOL result1 = RunScriptFile(L, L"tests/pil/scripts/float/modulo_integers.pil");
+        // Test integer modulo
+        BOOL result1 = RunScriptAndCheckResult(L, L"tests/pil/scripts/float/modulo_integers.pil");
 
-        // Modulo with floats should fail
-        BOOL result2 = RunScriptFile(L, L"tests/pil/scripts/float/modulo_floats.pil");
+        // Test float modulo
+        BOOL result2 = RunScriptAndCheckResult(L, L"tests/pil/scripts/float/modulo_floats.pil");
 
         delete L;
-        // First should pass, second should fail (expect error)
-        return result1 && !result2;
+        return result1 && result2;
     }
 
     static BOOL TestStrFunction()
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/float/str_function.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/float/str_function.pil");
         delete L;
         return result;
     }
@@ -106,8 +100,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/float/num_function.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/float/num_function.pil");
         delete L;
         return result;
     }
@@ -116,8 +109,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/float/floor_ceil_int.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/float/floor_ceil_int.pil");
         delete L;
         return result;
     }
@@ -126,8 +118,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/float/min_max_abs.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/float/min_max_abs.pil");
         delete L;
         return result;
     }
@@ -136,8 +127,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/float/negation.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/float/negation.pil");
         delete L;
         return result;
     }

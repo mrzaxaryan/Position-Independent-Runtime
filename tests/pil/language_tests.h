@@ -51,8 +51,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/recursion.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/recursion.pil");
         delete L;
         return result;
     }
@@ -61,8 +60,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/arithmetic_operators.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/arithmetic_operators.pil");
         delete L;
         return result;
     }
@@ -71,8 +69,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/comparison_operators.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/comparison_operators.pil");
         delete L;
         return result;
     }
@@ -81,8 +78,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/logical_operators.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/logical_operators.pil");
         delete L;
         return result;
     }
@@ -91,8 +87,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/while_loop.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/while_loop.pil");
         delete L;
         return result;
     }
@@ -101,8 +96,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/assignment_operators.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/assignment_operators.pil");
         delete L;
         return result;
     }
@@ -111,8 +105,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/string_concatenation.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/string_concatenation.pil");
         delete L;
         return result;
     }
@@ -121,8 +114,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/nested_functions.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/nested_functions.pil");
         delete L;
         return result;
     }
@@ -131,8 +123,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/first_class_functions.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/first_class_functions.pil");
         delete L;
         return result;
     }
@@ -141,8 +132,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/array_literals.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/array_literals.pil");
         delete L;
         return result;
     }
@@ -151,8 +141,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/array_access.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/array_access.pil");
         delete L;
         return result;
     }
@@ -161,8 +150,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/array_push_pop.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/array_push_pop.pil");
         delete L;
         return result;
     }
@@ -171,8 +159,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/string_indexing.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/string_indexing.pil");
         delete L;
         return result;
     }
@@ -181,8 +168,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/for_each_array.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/for_each_array.pil");
         delete L;
         return result;
     }
@@ -191,8 +177,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/for_each_string.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/for_each_string.pil");
         delete L;
         return result;
     }
@@ -201,8 +186,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/for_each_with_index.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/for_each_with_index.pil");
         delete L;
         return result;
     }
@@ -211,8 +195,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/break_in_while.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/break_in_while.pil");
         delete L;
         return result;
     }
@@ -221,8 +204,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/continue_in_while.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/continue_in_while.pil");
         delete L;
         return result;
     }
@@ -231,8 +213,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/break_in_for_each.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/break_in_for_each.pil");
         delete L;
         return result;
     }
@@ -241,8 +222,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/continue_in_for_each.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/continue_in_for_each.pil");
         delete L;
         return result;
     }
@@ -251,8 +231,7 @@ private:
     {
         script::State* L = CreateScriptState();
         script::OpenStdLib(*L);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/language/nested_loop_break.pil");
+        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/language/nested_loop_break.pil");
         delete L;
         return result;
     }

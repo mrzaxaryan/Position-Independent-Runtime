@@ -1,11 +1,16 @@
+// Test string indexing
 var s = "Hello";
 
 // Access individual characters
-print("s[0] =", s[0]);
-print("s[1] =", s[1]);
-print("s[4] =", s[4]);
+var ok1 = s[0] == "H" && s[1] == "e" && s[4] == "o";
 
-// Loop through string
+// Verify all characters via loop
+var ok2 = true;
+var expected = ["H", "e", "l", "l", "o"];
 for (var i = 0; i < len(s); i = i + 1) {
-    print("char", i, "=", s[i]);
+    if (s[i] != expected[i]) {
+        ok2 = false;
+    }
 }
+
+var result = ok1 && ok2;

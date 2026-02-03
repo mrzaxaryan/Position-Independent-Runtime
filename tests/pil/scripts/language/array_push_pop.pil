@@ -1,19 +1,17 @@
+// Test array push and pop
 var arr = [1, 2, 3];
-print("Initial array:", arr);
+var ok1 = len(arr) == 3;
 
 // Push elements
 push(arr, 4);
 push(arr, 5);
-print("After push 4, 5:", arr);
-print("Length:", len(arr));
+var ok2 = len(arr) == 5 && arr[3] == 4 && arr[4] == 5;
 
 // Pop elements
 var last = pop(arr);
-print("Popped:", last);
-print("After pop:", arr);
+var ok3 = last == 5 && len(arr) == 4;
 
 last = pop(arr);
-print("Popped:", last);
-print("After pop:", arr);
+var ok4 = last == 4 && len(arr) == 3;
 
-print("Final length:", len(arr));
+var result = ok1 && ok2 && ok3 && ok4;

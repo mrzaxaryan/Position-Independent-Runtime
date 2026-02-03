@@ -1,3 +1,5 @@
+// Test string concatenation
 var greeting = "Hello";
 var name = "World";
-print(greeting + ", " + name + "!");
+var combined = greeting + ", " + name + "!";
+var result = combined == "Hello, World!";

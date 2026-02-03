@@ -1,12 +1,14 @@
+// Test for-each over strings
 var s = "Hello";
 
-// For-each over string
-print("Characters in string:");
+// Count characters
+var count = 0;
 for (var c in s) {
-    print("  char:", c);
+    count = count + 1;
 }
+var ok1 = count == 5;
 
-// Count vowels
+// Count vowels in "Hello World" - e, o, o = 3 vowels
 var vowels = 0;
 var text = "Hello World";
 for (var ch in text) {
@@ -15,4 +17,6 @@ for (var ch in text) {
         vowels = vowels + 1;
     }
 }
-print("Vowels in text:", vowels);
+var ok2 = vowels == 3;
+
+var result = ok1 && ok2;

@@ -1,22 +1,23 @@
+// Test array access and assignment
 var arr = [10, 20, 30, 40, 50];
 
-// Access elements
-print("arr[0] =", arr[0]);
-print("arr[2] =", arr[2]);
-print("arr[4] =", arr[4]);
+// Check initial access
+var ok1 = arr[0] == 10 && arr[2] == 30 && arr[4] == 50;
 
 // Modify elements
 arr[0] = 100;
 arr[2] = 300;
-print("After modification:", arr);
+var ok2 = arr[0] == 100 && arr[2] == 300;
 
 // Compound assignment
 arr[1] += 5;
-print("arr[1] after += 5:", arr[1]);
+var ok3 = arr[1] == 25;
 
-// Loop through array
+// Loop through array: 100 + 25 + 300 + 40 + 50 = 515
 var sum = 0;
 for (var i = 0; i < len(arr); i = i + 1) {
     sum = sum + arr[i];
 }
-print("Sum of array:", sum);
+var ok4 = sum == 515;
+
+var result = ok1 && ok2 && ok3 && ok4;

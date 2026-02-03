@@ -1,4 +1,4 @@
-print("Hello from PIL!");
-print("1 + 2 =", 1 + 2);
-print("Type of 42:", type(42));
-print("len(hello):", len("hello"));
+// Test standard library functions
+var result = (1 + 2 == 3) &&
+             (type(42) == "number") &&
+             (len("hello") == 5);

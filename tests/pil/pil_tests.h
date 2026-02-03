@@ -101,6 +101,82 @@ static BOOL RunScriptFile(script::State* L, PCWCHAR path)
     return L->DoString(source);
 }
 
+/**
+ * RunScriptAndCheckResult - Execute a script and verify the 'result' global variable is TRUE
+ *
+ * @param L - Script state
+ * @param path - Wide string path to the script file
+ * @return TRUE if script executed successfully AND 'result' global is TRUE
+ */
+static BOOL RunScriptAndCheckResult(script::State* L, PCWCHAR path)
+{
+    if (!RunScriptFile(L, path))
+    {
+        LOG_ERROR("    Script execution failed: %s", L->GetError());
+        return FALSE;
+    }
+
+    script::Value resultValue;
+    if (!L->GetGlobal("result"_embed, 6, resultValue))
+    {
+        LOG_ERROR("    Global 'result' variable not found");
+        return FALSE;
+    }
+
+    if (!resultValue.IsBool())
+    {
+        LOG_ERROR("    Global 'result' is not a boolean");
+        return FALSE;
+    }
+
+    if (!resultValue.boolValue)
+    {
+        LOG_ERROR("    Test assertion failed: result = false");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/**
+ * RunScriptAndCheckNumber - Execute a script and verify the 'result' global equals expected
+ *
+ * @param L - Script state
+ * @param path - Wide string path to the script file
+ * @param expected - Expected numeric value
+ * @return TRUE if script executed successfully AND 'result' equals expected
+ */
+static BOOL RunScriptAndCheckNumber(script::State* L, PCWCHAR path, INT64 expected)
+{
+    if (!RunScriptFile(L, path))
+    {
+        LOG_ERROR("    Script execution failed: %s", L->GetError());
+        return FALSE;
+    }
+
+    script::Value resultValue;
+    if (!L->GetGlobal("result"_embed, 6, resultValue))
+    {
+        LOG_ERROR("    Global 'result' variable not found");
+        return FALSE;
+    }
+
+    if (!resultValue.IsNumber())
+    {
+        LOG_ERROR("    Global 'result' is not a number");
+        return FALSE;
+    }
+
+    INT64 actual = resultValue.AsInt();
+    if (actual != expected)
+    {
+        LOG_ERROR("    Test assertion failed: expected %lld, got %lld", expected, actual);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 // ============================================================================
 // CONSOLE OUTPUT CALLBACK FOR SCRIPT TESTS
 // ============================================================================
