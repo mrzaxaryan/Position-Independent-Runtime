@@ -27,10 +27,10 @@
  *
  * Implementation:
  *   The EMBEDDED_STRING class uses NOINLINE and DISABLE_OPTIMIZATION attributes
- *   to force runtime stack construction of strings. Characters are materialized
- *   at runtime using immediate values embedded in code, avoiding .rdata section
- *   dependencies. Uses binary-split recursion for O(log n) template depth,
- *   enabling support for large strings without exceeding compiler limits.
+ *   to force runtime stack construction of strings. Characters are packed into
+ *   UINT32 words at compile time (4 chars or 2 wchars per word) and written as
+ *   immediate values, reducing instruction count by up to 4x compared to
+ *   character-by-character writes.
  *
  * Build requirements:
  *   - i386: -mno-sse -mno-sse2 (disables SSE to prevent .rdata generation)
@@ -42,6 +42,47 @@
  *   - No string literals or floating-point constants in .rdata
  *   - All strings embedded as immediate values in .text section
  */
+
+// ============================================================================
+// INDEX SEQUENCE (Binary-split for O(log n) template depth)
+// ============================================================================
+
+template <USIZE... Is>
+struct IndexSeq
+{
+};
+
+template <typename, typename>
+struct ConcatSeq;
+
+template <USIZE... Is1, USIZE... Is2>
+struct ConcatSeq<IndexSeq<Is1...>, IndexSeq<Is2...>>
+{
+    using type = IndexSeq<Is1..., (sizeof...(Is1) + Is2)...>;
+};
+
+template <USIZE N>
+struct MakeIndexSeqImpl
+{
+    using type = typename ConcatSeq<
+        typename MakeIndexSeqImpl<N / 2>::type,
+        typename MakeIndexSeqImpl<N - N / 2>::type>::type;
+};
+
+template <>
+struct MakeIndexSeqImpl<0>
+{
+    using type = IndexSeq<>;
+};
+
+template <>
+struct MakeIndexSeqImpl<1>
+{
+    using type = IndexSeq<0>;
+};
+
+template <USIZE N>
+using MakeIndexSeq = typename MakeIndexSeqImpl<N>::type;
 
 // ============================================================================
 // CHARACTER TYPE CONSTRAINT
@@ -60,51 +101,72 @@ class EMBEDDED_STRING
 {
 private:
     static constexpr USIZE N = sizeof...(Cs) + 1; // Includes null terminator
+    static constexpr USIZE CharSize = sizeof(TChar);
+    static constexpr USIZE CharsPerWord = sizeof(UINT32) / CharSize; // 4 for char, 2 for wchar_t
+    static constexpr USIZE NumWords = (N + CharsPerWord - 1) / CharsPerWord;
 
-    // NOT aligned - prevents SSE optimization
-    TChar data[N];
+    // Pad to word boundary for safe word writes
+    static constexpr USIZE AllocN = NumWords * CharsPerWord;
 
-    // Compile-time character access - index is constexpr so result becomes immediate
-    template <USIZE I>
-    FORCE_INLINE static constexpr TChar get_char() noexcept
+    // Aligned for word access
+    alignas(UINT32) TChar data[AllocN];
+
+    /**
+     * Compute packed word value at compile time
+     * Packs CharsPerWord characters into a single UINT32
+     */
+    template <USIZE WordIndex>
+    static consteval UINT32 GetPackedWord() noexcept
     {
-        constexpr TChar chars[] = {Cs...};
-        return chars[I];
+        constexpr TChar chars[N] = {Cs..., TChar(0)};
+        UINT32 result = 0;
+        constexpr USIZE base = WordIndex * CharsPerWord;
+
+        for (USIZE i = 0; i < CharsPerWord; ++i)
+        {
+            USIZE idx = base + i;
+            TChar c = (idx < N) ? chars[idx] : TChar(0); // Zero-pad beyond N
+            if constexpr (CharSize == 1)
+            {
+                result |= static_cast<UINT32>(static_cast<UINT8>(c)) << (i * 8);
+            }
+            else // wchar_t (2 bytes)
+            {
+                result |= static_cast<UINT32>(static_cast<UINT16>(c)) << (i * 16);
+            }
+        }
+        return result;
     }
 
-    // Binary-split initialization - O(log n) template depth instead of O(n)
-    template <USIZE Start, USIZE End>
-    FORCE_INLINE void init_range() noexcept
+    /**
+     * Write all packed words using fold expression
+     * Each GetPackedWord<Is>() is a compile-time constant, becoming an immediate value
+     */
+    template <USIZE... Is>
+    NOINLINE DISABLE_OPTIMIZATION void WritePackedWords(IndexSeq<Is...>) noexcept
     {
-        if constexpr (End - Start == 1) {
-            data[Start] = get_char<Start>();
-        } else if constexpr (End > Start) {
-            constexpr USIZE Mid = Start + (End - Start) / 2;
-            init_range<Start, Mid>();
-            init_range<Mid, End>();
-        }
+        UINT32 *dst = reinterpret_cast<UINT32 *>(data);
+        ((dst[Is] = GetPackedWord<Is>()), ...);
     }
 
 public:
-    static constexpr USIZE Length() noexcept { return N - 1; }  // Excludes null terminator
-    static constexpr USIZE Size() noexcept { return N; }        // Includes null terminator
+    static constexpr USIZE Length() noexcept { return N - 1; } // Excludes null terminator
 
     /**
-     * Runtime Constructor - Forces string materialization on stack
+     * Runtime Constructor - Writes string as packed UINT32 words
      *
      * Using NOINLINE and DISABLE_OPTIMIZATION to prevent:
      * 1. Compile-time constant folding
      * 2. SSE vectorization
      * 3. Merging into .rdata section
      *
-     * Characters are materialized one-by-one at runtime using immediate values.
-     * Uses binary-split recursion for O(log n) template depth.
+     * Instead of writing characters one by one, this packs 4 chars (or 2 wchars)
+     * into a UINT32 and writes them at once, reducing instruction count by up to 4x.
+     * Each word value is computed at compile time and becomes an immediate operand.
      */
     NOINLINE DISABLE_OPTIMIZATION EMBEDDED_STRING() noexcept : data{}
     {
-        // Binary-split initialization avoids deep expression nesting
-        init_range<0, sizeof...(Cs)>();
-        data[N - 1] = (TChar)0;
+        WritePackedWords(MakeIndexSeq<NumWords>{});
     }
 
     /**
@@ -139,6 +201,7 @@ public:
  *
  * The compiler expands the string literal into a character parameter pack,
  * and the EMBEDDED_STRING constructor materializes it at runtime on the stack.
+ * No longer consteval to allow runtime construction.
  */
 template <TCHAR TChar, TChar... Chars>
 FORCE_INLINE auto operator""_embed() noexcept
