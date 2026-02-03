@@ -2,7 +2,7 @@
  * stdlib.h - Standard Library for PICScript (Lua-like API)
  *
  * Native functions using the new CFunction API.
- * print() outputs directly to Console (no callback needed).
+ * print() outputs via State.SetOutput() callback.
  *
  * Position-independent, no .rdata dependencies.
  *
@@ -10,14 +10,14 @@
  *
  * USAGE:
  *   script::State L;
- *   script::OpenStdLib(L);  // Registers print, len, str, num, type
+ *   L.SetOutput(MyOutputFunc);  // Set output callback
+ *   script::OpenStdLib(L);      // Registers print, len, str, num, type
  *   L.DoString("print(\"Hello!\");");
  */
 
 #pragma once
 
 #include "value.h"
-#include "pal/io/console.h"
 
 // Forward declaration - State is defined in state.h
 namespace script { class State; }
@@ -262,14 +262,14 @@ NOINLINE Value StdLib_Print(FunctionContext& ctx) noexcept
     {
         if (i > 0)
         {
-            Console::Write<CHAR>(" "_embed);
+            ctx.state->Write(" "_embed, 1);
         }
 
         USIZE len = ValueToString(ctx.Arg(i), buffer, sizeof(buffer));
-        Console::Write(buffer, len);
+        ctx.state->Write(buffer, len);
     }
 
-    Console::Write<CHAR>("\n"_embed);
+    ctx.state->Write("\n"_embed, 1);
     return Value::Nil();
 }
 
