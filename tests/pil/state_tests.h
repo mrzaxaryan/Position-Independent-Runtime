@@ -1,19 +1,16 @@
 #pragma once
 
-#include "pil/pil.h"
-#include "tests.h"
+#include "test_framework.h"
 
 // ============================================================================
-// CUSTOM C++ FUNCTIONS FOR STATE TESTS
+// STATE TESTS
 // ============================================================================
 
 // Custom function: double(n) - doubles a number
 static script::Value StateTest_Func_Double(script::FunctionContext& ctx)
 {
     if (ctx.CheckArgs(1) && ctx.IsNumber(0))
-    {
         return script::Value::Number(ctx.ToNumber(0) * 2);
-    }
     return script::Value::Number(0);
 }
 
@@ -28,28 +25,23 @@ static script::Value StateTest_Func_Square(script::FunctionContext& ctx)
     return script::Value::Number(0);
 }
 
-// ============================================================================
-// STATE TESTS CLASS
-// ============================================================================
-
 class StateTests
 {
 public:
     static BOOL RunAll()
     {
         BOOL allPassed = TRUE;
-
         LOG_INFO("Running State Tests...");
 
         RUN_TEST(allPassed, TestManualRegistration, "Manual function registration");
-        RUN_TEST(allPassed, TestGlobalVariables, "Global variables");
-        RUN_TEST(allPassed, TestMinimalSetup, "Minimal setup");
-        RUN_TEST(allPassed, TestStateLifecycle, "State lifecycle");
+        RUN_TEST(allPassed, TestGlobalVariables,    "Global variables");
+        RUN_TEST(allPassed, TestMinimalSetup,       "Minimal setup");
+        RUN_TEST(allPassed, TestStateLifecycle,     "State lifecycle");
 
         if (allPassed)
-            LOG_INFO("All State tests passed!");
+            LOG_INFO("All State Tests passed!");
         else
-            LOG_ERROR("Some State tests failed!");
+            LOG_ERROR("Some State Tests failed!");
 
         return allPassed;
     }

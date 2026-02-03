@@ -1,11 +1,9 @@
 #pragma once
 
-#include "pil/pil.h"
-#include "pil/fileio.h"
-#include "tests.h"
+#include "test_framework.h"
 
 // ============================================================================
-// FILE I/O TESTS CLASS
+// FILE I/O TESTS
 // ============================================================================
 
 class FileIOTests
@@ -14,196 +12,24 @@ public:
     static BOOL RunAll()
     {
         BOOL allPassed = TRUE;
-
         LOG_INFO("Running File I/O Tests...");
 
-        RUN_TEST(allPassed, TestFileOpenClose, "File open/close");
-        RUN_TEST(allPassed, TestFileWriteRead, "File write/read");
-        RUN_TEST(allPassed, TestFileExists, "File exists");
-        RUN_TEST(allPassed, TestFileDelete, "File delete");
-        RUN_TEST(allPassed, TestFileSizeSeekTell, "File size/seek/tell");
-        RUN_TEST(allPassed, TestFileAppend, "File append mode");
-        RUN_TEST(allPassed, TestFileReadLine, "File readline");
-        RUN_TEST(allPassed, TestDirectoryOperations, "Directory mkdir/rmdir");
-        RUN_TEST(allPassed, TestFileErrors, "File error handling");
-        RUN_TEST(allPassed, TestMultipleFiles, "Multiple files");
+        RUN_SCRIPT_TEST_FILEIO(allPassed, L"tests/pil/scripts/fileio/file_open_close.pil"_embed,    "File open/close");
+        RUN_SCRIPT_TEST_FILEIO(allPassed, L"tests/pil/scripts/fileio/file_write_read.pil"_embed,    "File write/read");
+        RUN_SCRIPT_TEST_FILEIO(allPassed, L"tests/pil/scripts/fileio/file_exists.pil"_embed,        "File exists");
+        RUN_SCRIPT_TEST_FILEIO(allPassed, L"tests/pil/scripts/fileio/file_delete.pil"_embed,        "File delete");
+        RUN_SCRIPT_TEST_FILEIO(allPassed, L"tests/pil/scripts/fileio/file_size_seek_tell.pil"_embed,"File size/seek/tell");
+        RUN_SCRIPT_TEST_FILEIO(allPassed, L"tests/pil/scripts/fileio/file_append.pil"_embed,        "File append mode");
+        RUN_SCRIPT_TEST_FILEIO(allPassed, L"tests/pil/scripts/fileio/file_readline.pil"_embed,      "File readline");
+        RUN_SCRIPT_TEST_FILEIO(allPassed, L"tests/pil/scripts/fileio/directory_ops.pil"_embed,      "Directory mkdir/rmdir");
+        RUN_SCRIPT_TEST_FILEIO(allPassed, L"tests/pil/scripts/fileio/file_errors.pil"_embed,        "File error handling");
+        RUN_SCRIPT_TEST_FILEIO(allPassed, L"tests/pil/scripts/fileio/multiple_files.pil"_embed,     "Multiple files");
 
         if (allPassed)
-            LOG_INFO("All File I/O tests passed!");
+            LOG_INFO("All File I/O Tests passed!");
         else
-            LOG_ERROR("Some File I/O tests failed!");
+            LOG_ERROR("Some File I/O Tests failed!");
 
         return allPassed;
-    }
-
-private:
-    // Test file open and close
-    static BOOL TestFileOpenClose()
-    {
-        script::FilePool pool;
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        script::OpenFileIO(*L, &pool);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/fileio/file_open_close.pil"_embed);
-        if (!result)
-        {
-            LOG_ERROR("Script error: %s at line %d", L->GetError(), L->GetErrorLine());
-        }
-        delete L;
-        return result;
-    }
-
-    // Test file write and read
-    static BOOL TestFileWriteRead()
-    {
-        script::FilePool pool;
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        script::OpenFileIO(*L, &pool);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/fileio/file_write_read.pil"_embed);
-        if (!result)
-        {
-            LOG_ERROR("Script error: %s at line %d", L->GetError(), L->GetErrorLine());
-        }
-        delete L;
-        return result;
-    }
-
-    // Test file exists
-    static BOOL TestFileExists()
-    {
-        script::FilePool pool;
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        script::OpenFileIO(*L, &pool);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/fileio/file_exists.pil"_embed);
-        if (!result)
-        {
-            LOG_ERROR("Script error: %s at line %d", L->GetError(), L->GetErrorLine());
-        }
-        delete L;
-        return result;
-    }
-
-    // Test file delete
-    static BOOL TestFileDelete()
-    {
-        script::FilePool pool;
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        script::OpenFileIO(*L, &pool);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/fileio/file_delete.pil"_embed);
-        if (!result)
-        {
-            LOG_ERROR("Script error: %s at line %d", L->GetError(), L->GetErrorLine());
-        }
-        delete L;
-        return result;
-    }
-
-    // Test file size, seek, and tell
-    static BOOL TestFileSizeSeekTell()
-    {
-        script::FilePool pool;
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        script::OpenFileIO(*L, &pool);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/fileio/file_size_seek_tell.pil"_embed);
-        if (!result)
-        {
-            LOG_ERROR("Script error: %s at line %d", L->GetError(), L->GetErrorLine());
-        }
-        delete L;
-        return result;
-    }
-
-    // Test file append mode
-    static BOOL TestFileAppend()
-    {
-        script::FilePool pool;
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        script::OpenFileIO(*L, &pool);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/fileio/file_append.pil"_embed);
-        if (!result)
-        {
-            LOG_ERROR("Script error: %s at line %d", L->GetError(), L->GetErrorLine());
-        }
-        delete L;
-        return result;
-    }
-
-    // Test file readline
-    static BOOL TestFileReadLine()
-    {
-        script::FilePool pool;
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        script::OpenFileIO(*L, &pool);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/fileio/file_readline.pil"_embed);
-        if (!result)
-        {
-            LOG_ERROR("Script error: %s at line %d", L->GetError(), L->GetErrorLine());
-        }
-        delete L;
-        return result;
-    }
-
-    // Test directory operations
-    static BOOL TestDirectoryOperations()
-    {
-        script::FilePool pool;
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        script::OpenFileIO(*L, &pool);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/fileio/directory_ops.pil"_embed);
-        if (!result)
-        {
-            LOG_ERROR("Script error: %s at line %d", L->GetError(), L->GetErrorLine());
-        }
-        delete L;
-        return result;
-    }
-
-    // Test error handling
-    static BOOL TestFileErrors()
-    {
-        script::FilePool pool;
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        script::OpenFileIO(*L, &pool);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/fileio/file_errors.pil"_embed);
-        if (!result)
-        {
-            LOG_ERROR("Script error: %s at line %d", L->GetError(), L->GetErrorLine());
-        }
-        delete L;
-        return result;
-    }
-
-    // Test multiple files
-    static BOOL TestMultipleFiles()
-    {
-        script::FilePool pool;
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        script::OpenFileIO(*L, &pool);
-
-        BOOL result = RunScriptFile(L, L"tests/pil/scripts/fileio/multiple_files.pil"_embed);
-        if (!result)
-        {
-            LOG_ERROR("Script error: %s at line %d", L->GetError(), L->GetErrorLine());
-        }
-        delete L;
-        return result;
     }
 };

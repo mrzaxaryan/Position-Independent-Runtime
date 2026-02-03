@@ -1,24 +1,18 @@
 #pragma once
 
-#include "pil/pil.h"
-#include "tests.h"
+#include "test_framework.h"
 
 // ============================================================================
-// CUSTOM C++ FUNCTIONS FOR STDLIB TESTS
+// STDLIB TESTS
 // ============================================================================
 
 // Custom function: greet(name) - prints a greeting
 static script::Value StdLibTest_Func_Greet(script::FunctionContext& ctx)
 {
     if (ctx.CheckArgs(1) && ctx.IsString(0))
-    {
         LOG_INFO("Hello, %s!", ctx.ToString(0));
-    }
     else
-    {
         LOG_INFO("Hello, World!");
-    }
-
     return script::Value::Nil();
 }
 
@@ -29,16 +23,10 @@ static script::Value StdLibTest_Func_Sum(script::FunctionContext& ctx)
     for (UINT8 i = 0; i < ctx.GetArgCount(); i++)
     {
         if (ctx.IsNumber(i))
-        {
             total += ctx.ToNumber(i);
-        }
     }
     return script::Value::Number(total);
 }
-
-// ============================================================================
-// STDLIB TESTS CLASS
-// ============================================================================
 
 class StdLibTests
 {
@@ -46,34 +34,26 @@ public:
     static BOOL RunAll()
     {
         BOOL allPassed = TRUE;
-
         LOG_INFO("Running StdLib Tests...");
 
-        RUN_TEST(allPassed, TestStdLibFunctions, "Standard library functions");
+        RUN_SCRIPT_TEST(allPassed, L"tests/pil/scripts/stdlib/stdlib_functions.pil"_embed, "Standard library functions", CFG_STDLIB);
+        RUN_SCRIPT_TEST(allPassed, L"tests/pil/scripts/stdlib/print_function.pil"_embed,   "Print function",             CFG_STDLIB);
+        RUN_SCRIPT_TEST(allPassed, L"tests/pil/scripts/stdlib/type_function.pil"_embed,    "Type function",              CFG_STDLIB);
+        RUN_SCRIPT_TEST(allPassed, L"tests/pil/scripts/stdlib/string_functions.pil"_embed, "String functions",           CFG_STDLIB);
+        RUN_SCRIPT_TEST(allPassed, L"tests/pil/scripts/stdlib/math_functions.pil"_embed,   "Math functions",             CFG_STDLIB);
+
+        // Custom test with registered C++ functions
         RUN_TEST(allPassed, TestCustomFunctionsWithStdLib, "Custom functions with StdLib");
-        RUN_TEST(allPassed, TestPrintFunction, "Print function");
-        RUN_TEST(allPassed, TestTypeFunction, "Type function");
-        RUN_TEST(allPassed, TestStringFunctions, "String functions");
-        RUN_TEST(allPassed, TestMathFunctions, "Math functions");
 
         if (allPassed)
-            LOG_INFO("All StdLib tests passed!");
+            LOG_INFO("All StdLib Tests passed!");
         else
-            LOG_ERROR("Some StdLib tests failed!");
+            LOG_ERROR("Some StdLib Tests failed!");
 
         return allPassed;
     }
 
 private:
-    static BOOL TestStdLibFunctions()
-    {
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/stdlib/stdlib_functions.pil"_embed);
-        delete L;
-        return result;
-    }
-
     static BOOL TestCustomFunctionsWithStdLib()
     {
         script::State* L = CreateScriptState();
@@ -81,42 +61,6 @@ private:
         L->Register("greet"_embed, EMBED_FUNC(StdLibTest_Func_Greet));
         L->Register("sum"_embed, EMBED_FUNC(StdLibTest_Func_Sum));
         BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/stdlib/custom_functions.pil"_embed);
-        delete L;
-        return result;
-    }
-
-    static BOOL TestPrintFunction()
-    {
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/stdlib/print_function.pil"_embed);
-        delete L;
-        return result;
-    }
-
-    static BOOL TestTypeFunction()
-    {
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/stdlib/type_function.pil"_embed);
-        delete L;
-        return result;
-    }
-
-    static BOOL TestStringFunctions()
-    {
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/stdlib/string_functions.pil"_embed);
-        delete L;
-        return result;
-    }
-
-    static BOOL TestMathFunctions()
-    {
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
-        BOOL result = RunScriptAndCheckResult(L, L"tests/pil/scripts/stdlib/math_functions.pil"_embed);
         delete L;
         return result;
     }
