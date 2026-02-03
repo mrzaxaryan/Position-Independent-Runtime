@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include "bal/types/primitives.h"
-#include "bal/types/embedded/embedded_string.h"
-#include "bal/string/string.h"  // String utilities
+#include "core/types/primitives.h"
+#include "core/types/embedded/embedded_string.h"
+#include "core/string/string.h"  // String utilities
 
 namespace script
 {

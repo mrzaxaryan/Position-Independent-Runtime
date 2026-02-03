@@ -3,8 +3,8 @@
 #include "pil/pil.h"
 #include "pil/fileio.h"
 #include "pil/networkio.h"
-#include "pal/io/console.h"
-#include "pal/io/file_system.h"
+#include "platform/io/console.h"
+#include "platform/io/file_system.h"
 #include "tests.h"
 
 // ============================================================================
