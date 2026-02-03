@@ -1,0 +1,714 @@
+# PICScript Language Specification
+
+PICScript is a lightweight, position-independent scripting language embedded in the NOSTDLIB-RUNTIME. It provides a Lua-like API while maintaining full position-independence with no `.rdata` dependencies.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Lexical Structure](#lexical-structure)
+- [Data Types](#data-types)
+- [Variables](#variables)
+- [Operators](#operators)
+- [Control Flow](#control-flow)
+- [Functions](#functions)
+- [Arrays](#arrays)
+- [Standard Library](#standard-library)
+- [File I/O](#file-io)
+- [C++ Integration](#c-integration)
+- [Error Handling](#error-handling)
+- [Constraints](#constraints)
+
+---
+
+## Overview
+
+| Property | Value |
+|----------|-------|
+| **Name** | PICScript |
+| **Type** | Dynamically typed, interpreted |
+| **Target** | Embedded in cpp-pic runtime |
+| **Dependencies** | None (no .rdata, no CRT) |
+
+### Design Philosophy
+
+- **No built-in functions**: All functions must be registered from C++
+- **Position-independent**: Uses `_embed` strings throughout
+- **Minimal footprint**: Designed for shellcode and embedded contexts
+- **State-based API**: Familiar State-based interface
+
+---
+
+## Lexical Structure
+
+### Comments
+
+```javascript
+// Single-line comment
+
+/* Multi-line
+   comment */
+```
+
+### Keywords
+
+```
+var     if      else    while   for     fn
+return  break   continue true    false   nil
+in
+```
+
+### Identifiers
+
+Identifiers start with a letter or underscore, followed by letters, digits, or underscores:
+
+```
+myVar
+_private
+count123
+```
+
+### Literals
+
+**Numbers (integers):**
+```javascript
+42
+-17
+0
+```
+
+**Strings:**
+```javascript
+"hello world"
+"escape sequences: \n \t \\ \""
+""  // empty string
+```
+
+**Booleans:**
+```javascript
+true
+false
+```
+
+**Nil:**
+```javascript
+nil
+```
+
+**Arrays:**
+```javascript
+[1, 2, 3]
+["a", "b", "c"]
+[1, "mixed", true, nil]
+[]  // empty array
+```
+
+---
+
+## Data Types
+
+PICScript has six value types:
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `nil` | Absence of value | `nil` |
+| `bool` | Boolean | `true`, `false` |
+| `number` | 64-bit integer | `42`, `-17` |
+| `string` | Character sequence | `"hello"` |
+| `array` | Indexed collection | `[1, 2, 3]` |
+| `function` | Callable | `fn(x) { return x; }` |
+
+### Type Coercion
+
+- **Truthiness**: `nil` and `false` are falsy; everything else is truthy
+- **String concatenation**: `+` with strings performs concatenation
+- **Numeric operations**: Non-numbers in arithmetic cause runtime errors
+
+---
+
+## Variables
+
+### Declaration
+
+Variables are declared with `var`:
+
+```javascript
+var x = 10;
+var name = "hello";
+var flag = true;
+var empty;  // initialized to nil
+```
+
+### Assignment
+
+```javascript
+x = 20;
+name = "world";
+```
+
+### Compound Assignment
+
+```javascript
+x += 5;   // x = x + 5
+x -= 3;   // x = x - 3
+x *= 2;   // x = x * 2
+x /= 4;   // x = x / 4
+```
+
+### Scope
+
+Variables follow lexical scoping:
+
+```javascript
+var x = "outer";
+{
+    var x = "inner";  // shadows outer x
+    print(x);         // "inner"
+}
+print(x);             // "outer"
+```
+
+Maximum scope depth: 32 levels.
+
+---
+
+## Operators
+
+### Precedence (highest to lowest)
+
+| Precedence | Operators | Associativity |
+|------------|-----------|---------------|
+| 1 | `()` `[]` | Left-to-right |
+| 2 | `!` `-` (unary) | Right-to-left |
+| 3 | `*` `/` `%` | Left-to-right |
+| 4 | `+` `-` | Left-to-right |
+| 5 | `<` `>` `<=` `>=` | Left-to-right |
+| 6 | `==` `!=` | Left-to-right |
+| 7 | `&&` | Left-to-right |
+| 8 | `\|\|` | Left-to-right |
+| 9 | `=` `+=` `-=` `*=` `/=` | Right-to-left |
+
+### Arithmetic Operators
+
+```javascript
+var a = 10 + 5;   // 15
+var b = 10 - 5;   // 5
+var c = 10 * 5;   // 50
+var d = 10 / 5;   // 2
+var e = 10 % 3;   // 1
+var f = -a;       // -15
+```
+
+### Comparison Operators
+
+```javascript
+a == b    // equal
+a != b    // not equal
+a < b     // less than
+a > b     // greater than
+a <= b    // less than or equal
+a >= b    // greater than or equal
+```
+
+### Logical Operators
+
+```javascript
+a && b    // logical AND (short-circuit)
+a || b    // logical OR (short-circuit)
+!a        // logical NOT
+```
+
+### String Concatenation
+
+```javascript
+var greeting = "Hello, " + "World!";  // "Hello, World!"
+var msg = "Value: " + str(42);        // "Value: 42"
+```
+
+---
+
+## Control Flow
+
+### If Statement
+
+```javascript
+if (condition) {
+    // then branch
+}
+
+if (condition) {
+    // then branch
+} else {
+    // else branch
+}
+
+if (condition1) {
+    // branch 1
+} else if (condition2) {
+    // branch 2
+} else {
+    // else branch
+}
+```
+
+### While Loop
+
+```javascript
+var i = 0;
+while (i < 10) {
+    print(i);
+    i = i + 1;
+}
+```
+
+### For Loop (Traditional)
+
+```javascript
+for (var i = 0; i < 10; i = i + 1) {
+    print(i);
+}
+```
+
+### For-Each Loop
+
+Iterate over arrays:
+```javascript
+var arr = [1, 2, 3];
+for (var item in arr) {
+    print(item);
+}
+```
+
+Iterate over strings:
+```javascript
+for (var c in "hello") {
+    print(c);
+}
+```
+
+With index:
+```javascript
+for (var i, item in arr) {
+    print(i, ":", item);
+}
+```
+
+### Break and Continue
+
+```javascript
+for (var i = 0; i < 10; i = i + 1) {
+    if (i == 5) {
+        break;      // exit loop
+    }
+    if (i % 2 == 0) {
+        continue;   // skip to next iteration
+    }
+    print(i);
+}
+```
+
+---
+
+## Functions
+
+### Declaration
+
+```javascript
+fn add(a, b) {
+    return a + b;
+}
+
+fn greet(name) {
+    print("Hello, " + name + "!");
+}
+
+fn factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+```
+
+### Calling Functions
+
+```javascript
+var sum = add(3, 4);      // 7
+greet("World");           // prints "Hello, World!"
+var f = factorial(5);     // 120
+```
+
+### Return Statement
+
+```javascript
+fn getValue() {
+    return 42;
+}
+
+fn earlyReturn(x) {
+    if (x < 0) {
+        return nil;  // early return
+    }
+    return x * 2;
+}
+```
+
+Functions without a `return` statement return `nil`.
+
+### First-Class Functions
+
+Functions are first-class values:
+
+```javascript
+fn apply(f, x) {
+    return f(x);
+}
+
+fn double(n) {
+    return n * 2;
+}
+
+var result = apply(double, 21);  // 42
+```
+
+---
+
+## Arrays
+
+### Creation
+
+```javascript
+var empty = [];
+var numbers = [1, 2, 3, 4, 5];
+var mixed = [1, "two", true, nil];
+```
+
+Maximum 16 elements per array. Maximum 64 arrays in pool.
+
+### Access
+
+```javascript
+var arr = [10, 20, 30];
+print(arr[0]);    // 10
+print(arr[2]);    // 30
+```
+
+String indexing:
+```javascript
+var s = "hello";
+print(s[0]);      // "h"
+print(s[4]);      // "o"
+```
+
+### Assignment
+
+```javascript
+var arr = [1, 2, 3];
+arr[1] = 99;
+print(arr);       // [1, 99, 3]
+```
+
+### Array Functions
+
+```javascript
+var arr = [1, 2, 3];
+
+print(len(arr));      // 3
+
+push(arr, 4);         // arr is now [1, 2, 3, 4]
+
+var last = pop(arr);  // last = 4, arr is [1, 2, 3]
+```
+
+---
+
+## Standard Library
+
+Register the standard library:
+```cpp
+script::State L;
+script::OpenStdLib(L);
+```
+
+### Available Functions
+
+| Function | Description | Example | Result |
+|----------|-------------|---------|--------|
+| `print(...)` | Print values to console | `print("x =", 42);` | Output: `x = 42` |
+| `len(v)` | Get length of string/array | `len("hello")` | `5` |
+| `str(v)` | Convert to string | `str(42)` | `"42"` |
+| `num(v)` | Convert to number | `num("123")` | `123` |
+| `type(v)` | Get type name | `type(42)` | `"number"` |
+| `abs(n)` | Absolute value | `abs(-5)` | `5` |
+| `min(a, b)` | Minimum of two values | `min(3, 5)` | `3` |
+| `max(a, b)` | Maximum of two values | `max(3, 5)` | `5` |
+| `push(arr, v)` | Add element to array | `push(arr, 4)` | - |
+| `pop(arr)` | Remove last element | `pop(arr)` | Last element |
+
+---
+
+## File I/O
+
+File operations are available through the standard library.
+
+### Functions
+
+| Function | Description |
+|----------|-------------|
+| `fopen(path, mode)` | Open file. Modes: `"r"`, `"w"`, `"a"`, `"rb"`, `"wb"`, `"ab"` |
+| `fclose(handle)` | Close file |
+| `fread(handle [, size])` | Read from file (max 255 bytes per call) |
+| `freadline(handle)` | Read a line from file |
+| `fwrite(handle, data)` | Write to file |
+| `fexists(path)` | Check if file exists |
+| `fdelete(path)` | Delete file |
+| `fsize(handle)` | Get file size |
+| `fseek(handle, offset, origin)` | Set position (0=start, 1=current, 2=end) |
+| `ftell(handle)` | Get current position |
+| `mkdir(path)` | Create directory |
+| `rmdir(path)` | Remove directory |
+
+Maximum 16 open files simultaneously.
+
+### Example
+
+```javascript
+// Write to file
+var f = fopen("test.txt", "w");
+if (f != nil) {
+    fwrite(f, "Hello, World!\n");
+    fwrite(f, "Line 2\n");
+    fclose(f);
+}
+
+// Read from file
+f = fopen("test.txt", "r");
+if (f != nil) {
+    var line = freadline(f);
+    while (line != nil) {
+        print(line);
+        line = freadline(f);
+    }
+    fclose(f);
+}
+
+// Check file exists
+if (fexists("test.txt")) {
+    print("File exists!");
+}
+```
+
+---
+
+## C++ Integration
+
+### Basic Usage
+
+```cpp
+#include "ral/script/script.h"
+
+script::State* L = new script::State();
+
+// Register standard library
+script::OpenStdLib(*L);
+
+// Execute script
+L->DoString(R"(
+    print("Hello from PICScript!");
+)"_embed);
+
+delete L;
+```
+
+### Custom Functions
+
+```cpp
+script::Value MyFunction(script::FunctionContext& ctx)
+{
+    if (ctx.CheckArgs(1) && ctx.IsNumber(0))
+    {
+        INT64 n = ctx.ToNumber(0);
+        return script::Value::Number(n * 2);
+    }
+    return script::Value::Nil();
+}
+
+// Register custom function
+L->Register("double"_embed, MyFunction);
+```
+
+### Setting Global Variables
+
+```cpp
+L->SetGlobalNumber("PI"_embed, 2, 314);
+L->SetGlobalString("version"_embed, 7, "1.0.0"_embed, 5);
+L->SetGlobalBool("debug"_embed, 5, TRUE);
+```
+
+### FunctionContext API
+
+| Method | Description |
+|--------|-------------|
+| `ArgCount()` | Get number of arguments |
+| `CheckArgs(n)` | Check if exactly n arguments |
+| `IsNil(i)` | Check if argument i is nil |
+| `IsBool(i)` | Check if argument i is bool |
+| `IsNumber(i)` | Check if argument i is number |
+| `IsString(i)` | Check if argument i is string |
+| `IsArray(i)` | Check if argument i is array |
+| `ToBool(i)` | Get argument i as bool |
+| `ToNumber(i)` | Get argument i as number |
+| `ToString(i)` | Get argument i as string |
+
+### Value Creation
+
+```cpp
+script::Value::Nil()
+script::Value::Bool(true)
+script::Value::Number(42)
+script::Value::String("hello", 5)
+```
+
+---
+
+## Error Handling
+
+### In Scripts
+
+Errors halt execution and set an error message:
+
+```cpp
+if (!L->DoString(source))
+{
+    Console::Write<CHAR>("Error: "_embed);
+    Console::Write<CHAR>(L->GetError());
+}
+```
+
+### Common Errors
+
+| Error | Cause |
+|-------|-------|
+| `Undefined variable 'x'` | Using undeclared variable |
+| `Division by zero` | Dividing by zero |
+| `Type error` | Invalid operation for types |
+| `Index out of bounds` | Array/string index invalid |
+| `Too many arguments` | Exceeding function parameter limit |
+| `break outside loop` | Using break outside a loop |
+| `continue outside loop` | Using continue outside a loop |
+
+---
+
+## Constraints
+
+Due to cpp-pic compatibility requirements:
+
+1. **No .rdata**: All strings use `_embed` suffix
+2. **No exceptions**: Uses error codes/flags
+3. **No dynamic allocation**: Fixed-size buffers and pools
+4. **No STL**: Custom containers only
+5. **Position-independent**: No relocation dependencies
+
+### Limits
+
+| Resource | Limit |
+|----------|-------|
+| Scope depth | 32 levels |
+| Array elements | 16 per array |
+| Array pool | 64 arrays |
+| Open files | 16 handles |
+| String buffer | 256 characters |
+
+---
+
+## Examples
+
+### FizzBuzz
+
+```javascript
+fn fizzbuzz(n) {
+    for (var i = 1; i <= n; i = i + 1) {
+        if (i % 15 == 0) {
+            print("FizzBuzz");
+        } else if (i % 3 == 0) {
+            print("Fizz");
+        } else if (i % 5 == 0) {
+            print("Buzz");
+        } else {
+            print(i);
+        }
+    }
+}
+fizzbuzz(15);
+```
+
+### Fibonacci
+
+```javascript
+fn fib(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+for (var i = 0; i < 10; i = i + 1) {
+    print(fib(i));
+}
+```
+
+### Array Processing
+
+```javascript
+var numbers = [1, 2, 3, 4, 5];
+var sum = 0;
+
+for (var n in numbers) {
+    sum = sum + n;
+}
+
+print("Sum:", sum);           // Sum: 15
+print("Average:", sum / len(numbers));  // Average: 3
+```
+
+### File Processing
+
+```javascript
+// Count lines in a file
+fn countLines(path) {
+    var f = fopen(path, "r");
+    if (f == nil) {
+        return -1;
+    }
+
+    var count = 0;
+    var line = freadline(f);
+    while (line != nil) {
+        count = count + 1;
+        line = freadline(f);
+    }
+
+    fclose(f);
+    return count;
+}
+
+var lines = countLines("myfile.txt");
+print("Lines:", lines);
+```
+
+---
+
+## Architecture
+
+PICScript is implemented as part of the RAL (Runtime Abstraction Layer):
+
+```
+include/ral/script/
+├── token.h          # Token types and struct
+├── lexer.h          # Lexer class
+├── ast.h            # AST node definitions + allocator
+├── parser.h         # Recursive descent parser
+├── value.h          # Value type system + Environment
+├── interpreter.h    # Tree-walking interpreter
+├── stdlib.h         # Standard library functions
+└── state.h          # State-based API wrapper (script.h)
+```

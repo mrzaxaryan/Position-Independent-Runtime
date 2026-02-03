@@ -11,6 +11,7 @@
  *   ErrorTests     - Error handling and detection tests
  *   FloatTests     - Floating-point number tests
  *   FileIOTests    - File I/O function tests (fopen, fclose, fread, fwrite, etc.)
+ *   NetworkIOTests - Network I/O function tests (sockets, DNS, HTTP)
  *
  * USAGE:
  *   #include "script_tests.h"
@@ -25,6 +26,7 @@
  *   ErrorTests::RunAll();
  *   FloatTests::RunAll();
  *   FileIOTests::RunAll();
+ *   NetworkIOTests::RunAll();
  */
 
 #pragma once
@@ -61,6 +63,7 @@ static script::State* CreateScriptState()
 #include "error_tests.h"
 #include "float_tests.h"
 #include "fileio_tests.h"
+#include "networkio_tests.h"
 
 static BOOL RunScriptTests()
 {
@@ -87,6 +90,9 @@ static BOOL RunScriptTests()
 
     // File I/O tests
     RUN_TEST_SUITE(allPassed, FileIOTests);
+
+    // Network I/O tests
+    RUN_TEST_SUITE(allPassed, NetworkIOTests);
 
     // Final summary
     LOG_INFO("=== PICScript Test Suite Complete ===");
