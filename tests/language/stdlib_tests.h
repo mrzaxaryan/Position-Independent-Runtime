@@ -7,17 +7,17 @@
 // ============================================================================
 
 // Custom function: greet(name) - prints a greeting
-static script::Value StdLibTest_Func_Greet(script::FunctionContext& ctx)
+static PIL::Value StdLibTest_Func_Greet(PIL::FunctionContext& ctx)
 {
     if (ctx.CheckArgs(1) && ctx.IsString(0))
         LOG_INFO("Hello, %s!", ctx.ToString(0));
     else
         LOG_INFO("Hello, World!");
-    return script::Value::Nil();
+    return PIL::Value::Nil();
 }
 
 // Custom function: sum(...) - sums all numeric arguments
-static script::Value StdLibTest_Func_Sum(script::FunctionContext& ctx)
+static PIL::Value StdLibTest_Func_Sum(PIL::FunctionContext& ctx)
 {
     INT64 total = 0;
     for (UINT8 i = 0; i < ctx.GetArgCount(); i++)
@@ -25,7 +25,7 @@ static script::Value StdLibTest_Func_Sum(script::FunctionContext& ctx)
         if (ctx.IsNumber(i))
             total += ctx.ToNumber(i);
     }
-    return script::Value::Number(total);
+    return PIL::Value::Number(total);
 }
 
 class StdLibTests
@@ -56,8 +56,8 @@ public:
 private:
     static BOOL TestCustomFunctionsWithStdLib()
     {
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
+        PIL::State* L = CreateScriptState();
+        PIL::OpenStdLib(*L);
         L->Register("greet"_embed, EMBED_FUNC(StdLibTest_Func_Greet));
         L->Register("sum"_embed, EMBED_FUNC(StdLibTest_Func_Sum));
         BOOL result = RunScriptAndCheckResult(L, L"tests/language/scripts/stdlib/custom_functions.pil"_embed);

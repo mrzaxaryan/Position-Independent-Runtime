@@ -36,7 +36,7 @@ public:
 private:
     static BOOL TestUndefinedFunction()
     {
-        script::State* L = CreateScriptState();
+        PIL::State* L = CreateScriptState();
         // Note: NOT registering any functions, not even print
         BOOL result = !RunScriptFile(L, L"tests/language/scripts/error/undefined_function.pil"_embed);
         if (result)
@@ -47,8 +47,8 @@ private:
 
     static BOOL TestErrorMessageRetrieval()
     {
-        script::State* L = CreateScriptState();
-        script::OpenStdLib(*L);
+        PIL::State* L = CreateScriptState();
+        PIL::OpenStdLib(*L);
 
         // Script with error
         RunScriptFile(L, L"tests/language/scripts/error/error_message.pil"_embed);

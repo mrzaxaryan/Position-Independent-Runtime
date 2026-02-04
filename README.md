@@ -573,14 +573,14 @@ The Position-Independent Runtime includes **PIL (Position Independent Language)*
 **Basic Usage:**
 
 ```cpp
-script::Value MyFunction(script::FunctionContext& ctx)
+PIL::Value MyFunction(PIL::FunctionContext& ctx)
 {
     if (ctx.CheckArgs(1) && ctx.IsNumber(0))
     {
         INT64 n = ctx.ToNumber(0);
-        return script::Value::Number(n * 2);
+        return PIL::Value::Number(n * 2);
     }
-    return script::Value::Nil();
+    return PIL::Value::Nil();
 }
 
 // Register custom function

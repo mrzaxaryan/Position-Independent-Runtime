@@ -65,7 +65,7 @@ static inline CHAR* LoadScript(PCWCHAR path)
 /**
  * RunScriptFile - Load and execute a PIL script file
  */
-static inline BOOL RunScriptFile(script::State* L, PCWCHAR path)
+static inline BOOL RunScriptFile(PIL::State* L, PCWCHAR path)
 {
     CHAR* source = LoadScript(path);
     if (source == nullptr)
@@ -78,7 +78,7 @@ static inline BOOL RunScriptFile(script::State* L, PCWCHAR path)
 /**
  * RunScriptAndCheckResult - Execute a script and verify the 'result' global variable is TRUE
  */
-static inline BOOL RunScriptAndCheckResult(script::State* L, PCWCHAR path)
+static inline BOOL RunScriptAndCheckResult(PIL::State* L, PCWCHAR path)
 {
     if (!RunScriptFile(L, path))
     {
@@ -86,7 +86,7 @@ static inline BOOL RunScriptAndCheckResult(script::State* L, PCWCHAR path)
         return FALSE;
     }
 
-    script::Value resultValue;
+    PIL::Value resultValue;
     if (!L->GetGlobal("result"_embed, 6, resultValue))
     {
         LOG_ERROR("    Global 'result' variable not found");
@@ -117,9 +117,9 @@ static inline void ScriptConsoleOutput(const CHAR* str, USIZE len)
     Console::Write(str, len);
 }
 
-static inline script::State* CreateScriptState()
+static inline PIL::State* CreateScriptState()
 {
-    script::State* L = new script::State();
+    PIL::State* L = new PIL::State();
     L->SetOutput(NULL);
     return L;
 }
@@ -166,25 +166,25 @@ static constexpr TestConfig CFG_NETWORKIO = TestConfig::OPEN_STDLIB | TestConfig
  * RunScriptTestInline - Execute a script test with the given configuration
  */
 static inline BOOL RunScriptTestInline(PCWCHAR path, TestConfig config,
-                                        script::FilePool* filePool = nullptr,
-                                        script::NetworkContext* netCtx = nullptr)
+                                        PIL::FilePool* filePool = nullptr,
+                                        PIL::NetworkContext* netCtx = nullptr)
 {
-    script::State* L = CreateScriptState();
+    PIL::State* L = CreateScriptState();
 
     // Open libraries based on configuration
     if (config & TestConfig::OPEN_STDLIB)
-        script::OpenStdLib(*L);
+        PIL::OpenStdLib(*L);
 
     if (config & TestConfig::OPEN_FILEIO)
     {
         if (filePool)
-            script::OpenFileIO(*L, filePool);
+            PIL::OpenFileIO(*L, filePool);
     }
 
     if (config & TestConfig::OPEN_NETWORKIO)
     {
         if (netCtx)
-            script::OpenNetworkIO(*L, netCtx);
+            PIL::OpenNetworkIO(*L, netCtx);
     }
 
     // Execute the test
@@ -239,7 +239,7 @@ static inline BOOL RunScriptTestInline(PCWCHAR path, TestConfig config,
  */
 #define RUN_SCRIPT_TEST_FILEIO(allPassedVar, scriptPath, description) \
     do { \
-        script::FilePool _pool; \
+        PIL::FilePool _pool; \
         BOOL _passed = RunScriptTestInline(scriptPath, CFG_FILEIO, &_pool, nullptr); \
         if (_passed) \
             LOG_INFO("  PASSED: " description); \
@@ -258,7 +258,7 @@ static inline BOOL RunScriptTestInline(PCWCHAR path, TestConfig config,
  */
 #define RUN_SCRIPT_TEST_NETWORKIO(allPassedVar, scriptPath, description) \
     do { \
-        script::NetworkContext* _netCtx = new script::NetworkContext(); \
+        PIL::NetworkContext* _netCtx = new PIL::NetworkContext(); \
         BOOL _passed = RunScriptTestInline(scriptPath, CFG_NETWORKIO, nullptr, _netCtx); \
         delete _netCtx; \
         if (_passed) \
