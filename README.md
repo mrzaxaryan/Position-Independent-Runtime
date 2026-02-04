@@ -535,7 +535,7 @@ All functionality is implemented using low-level native interfaces to avoid exte
 
 ## Practical Use Cases
 
-NOSTDLIB‑RUNTIME is designed for execution environments where traditional runtime assumptions do not apply. Its architecture makes it particularly suitable for the following domains:
+Position-Indepenedent Runtime is designed for execution environments where traditional runtime assumptions do not apply. Its architecture makes it particularly suitable for the following domains:
 - Shellcode and loaderless code execution
 - Security research and malware analysis
 - Embedded and low-level system programming
@@ -544,7 +544,7 @@ NOSTDLIB‑RUNTIME is designed for execution environments where traditional runt
 
 ## To Do
 This project is still a work in progress. Below is a list of remaining tasks and planned improvements. Any help or contributions are greatly appreciated.
-
+- PIL - Position Independent Language
 - Support for additional platforms (macOS, FreeBSD)
 - Windows direct syscall implementations (bypassing ntdll)
 - Compile-time polymorphism
@@ -559,168 +559,30 @@ This project is intended for researchers, systems programmers, and security engi
 
 ## Appendix A: PIL - Position Independent Language
 
-The Position-Independent Runtime includes **PIL (Position Independent Language)**, a lightweight, position-independent scripting language designed for embedded and constrained environments. PIL provides a State API while maintaining full position-independence with no `.rdata` dependencies.
+The Position-Independent Runtime includes **PIL (Position Independent Language)**, a lightweight, position-independent scripting language designed for embedded and constrained environments. PIL provides a State API allowing programs to manage variables, call stacks, and other runtime state, all while maintaining full position-independence with no `.rdata` dependencies.
 
 ### Design Philosophy
 
 - **No built-in functions**: All functions must be registered from C++, giving complete control over the runtime environment
-- **Position-independent**: Uses `_embed` strings throughout, ensuring no relocations are needed
-- **Minimal footprint**: Designed for shellcode and embedded contexts where size matters
-- **State-based API**: Familiar State-based interface for easy adoption
-
-### Language Syntax
-
-**Variables:**
-```
-var x = 10;
-var name = "hello";
-var flag = true;
-```
-
-**Functions:**
-```
-fn factorial(n) {
-    if (n <= 1) {
-        return 1;
-    }
-    return n * factorial(n - 1);
-}
-```
-
-**Control Flow:**
-```
-if (condition) {
-    // ...
-} else if (other) {
-    // ...
-} else {
-    // ...
-}
-
-while (condition) {
-    // ...
-}
-
-for (var i = 0; i < 10; i = i + 1) {
-    // ...
-}
-```
-
-**Operators:**
-- Arithmetic: `+`, `-`, `*`, `/`, `%`
-- Comparison: `==`, `!=`, `<`, `>`, `<=`, `>=`
-- Logical: `&&`, `||`, `!`
-- Assignment: `=`, `+=`, `-=`, `*=`, `/=`
-
-**Data Types:**
-- Numbers (integers): `42`, `-17`
-- Strings: `"hello world"`
-- Booleans: `true`, `false`
-- Nil: `nil`
-- Functions (first-class)
+- **Position-independent**: Uses `_embed` strings and other techniques to eliminate relocations
+- **Minimal footprint**: Designed for shellcode and embedded contexts where binary size is critical
+- **State-based API**: Offers a familiar, state-oriented interface for easy integration and adoption
 
 ### C++ Integration
 
 **Basic Usage:**
+
 ```cpp
-#include "pil/pil.h"
-
-script::State* L = new script::State();
-
-// Option 1: Register standard library
-script::OpenStdLib(*L);  // Registers: print, len, str, num, type, abs, min, max
-
-// Option 2: Register only what you need
-L->Register("print"_embed, script::StdLib_Print);
-
-// Execute script
-L->DoString(R"(
-    print("Hello from PIL!");
-)"_embed);
-
-delete L;
-```
-
-**Custom C++ Functions:**
-```cpp
-script::Value MyFunction(script::FunctionContext& ctx)
+PIL::Value MyFunction(PIL::FunctionContext& ctx)
 {
     if (ctx.CheckArgs(1) && ctx.IsNumber(0))
     {
         INT64 n = ctx.ToNumber(0);
-        return script::Value::Number(n * 2);
+        return PIL::Value::Number(n * 2);
     }
-    return script::Value::Nil();
+    return PIL::Value::Nil();
 }
 
 // Register custom function
 L->Register("double"_embed, MyFunction);
 ```
-
-**Setting Global Variables:**
-```cpp
-L->SetGlobalNumber("PI"_embed, 2, 314);           // PI = 314 (scaled)
-L->SetGlobalString("version"_embed, 7, "1.0.0"_embed, 5);
-L->SetGlobalBool("debug"_embed, 5, TRUE);
-```
-
-### Standard Library Functions
-
-When `OpenStdLib()` is called, the following functions are registered:
-
-| Function | Description | Example |
-|----------|-------------|---------|
-| `print(...)` | Print values to console | `print("x =", x);` |
-| `len(s)` | Get string length | `len("hello")` → `5` |
-| `str(v)` | Convert to string | `str(42)` → `"42"` |
-| `num(v)` | Convert to number | `num("123")` → `123` |
-| `type(v)` | Get type name | `type(42)` → `"number"` |
-| `abs(n)` | Absolute value | `abs(-5)` → `5` |
-| `min(a, b)` | Minimum of two | `min(3, 5)` → `3` |
-| `max(a, b)` | Maximum of two | `max(3, 5)` → `5` |
-
-### Example: FizzBuzz
-
-```cpp
-script::State* L = new script::State();
-script::OpenStdLib(*L);
-
-L->DoString(R"(
-fn fizzbuzz(n) {
-    for (var i = 1; i <= n; i = i + 1) {
-        if (i % 15 == 0) {
-            print("FizzBuzz");
-        } else if (i % 3 == 0) {
-            print("Fizz");
-        } else if (i % 5 == 0) {
-            print("Buzz");
-        } else {
-            print(i);
-        }
-    }
-}
-fizzbuzz(15);
-)"_embed);
-
-delete L;
-```
-
-### Error Handling
-
-```cpp
-if (!L->DoString(source))
-{
-    Console::Write<CHAR>("Error: "_embed);
-    Console::Write<CHAR>(L->GetError());
-}
-```
-
-### Architecture
-
-PIL is implemented as a standalone module and consists of:
-
-- **Lexer** ([lexer.h](include/pil/lexer.h)): Tokenizes source code
-- **Parser** ([parser.h](include/pil/parser.h)): Builds AST from tokens
-- **Interpreter** ([interpreter.h](include/pil/interpreter.h)): Tree-walking interpreter
-- **State** ([state.h](include/pil/state.h)): State-based API wrapper
-- **StdLib** ([stdlib.h](include/pil/stdlib.h)): Standard library functions
