@@ -27,6 +27,7 @@
 template <typename TestFunc>
 inline BOOL RunTest(BOOL& allPassedVar, TestFunc testFunc, PCWCHAR description)
 {
+	(VOID)description; // Suppress unused parameter warning if logging is disabled
 	if (!testFunc())
 	{
 		allPassedVar = FALSE;
