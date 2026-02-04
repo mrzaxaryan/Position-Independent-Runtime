@@ -13,18 +13,18 @@ public:
 
 		LOG_INFO("Running ECC Tests...");
 
-		RUN_TEST(allPassed, TestEccInitialization, "ECC initialization");
-		RUN_TEST(allPassed, TestEccSecp128r1, "ECC secp128r1");
-		RUN_TEST(allPassed, TestEccSecp192r1, "ECC secp192r1");
-		RUN_TEST(allPassed, TestEccSecp256r1, "ECC secp256r1");
-		RUN_TEST(allPassed, TestEccSecp384r1, "ECC secp384r1");
-		RUN_TEST(allPassed, TestPublicKeyExport, "Public key export");
-		RUN_TEST(allPassed, TestPublicKeyFormat, "Public key format");
-		RUN_TEST(allPassed, TestSharedSecretComputation, "Shared secret computation (ECDH)");
-		RUN_TEST(allPassed, TestInvalidCurveSize, "Invalid curve size handling");
-		RUN_TEST(allPassed, TestExportBufferSizeValidation, "Export buffer size validation");
-		RUN_TEST(allPassed, TestInvalidPublicKey, "Invalid public key handling");
-		RUN_TEST(allPassed, TestMultipleKeyGeneration, "Multiple key generation uniqueness");
+		RunTest(allPassed, TestEccInitialization, L"ECC initialization"_embed);
+		RunTest(allPassed, TestEccSecp128r1, L"ECC secp128r1"_embed);
+		RunTest(allPassed, TestEccSecp192r1, L"ECC secp192r1"_embed);
+		RunTest(allPassed, TestEccSecp256r1, L"ECC secp256r1"_embed);
+		RunTest(allPassed, TestEccSecp384r1, L"ECC secp384r1"_embed);
+		RunTest(allPassed, TestPublicKeyExport, L"Public key export"_embed);
+		RunTest(allPassed, TestPublicKeyFormat, L"Public key format"_embed);
+		RunTest(allPassed, TestSharedSecretComputation, L"Shared secret computation (ECDH)"_embed);
+		RunTest(allPassed, TestInvalidCurveSize, L"Invalid curve size handling"_embed);
+		RunTest(allPassed, TestExportBufferSizeValidation, L"Export buffer size validation"_embed);
+		RunTest(allPassed, TestInvalidPublicKey, L"Invalid public key handling"_embed);
+		RunTest(allPassed, TestMultipleKeyGeneration, L"Multiple key generation uniqueness"_embed);
 
 		if (allPassed)
 			LOG_INFO("All ECC tests passed!");

@@ -12,12 +12,12 @@ public:
 
 		LOG_INFO("Running ArrayStorage Tests...");
 
-		RUN_TEST(allPassed, TestWideCharArrayStorage, "Wide char array storage");
-		RUN_TEST(allPassed, TestUInt32ArrayStorage, "UINT32 array storage");
-		RUN_TEST(allPassed, TestUInt64ArrayStorage, "UINT64 array storage");
-		RUN_TEST(allPassed, TestArrayIndexing, "Array indexing");
-		RUN_TEST(allPassed, TestPointerConversionAndCopy, "Pointer conversion and copy");
-		RUN_TEST(allPassed, TestCompileTimeConstants, "Compile-time constants");
+		RunTest(allPassed, TestWideCharArrayStorage, L"Wide char array storage"_embed);
+		RunTest(allPassed, TestUInt32ArrayStorage, L"UINT32 array storage"_embed);
+		RunTest(allPassed, TestUInt64ArrayStorage, L"UINT64 array storage"_embed);
+		RunTest(allPassed, TestArrayIndexing, L"Array indexing"_embed);
+		RunTest(allPassed, TestPointerConversionAndCopy, L"Pointer conversion and copy"_embed);
+		RunTest(allPassed, TestCompileTimeConstants, L"Compile-time constants"_embed);
 
 		if (allPassed)
 			LOG_INFO("All ArrayStorage tests passed!");

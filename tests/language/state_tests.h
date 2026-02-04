@@ -33,10 +33,10 @@ public:
         BOOL allPassed = TRUE;
         LOG_INFO("Running State Tests...");
 
-        RUN_TEST(allPassed, TestManualRegistration, "Manual function registration");
-        RUN_TEST(allPassed, TestGlobalVariables,    "Global variables");
-        RUN_TEST(allPassed, TestMinimalSetup,       "Minimal setup");
-        RUN_TEST(allPassed, TestStateLifecycle,     "State lifecycle");
+        RunTest(allPassed, TestManualRegistration, L"Manual function registration"_embed);
+        RunTest(allPassed, TestGlobalVariables,    L"Global variables"_embed);
+        RunTest(allPassed, TestMinimalSetup,       L"Minimal setup"_embed);
+        RunTest(allPassed, TestStateLifecycle,     L"State lifecycle"_embed);
 
         if (allPassed)
             LOG_INFO("All State Tests passed!");

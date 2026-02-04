@@ -12,14 +12,14 @@ public:
 
 		LOG_INFO("Running String Tests...");
 
-		RUN_TEST(allPassed, TestLengthNarrow, "Narrow string length");
-		RUN_TEST(allPassed, TestLengthWide, "Wide string length");
-		RUN_TEST(allPassed, TestLengthEmpty, "Empty string length");
-		RUN_TEST(allPassed, TestToLowerCaseAscii, "ToLowerCase ASCII");
-		RUN_TEST(allPassed, TestToLowerCasePreserves, "ToLowerCase preserves non-uppercase");
-		RUN_TEST(allPassed, TestWideToUtf8BasicAscii, "WideToUtf8 basic ASCII");
-		RUN_TEST(allPassed, TestWideToUtf8Empty, "WideToUtf8 empty string");
-		RUN_TEST(allPassed, TestWideToUtf8NullHandling, "WideToUtf8 null handling");
+		RunTest(allPassed, TestLengthNarrow, L"Narrow string length"_embed);
+		RunTest(allPassed, TestLengthWide, L"Wide string length"_embed);
+		RunTest(allPassed, TestLengthEmpty, L"Empty string length"_embed);
+		RunTest(allPassed, TestToLowerCaseAscii, L"ToLowerCase ASCII"_embed);
+		RunTest(allPassed, TestToLowerCasePreserves, L"ToLowerCase preserves non-uppercase"_embed);
+		RunTest(allPassed, TestWideToUtf8BasicAscii, L"WideToUtf8 basic ASCII"_embed);
+		RunTest(allPassed, TestWideToUtf8Empty, L"WideToUtf8 empty string"_embed);
+		RunTest(allPassed, TestWideToUtf8NullHandling, L"WideToUtf8 null handling"_embed);
 
 		if (allPassed)
 			LOG_INFO("All String tests passed!");

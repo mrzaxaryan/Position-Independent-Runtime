@@ -217,54 +217,76 @@ static inline BOOL RunScriptTestInline(PCWCHAR path, TestConfig config,
 }
 
 // ============================================================================
-// SCRIPT TEST MACROS
+// SCRIPT TEST FUNCTIONS
 // ============================================================================
 
 /**
- * RUN_SCRIPT_TEST - Macro to run a script test and log the result
+ * RunScriptTest - Run a script test and log the result
+ *
+ * @param allPassedVar - Boolean variable to track overall test status
+ * @param scriptPath   - Path to the script file (wide embedded string)
+ * @param description  - Human-readable description of the test (wide embedded string)
+ * @param config       - Test configuration flags
+ * @return TRUE if test passed, FALSE otherwise
  */
-#define RUN_SCRIPT_TEST(allPassedVar, scriptPath, description, config) \
-    do { \
-        BOOL _passed = RunScriptTestInline(scriptPath, config); \
-        if (_passed) \
-            LOG_INFO("  PASSED: " description); \
-        else { \
-            LOG_ERROR("  FAILED: " description); \
-            allPassedVar = FALSE; \
-        } \
-    } while (0)
+inline BOOL RunScriptTest(BOOL& allPassedVar, PCWCHAR scriptPath, PCWCHAR description, TestConfig config)
+{
+    BOOL passed = RunScriptTestInline(scriptPath, config);
+    if (passed)
+        LOG_INFO("  PASSED: %ls", description);
+    else
+    {
+        LOG_ERROR("  FAILED: %ls", description);
+        allPassedVar = FALSE;
+    }
+    return passed;
+}
 
 /**
- * RUN_SCRIPT_TEST_FILEIO - Macro to run a script test with FileIO
+ * RunScriptTestFileIO - Run a script test with FileIO
+ *
+ * @param allPassedVar - Boolean variable to track overall test status
+ * @param scriptPath   - Path to the script file (wide embedded string)
+ * @param description  - Human-readable description of the test (wide embedded string)
+ * @return TRUE if test passed, FALSE otherwise
  */
-#define RUN_SCRIPT_TEST_FILEIO(allPassedVar, scriptPath, description) \
-    do { \
-        PIL::FilePool _pool; \
-        BOOL _passed = RunScriptTestInline(scriptPath, CFG_FILEIO, &_pool, nullptr); \
-        if (_passed) \
-            LOG_INFO("  PASSED: " description); \
-        else { \
-            LOG_ERROR("  FAILED: " description); \
-            allPassedVar = FALSE; \
-        } \
-    } while (0)
+inline BOOL RunScriptTestFileIO(BOOL& allPassedVar, PCWCHAR scriptPath, PCWCHAR description)
+{
+    PIL::FilePool pool;
+    BOOL passed = RunScriptTestInline(scriptPath, CFG_FILEIO, &pool, nullptr);
+    if (passed)
+        LOG_INFO("  PASSED: %ls", description);
+    else
+    {
+        LOG_ERROR("  FAILED: %ls", description);
+        allPassedVar = FALSE;
+    }
+    return passed;
+}
 
 /**
- * RUN_SCRIPT_TEST_NETWORKIO - Macro to run a script test with NetworkIO
+ * RunScriptTestNetworkIO - Run a script test with NetworkIO
  *
  * NOTE: NetworkContext is allocated on heap because it's very large (~32KB+)
  * due to inline storage for HttpClient and WebSocketClient objects.
  * Stack allocation causes overflow in -O0 builds.
+ *
+ * @param allPassedVar - Boolean variable to track overall test status
+ * @param scriptPath   - Path to the script file (wide embedded string)
+ * @param description  - Human-readable description of the test (wide embedded string)
+ * @return TRUE if test passed, FALSE otherwise
  */
-#define RUN_SCRIPT_TEST_NETWORKIO(allPassedVar, scriptPath, description) \
-    do { \
-        PIL::NetworkContext* _netCtx = new PIL::NetworkContext(); \
-        BOOL _passed = RunScriptTestInline(scriptPath, CFG_NETWORKIO, nullptr, _netCtx); \
-        delete _netCtx; \
-        if (_passed) \
-            LOG_INFO("  PASSED: " description); \
-        else { \
-            LOG_ERROR("  FAILED: " description); \
-            allPassedVar = FALSE; \
-        } \
-    } while (0)
+inline BOOL RunScriptTestNetworkIO(BOOL& allPassedVar, PCWCHAR scriptPath, PCWCHAR description)
+{
+    PIL::NetworkContext* netCtx = new PIL::NetworkContext();
+    BOOL passed = RunScriptTestInline(scriptPath, CFG_NETWORKIO, nullptr, netCtx);
+    delete netCtx;
+    if (passed)
+        LOG_INFO("  PASSED: %ls", description);
+    else
+    {
+        LOG_ERROR("  FAILED: %ls", description);
+        allPassedVar = FALSE;
+    }
+    return passed;
+}

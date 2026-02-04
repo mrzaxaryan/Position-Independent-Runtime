@@ -13,28 +13,28 @@ public:
 		LOG_INFO("Running Base64 Tests...");
 
 		// Encoding Tests
-		RUN_TEST(allPassed, TestEncode_Empty, "Base64 encode empty string");
-		RUN_TEST(allPassed, TestEncode_SingleChar, "Base64 encode single character");
-		RUN_TEST(allPassed, TestEncode_TwoChars, "Base64 encode two characters");
-		RUN_TEST(allPassed, TestEncode_ThreeChars, "Base64 encode three characters");
-		RUN_TEST(allPassed, TestEncode_StandardText, "Base64 encode standard text");
-		RUN_TEST(allPassed, TestEncode_BinaryData, "Base64 encode binary data");
-		RUN_TEST(allPassed, TestEncode_AllPaddingCases, "Base64 encode all padding cases");
+		RunTest(allPassed, TestEncode_Empty, L"Base64 encode empty string"_embed);
+		RunTest(allPassed, TestEncode_SingleChar, L"Base64 encode single character"_embed);
+		RunTest(allPassed, TestEncode_TwoChars, L"Base64 encode two characters"_embed);
+		RunTest(allPassed, TestEncode_ThreeChars, L"Base64 encode three characters"_embed);
+		RunTest(allPassed, TestEncode_StandardText, L"Base64 encode standard text"_embed);
+		RunTest(allPassed, TestEncode_BinaryData, L"Base64 encode binary data"_embed);
+		RunTest(allPassed, TestEncode_AllPaddingCases, L"Base64 encode all padding cases"_embed);
 
 		// Decoding Tests
-		RUN_TEST(allPassed, TestDecode_Empty, "Base64 decode empty string");
-		RUN_TEST(allPassed, TestDecode_SingleChar, "Base64 decode single character");
-		RUN_TEST(allPassed, TestDecode_TwoChars, "Base64 decode two characters");
-		RUN_TEST(allPassed, TestDecode_ThreeChars, "Base64 decode three characters");
-		RUN_TEST(allPassed, TestDecode_StandardText, "Base64 decode standard text");
-		RUN_TEST(allPassed, TestDecode_BinaryData, "Base64 decode binary data");
+		RunTest(allPassed, TestDecode_Empty, L"Base64 decode empty string"_embed);
+		RunTest(allPassed, TestDecode_SingleChar, L"Base64 decode single character"_embed);
+		RunTest(allPassed, TestDecode_TwoChars, L"Base64 decode two characters"_embed);
+		RunTest(allPassed, TestDecode_ThreeChars, L"Base64 decode three characters"_embed);
+		RunTest(allPassed, TestDecode_StandardText, L"Base64 decode standard text"_embed);
+		RunTest(allPassed, TestDecode_BinaryData, L"Base64 decode binary data"_embed);
 
 		// Round-trip Tests
-		RUN_TEST(allPassed, TestRoundTrip_Various, "Base64 round-trip test");
+		RunTest(allPassed, TestRoundTrip_Various, L"Base64 round-trip test"_embed);
 
 		// Size Calculation Tests
-		RUN_TEST(allPassed, TestEncodeOutSize, "Base64 encode output size calculation");
-		RUN_TEST(allPassed, TestDecodeOutSize, "Base64 decode output size calculation");
+		RunTest(allPassed, TestEncodeOutSize, L"Base64 encode output size calculation"_embed);
+		RunTest(allPassed, TestDecodeOutSize, L"Base64 decode output size calculation"_embed);
 
 		if (allPassed)
 			LOG_INFO("All Base64 tests passed!");

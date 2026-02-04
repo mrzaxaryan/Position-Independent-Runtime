@@ -36,14 +36,14 @@ public:
         BOOL allPassed = TRUE;
         LOG_INFO("Running StdLib Tests...");
 
-        RUN_SCRIPT_TEST(allPassed, L"tests/language/scripts/stdlib/stdlib_functions.pil"_embed, "Standard library functions", CFG_STDLIB);
-        RUN_SCRIPT_TEST(allPassed, L"tests/language/scripts/stdlib/print_function.pil"_embed,   "Print function",             CFG_STDLIB);
-        RUN_SCRIPT_TEST(allPassed, L"tests/language/scripts/stdlib/type_function.pil"_embed,    "Type function",              CFG_STDLIB);
-        RUN_SCRIPT_TEST(allPassed, L"tests/language/scripts/stdlib/string_functions.pil"_embed, "String functions",           CFG_STDLIB);
-        RUN_SCRIPT_TEST(allPassed, L"tests/language/scripts/stdlib/math_functions.pil"_embed,   "Math functions",             CFG_STDLIB);
+        RunScriptTest(allPassed, L"tests/language/scripts/stdlib/stdlib_functions.pil"_embed, L"Standard library functions"_embed, CFG_STDLIB);
+        RunScriptTest(allPassed, L"tests/language/scripts/stdlib/print_function.pil"_embed,   L"Print function"_embed,             CFG_STDLIB);
+        RunScriptTest(allPassed, L"tests/language/scripts/stdlib/type_function.pil"_embed,    L"Type function"_embed,              CFG_STDLIB);
+        RunScriptTest(allPassed, L"tests/language/scripts/stdlib/string_functions.pil"_embed, L"String functions"_embed,           CFG_STDLIB);
+        RunScriptTest(allPassed, L"tests/language/scripts/stdlib/math_functions.pil"_embed,   L"Math functions"_embed,             CFG_STDLIB);
 
         // Custom test with registered C++ functions
-        RUN_TEST(allPassed, TestCustomFunctionsWithStdLib, "Custom functions with StdLib");
+        RunTest(allPassed, TestCustomFunctionsWithStdLib, L"Custom functions with StdLib"_embed);
 
         if (allPassed)
             LOG_INFO("All StdLib Tests passed!");
