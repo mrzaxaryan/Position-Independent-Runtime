@@ -480,7 +480,7 @@ jobs:
               all_labels.sort(key=lambda l: (l[0], l[1]))
 
               # Resolve label collisions with iterative adjustment
-              min_label_spacing = 12  # Minimum vertical spacing between labels
+              min_label_spacing = 18  # Minimum vertical spacing between labels
               label_width = 45        # Approximate width of label text
               placed_labels = []      # [(x, y, text, color), ...]
 
