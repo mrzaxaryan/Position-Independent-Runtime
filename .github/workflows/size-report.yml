@@ -442,9 +442,11 @@ jobs:
 
               for key, color, label in platforms:
                   points = []
+                  sizes_at_points = []
                   for i, e in enumerate(entries):
                       if key in e["sizes"]:
                           points.append((scale_x(i), scale_y(e["sizes"][key])))
+                          sizes_at_points.append(e["sizes"][key])
 
                   if len(points) >= 2:
                       path_d = f'M {points[0][0]:.1f} {points[0][1]:.1f}'
@@ -452,7 +454,10 @@ jobs:
                           path_d += f' L {x:.1f} {y:.1f}'
                       svg_parts.append(f'<path d="{path_d}" fill="none" stroke="{color}" stroke-width="2" opacity="0.8"/>')
                       last_x, last_y = points[-1]
+                      last_size = sizes_at_points[-1]
+                      size_label = f"{last_size/1024:.1f}KB"
                       svg_parts.append(f'<circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="4" fill="{color}"/>')
+                      svg_parts.append(f'<text x="{last_x + 6:.1f}" y="{last_y + 4:.1f}" fill="{color}" font-family="monospace" font-size="9px">{size_label}</text>')
 
               legend_x = width - margin["right"] + 15
               for i, (key, color, label) in enumerate(platforms):
