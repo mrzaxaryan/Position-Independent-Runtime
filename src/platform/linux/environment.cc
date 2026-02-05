@@ -36,6 +36,15 @@ USIZE Environment::GetVariable(const CHAR* name, CHAR* buffer, USIZE bufferSize)
 
     // Open /proc/self/environ
     const CHAR* procEnvPath = "/proc/self/environ"_embed;
+#if defined(ARCHITECTURE_AARCH64)
+    // aarch64 only has openat syscall
+    SSIZE fd = System::Call(SYS_OPENAT, (USIZE)-100, (USIZE)procEnvPath, 0, 0);
+    if (fd < 0)
+    {
+        buffer[0] = '\0';
+        return 0;
+    }
+#else
     SSIZE fd = System::Call(SYS_OPEN, (USIZE)procEnvPath, 0 /* O_RDONLY */, 0);
     if (fd < 0)
     {
@@ -47,6 +56,7 @@ USIZE Environment::GetVariable(const CHAR* name, CHAR* buffer, USIZE bufferSize)
             return 0;
         }
     }
+#endif
 
     // Read environment block (entries separated by null bytes)
     CHAR envBuf[4096];

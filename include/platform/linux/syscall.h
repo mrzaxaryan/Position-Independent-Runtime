@@ -14,6 +14,7 @@ constexpr USIZE SYS_WRITE = 1;
 constexpr USIZE SYS_OPEN = 2;
 constexpr USIZE SYS_CLOSE = 3;
 constexpr USIZE SYS_LSEEK = 8;
+constexpr USIZE SYS_OPENAT = 257;
 
 // File operations
 constexpr USIZE SYS_STAT = 4;
@@ -62,6 +63,7 @@ constexpr USIZE SYS_WRITE = 4;
 constexpr USIZE SYS_OPEN = 5;
 constexpr USIZE SYS_CLOSE = 6;
 constexpr USIZE SYS_LSEEK = 19;
+constexpr USIZE SYS_OPENAT = 295;
 
 // File operations
 constexpr USIZE SYS_STAT = 106;
@@ -164,6 +166,7 @@ constexpr USIZE SYS_WRITE = 4;
 constexpr USIZE SYS_OPEN = 5;
 constexpr USIZE SYS_CLOSE = 6;
 constexpr USIZE SYS_LSEEK = 19;
+constexpr USIZE SYS_OPENAT = 322;
 
 // File operations
 constexpr USIZE SYS_STAT = 106;
