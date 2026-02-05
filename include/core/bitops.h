@@ -25,25 +25,9 @@ namespace BitOps
         return (x << n) | (x >> (bits - n));
     }
 
-    // Specialized 32-bit versions for performance
-    static FORCE_INLINE UINT32 ROTR32(UINT32 x, UINT32 n)
-    {
-        return (x >> n) | (x << (32 - n));
-    }
-
-    static FORCE_INLINE UINT32 ROTL32(UINT32 x, UINT32 n)
-    {
-        return (x << n) | (x >> (32 - n));
-    }
-
-    // Specialized 64-bit versions for performance
-    static FORCE_INLINE UINT64 ROTR64(UINT64 x, UINT32 n)
-    {
-        return (x >> n) | (x << (64 - n));
-    }
-
-    static FORCE_INLINE UINT64 ROTL64(UINT64 x, UINT32 n)
-    {
-        return (x << n) | (x >> (64 - n));
-    }
+    // Convenience aliases - generic templates compile to identical code
+    static FORCE_INLINE UINT32 ROTR32(UINT32 x, UINT32 n) { return ROTR(x, n); }
+    static FORCE_INLINE UINT32 ROTL32(UINT32 x, UINT32 n) { return ROTL(x, n); }
+    static FORCE_INLINE UINT64 ROTR64(UINT64 x, UINT32 n) { return ROTR(x, n); }
+    static FORCE_INLINE UINT64 ROTL64(UINT64 x, UINT32 n) { return ROTL(x, n); }
 }

@@ -63,6 +63,8 @@ private:
     static INT32 FormatPointerAsHex(BOOL (*writer)(PVOID, TChar), PVOID context, PVOID ptr);
     template <TCHAR TChar>
     static INT32 FormatUInt32AsHex(BOOL (*writer)(PVOID, TChar), PVOID context, UINT32 num, INT32 fieldWidth = 0, INT32 uppercase = 0, INT32 zeroPad = 0, BOOL addPrefix = FALSE);
+    template <TCHAR TChar>
+    static INT32 FormatWideString(BOOL (*writer)(PVOID, TChar), PVOID context, const WCHAR* wstr);
 
 public:
     // C++11 variadic template version - supports custom types like DOUBLE
@@ -270,6 +272,24 @@ INT32 StringFormatter::FormatPointerAsHex(BOOL (*writer)(PVOID, TChar), PVOID co
         index++;
     }
     return index - startIndex;
+}
+
+template <TCHAR TChar>
+INT32 StringFormatter::FormatWideString(BOOL (*writer)(PVOID, TChar), PVOID context, const WCHAR* wstr)
+{
+    INT32 j = 0;
+    if (wstr == NULL)
+    {
+        writer(context, (TChar)'?');
+        writer(context, (TChar)'\0');
+        return 2;
+    }
+    for (INT32 k = 0; wstr[k] != (WCHAR)'\0'; k++)
+    {
+        writer(context, (TChar)wstr[k]);
+        j++;
+    }
+    return j;
 }
 
 template <TCHAR TChar>
@@ -606,22 +626,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
                 {
                     i += 2;                              // Skip over "ws"
                     if (currentArg >= argCount) continue;
-                    WCHAR *wstr = (WCHAR*)args[currentArg++].wstr; // Get the next argument as a PWCHAR (wide string)
-                    // C standard does not allow NULL strings, so if the string is NULL, handle it by printing '?'.
-                    if (wstr == NULL)
-                    {
-                        writer(context, (TChar)'?');
-                        writer(context, (TChar)'\0');
-                        j += 2;
-                        continue;
-                    }
-
-                    // copy wide string to output
-                    for (INT32 k = 0; wstr[k] != (TChar)'\0'; k++)
-                    {
-                        writer(context, (TChar)wstr[k]); // Copy each character from the wide string to the output
-                        j++;
-                    }
+                    j += FormatWideString<TChar>(writer, context, args[currentArg++].wstr);
                     continue;
                 }
                 else
@@ -638,23 +643,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
                 {
                     i += 2;                              // Skip over "ls"
                     if (currentArg >= argCount) continue;
-                    WCHAR *wstr = (WCHAR*)args[currentArg++].wstr; // Get the next argument as a PWCHAR (wide string)
-                    // C standard does not allow NULL strings, so if the string is NULL, handle it by printing '?'.
-                    if (wstr == NULL)
-                    {
-                        writer(context, (WCHAR)'?');
-                        writer(context, (WCHAR)'\0');
-                        j += 2;
-                        continue;
-                    }
-
-                    // Copy wide string to output
-                    for (INT32 k = 0; wstr[k] != (TChar)'\0'; k++)
-                    {
-                        writer(context, (TChar)wstr[k]); // Copy each character from the wide string to the output
-                        j++;
-                    }
-
+                    j += FormatWideString<TChar>(writer, context, args[currentArg++].wstr);
                     continue;
                 }
                 // Handle other long variants ( ld, lu, lld)
@@ -742,15 +731,6 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
                     j++;
                     continue;
                 }
-            }
-            else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'f')
-            {                                                                            // Handle %f (double)
-                i++;                                                                     // Skip 'f'
-                if (currentArg >= argCount) continue;
-                // Now we can use DOUBLE directly without casting!
-                DOUBLE num = args[currentArg++].dbl;
-                j += StringFormatter::FormatDouble(writer, context, num, precision, fieldWidth, zeroPad); // Convert the double to string with specified formatting
-                continue;
             }
             else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'%')
             {                                // Handle literal "%%"

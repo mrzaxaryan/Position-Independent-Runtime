@@ -1,5 +1,6 @@
 #pragma once
 #include "primitives.h"
+#include "string.h"
 
 consteval USIZE ct_hash_str_seed(const CHAR *s)
 {
@@ -21,9 +22,7 @@ public:
         USIZE h = Seed;
         for (USIZE i = 0; value[i] != (TChar)0; ++i)
         {
-            TChar c = value[i];
-            if (c >= (TChar)'A' && c <= (TChar)'Z')
-                c += (TChar)('a' - 'A');
+            TChar c = String::ToLowerCase(value[i]);
             h = ((h << 5) + h) + (USIZE)c;
         }
         return h;
@@ -33,11 +32,9 @@ public:
     static consteval USIZE HashCompileTime(const TChar (&value)[N])
     {
         USIZE h = Seed;
-        for (USIZE i = 0; i + 1 < N; ++i)
+        for (USIZE i = 0; value[i] != (TChar)0; ++i)
         {
-            TChar c = value[i];
-            if (c >= (TChar)'A' && c <= (TChar)'Z')
-                c += (TChar)('a' - 'A');
+            TChar c = String::ToLowerCase(value[i]);
             h = ((h << 5) + h) + (USIZE)c;
         }
         return h;

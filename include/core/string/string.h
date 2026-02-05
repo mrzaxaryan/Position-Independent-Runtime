@@ -35,11 +35,11 @@ public:
 
     // Convert character to lowercase
     template <TCHAR TChar>
-    static FORCE_INLINE TChar ToLowerCase(TChar c) noexcept;
+    static constexpr FORCE_INLINE TChar ToLowerCase(TChar c) noexcept;
 
     // Convert character to uppercase
     template <TCHAR TChar>
-    static FORCE_INLINE TChar ToUpperCase(TChar c) noexcept;
+    static constexpr FORCE_INLINE TChar ToUpperCase(TChar c) noexcept;
 
     // ============================================================================
     // STRING LENGTH AND COMPARISON
@@ -47,7 +47,7 @@ public:
 
     // Getting the length of a string
     template <TCHAR TChar>
-    static FORCE_INLINE USIZE Length(const TChar *pChar) noexcept;
+    static constexpr FORCE_INLINE USIZE Length(const TChar *pChar) noexcept;
 
     // Compare two null-terminated strings
     template <TCHAR TChar>
@@ -221,7 +221,7 @@ FORCE_INLINE BOOL String::IsAlphaNum(TChar c) noexcept
 // ============================================================================
 
 template <TCHAR TChar>
-FORCE_INLINE TChar String::ToLowerCase(TChar c) noexcept
+constexpr FORCE_INLINE TChar String::ToLowerCase(TChar c) noexcept
 {
     if (c >= (TChar)'A' && c <= (TChar)'Z')
     {
@@ -231,7 +231,7 @@ FORCE_INLINE TChar String::ToLowerCase(TChar c) noexcept
 }
 
 template <TCHAR TChar>
-FORCE_INLINE TChar String::ToUpperCase(TChar c) noexcept
+constexpr FORCE_INLINE TChar String::ToUpperCase(TChar c) noexcept
 {
     if (c >= (TChar)'a' && c <= (TChar)'z')
     {
@@ -245,7 +245,7 @@ FORCE_INLINE TChar String::ToUpperCase(TChar c) noexcept
 // ============================================================================
 
 template <TCHAR TChar>
-FORCE_INLINE USIZE String::Length(const TChar *p) noexcept
+constexpr FORCE_INLINE USIZE String::Length(const TChar *p) noexcept
 {
     if (!p) return 0;
     USIZE i = 0;
