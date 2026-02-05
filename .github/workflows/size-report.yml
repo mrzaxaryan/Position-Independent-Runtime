@@ -453,11 +453,22 @@ jobs:
                       for x, y in points[1:]:
                           path_d += f' L {x:.1f} {y:.1f}'
                       svg_parts.append(f'<path d="{path_d}" fill="none" stroke="{color}" stroke-width="2" opacity="0.8"/>')
+
+                      # Add circles and size labels at regular intervals
+                      label_step = max(1, len(points) // 5)  # Show ~5 labels per line
+                      for idx in range(0, len(points), label_step):
+                          px, py = points[idx]
+                          size_val = sizes_at_points[idx]
+                          size_label = f"{size_val/1024:.1f}KB"
+                          svg_parts.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="3" fill="{color}"/>')
+                          svg_parts.append(f'<text x="{px:.1f}" y="{py - 8:.1f}" fill="{color}" font-family="monospace" font-size="8px" text-anchor="middle">{size_label}</text>')
+
+                      # Always show the last point
                       last_x, last_y = points[-1]
                       last_size = sizes_at_points[-1]
                       size_label = f"{last_size/1024:.1f}KB"
                       svg_parts.append(f'<circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="4" fill="{color}"/>')
-                      svg_parts.append(f'<text x="{last_x + 6:.1f}" y="{last_y + 4:.1f}" fill="{color}" font-family="monospace" font-size="9px">{size_label}</text>')
+                      svg_parts.append(f'<text x="{last_x:.1f}" y="{last_y - 8:.1f}" fill="{color}" font-family="monospace" font-size="8px" text-anchor="middle">{size_label}</text>')
 
               legend_x = width - margin["right"] + 15
               for i, (key, color, label) in enumerate(platforms):
