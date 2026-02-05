@@ -32,6 +32,85 @@ struct SockAddr6
 	UINT32 sin6_scope_id;
 };
 
+// Helper class for preparing socket addresses from IPAddress
+class SocketAddressHelper
+{
+public:
+	// Prepare a socket address for connect/bind operations
+	// Returns the size of the prepared address structure
+	static UINT32 PrepareAddress(const IPAddress& ip, UINT16 port, PVOID addrBuffer, UINT32 bufferSize)
+	{
+		if (ip.IsIPv6())
+		{
+			if (bufferSize < sizeof(SockAddr6))
+				return 0;
+
+			SockAddr6* addr6 = (SockAddr6*)addrBuffer;
+			Memory::Zero(addr6, sizeof(SockAddr6));
+			addr6->sin6_family = AF_INET6;
+			addr6->sin6_port = UINT16SwapByteOrder(port);
+			addr6->sin6_flowinfo = 0;
+			addr6->sin6_scope_id = 0;
+
+			const UINT8* ipv6Addr = ip.ToIPv6();
+			if (ipv6Addr != NULL)
+			{
+				Memory::Copy(addr6->sin6_addr, ipv6Addr, 16);
+			}
+
+			return sizeof(SockAddr6);
+		}
+		else
+		{
+			if (bufferSize < sizeof(SockAddr))
+				return 0;
+
+			SockAddr* addr = (SockAddr*)addrBuffer;
+			Memory::Zero(addr, sizeof(SockAddr));
+			addr->sin_family = AF_INET;
+			addr->sin_port = UINT16SwapByteOrder(port);
+			addr->sin_addr = ip.ToIPv4();
+
+			return sizeof(SockAddr);
+		}
+	}
+
+	// Prepare a bind address (zeroed IP, just family and port)
+	static UINT32 PrepareBindAddress(BOOL isIPv6, UINT16 port, PVOID addrBuffer, UINT32 bufferSize)
+	{
+		if (isIPv6)
+		{
+			if (bufferSize < sizeof(SockAddr6))
+				return 0;
+
+			SockAddr6* addr6 = (SockAddr6*)addrBuffer;
+			Memory::Zero(addr6, sizeof(SockAddr6));
+			addr6->sin6_family = AF_INET6;
+			addr6->sin6_port = UINT16SwapByteOrder(port);
+
+			return sizeof(SockAddr6);
+		}
+		else
+		{
+			if (bufferSize < sizeof(SockAddr))
+				return 0;
+
+			SockAddr* addr = (SockAddr*)addrBuffer;
+			Memory::Zero(addr, sizeof(SockAddr));
+			addr->sin_family = AF_INET;
+			addr->sin_port = UINT16SwapByteOrder(port);
+
+			return sizeof(SockAddr);
+		}
+	}
+
+	// Get the address family for an IP address
+	static INT32 GetAddressFamily(const IPAddress& ip)
+	{
+		return ip.IsIPv6() ? AF_INET6 : AF_INET;
+	}
+};
+
 class Socket
 {
 private:

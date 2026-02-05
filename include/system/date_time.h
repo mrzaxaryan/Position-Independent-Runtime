@@ -146,4 +146,37 @@ public:
     {
         return (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0));
     }
+
+    // Get days in a specific month (1-indexed: 1=January, 12=December)
+    static FORCE_INLINE UINT32 GetDaysInMonth(UINT32 month, BOOL isLeapYear) noexcept
+    {
+        // Days in each month (non-leap year): Jan=31, Feb=28, Mar=31, Apr=30, May=31, Jun=30, Jul=31, Aug=31, Sep=30, Oct=31, Nov=30, Dec=31
+        // Using a computed approach to avoid .rdata dependency
+        if (month == 2)
+            return isLeapYear ? 29 : 28;
+        if (month == 4 || month == 6 || month == 9 || month == 11)
+            return 30;
+        return 31;
+    }
+
+    // Convert day-of-year (0-based) to month and day
+    // Returns month (1-12) and day (1-31) via output parameters
+    static FORCE_INLINE VOID DaysToMonthDay(UINT64 dayOfYear, UINT64 year, UINT32& outMonth, UINT32& outDay) noexcept
+    {
+        BOOL isLeap = IsLeapYear(year);
+        UINT32 month = 1;
+        UINT64 remainingDays = dayOfYear;
+
+        while (month <= 12)
+        {
+            UINT32 daysInMonth = GetDaysInMonth(month, isLeap);
+            if (remainingDays < daysInMonth)
+                break;
+            remainingDays -= daysInMonth;
+            month++;
+        }
+
+        outMonth = month;
+        outDay = (UINT32)remainingDays + 1;  // Days are 1-indexed
+    }
 };

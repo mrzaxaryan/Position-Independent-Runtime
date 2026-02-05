@@ -23,6 +23,7 @@
 #pragma once
 
 #include "core.h"
+#include "bitops.h"
 
 #define SHA256_DIGEST_SIZE (256 / 8)
 #define SHA384_DIGEST_SIZE (384 / 8)
@@ -49,13 +50,10 @@ struct SHA256Traits
     static FORCE_INLINE VOID FillK(Word* out);
     static FORCE_INLINE VOID Pack(const UINT8* str, Word* x);
     static FORCE_INLINE VOID Unpack(Word x, UINT8* str);
-    static FORCE_INLINE Word F1(Word x) { return ROTR(x, 2) ^ ROTR(x, 13) ^ ROTR(x, 22); }
-    static FORCE_INLINE Word F2(Word x) { return ROTR(x, 6) ^ ROTR(x, 11) ^ ROTR(x, 25); }
-    static FORCE_INLINE Word F3(Word x) { return ROTR(x, 7) ^ ROTR(x, 18) ^ (x >> 3); }
-    static FORCE_INLINE Word F4(Word x) { return ROTR(x, 17) ^ ROTR(x, 19) ^ (x >> 10); }
-
-private:
-    static FORCE_INLINE Word ROTR(Word x, UINT32 n) { return (x >> n) | (x << (32 - n)); }
+    static FORCE_INLINE Word F1(Word x) { return BitOps::ROTR32(x, 2) ^ BitOps::ROTR32(x, 13) ^ BitOps::ROTR32(x, 22); }
+    static FORCE_INLINE Word F2(Word x) { return BitOps::ROTR32(x, 6) ^ BitOps::ROTR32(x, 11) ^ BitOps::ROTR32(x, 25); }
+    static FORCE_INLINE Word F3(Word x) { return BitOps::ROTR32(x, 7) ^ BitOps::ROTR32(x, 18) ^ (x >> 3); }
+    static FORCE_INLINE Word F4(Word x) { return BitOps::ROTR32(x, 17) ^ BitOps::ROTR32(x, 19) ^ (x >> 10); }
 };
 
 struct SHA384Traits
@@ -73,13 +71,10 @@ struct SHA384Traits
     static FORCE_INLINE VOID FillK(Word* out);
     static FORCE_INLINE VOID Pack(const UINT8* str, Word* x);
     static FORCE_INLINE VOID Unpack(Word x, UINT8* str);
-    static FORCE_INLINE Word F1(Word x) { return ROTR(x, 28) ^ ROTR(x, 34) ^ ROTR(x, 39); }
-    static FORCE_INLINE Word F2(Word x) { return ROTR(x, 14) ^ ROTR(x, 18) ^ ROTR(x, 41); }
-    static FORCE_INLINE Word F3(Word x) { return ROTR(x, 1) ^ ROTR(x, 8) ^ (x >> 7); }
-    static FORCE_INLINE Word F4(Word x) { return ROTR(x, 19) ^ ROTR(x, 61) ^ (x >> 6); }
-
-private:
-    static FORCE_INLINE Word ROTR(Word x, UINT32 n) { return (x >> n) | (x << (64 - n)); }
+    static FORCE_INLINE Word F1(Word x) { return BitOps::ROTR64(x, 28) ^ BitOps::ROTR64(x, 34) ^ BitOps::ROTR64(x, 39); }
+    static FORCE_INLINE Word F2(Word x) { return BitOps::ROTR64(x, 14) ^ BitOps::ROTR64(x, 18) ^ BitOps::ROTR64(x, 41); }
+    static FORCE_INLINE Word F3(Word x) { return BitOps::ROTR64(x, 1) ^ BitOps::ROTR64(x, 8) ^ (x >> 7); }
+    static FORCE_INLINE Word F4(Word x) { return BitOps::ROTR64(x, 19) ^ BitOps::ROTR64(x, 61) ^ (x >> 6); }
 };
 
 template<typename Traits>

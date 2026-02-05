@@ -75,7 +75,7 @@ DateTime DateTime::Now()
     UINT64 days = local100ns / TICKS_PER_DAY;
     UINT64 dayTicks = local100ns % TICKS_PER_DAY;
 
-    // ----- inline: days since 1601-01-01 -> (Y,M,D) -----
+    // Convert days since 1601-01-01 to year
     UINT64 year = 1601;
 
     while (1)
@@ -90,38 +90,13 @@ DateTime DateTime::Now()
             break;
     }
 
-    UINT32 mdays_norm[12];
-    mdays_norm[0] = 31;
-    mdays_norm[1] = 28;
-    mdays_norm[2] = 31;
-    mdays_norm[3] = 30;
-    mdays_norm[4] = 31;
-    mdays_norm[5] = 30;
-    mdays_norm[6] = 31;
-    mdays_norm[7] = 31;
-    mdays_norm[8] = 30;
-    mdays_norm[9] = 31;
-    mdays_norm[10] = 30;
-    mdays_norm[11] = 31;
-
-    UINT32 mdays[12];
-    for (INT32 i = 0; i < 12; ++i)
-        mdays[i] = mdays_norm[i];
-
-    // Adjust for leap year
-    if (DateTime::IsLeapYear(year))
-        mdays[1] = 29;
-
-    UINT32 month = 0;
-    while (month < 12 && days >= mdays[month])
-    {
-        days -= mdays[month];
-        month++;
-    }
+    // Use shared helper to convert day-of-year to month and day
+    UINT32 month, day;
+    DateTime::DaysToMonthDay(days, year, month, day);
 
     dt.Years = year;
-    dt.Monthes = month + 1;     // 1..12
-    dt.Days = (UINT32)days + 1; // 1..31
+    dt.Monthes = month;
+    dt.Days = day;
 
     // time-of-day
     UINT64 total_secs = dayTicks / TICKS_PER_SEC;

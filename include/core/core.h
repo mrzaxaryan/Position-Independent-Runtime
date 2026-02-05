@@ -11,6 +11,7 @@
 #include "core/memory.h"
 #include "core/math.h"
 #include "core/byteorder.h"
+#include "core/bitops.h"
 
 // Base types
 #include "types/primitives.h"
@@ -26,10 +27,14 @@
 // String utilities
 #include "string/string.h"
 #include "string/string_formatter.h"
+#include "string/number_utils.h"
 
 // Algorithms
 #include "algorithms/djb2.h"
 #include "algorithms/base64.h"
+
+// Encoding utilities
+#include "encoding/utf16.h"
 
 // Network types
 #include "types/network/ip_address.h"

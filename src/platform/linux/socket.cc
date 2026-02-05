@@ -71,7 +71,7 @@ static SSIZE linux_recv(SSIZE sockfd, VOID* buf, USIZE len, INT32 flags)
 Socket::Socket(const IPAddress& ipAddress, UINT16 port)
     : ip(ipAddress), port(port), m_socket(NULL)
 {
-    INT32 addressFamily = ip.IsIPv6() ? AF_INET6 : AF_INET;
+    INT32 addressFamily = SocketAddressHelper::GetAddressFamily(ip);
     INT32 socketType = SOCK_STREAM;
     INT32 protocol = IPPROTO_TCP;
 
@@ -94,18 +94,9 @@ BOOL Socket::Bind(SockAddr* socketAddress, INT32 shareType)
         return FALSE;
 
     SSIZE sockfd = (SSIZE)m_socket;
-
-    if (socketAddress->sin_family == AF_INET6)
-    {
-        SockAddr6* addr6 = (SockAddr6*)socketAddress;
-        SSIZE result = linux_bind(sockfd, (SockAddr*)addr6, sizeof(SockAddr6));
-        return result == 0;
-    }
-    else
-    {
-        SSIZE result = linux_bind(sockfd, socketAddress, sizeof(SockAddr));
-        return result == 0;
-    }
+    UINT32 addrLen = (socketAddress->sin_family == AF_INET6) ? sizeof(SockAddr6) : sizeof(SockAddr);
+    SSIZE result = linux_bind(sockfd, socketAddress, addrLen);
+    return result == 0;
 }
 
 // Open/Connect socket
@@ -116,37 +107,18 @@ BOOL Socket::Open()
 
     SSIZE sockfd = (SSIZE)m_socket;
 
-    // Prepare socket address
-    if (ip.IsIPv6())
-    {
-        SockAddr6 addr;
-        Memory::Zero(&addr, sizeof(addr));
-        addr.sin6_family = AF_INET6;
-        addr.sin6_port = UINT16SwapByteOrder(port);
+    // Use helper to prepare socket address
+    union {
+        SockAddr addr4;
+        SockAddr6 addr6;
+    } addrBuffer;
 
-        const UINT8* ipv6Addr = ip.ToIPv6();
-        if (ipv6Addr != NULL)
-        {
-            Memory::Copy(addr.sin6_addr, ipv6Addr, 16);
-        }
+    UINT32 addrLen = SocketAddressHelper::PrepareAddress(ip, port, &addrBuffer, sizeof(addrBuffer));
+    if (addrLen == 0)
+        return FALSE;
 
-        addr.sin6_flowinfo = 0;
-        addr.sin6_scope_id = 0;
-
-        SSIZE result = linux_connect(sockfd, (SockAddr*)&addr, sizeof(addr));
-        return result == 0;
-    }
-    else
-    {
-        SockAddr addr;
-        Memory::Zero(&addr, sizeof(addr));
-        addr.sin_family = AF_INET;
-        addr.sin_port = UINT16SwapByteOrder(port);
-        addr.sin_addr = ip.ToIPv4();
-
-        SSIZE result = linux_connect(sockfd, &addr, sizeof(addr));
-        return result == 0;
-    }
+    SSIZE result = linux_connect(sockfd, (SockAddr*)&addrBuffer, addrLen);
+    return result == 0;
 }
 
 // Close socket

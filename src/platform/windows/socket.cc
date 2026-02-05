@@ -170,27 +170,17 @@ BOOL Socket::Open()
 
     NTSTATUS Status = 0;
 
-    if (ip.IsIPv6())
+    // Prepare bind address using helper
+    union {
+        SockAddr addr4;
+        SockAddr6 addr6;
+    } bindBuffer;
+
+    SocketAddressHelper::PrepareBindAddress(ip.IsIPv6(), 0, &bindBuffer, sizeof(bindBuffer));
+    if (Bind((SockAddr*)&bindBuffer, AFD_SHARE_REUSE) == FALSE)
     {
-        SockAddr6 BindAddr;
-        Memory::Zero(&BindAddr, sizeof(BindAddr));
-        BindAddr.sin6_family = AF_INET6;
-        if (Bind((SockAddr*)&BindAddr, AFD_SHARE_REUSE) == FALSE)
-        {
-            LOG_ERROR("Failed to bind IPv6 socket\n");
-            return FALSE;
-        }
-    }
-    else
-    {
-        SockAddr BindAddr;
-        Memory::Zero(&BindAddr, sizeof(BindAddr));
-        BindAddr.sin_family = AF_INET;
-        if (Bind(&BindAddr, AFD_SHARE_REUSE) == FALSE)
-        {
-            LOG_ERROR("Failed to bind socket\n");
-            return FALSE;
-        }
+        LOG_ERROR("Failed to bind socket\n");
+        return FALSE;
     }
     LOG_DEBUG("Socket bound successfully\n");
 
@@ -210,25 +200,21 @@ BOOL Socket::Open()
 
     IO_STATUS_BLOCK IOSB;
 
+    // Prepare connect address using helper
+    union {
+        SockAddr addr4;
+        SockAddr6 addr6;
+    } addrBuffer;
+
+    SocketAddressHelper::PrepareAddress(ip, port, &addrBuffer, sizeof(addrBuffer));
+
     if (ip.IsIPv6())
     {
-        SockAddr6 SocketAddress;
-        Memory::Zero(&SocketAddress, sizeof(SocketAddress));
-        SocketAddress.sin6_family = AF_INET6;
-        SocketAddress.sin6_port = UINT16SwapByteOrder(port);
-        const UINT8* ipv6Addr = ip.ToIPv6();
-        if (ipv6Addr != NULL)
-        {
-            Memory::Copy(SocketAddress.sin6_addr, ipv6Addr, 16);
-        }
-        SocketAddress.sin6_flowinfo = 0;
-        SocketAddress.sin6_scope_id = 0;
-
         AfdConnectInfo6 ConnectInfo;
         ConnectInfo.UseSAN = 0;
         ConnectInfo.Root = 0;
         ConnectInfo.Unknown = 0;
-        ConnectInfo.Address = SocketAddress;
+        ConnectInfo.Address = addrBuffer.addr6;
 
         Status = NTDLL::NtDeviceIoControlFile((PVOID)m_socket,
                                               SockEvent,
@@ -243,17 +229,11 @@ BOOL Socket::Open()
     }
     else
     {
-        SockAddr SocketAddress;
-        Memory::Zero(&SocketAddress, sizeof(SocketAddress));
-        SocketAddress.sin_family = AF_INET;
-        SocketAddress.sin_port = UINT16SwapByteOrder(port);
-        SocketAddress.sin_addr = ip.ToIPv4();
-
         AfdConnectInfo ConnectInfo;
         ConnectInfo.UseSAN = 0;
         ConnectInfo.Root = 0;
         ConnectInfo.Unknown = 0;
-        ConnectInfo.Address = SocketAddress;
+        ConnectInfo.Address = addrBuffer.addr4;
 
         Status = NTDLL::NtDeviceIoControlFile((PVOID)m_socket,
                                               SockEvent,
@@ -444,7 +424,7 @@ Socket::Socket(const IPAddress& ipAddress, UINT16 port) : ip(ipAddress), port(po
 
     NTSTATUS Status = 0;
 
-    INT32 AddressFamily = ip.IsIPv6() ? AF_INET6 : AF_INET;
+    INT32 AddressFamily = SocketAddressHelper::GetAddressFamily(ip);
     INT32 SocketType = SOCK_STREAM;
     INT32 Protocol = IPPROTO_TCP;
 

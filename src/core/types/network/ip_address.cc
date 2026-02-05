@@ -1,6 +1,7 @@
 #include "ip_address.h"
 #include "memory.h"
 #include "string.h"
+#include "number_utils.h"
 
 // Default constructor - creates an invalid IP address
 IPAddress::IPAddress() : version(IPVersion::Invalid)
@@ -49,92 +50,6 @@ IPAddress IPAddress::FromIPv6(const UINT8 ipv6Address[16])
 IPAddress IPAddress::Invalid()
 {
     return IPAddress();
-}
-
-// Helper function to parse hex string
-static UINT32 ParseHex(PCCHAR str)
-{
-    UINT32 result = 0;
-    while (*str != '\0')
-    {
-        CHAR c = *str;
-        UINT32 digit = 0;
-
-        if (c >= '0' && c <= '9')
-        {
-            digit = c - '0';
-        }
-        else if (c >= 'a' && c <= 'f')
-        {
-            digit = 10 + (c - 'a');
-        }
-        else if (c >= 'A' && c <= 'F')
-        {
-            digit = 10 + (c - 'A');
-        }
-        else
-        {
-            break;
-        }
-
-        result = (result << 4) | digit;
-        str++;
-    }
-    return result;
-}
-
-// Helper function to write decimal number to buffer
-static void WriteDecimal(PCHAR buffer, UINT32 num)
-{
-    if (num == 0)
-    {
-        buffer[0] = '0';
-        buffer[1] = '\0';
-        return;
-    }
-
-    CHAR temp[12];
-    INT32 i = 0;
-
-    while (num > 0)
-    {
-        temp[i++] = '0' + (num % 10);
-        num /= 10;
-    }
-
-    for (INT32 j = 0; j < i; j++)
-    {
-        buffer[j] = temp[i - 1 - j];
-    }
-    buffer[i] = '\0';
-}
-
-// Helper function to write hex number to buffer
-static void WriteHex(PCHAR buffer, UINT32 num)
-{
-    if (num == 0)
-    {
-        buffer[0] = '0';
-        buffer[1] = '\0';
-        return;
-    }
-
-    CHAR temp[9];
-    INT32 i = 0;
-
-    while (num > 0)
-    {
-        UINT32 digit = num & 0xF;
-        // Generate hex character at runtime to avoid .rdata section
-        temp[i++] = (digit < 10) ? ('0' + digit) : ('a' + digit - 10);
-        num >>= 4;
-    }
-
-    for (INT32 j = 0; j < i; j++)
-    {
-        buffer[j] = temp[i - 1 - j];
-    }
-    buffer[i] = '\0';
 }
 
 // Convert string to IPAddress (supports both IPv4 and IPv6)
@@ -189,7 +104,7 @@ IPAddress IPAddress::FromString(PCCHAR ipString)
                 {
                     // Process accumulated hex digits
                     hexBuffer[hexIndex] = '\0';
-                    UINT32 value = ParseHex(hexBuffer);
+                    UINT32 value = NumberUtils::ParseHex(hexBuffer);
                     ipv6[groupIndex * 2] = (UINT8)(value >> 8);
                     ipv6[groupIndex * 2 + 1] = (UINT8)(value & 0xFF);
                     groupIndex++;
@@ -222,7 +137,7 @@ IPAddress IPAddress::FromString(PCCHAR ipString)
         if (hexIndex > 0 && groupIndex < 8)
         {
             hexBuffer[hexIndex] = '\0';
-            UINT32 value = ParseHex(hexBuffer);
+            UINT32 value = NumberUtils::ParseHex(hexBuffer);
             ipv6[groupIndex * 2] = (UINT8)(value >> 8);
             ipv6[groupIndex * 2 + 1] = (UINT8)(value & 0xFF);
             groupIndex++;
@@ -409,7 +324,7 @@ BOOL IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
                 buffer[offset++] = '.';
             }
             CHAR temp[4];
-            WriteDecimal(temp, octets[i]);
+            NumberUtils::WriteDecimal(temp, octets[i]);
             UINT32 len = String::Length(temp);
             Memory::Copy(buffer + offset, temp, len);
             offset += len;
@@ -436,7 +351,7 @@ BOOL IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
 
             // Convert to hex
             CHAR hexStr[5];
-            WriteHex(hexStr, group);
+            NumberUtils::WriteHex(hexStr, group);
             UINT32 hexLen = String::Length(hexStr);
             Memory::Copy(buffer + offset, hexStr, hexLen);
             offset += hexLen;

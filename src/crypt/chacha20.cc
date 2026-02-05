@@ -2,6 +2,7 @@
 #include "memory.h"
 #include "platform.h"
 #include "logger.h"
+#include "bitops.h"
 
 // ChaCha20 implementation by D. J. Bernstein
 // Public domain.
@@ -28,10 +29,7 @@
         (p)[3] = U8V((v) >> 24);         \
     } while (0)
 
-#define ROTL32(v, n) \
-    (U32V((v) << (n)) | ((v) >> (32 - (n))))
-
-#define ROTATE(v, c) (ROTL32(v, c))
+#define ROTATE(v, c) (BitOps::ROTL32(v, c))
 #define XOR(v, w) ((v) ^ (w))
 #define PLUS(v, w) (U32V((v) + (w)))
 #define PLUSONE(v) (PLUS((v), 1))
