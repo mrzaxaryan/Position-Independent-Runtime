@@ -54,7 +54,7 @@ private:
     template <TCHAR TChar>
     static INT32 FormatInt64(BOOL (*writer)(PVOID, TChar), PVOID context, INT64 num, INT32 width = 0, INT32 zeroPad = 0, INT32 leftAlign = 0);
     template <TCHAR TChar>
-    static INT32 FormatUInt64(BOOL (*writer)(PVOID, TChar), PVOID context, UINT64 num, INT32 width = 0, INT32 zeroPad = 0, INT32 leftAlign = 0);
+    static INT32 FormatUInt64(BOOL (*writer)(PVOID, TChar), PVOID context, UINT64 num, INT32 width = 0, INT32 zeroPad = 0, INT32 leftAlign = 0, TChar signChar = 0);
     template <TCHAR TChar>
     static INT32 FormatUInt64AsHex(BOOL (*writer)(PVOID, TChar), PVOID context, UINT64 num);
     template <TCHAR TChar>
@@ -73,109 +73,30 @@ public:
 template <TCHAR TChar>
 INT32 StringFormatter::FormatInt64(BOOL (*writer)(PVOID, TChar), PVOID context, INT64 num, INT32 width, INT32 zeroPad, INT32 leftAlign)
 {
-    BOOL isNegative = FALSE; // Flag to check if the number is negative
-    INT32 index = 0;
-    INT32 startIndex = index; // Store the starting index for the string
-
-    // Handle negative numbers
     if (num < 0)
-    {
-        isNegative = TRUE; // Set the negative flag if the number is negative
-        num = -num;        // Make the number positive for further processing
-    }
-
-    TChar rev[20]; // Temporary storage for reversed digits
-    INT32 len = 0; // Length of the number in digits
-
-    // Convert the number to a reversed string
-    do
-    {
-        rev[len++] = (num % 10) + (TChar)'0'; // Get the last digit and convert it to character
-        num /= 10;                            // Remove the last digit from the number
-    } while (num);
-
-    INT32 totalDigits = len;                               // Total number of digits in the number
-    INT32 signWidth = isNegative ? 1 : 0;                  // Width for the sign character (1 for negative sign, 0 otherwise)
-    INT32 paddingSpaces = width - totalDigits - signWidth; // Calculate padding spaces needed based on width, total digits, and sign width
-    INT32 paddingZeros = 0;                                // Count of leading zeros to add
-
-    // Calculate padding based on flags
-    if (zeroPad && !leftAlign)
-    {
-        paddingZeros = paddingSpaces > 0 ? paddingSpaces : 0; // If zero padding is enabled and not left-aligned, use padding spaces for leading zeros
-        paddingSpaces = 0;                                    // Set padding spaces to 0 since leading zeros are used
-    }
-    else
-    {
-        paddingSpaces = paddingSpaces > 0 ? paddingSpaces : 0; // If not zero padding or left-aligned, ensure padding spaces are non-negative
-    }
-
-    // If not left-aligned, pad spaces first
-    if (!leftAlign)
-    {
-        for (INT32 i = 0; i < paddingSpaces; ++i)
-        {
-            // Add spaces before the number
-            writer(context, (TChar)' ');
-            index++;
-        }
-    }
-
-    // Add negative sign if needed
-    if (isNegative)
-    {
-        writer(context, (TChar)'-');
-        index++;
-    }
-
-    // Add leading zeros
-    for (INT32 i = 0; i < paddingZeros; ++i)
-    {
-        writer(context, (TChar)'0');
-        index++;
-    }
-
-    // Copy digits in correct order
-    while (len)
-    {
-        writer(context, rev[--len]);
-        index++;
-    }
-
-    // If left-aligned, pad spaces after the number
-    if (leftAlign)
-    {
-        INT32 printed = index - startIndex; // Number of characters printed so far
-        for (INT32 i = printed; i < width; ++i)
-        {
-            // Add spaces after the number to fill the width
-            writer(context, (TChar)' ');
-            index++;
-        }
-    }
-    return index - startIndex; // Return the total number of characters added to the string
+        return FormatUInt64<TChar>(writer, context, (UINT64)(-num), width, zeroPad, leftAlign, (TChar)'-');
+    return FormatUInt64<TChar>(writer, context, (UINT64)num, width, zeroPad, leftAlign, (TChar)0);
 }
 
 template <TCHAR TChar>
-INT32 StringFormatter::FormatUInt64(BOOL (*writer)(PVOID, TChar), PVOID context, UINT64 num, INT32 width, INT32 zeroPad, INT32 leftAlign)
+INT32 StringFormatter::FormatUInt64(BOOL (*writer)(PVOID, TChar), PVOID context, UINT64 num, INT32 width, INT32 zeroPad, INT32 leftAlign, TChar signChar)
 {
-    TChar rev[20]; // Temporary storage for reversed digits
-    INT32 len = 0; // Length of the number in digits
+    TChar rev[20];
+    INT32 len = 0;
     INT32 index = 0;
-    INT32 startIndex = index; // Store the starting index for the string
+    INT32 startIndex = index;
 
-    // Convert the unsigned number to a reversed string
+    // Convert number to reversed digit string
     do
     {
-        rev[len++] = (TChar)((num % 10) + (UINT64)(UINT32)'0'); // Convert last digit to character
-        num /= 10;                            // Remove the last digit from the number
+        rev[len++] = (TChar)((num % 10) + (UINT64)(UINT32)'0');
+        num /= 10;
     } while (num);
 
-    INT32 totalDigits = len;                   // Total number of digits in the number
-    INT32 paddingSpaces = width - totalDigits; // Calculate padding spaces needed based on width and total digits
-    INT32 paddingZeros = 0;                    // Count of leading zeros to add
+    INT32 signWidth = signChar ? 1 : 0;
+    INT32 paddingSpaces = width - len - signWidth;
+    INT32 paddingZeros = 0;
 
-    // Calculate padding
     if (zeroPad && !leftAlign)
     {
         paddingZeros = paddingSpaces > 0 ? paddingSpaces : 0;
@@ -186,7 +107,7 @@ INT32 StringFormatter::FormatUInt64(BOOL (*writer)(PVOID, TChar), PVOID context,
         paddingSpaces = paddingSpaces > 0 ? paddingSpaces : 0;
     }
 
-    // If not left-aligned, pad spaces first
+    // Right-align: pad spaces first
     if (!leftAlign)
     {
         for (INT32 i = 0; i < paddingSpaces; ++i)
@@ -196,21 +117,28 @@ INT32 StringFormatter::FormatUInt64(BOOL (*writer)(PVOID, TChar), PVOID context,
         }
     }
 
-    // Add leading zeros
+    // Output sign if present
+    if (signChar)
+    {
+        writer(context, signChar);
+        index++;
+    }
+
+    // Leading zeros
     for (INT32 i = 0; i < paddingZeros; ++i)
     {
         writer(context, (TChar)'0');
         index++;
     }
 
-    // Copy digits in correct order
+    // Digits in correct order
     while (len)
     {
         writer(context, rev[--len]);
         index++;
     }
 
-    // If left-aligned, pad trailing spaces
+    // Left-align: pad trailing spaces
     if (leftAlign)
     {
         INT32 printed = index - startIndex;
@@ -220,7 +148,7 @@ INT32 StringFormatter::FormatUInt64(BOOL (*writer)(PVOID, TChar), PVOID context,
             index++;
         }
     }
-    return index - startIndex; // total number of characters added to the string
+    return index - startIndex;
 }
 
 template <TCHAR TChar>
