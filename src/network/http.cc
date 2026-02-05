@@ -277,7 +277,7 @@ BOOL HttpClient::ParseUrl(PCCHAR url, PCHAR host, PCHAR path, PUINT16 port, PBOO
             if (portBuffer[i] < '0' || portBuffer[i] > '9')
                 return FALSE;
 
-        INT64 pnum = ParseINT64(portBuffer);
+        INT64 pnum = String::ParseInt64(portBuffer);
         if (pnum == 0 || pnum > 65535)
             return FALSE;
         *port = (UINT16)pnum;

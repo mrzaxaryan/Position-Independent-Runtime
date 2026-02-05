@@ -457,16 +457,19 @@ jobs:
                           path_d += f' L {x:.1f} {y:.1f}'
                       svg_parts.append(f'<path d="{path_d}" fill="none" stroke="{color}" stroke-width="2" opacity="0.8"/>')
 
-                      # Add circles at regular intervals
+                      # Add circles at regular intervals (exclude last point, handled separately)
                       label_step = max(1, len(points) // 5)  # Show ~5 labels per line
+                      last_idx = len(points) - 1
                       for idx in range(0, len(points), label_step):
+                          if idx == last_idx:
+                              continue  # Skip last point here, add it below with larger circle
                           px, py = points[idx]
                           size_val = sizes_at_points[idx]
                           size_label = f"{size_val/1024:.1f}KB"
                           svg_parts.append(f'<circle cx="{px:.1f}" cy="{py:.1f}" r="3" fill="{color}"/>')
                           all_labels.append((px, py - 8, size_label, color))
 
-                      # Always show the last point
+                      # Always show the last point with larger circle
                       last_x, last_y = points[-1]
                       last_size = sizes_at_points[-1]
                       size_label = f"{last_size/1024:.1f}KB"
@@ -476,22 +479,27 @@ jobs:
               # Sort labels by x position, then y position for consistent ordering
               all_labels.sort(key=lambda l: (l[0], l[1]))
 
-              # Resolve label collisions - offset overlapping labels vertically
-              label_height = 10  # Approximate height of label text
-              label_width = 40   # Approximate width of label text
-              placed_labels = []
+              # Resolve label collisions with iterative adjustment
+              min_label_spacing = 12  # Minimum vertical spacing between labels
+              label_width = 45        # Approximate width of label text
+              placed_labels = []      # [(x, y, text, color), ...]
 
               for lx, ly, text, color in all_labels:
                   final_y = ly
-                  # Check for collisions with already placed labels
-                  for px, py, _, _ in placed_labels:
-                      # Check if labels overlap (similar x position and y within label height)
-                      if abs(lx - px) < label_width and abs(final_y - py) < label_height:
-                          # Move this label up or down to avoid collision
-                          if final_y >= py:
-                              final_y = py + label_height
-                          else:
-                              final_y = py - label_height
+                  # Iteratively resolve collisions (max 20 iterations to prevent infinite loops)
+                  for _ in range(20):
+                      collision = False
+                      for px, py, _, _ in placed_labels:
+                          # Check if labels overlap (similar x position and y too close)
+                          if abs(lx - px) < label_width and abs(final_y - py) < min_label_spacing:
+                              collision = True
+                              # Move label away from collision
+                              if final_y >= py:
+                                  final_y = py + min_label_spacing
+                              else:
+                                  final_y = py - min_label_spacing
+                      if not collision:
+                          break
                   placed_labels.append((lx, final_y, text, color))
                   svg_parts.append(f'<text x="{lx:.1f}" y="{final_y:.1f}" fill="{color}" font-family="monospace" font-size="8px" text-anchor="middle">{text}</text>')
 

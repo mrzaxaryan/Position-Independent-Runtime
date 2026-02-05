@@ -216,7 +216,7 @@ IPAddress IPAddress::FromString(PCCHAR ipString)
                     return Invalid();
                 }
 
-                dwOctet = ParseINT64(szCurrOctet);
+                dwOctet = String::ParseInt64(szCurrOctet);
                 if (dwOctet > 255)
                 {
                     return Invalid();

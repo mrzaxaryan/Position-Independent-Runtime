@@ -153,19 +153,19 @@ public:
     // Returns pointer to the null terminator
     static FORCE_INLINE PCHAR WriteDecimal(PCHAR buffer, UINT32 num) noexcept;
 
-    // Write a hexadecimal number to a buffer (lowercase)
+    // Write a hexadecimal number to a buffer
+    // uppercase: FALSE for lowercase (a-f), TRUE for uppercase (A-F)
     // Returns pointer to the null terminator
-    static FORCE_INLINE PCHAR WriteHex(PCHAR buffer, UINT32 num) noexcept;
-
-    // Write a hexadecimal number to a buffer (uppercase)
-    // Returns pointer to the null terminator
-    static FORCE_INLINE PCHAR WriteHexUpper(PCHAR buffer, UINT32 num) noexcept;
+    static FORCE_INLINE PCHAR WriteHex(PCHAR buffer, UINT32 num, BOOL uppercase = FALSE) noexcept;
 
     // Convert DOUBLE to string with configurable precision
     static FORCE_INLINE USIZE FloatToStr(DOUBLE value, CHAR *buffer, USIZE bufSize, UINT8 precision = 6) noexcept;
 
-    // Convert string to integer
-    static FORCE_INLINE BOOL StrToInt(const CHAR *str, USIZE len, INT64 &result) noexcept;
+    // Parse string to INT64 (with explicit length, returns success/failure)
+    static FORCE_INLINE BOOL ParseInt64(const CHAR *str, USIZE len, INT64 &result) noexcept;
+
+    // Parse null-terminated string to INT64 (simple version)
+    static FORCE_INLINE INT64 ParseInt64(PCCHAR str) noexcept;
 
     // Convert string to DOUBLE
     static FORCE_INLINE BOOL StrToFloat(const CHAR *str, USIZE len, DOUBLE &result) noexcept;
@@ -607,62 +607,60 @@ FORCE_INLINE USIZE String::FloatToStr(DOUBLE value, CHAR *buffer, USIZE bufSize,
     USIZE pos = 0;
     DOUBLE zero = DOUBLE(INT32(0));
 
+    // Handle negative
     if (value < zero)
     {
         if (pos < bufSize - 1) buffer[pos++] = '-';
         value = -value;
     }
 
-    INT64 intPart = (INT64)value;
-    DOUBLE fracPart = value - DOUBLE(intPart);
-
-    CHAR intBuf[24];
-    USIZE intLen = IntToStr(intPart < 0 ? -intPart : intPart, intBuf, sizeof(intBuf));
-    for (USIZE i = 0; i < intLen && pos < bufSize - 1; i++)
+    // Rounding: add 0.5 / 10^precision
+    if (precision > 0)
     {
-        buffer[pos++] = intBuf[i];
+        DOUBLE scale = DOUBLE(INT32(1));
+        for (UINT8 p = 0; p < precision; p++)
+            scale = scale * DOUBLE(INT32(10));
+        value = value + DOUBLE(INT32(5)) / (scale * DOUBLE(INT32(10)));
+    }
+    else
+    {
+        value = value + DOUBLE(INT32(5)) / DOUBLE(INT32(10));
     }
 
+    // Integer part
+    UINT64 intPart = (UINT64)(INT64)value;
+    DOUBLE fracPart = value - DOUBLE((INT64)intPart);
+
+    CHAR intBuf[24];
+    USIZE intLen = UIntToStr(intPart, intBuf, sizeof(intBuf));
+    for (USIZE i = 0; i < intLen && pos < bufSize - 1; i++)
+        buffer[pos++] = intBuf[i];
+
+    // Fractional part
     if (precision > 0 && pos < bufSize - 1)
     {
         buffer[pos++] = '.';
 
-        DOUBLE ten = DOUBLE(INT32(10));
-
-        for (UINT8 p = 0; p < precision; p++)
+        for (UINT8 p = 0; p < precision && pos < bufSize - 1; p++)
         {
-            fracPart = fracPart * ten;
+            fracPart = fracPart * DOUBLE(INT32(10));
+            INT32 digit = (INT32)fracPart;
+            if (digit < 0) digit = 0;
+            if (digit > 9) digit = 9;
+            buffer[pos++] = '0' + digit;
+            fracPart = fracPart - DOUBLE(digit);
         }
 
-        DOUBLE half = DOUBLE(INT32(5)) / ten;
-        fracPart = fracPart + half;
-        UINT64 fracInt = (UINT64)(INT64)fracPart;
-
-        CHAR fracBuf[24];
-        USIZE fracLen = UIntToStr(fracInt, fracBuf, sizeof(fracBuf));
-
-        USIZE leadingZeros = fracLen < precision ? precision - fracLen : 0;
-        for (USIZE i = 0; i < leadingZeros && pos < bufSize - 1; i++)
-        {
-            buffer[pos++] = '0';
-        }
-
-        for (USIZE i = 0; i < fracLen && pos < bufSize - 1; i++)
-        {
-            buffer[pos++] = fracBuf[i];
-        }
-
+        // Trim trailing zeros
         while (pos > 2 && buffer[pos - 1] == '0' && buffer[pos - 2] != '.')
-        {
             pos--;
-        }
     }
 
     buffer[pos] = '\0';
     return pos;
 }
 
-FORCE_INLINE BOOL String::StrToInt(const CHAR *str, USIZE len, INT64 &result) noexcept
+FORCE_INLINE BOOL String::ParseInt64(const CHAR *str, USIZE len, INT64 &result) noexcept
 {
     if (!str || len == 0)
     {
@@ -705,6 +703,15 @@ FORCE_INLINE BOOL String::StrToInt(const CHAR *str, USIZE len, INT64 &result) no
 
     result = negative ? -value : value;
     return TRUE;
+}
+
+FORCE_INLINE INT64 String::ParseInt64(PCCHAR str) noexcept
+{
+    INT64 result = 0;
+    if (!str)
+        return 0;
+    ParseInt64(str, Length(str), result);
+    return result;
 }
 
 FORCE_INLINE BOOL String::StrToFloat(const CHAR *str, USIZE len, DOUBLE &result) noexcept
@@ -760,32 +767,11 @@ FORCE_INLINE UINT32 String::ParseHex(PCCHAR str) noexcept
 
 FORCE_INLINE PCHAR String::WriteDecimal(PCHAR buffer, UINT32 num) noexcept
 {
-    if (num == 0)
-    {
-        buffer[0] = '0';
-        buffer[1] = '\0';
-        return buffer + 1;
-    }
-
-    CHAR temp[12];
-    INT32 i = 0;
-
-    while (num > 0)
-    {
-        temp[i++] = '0' + (num % 10);
-        num /= 10;
-    }
-
-    INT32 j = 0;
-    while (i > 0)
-    {
-        buffer[j++] = temp[--i];
-    }
-    buffer[j] = '\0';
-    return buffer + j;
+    USIZE len = UIntToStr((UINT64)num, buffer, 12);
+    return buffer + len;
 }
 
-FORCE_INLINE PCHAR String::WriteHex(PCHAR buffer, UINT32 num) noexcept
+FORCE_INLINE PCHAR String::WriteHex(PCHAR buffer, UINT32 num, BOOL uppercase) noexcept
 {
     if (num == 0)
     {
@@ -796,39 +782,12 @@ FORCE_INLINE PCHAR String::WriteHex(PCHAR buffer, UINT32 num) noexcept
 
     CHAR temp[9];
     INT32 i = 0;
+    CHAR baseChar = uppercase ? 'A' : 'a';
 
     while (num > 0)
     {
         UINT32 digit = num & 0xF;
-        temp[i++] = (digit < 10) ? ('0' + digit) : ('a' + digit - 10);
-        num >>= 4;
-    }
-
-    INT32 j = 0;
-    while (i > 0)
-    {
-        buffer[j++] = temp[--i];
-    }
-    buffer[j] = '\0';
-    return buffer + j;
-}
-
-FORCE_INLINE PCHAR String::WriteHexUpper(PCHAR buffer, UINT32 num) noexcept
-{
-    if (num == 0)
-    {
-        buffer[0] = '0';
-        buffer[1] = '\0';
-        return buffer + 1;
-    }
-
-    CHAR temp[9];
-    INT32 i = 0;
-
-    while (num > 0)
-    {
-        UINT32 digit = num & 0xF;
-        temp[i++] = (digit < 10) ? ('0' + digit) : ('A' + digit - 10);
+        temp[i++] = (digit < 10) ? ('0' + digit) : (baseChar + digit - 10);
         num >>= 4;
     }
 

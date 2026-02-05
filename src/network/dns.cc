@@ -109,7 +109,7 @@ static INT64 ParseContentLength(PCHAR response)
     USIZE offset = 0;
     while (Memory::Compare(response + offset, contentLengthHeader, headerSize) != 0)
         offset++;
-    return ParseINT64(response + offset + headerSize);
+    return String::ParseInt64(response + offset + headerSize);
 }
 
 static inline UINT16 ReadU16BE(PCVOID buffer, USIZE index)
