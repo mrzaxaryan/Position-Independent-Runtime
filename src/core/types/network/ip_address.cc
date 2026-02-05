@@ -1,7 +1,6 @@
 #include "ip_address.h"
 #include "memory.h"
 #include "string.h"
-#include "number_utils.h"
 
 // Default constructor - creates an invalid IP address
 IPAddress::IPAddress() : version(IPVersion::Invalid)
@@ -104,7 +103,7 @@ IPAddress IPAddress::FromString(PCCHAR ipString)
                 {
                     // Process accumulated hex digits
                     hexBuffer[hexIndex] = '\0';
-                    UINT32 value = NumberUtils::ParseHex(hexBuffer);
+                    UINT32 value = String::ParseHex(hexBuffer);
                     ipv6[groupIndex * 2] = (UINT8)(value >> 8);
                     ipv6[groupIndex * 2 + 1] = (UINT8)(value & 0xFF);
                     groupIndex++;
@@ -137,7 +136,7 @@ IPAddress IPAddress::FromString(PCCHAR ipString)
         if (hexIndex > 0 && groupIndex < 8)
         {
             hexBuffer[hexIndex] = '\0';
-            UINT32 value = NumberUtils::ParseHex(hexBuffer);
+            UINT32 value = String::ParseHex(hexBuffer);
             ipv6[groupIndex * 2] = (UINT8)(value >> 8);
             ipv6[groupIndex * 2 + 1] = (UINT8)(value & 0xFF);
             groupIndex++;
@@ -324,7 +323,7 @@ BOOL IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
                 buffer[offset++] = '.';
             }
             CHAR temp[4];
-            NumberUtils::WriteDecimal(temp, octets[i]);
+            String::WriteDecimal(temp, octets[i]);
             UINT32 len = String::Length(temp);
             Memory::Copy(buffer + offset, temp, len);
             offset += len;
@@ -351,7 +350,7 @@ BOOL IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
 
             // Convert to hex
             CHAR hexStr[5];
-            NumberUtils::WriteHex(hexStr, group);
+            String::WriteHex(hexStr, group);
             UINT32 hexLen = String::Length(hexStr);
             Memory::Copy(buffer + offset, hexStr, hexLen);
             offset += hexLen;

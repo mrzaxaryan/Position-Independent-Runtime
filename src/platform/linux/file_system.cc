@@ -2,6 +2,7 @@
 #include "syscall.h"
 #include "system.h"
 #include "string.h"
+#include "utf16.h"
 
 // --- File Implementation ---
 
@@ -101,7 +102,9 @@ VOID File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
 File FileSystem::Open(PCWCHAR path, INT32 flags)
 {
     CHAR utf8Path[1024];
-    String::WideToUtf8(path, utf8Path, sizeof(utf8Path));
+    USIZE pathLen = String::Length(path);
+    USIZE utf8Len = UTF16::ToUTF8(path, pathLen, utf8Path, sizeof(utf8Path) - 1);
+    utf8Path[utf8Len] = '\0';
 
     INT32 openFlags = 0;
     INT32 mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
@@ -138,7 +141,9 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
 BOOL FileSystem::Delete(PCWCHAR path)
 {
     CHAR utf8Path[1024];
-    String::WideToUtf8(path, utf8Path, sizeof(utf8Path));
+    USIZE pathLen = String::Length(path);
+    USIZE utf8Len = UTF16::ToUTF8(path, pathLen, utf8Path, sizeof(utf8Path) - 1);
+    utf8Path[utf8Len] = '\0';
 
 #if defined(ARCHITECTURE_AARCH64)
     return System::Call(SYS_UNLINKAT, AT_FDCWD, (USIZE)utf8Path, 0) == 0;
@@ -150,7 +155,9 @@ BOOL FileSystem::Delete(PCWCHAR path)
 BOOL FileSystem::Exists(PCWCHAR path)
 {
     CHAR utf8Path[1024];
-    String::WideToUtf8(path, utf8Path, sizeof(utf8Path));
+    USIZE pathLen = String::Length(path);
+    USIZE utf8Len = UTF16::ToUTF8(path, pathLen, utf8Path, sizeof(utf8Path) - 1);
+    utf8Path[utf8Len] = '\0';
 
     UINT8 statbuf[144];
 
@@ -164,7 +171,9 @@ BOOL FileSystem::Exists(PCWCHAR path)
 BOOL FileSystem::CreateDirectory(PCWCHAR path)
 {
     CHAR utf8Path[1024];
-    String::WideToUtf8(path, utf8Path, sizeof(utf8Path));
+    USIZE pathLen = String::Length(path);
+    USIZE utf8Len = UTF16::ToUTF8(path, pathLen, utf8Path, sizeof(utf8Path) - 1);
+    utf8Path[utf8Len] = '\0';
 
     // Mode 0755 (rwxr-xr-x)
     INT32 mode = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
@@ -179,7 +188,9 @@ BOOL FileSystem::CreateDirectory(PCWCHAR path)
 BOOL FileSystem::DeleteDirectory(PCWCHAR path)
 {
     CHAR utf8Path[1024];
-    String::WideToUtf8(path, utf8Path, sizeof(utf8Path));
+    USIZE pathLen = String::Length(path);
+    USIZE utf8Len = UTF16::ToUTF8(path, pathLen, utf8Path, sizeof(utf8Path) - 1);
+    utf8Path[utf8Len] = '\0';
 
 #if defined(ARCHITECTURE_AARCH64)
     return System::Call(SYS_UNLINKAT, AT_FDCWD, (USIZE)utf8Path, AT_REMOVEDIR) == 0;
@@ -197,7 +208,9 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path)
 
     if (path && path[0] != L'\0')
     {
-        String::WideToUtf8(path, utf8Path, sizeof(utf8Path));
+        USIZE pathLen = String::Length(path);
+        USIZE utf8Len = UTF16::ToUTF8(path, pathLen, utf8Path, sizeof(utf8Path) - 1);
+        utf8Path[utf8Len] = '\0';
     }
     else
     {

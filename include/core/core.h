@@ -27,7 +27,6 @@
 // String utilities
 #include "string/string.h"
 #include "string/string_formatter.h"
-#include "string/number_utils.h"
 
 // Algorithms
 #include "algorithms/djb2.h"

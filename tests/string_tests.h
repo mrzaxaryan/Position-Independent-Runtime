@@ -17,9 +17,8 @@ public:
 		RunTest(allPassed, EMBED_FUNC(TestLengthEmpty), L"Empty string length"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestToLowerCaseAscii), L"ToLowerCase ASCII"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestToLowerCasePreserves), L"ToLowerCase preserves non-uppercase"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWideToUtf8BasicAscii), L"WideToUtf8 basic ASCII"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWideToUtf8Empty), L"WideToUtf8 empty string"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWideToUtf8NullHandling), L"WideToUtf8 null handling"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestUTF16ToUTF8BasicAscii), L"UTF16::ToUTF8 basic ASCII"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestUTF16ToUTF8Empty), L"UTF16::ToUTF8 empty string"_embed);
 
 		if (allPassed)
 			LOG_INFO("All String tests passed!");
@@ -119,12 +118,14 @@ private:
 		return TRUE;
 	}
 
-	static BOOL TestWideToUtf8BasicAscii()
+	static BOOL TestUTF16ToUTF8BasicAscii()
 	{
 		auto wide = L"Hello"_embed;
 		CHAR utf8[16];
 
-		USIZE len = String::WideToUtf8((const WCHAR*)wide, utf8, sizeof(utf8));
+		USIZE wideLen = String::Length((const WCHAR*)wide);
+		USIZE len = UTF16::ToUTF8((const WCHAR*)wide, wideLen, utf8, sizeof(utf8) - 1);
+		utf8[len] = '\0';
 
 		// Should be 5 characters
 		if (len != 5)
@@ -138,12 +139,14 @@ private:
 		return TRUE;
 	}
 
-	static BOOL TestWideToUtf8Empty()
+	static BOOL TestUTF16ToUTF8Empty()
 	{
 		auto wide = L""_embed;
 		CHAR utf8[16];
 
-		USIZE len = String::WideToUtf8((const WCHAR*)wide, utf8, sizeof(utf8));
+		USIZE wideLen = String::Length((const WCHAR*)wide);
+		USIZE len = UTF16::ToUTF8((const WCHAR*)wide, wideLen, utf8, sizeof(utf8) - 1);
+		utf8[len] = '\0';
 
 		// Should be 0 characters
 		if (len != 0)
@@ -152,26 +155,6 @@ private:
 		// Should be null terminated
 		auto expected_empty = ""_embed;
 		if (Memory::Compare(utf8, (const CHAR*)expected_empty, 1) != 0)
-			return FALSE;
-
-		return TRUE;
-	}
-
-	static BOOL TestWideToUtf8NullHandling()
-	{
-		CHAR utf8[16];
-		auto wide = L"Test"_embed;
-
-		// Null wide string should return 0
-		if (String::WideToUtf8(NULL, utf8, sizeof(utf8)) != 0)
-			return FALSE;
-
-		// Null utf8 buffer should return 0
-		if (String::WideToUtf8((const WCHAR*)wide, NULL, sizeof(utf8)) != 0)
-			return FALSE;
-
-		// Zero buffer size should return 0
-		if (String::WideToUtf8((const WCHAR*)wide, utf8, 0) != 0)
 			return FALSE;
 
 		return TRUE;

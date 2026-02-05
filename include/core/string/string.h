@@ -145,6 +145,22 @@ public:
     // Convert unsigned integer to string
     static FORCE_INLINE USIZE UIntToStr(UINT64 value, CHAR *buffer, USIZE bufSize) noexcept;
 
+    // Parse a hexadecimal string to UINT32
+    // Stops at first non-hex character
+    static FORCE_INLINE UINT32 ParseHex(PCCHAR str) noexcept;
+
+    // Write a decimal number to a buffer
+    // Returns pointer to the null terminator
+    static FORCE_INLINE PCHAR WriteDecimal(PCHAR buffer, UINT32 num) noexcept;
+
+    // Write a hexadecimal number to a buffer (lowercase)
+    // Returns pointer to the null terminator
+    static FORCE_INLINE PCHAR WriteHex(PCHAR buffer, UINT32 num) noexcept;
+
+    // Write a hexadecimal number to a buffer (uppercase)
+    // Returns pointer to the null terminator
+    static FORCE_INLINE PCHAR WriteHexUpper(PCHAR buffer, UINT32 num) noexcept;
+
     // Convert DOUBLE to string with configurable precision
     static FORCE_INLINE USIZE FloatToStr(DOUBLE value, CHAR *buffer, USIZE bufSize, UINT8 precision = 6) noexcept;
 
@@ -162,8 +178,7 @@ public:
     // UTF CONVERSION
     // ============================================================================
 
-    // UTF-16 (WCHAR) <-> UTF-8 (CHAR) conversion
-    static USIZE WideToUtf8(PCWCHAR wide, PCHAR utf8, USIZE utf8BufferSize);
+    // UTF-8 (CHAR) -> UTF-16 (WCHAR) conversion
     static USIZE Utf8ToWide(PCCHAR utf8, PWCHAR wide, USIZE wideBufferSize);
 };
 
@@ -710,4 +725,118 @@ FORCE_INLINE BOOL String::StrToFloat(const CHAR *str, USIZE len, DOUBLE &result)
 
     result = DOUBLE::Parse(buffer);
     return TRUE;
+}
+
+FORCE_INLINE UINT32 String::ParseHex(PCCHAR str) noexcept
+{
+    UINT32 result = 0;
+    while (*str != '\0')
+    {
+        CHAR c = *str;
+        UINT32 digit = 0;
+
+        if (c >= '0' && c <= '9')
+        {
+            digit = c - '0';
+        }
+        else if (c >= 'a' && c <= 'f')
+        {
+            digit = 10 + (c - 'a');
+        }
+        else if (c >= 'A' && c <= 'F')
+        {
+            digit = 10 + (c - 'A');
+        }
+        else
+        {
+            break;
+        }
+
+        result = (result << 4) | digit;
+        str++;
+    }
+    return result;
+}
+
+FORCE_INLINE PCHAR String::WriteDecimal(PCHAR buffer, UINT32 num) noexcept
+{
+    if (num == 0)
+    {
+        buffer[0] = '0';
+        buffer[1] = '\0';
+        return buffer + 1;
+    }
+
+    CHAR temp[12];
+    INT32 i = 0;
+
+    while (num > 0)
+    {
+        temp[i++] = '0' + (num % 10);
+        num /= 10;
+    }
+
+    INT32 j = 0;
+    while (i > 0)
+    {
+        buffer[j++] = temp[--i];
+    }
+    buffer[j] = '\0';
+    return buffer + j;
+}
+
+FORCE_INLINE PCHAR String::WriteHex(PCHAR buffer, UINT32 num) noexcept
+{
+    if (num == 0)
+    {
+        buffer[0] = '0';
+        buffer[1] = '\0';
+        return buffer + 1;
+    }
+
+    CHAR temp[9];
+    INT32 i = 0;
+
+    while (num > 0)
+    {
+        UINT32 digit = num & 0xF;
+        temp[i++] = (digit < 10) ? ('0' + digit) : ('a' + digit - 10);
+        num >>= 4;
+    }
+
+    INT32 j = 0;
+    while (i > 0)
+    {
+        buffer[j++] = temp[--i];
+    }
+    buffer[j] = '\0';
+    return buffer + j;
+}
+
+FORCE_INLINE PCHAR String::WriteHexUpper(PCHAR buffer, UINT32 num) noexcept
+{
+    if (num == 0)
+    {
+        buffer[0] = '0';
+        buffer[1] = '\0';
+        return buffer + 1;
+    }
+
+    CHAR temp[9];
+    INT32 i = 0;
+
+    while (num > 0)
+    {
+        UINT32 digit = num & 0xF;
+        temp[i++] = (digit < 10) ? ('0' + digit) : ('A' + digit - 10);
+        num >>= 4;
+    }
+
+    INT32 j = 0;
+    while (i > 0)
+    {
+        buffer[j++] = temp[--i];
+    }
+    buffer[j] = '\0';
+    return buffer + j;
 }
