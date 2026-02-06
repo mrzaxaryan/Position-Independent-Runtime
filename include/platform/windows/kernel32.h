@@ -50,4 +50,6 @@ public:
     static int MultiByteToWideChar(UINT32 CodePage, UINT32 dwFlags, const CHAR *lpMultiByteStr, INT32 cbMultiByte, PWCHAR lpWideCharStr, INT32 cchWideChar);
     // CreateProcessW
     static BOOL CreateProcessW(PWCHAR lpApplicationName, PWCHAR lpCommandLine, PVOID lpProcessAttributes, PVOID lpThreadAttributes, BOOL bInheritHandles, UINT32 dwCreationFlags, PVOID lpEnvironment, PWCHAR lpCurrentDirectory, LPSTARTUPINFOW lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
+    // SetHandleInformation
+    static BOOL SetHandleInformation(PVOID hObject, UINT32 dwMask, UINT32 dwFlags);
 };
