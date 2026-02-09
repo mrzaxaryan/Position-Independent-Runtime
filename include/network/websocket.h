@@ -9,6 +9,7 @@
 #define OPCODE_PING 0x9
 #define OPCODE_PONG 0xA
 
+// Structure that represents a Websocket frame - final, reserved bits, mask, opcode, payload data, and payload length
 typedef struct WebSocketFrame
 {
     INT32 fin;
@@ -21,30 +22,33 @@ typedef struct WebSocketFrame
     UINT64 length;
 } WebSocketFrame, *PWebSocketFrame;
 
+// WebSocketClient class for managing WebSocket connections, sending and receiving data, and handling WebSocket frames
 class WebSocketClient
 {
 private:
     static BOOL FormatterCallback(PVOID context, CHAR ch);
-    BOOL isSecure;
-    CHAR hostName[1024];
-    CHAR path[1024];
-    IPAddress ipAddress;
-    UINT16 port;
+    BOOL isSecure;          // The WebSocket connection is secure (wss) or not (ws)
+    CHAR hostName[1024];    // Host name extracted from the URL
+    CHAR path[1024];        // Path extracted from the URL
+    IPAddress ipAddress;    // IP address of the WebSocket server
+    UINT16 port;            // Port number of the WebSocket server
 
-    TLSClient tlsContext;
-    Socket socketContext;
+    TLSClient tlsContext;   // TLS client context for secure WebSocket connections
+    Socket socketContext;   // Socket context for non-secure WebSocket connections
 
-    BOOL isConnected;
+    BOOL isConnected;       // Indicates whether the WebSocket client is currently connected to the server
 
     BOOL ReceiveRestrict(PVOID buffer, INT32 size);
     BOOL ReceiveFrame(PWebSocketFrame frame);
 
-public:
+public: 
+    // Disable dynamic memory allocation for WebSocketClient instances
     VOID *operator new(USIZE) = delete;
     VOID operator delete(VOID *) = delete;
-
+    // Constructors for WebSocketClient class, allowing initialization with a URL and optional IP address
     WebSocketClient(PCCHAR url);
     WebSocketClient(PCCHAR url, PCCHAR ipAddress);
+    // Open, Close, Read, and Write operations for WebSocketClient
     BOOL Open();
     BOOL Close();
     PVOID Read(PUSIZE dwBufferLength, PINT8 opcode);
