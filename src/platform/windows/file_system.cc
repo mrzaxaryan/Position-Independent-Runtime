@@ -253,11 +253,11 @@ BOOL FileSystem::Delete(PCWCHAR path)
                                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                  FILE_OPEN, FILE_DELETE_ON_CLOSE | FILE_NON_DIRECTORY_FILE, NULL, 0);
 
-    if (status == 0)
+    if (NT_SUCCESS(status))
         status = NTDLL::NtClose(hFile);
 
     NTDLL::RtlFreeUnicodeString(&ntName);
-    return status == 0;
+    return NT_SUCCESS(status);
 }
 
 // Check if a file exists at the specified path
@@ -275,7 +275,7 @@ BOOL FileSystem::Exists(PCWCHAR path)
 
     NTDLL::RtlFreeUnicodeString(&uniName);
 
-    if (status != 0)
+    if (!NT_SUCCESS(status))
     {
         return FALSE;
     }
@@ -313,7 +313,7 @@ BOOL FileSystem::CreateDirectory(PCWCHAR path)
 
     NTDLL::RtlFreeUnicodeString(&uniName);
 
-    if (status == 0 && hDir && hDir != INVALID_HANDLE_VALUE)
+    if (NT_SUCCESS(status) && hDir && hDir != INVALID_HANDLE_VALUE)
     {
         NTDLL::NtClose(hDir);
         return TRUE;
@@ -340,7 +340,7 @@ BOOL FileSystem::DeleteDirectory(PCWCHAR path)
     InitializeObjectAttributes(&objAttr, &uniName, 0, NULL, NULL);
 
     NTSTATUS status = NTDLL::NtOpenFile(&hDir, DELETE | SYNCHRONIZE, &objAttr, &ioStatusBlock, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT);
-    if (status != 0)
+    if (!NT_SUCCESS(status))
         return FALSE;
 
     status = NTDLL::NtSetInformationFile(
@@ -353,7 +353,7 @@ BOOL FileSystem::DeleteDirectory(PCWCHAR path)
     NTDLL::NtClose(hDir);
     NTDLL::RtlFreeUnicodeString(&uniName);
 
-    return status == 0;
+    return NT_SUCCESS(status);
 }
 // --- DirectoryIterator Implementation ---
 
