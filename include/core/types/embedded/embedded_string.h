@@ -27,55 +27,6 @@
 #include "primitives.h"
 
 // =============================================================================
-// INDEX SEQUENCE UTILITIES
-// =============================================================================
-
-/**
- * @brief Index sequence type for template parameter pack expansion
- * @tparam Is Variadic index values
- * @details Uses binary-split generation for O(log n) template instantiation depth.
- */
-template <USIZE... Is>
-struct IndexSeq
-{
-};
-
-/** @brief Concatenates two index sequences */
-template <typename, typename>
-struct ConcatSeq;
-
-template <USIZE... Is1, USIZE... Is2>
-struct ConcatSeq<IndexSeq<Is1...>, IndexSeq<Is2...>>
-{
-    using type = IndexSeq<Is1..., (sizeof...(Is1) + Is2)...>;
-};
-
-/** @brief Generates index sequence 0, 1, 2, ..., N-1 */
-template <USIZE N>
-struct MakeIndexSeqImpl
-{
-    using type = typename ConcatSeq<
-        typename MakeIndexSeqImpl<N / 2>::type,
-        typename MakeIndexSeqImpl<N - N / 2>::type>::type;
-};
-
-template <>
-struct MakeIndexSeqImpl<0>
-{
-    using type = IndexSeq<>;
-};
-
-template <>
-struct MakeIndexSeqImpl<1>
-{
-    using type = IndexSeq<0>;
-};
-
-/** @brief Alias for index sequence generation */
-template <USIZE N>
-using MakeIndexSeq = typename MakeIndexSeqImpl<N>::type;
-
-// =============================================================================
 // CHARACTER TYPE CONSTRAINT
 // =============================================================================
 
@@ -155,15 +106,18 @@ private:
     }
 
     /**
-     * @brief Writes packed words to the data array
-     * @tparam Is Index sequence for word indices
-     * @details Uses fold expression to write all words as immediate values.
+     * @brief Recursively writes packed words to the data array
+     * @tparam I Current word index (starts at 0)
+     * @details Uses if constexpr recursion to write all words as immediate values.
      */
-    template <USIZE... Is>
-    NOINLINE DISABLE_OPTIMIZATION void WritePackedWords(IndexSeq<Is...>) noexcept
+    template <USIZE I = 0>
+    FORCE_INLINE void WritePackedWord() noexcept
     {
-        UINT64 *dst = reinterpret_cast<UINT64 *>(data);
-        ((dst[Is] = GetPackedWord<Is>()), ...);
+        if constexpr (I < NumWords)
+        {
+            reinterpret_cast<UINT64 *>(data)[I] = GetPackedWord<I>();
+            WritePackedWord<I + 1>();
+        }
     }
 
 public:
@@ -180,7 +134,7 @@ public:
      */
     NOINLINE DISABLE_OPTIMIZATION EMBEDDED_STRING() noexcept : data{}
     {
-        WritePackedWords(MakeIndexSeq<NumWords>{});
+        WritePackedWord();
     }
 
     /**
