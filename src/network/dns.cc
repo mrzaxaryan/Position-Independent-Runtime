@@ -548,24 +548,30 @@ IPAddress DNS::GoogleResolve(PCCHAR host, RequestType dnstype)
     return ip;
 }
 
-IPAddress DNS::Resolve(PCCHAR host)
+IPAddress DNS::Resolve(PCCHAR host, RequestType dnstype)
 {
     LOG_DEBUG("DNS_resolve(host: %s) called - trying IPv6 first", host);
 
     // Try IPv6 (AAAA) first via Cloudflare, then Google
-    IPAddress ip = CloudflareResolve(host, AAAA);
+    IPAddress ip = CloudflareResolve(host, dnstype);
     if (ip.IsValid())
         return ip;
 
-    ip = GoogleResolve(host, AAAA);
+    ip = GoogleResolve(host, dnstype);
     if (ip.IsValid())
         return ip;
 
-    // Fall back to IPv4 (A)
-    LOG_DEBUG("IPv6 resolution failed, falling back to IPv4 (A) for %s", host);
-    ip = CloudflareResolve(host, A);
-    if (ip.IsValid())
-        return ip;
+    if (dnstype == AAAA)
+    { // Fall back to IPv4 (A)
+        LOG_DEBUG("IPv6 resolution failed, falling back to IPv4 (A) for %s", host);
+        ip = CloudflareResolve(host, A);
+        if (ip.IsValid())
+            return ip;
 
-    return GoogleResolve(host, A);
+        return GoogleResolve(host, A);
+    }
+    else
+    {
+        return ip; // Return the result (which may be invalid if both attempts failed)
+    }
 }

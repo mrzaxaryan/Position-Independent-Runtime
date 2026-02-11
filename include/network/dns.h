@@ -29,7 +29,7 @@ private:
 
 public:
     // Function to resolve a hostname to an IP address (tries IPv6 first, then IPv4)
-    static IPAddress Resolve(PCCHAR host);
+    static IPAddress Resolve(PCCHAR host, RequestType dnstype = AAAA);
     // Cloudflare DNS over HTTPS [IP:1.1.1.1|1.0.0.1] [POST:/dns-query] [content-type:application/dns-message]
     static IPAddress CloudflareResolve(PCCHAR host, RequestType dnstype = AAAA);
     // Google DNS over HTTPS [IP:8.8.8.8|8.8.4.4] [POST:/dns-query] [content-type:application/dns-message]

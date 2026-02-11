@@ -45,12 +45,14 @@ BOOL WebSocketClient::Open()
     PCHAR headers = NULL;
     LOG_DEBUG("Opening WebSocket client to %s:%u%s (secure: %s)", hostName, port, path, isSecure ? "true"_embed : "false"_embed);
 
+    BOOL result = TRUE;
+
     if (isSecure)
     {
         if (!tlsContext.Open())
         {
             LOG_DEBUG("Failed to open network transport for WebSocket client");
-            return FALSE;
+            result = FALSE;
         }
     }
     else
@@ -58,8 +60,41 @@ BOOL WebSocketClient::Open()
         if (!socketContext.Open())
         {
             LOG_DEBUG("Failed to open network transport for WebSocket client");
-            return FALSE;
+            result = FALSE;
         }
+    }
+
+    if (!result && ipAddress.IsIPv6())
+    {
+        // If connection failed and it's an IPv6 address, try connecting to the IPv4 address
+        IPAddress ipv4Address = DNS::Resolve(hostName, A);
+
+        if (ipv4Address.IsValid())
+        {
+            if (isSecure)
+            {
+                tlsContext = TLSClient(hostName, ipv4Address, port);
+
+                if (!tlsContext.Open())
+                {
+                    LOG_DEBUG("Failed to open network transport for WebSocket client");
+                    result = FALSE;
+                }
+            }
+            else
+            {
+                socketContext = Socket(ipv4Address, port);
+                if (!socketContext.Open())
+                {
+                    LOG_DEBUG("Failed to open network transport for WebSocket client");
+                    result = FALSE;
+                }
+            }
+        }
+    }
+    else if (!result)
+    {
+        return FALSE;
     }
 
     CHAR key[16];
