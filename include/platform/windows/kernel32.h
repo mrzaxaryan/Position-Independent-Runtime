@@ -5,12 +5,9 @@
 #include "djb2.h"
 
 #define HANDLE_FLAG_INHERIT 0x00000001
-#define SW_HIDE 0
-#define STARTF_USESHOWWINDOW 0x00000001
 #define STARTF_USESTDHANDLES 0x00000100
 
 #define CP_UTF8 65001
-#define CREATE_NO_WINDOW 0x08000000
 
 // Structures for process creation and management in Windows API
 typedef struct _STARTUPINFOW
@@ -50,10 +47,13 @@ class Kernel32
 {
 private:
 public:
-    // MultiByteToWideChar
+    // Maps a character string to a UTF-16 (wide character) string.
+    // Minimum supported client	Windows 2000 Professional [desktop apps | UWP apps]
     static int MultiByteToWideChar(UINT32 CodePage, UINT32 dwFlags, const CHAR *lpMultiByteStr, INT32 cbMultiByte, PWCHAR lpWideCharStr, INT32 cchWideChar);
-    // CreateProcessW
+    // Creates a new process and its primary thread.
+    // Minimum supported client Windows Xp [desktop apps | UWP apps]
     static BOOL CreateProcessW(PWCHAR lpApplicationName, PWCHAR lpCommandLine, PVOID lpProcessAttributes, PVOID lpThreadAttributes, BOOL bInheritHandles, UINT32 dwCreationFlags, PVOID lpEnvironment, PWCHAR lpCurrentDirectory, LPSTARTUPINFOW lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
-    // SetHandleInformation
+    // Sets certain properties of an object handle.
+    // Minimum supported client Windows 2000 Professional [desktop apps only]
     static BOOL SetHandleInformation(PVOID hObject, UINT32 dwMask, UINT32 dwFlags);
 };

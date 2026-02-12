@@ -2,7 +2,6 @@
 
 #include "primitives.h"
 
-#define STATUS_SUCCESS 0x0
 
 #define FILE_OPEN 0x00000001
 #define FILE_NON_DIRECTORY_FILE 0x00000040
@@ -21,10 +20,8 @@
 #define FILE_SHARE_READ 0x00000001
 #define FILE_SHARE_WRITE 0x00000002
 #define FILE_SHARE_DELETE 0x00000004
-#define FileStandardInformation 5
-#define FilePositionInformation 14
-#define FileDispositionInformation 13
-#define FileFsDeviceInformation 4
+
+
 
 #define FILE_DEVICE_CD_ROM_FILE_SYSTEM  0x00000003
 #define FILE_DEVICE_VIRTUAL_DISK        0x00000024
