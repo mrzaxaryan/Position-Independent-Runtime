@@ -66,22 +66,6 @@ typedef struct _FILE_FS_DEVICE_INFORMATION
     UINT32 Characteristics; // Bitmask of device characteristics (see FILE_DEVICE_* flags)
 } FILE_FS_DEVICE_INFORMATION, *PFILE_FS_DEVICE_INFORMATION;
 
-// Directory information structures for file enumeration
-typedef struct _FILE_DIRECTORY_INFORMATION
-{
-    UINT32 NextEntryOffset;
-    UINT32 FileIndex;
-    LARGE_INTEGER CreationTime;
-    LARGE_INTEGER LastAccessTime;
-    LARGE_INTEGER LastWriteTime;
-    LARGE_INTEGER ChangeTime;
-    LARGE_INTEGER EndOfFile;
-    LARGE_INTEGER AllocationSize;
-    UINT32 FileAttributes;
-    UINT32 FileNameLength;
-    WCHAR FileName[1];
-} FILE_DIRECTORY_INFORMATION, *PFILE_DIRECTORY_INFORMATION;
-
 // Structure to query detailed information about files in a directory
 typedef struct _FILE_BOTH_DIR_INFORMATION
 {
@@ -104,15 +88,11 @@ typedef struct _FILE_BOTH_DIR_INFORMATION
 // Information class 
 typedef enum _FILE_INFORMATION_CLASS_DIR
 {
-    FileDirectoryInformation = 1,
-    FileFullDirectoryInformation = 2,
     FileBothDirectoryInformation = 3,
-    FileNamesInformation = 12,
-    FileIdBothDirectoryInformation = 37,
-    FileIdFullDirectoryInformation = 38,
-    FileIdGlobalTxDirectoryInformation = 50,
-    FileIdExtdDirectoryInformation = 60,
-    FileIdExtdBothDirectoryInformation = 63
+    FileFsDeviceInformation = 4,
+    FileStandardInformation = 5,
+    FileDispositionInformation = 13,
+    FilePositionInformation = 14,
 } FILE_INFORMATION_CLASS_DIR;
 
 
