@@ -10,14 +10,11 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
     result.syscallAddress = nullptr;
 
     PVOID ntdllBase = GetModuleHandleFromPEB(Djb2::HashCompileTime(L"ntdll.dll"));
-
     if (!ntdllBase)
         return result;
 
-    UINT8* base = (UINT8*)ntdllBase;
-
-    UINT32 e_lfanew = *(UINT32*)(base + 0x3C);
-    UINT8* ntHeaders = base + e_lfanew;
+    UINT8* base      = (UINT8*)ntdllBase;
+    UINT8* ntHeaders = base + *(UINT32*)(base + 0x3C);
 
 #if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_AARCH64)
     UINT32 exportDirRva  = *(UINT32*)(ntHeaders + 0x88);
@@ -34,32 +31,22 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 
     UINT8* exportDir = base + exportDirRva;
 
-    UINT32  numberOfNames      = *(UINT32*)(exportDir + 0x18);
-    UINT32  addressOfFunctions = *(UINT32*)(exportDir + 0x1C);
-    UINT32  addressOfNames     = *(UINT32*)(exportDir + 0x20);
-    UINT32  addressOfOrdinals  = *(UINT32*)(exportDir + 0x24);
-
-    UINT32* funcRvaTable = (UINT32*)(base + addressOfFunctions);
-    UINT32* nameRvaTable = (UINT32*)(base + addressOfNames);
-    UINT16* ordinalTable = (UINT16*)(base + addressOfOrdinals);
-
-    // --- Pass 1: Find the target function by hash ---
-    UINT32 targetRva    = 0;
-    PVOID  targetGadget = nullptr;
+    UINT32  numberOfNames = *(UINT32*)(exportDir + 0x18);
+    UINT32* funcRvaTable  = (UINT32*)(base + *(UINT32*)(exportDir + 0x1C));
+    UINT32* nameRvaTable  = (UINT32*)(base + *(UINT32*)(exportDir + 0x20));
+    UINT16* ordinalTable  = (UINT16*)(base + *(UINT32*)(exportDir + 0x24));
 
     for (UINT32 i = 0; i < numberOfNames; i++)
     {
         const CHAR* name = (const CHAR*)(base + nameRvaTable[i]);
 
-        // 'Zw' prefix filter
         if (*(UINT16*)name != 0x775A)
             continue;
 
         if (Djb2::Hash(name) != functionNameHash)
             continue;
 
-        UINT16 ordinal = ordinalTable[i];
-        UINT32 funcRva = funcRvaTable[ordinal];
+        UINT32 funcRva = funcRvaTable[ordinalTable[i]];
 
         // Skip forwarded exports
         if (funcRva >= exportDirRva && funcRva < (exportDirRva + exportDirSize))
@@ -73,13 +60,12 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
             {
                 if (funcAddr[k] == 0x0F && funcAddr[k + 1] == 0x05 && funcAddr[k + 2] == 0xC3)
                 {
-                    targetGadget = (PVOID)(funcAddr + k);
+                    result.syscallAddress = (PVOID)(funcAddr + k);
                     break;
                 }
             }
-            if (!targetGadget)
+            if (!result.syscallAddress)
                 return result;
-            targetRva = funcRva;
         }
 #elif defined(ARCHITECTURE_I386)
         {
@@ -91,49 +77,36 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
             PVOID rawAddr = *(PVOID*)(funcAddr + 6);
 
             if (funcAddr[10] == 0xFF && funcAddr[11] == 0x12)
-                targetGadget = *(PVOID*)rawAddr;   // native: dereference pointer to KiFastSystemCall
+                result.syscallAddress = *(PVOID*)rawAddr;   // native: dereference pointer to KiFastSystemCall
             else if (funcAddr[10] == 0xFF && funcAddr[11] == 0xD2)
-                targetGadget = rawAddr;            // WoW64: direct trampoline address
+                result.syscallAddress = rawAddr;            // WoW64: direct trampoline address
             else
                 return result;
 
-            // SSN is embedded directly in the stub — no pass 2 needed
-            result.ssn            = (INT32)(*(UINT32*)(funcAddr + 1));
-            result.syscallAddress = targetGadget;
+            // SSN is embedded directly in the stub — no counting needed
+            result.ssn = (INT32)(*(UINT32*)(funcAddr + 1));
             return result;
         }
-#elif defined(ARCHITECTURE_AARCH64)
-        // AArch64 stubs use svc #0 directly; no gadget needed
-        targetRva = funcRva;
 #endif
 
-        break;
-    }
+        // Derive SSN by counting Zw* exports with lower RVA (x86_64/aarch64)
+        result.ssn = 0;
+        for (UINT32 j = 0; j < numberOfNames; j++)
+        {
+            const CHAR* n = (const CHAR*)(base + nameRvaTable[j]);
+            if (*(UINT16*)n != 0x775A)
+                continue;
 
-    if (targetRva == 0)
+            UINT32 rva = funcRvaTable[ordinalTable[j]];
+            if (rva >= exportDirRva && rva < (exportDirRva + exportDirSize))
+                continue;
+
+            if (rva < funcRva)
+                result.ssn++;
+        }
+
         return result;
-
-    // --- Pass 2: Count Zw* exports with lower RVA to derive SSN (x86_64/aarch64) ---
-    UINT32 ssn = 0;
-    for (UINT32 i = 0; i < numberOfNames; i++)
-    {
-        const CHAR* name = (const CHAR*)(base + nameRvaTable[i]);
-
-        if (*(UINT16*)name != 0x775A)
-            continue;
-
-        UINT16 ordinal = ordinalTable[i];
-        UINT32 funcRva = funcRvaTable[ordinal];
-
-        // Skip forwarded exports
-        if (funcRva >= exportDirRva && funcRva < (exportDirRva + exportDirSize))
-            continue;
-
-        if (funcRva < targetRva)
-            ssn++;
     }
 
-    result.ssn            = (INT32)ssn;
-    result.syscallAddress = targetGadget;
     return result;
 }
