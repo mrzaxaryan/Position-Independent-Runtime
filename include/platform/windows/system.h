@@ -3,27 +3,27 @@
 #include "platform.h"
 #include "peb.h"
 
-#define SYSCALL_MAX_ENTRIES 1024
-#define SYSCALL_SSN_INVALID ((INT32)-1)
+#define SYSCALL_MAX_ENTRIES 512
+#define SYSCALL_SSN_INVALID ((INT32) - 1)
 
 typedef struct ZW_ENTRY
-    {
-        UINT64 nameHash;
-        UINT32 rva;
-        PVOID syscallAddress; // absolute address of syscall;ret gadget in this stub
-    } ZW_ENTRY;
+{
+    UINT64 nameHash;
+    UINT32 rva;
+    PVOID syscallAddress; // absolute address of syscall;ret gadget in this stub
+} ZW_ENTRY;
 
-    typedef struct SYSCALL_ENTRY
-    {
-        INT32 ssn;
-        PVOID syscallAddress;
-    } SYSCALL_ENTRY;
+typedef struct SYSCALL_ENTRY
+{
+    INT32 ssn;
+    PVOID syscallAddress;
+} SYSCALL_ENTRY;
 
-    typedef struct SYSCALL_TABLE
-    {
-        ZW_ENTRY entries[SYSCALL_MAX_ENTRIES];
-        UINT32   count;
-    } SYSCALL_TABLE;
+typedef struct SYSCALL_TABLE
+{
+    ZW_ENTRY entries[SYSCALL_MAX_ENTRIES];
+    UINT32 count;
+} SYSCALL_TABLE;
 
 class System
 {
@@ -40,8 +40,7 @@ public:
             "call *%[gadget]\n"
             : "+r"(r_rax)
             : [gadget] "r"(entry.syscallAddress)
-            : "rcx", "r11", "memory"
-        );
+            : "rcx", "r11", "memory");
         return (NTSTATUS)r_rax;
     }
 
@@ -54,8 +53,7 @@ public:
             "call *%[gadget]\n"
             : "+r"(r_rax)
             : "r"(r_r10), [gadget] "r"(entry.syscallAddress)
-            : "rcx", "r11", "memory"
-        );
+            : "rcx", "r11", "memory");
         return (NTSTATUS)r_rax;
     }
 
@@ -69,8 +67,7 @@ public:
             "call *%[gadget]\n"
             : "+r"(r_rax)
             : "r"(r_r10), "r"(r_rdx), [gadget] "r"(entry.syscallAddress)
-            : "rcx", "r11", "memory"
-        );
+            : "rcx", "r11", "memory");
         return (NTSTATUS)r_rax;
     }
 
@@ -79,14 +76,13 @@ public:
     {
         register USIZE r_r10 __asm__("r10") = a1;
         register USIZE r_rdx __asm__("rdx") = a2;
-        register USIZE r_r8  __asm__("r8")  = a3;
+        register USIZE r_r8 __asm__("r8") = a3;
         register USIZE r_rax __asm__("rax") = (USIZE)entry.ssn;
         __asm__ volatile(
             "call *%[gadget]\n"
             : "+r"(r_rax)
             : "r"(r_r10), "r"(r_rdx), "r"(r_r8), [gadget] "r"(entry.syscallAddress)
-            : "rcx", "r11", "memory"
-        );
+            : "rcx", "r11", "memory");
         return (NTSTATUS)r_rax;
     }
 
@@ -95,16 +91,15 @@ public:
     {
         register USIZE r_r10 __asm__("r10") = a1;
         register USIZE r_rdx __asm__("rdx") = a2;
-        register USIZE r_r8  __asm__("r8")  = a3;
-        register USIZE r_r9  __asm__("r9")  = a4;
+        register USIZE r_r8 __asm__("r8") = a3;
+        register USIZE r_r9 __asm__("r9") = a4;
         register USIZE r_rax __asm__("rax") = (USIZE)entry.ssn;
         __asm__ volatile(
             "call *%[gadget]\n"
             : "+r"(r_rax)
             : "r"(r_r10), "r"(r_rdx), "r"(r_r8), "r"(r_r9),
               [gadget] "r"(entry.syscallAddress)
-            : "rcx", "r11", "memory"
-        );
+            : "rcx", "r11", "memory");
         return (NTSTATUS)r_rax;
     }
 
@@ -113,8 +108,8 @@ public:
     {
         register USIZE r_r10 __asm__("r10") = a1;
         register USIZE r_rdx __asm__("rdx") = a2;
-        register USIZE r_r8  __asm__("r8")  = a3;
-        register USIZE r_r9  __asm__("r9")  = a4;
+        register USIZE r_r8 __asm__("r8") = a3;
+        register USIZE r_r9 __asm__("r9") = a4;
         register USIZE r_rax __asm__("rax") = (USIZE)entry.ssn;
         __asm__ volatile(
             "sub $0x28, %%rsp\n"
@@ -124,8 +119,7 @@ public:
             : "+r"(r_rax)
             : "r"(r_r10), "r"(r_rdx), "r"(r_r8), "r"(r_r9),
               [a5] "r"(a5), [gadget] "r"(entry.syscallAddress)
-            : "rcx", "r11", "memory"
-        );
+            : "rcx", "r11", "memory");
         return (NTSTATUS)r_rax;
     }
 
@@ -134,8 +128,8 @@ public:
     {
         register USIZE r_r10 __asm__("r10") = a1;
         register USIZE r_rdx __asm__("rdx") = a2;
-        register USIZE r_r8  __asm__("r8")  = a3;
-        register USIZE r_r9  __asm__("r9")  = a4;
+        register USIZE r_r8 __asm__("r8") = a3;
+        register USIZE r_r9 __asm__("r9") = a4;
         register USIZE r_rax __asm__("rax") = (USIZE)entry.ssn;
         __asm__ volatile(
             "sub $0x30, %%rsp\n"
@@ -146,8 +140,7 @@ public:
             : "+r"(r_rax)
             : "r"(r_r10), "r"(r_rdx), "r"(r_r8), "r"(r_r9),
               [a5] "r"(a5), [a6] "r"(a6), [gadget] "r"(entry.syscallAddress)
-            : "rcx", "r11", "memory"
-        );
+            : "rcx", "r11", "memory");
         return (NTSTATUS)r_rax;
     }
 
@@ -156,8 +149,8 @@ public:
     {
         register USIZE r_r10 __asm__("r10") = a1;
         register USIZE r_rdx __asm__("rdx") = a2;
-        register USIZE r_r8  __asm__("r8")  = a3;
-        register USIZE r_r9  __asm__("r9")  = a4;
+        register USIZE r_r8 __asm__("r8") = a3;
+        register USIZE r_r9 __asm__("r9") = a4;
         register USIZE r_rax __asm__("rax") = (USIZE)entry.ssn;
         __asm__ volatile(
             "sub $0x38, %%rsp\n"
@@ -170,8 +163,7 @@ public:
             : "r"(r_r10), "r"(r_rdx), "r"(r_r8), "r"(r_r9),
               [a5] "r"(a5), [a6] "r"(a6), [a7] "r"(a7),
               [gadget] "r"(entry.syscallAddress)
-            : "rcx", "r11", "memory"
-        );
+            : "rcx", "r11", "memory");
         return (NTSTATUS)r_rax;
     }
 
@@ -180,8 +172,8 @@ public:
     {
         register USIZE r_r10 __asm__("r10") = a1;
         register USIZE r_rdx __asm__("rdx") = a2;
-        register USIZE r_r8  __asm__("r8")  = a3;
-        register USIZE r_r9  __asm__("r9")  = a4;
+        register USIZE r_r8 __asm__("r8") = a3;
+        register USIZE r_r9 __asm__("r9") = a4;
         register USIZE r_rax __asm__("rax") = (USIZE)entry.ssn;
         __asm__ volatile(
             "sub $0x40, %%rsp\n"
@@ -195,8 +187,7 @@ public:
             : "r"(r_r10), "r"(r_rdx), "r"(r_r8), "r"(r_r9),
               [a5] "r"(a5), [a6] "r"(a6), [a7] "r"(a7), [a8] "r"(a8),
               [gadget] "r"(entry.syscallAddress)
-            : "rcx", "r11", "memory"
-        );
+            : "rcx", "r11", "memory");
         return (NTSTATUS)r_rax;
     }
 
@@ -205,8 +196,8 @@ public:
     {
         register USIZE r_r10 __asm__("r10") = a1;
         register USIZE r_rdx __asm__("rdx") = a2;
-        register USIZE r_r8  __asm__("r8")  = a3;
-        register USIZE r_r9  __asm__("r9")  = a4;
+        register USIZE r_r8 __asm__("r8") = a3;
+        register USIZE r_r9 __asm__("r9") = a4;
         register USIZE r_rax __asm__("rax") = (USIZE)entry.ssn;
         __asm__ volatile(
             "sub $0x48, %%rsp\n"
@@ -221,8 +212,7 @@ public:
             : "r"(r_r10), "r"(r_rdx), "r"(r_r8), "r"(r_r9),
               [a5] "r"(a5), [a6] "r"(a6), [a7] "r"(a7), [a8] "r"(a8),
               [a9] "r"(a9), [gadget] "r"(entry.syscallAddress)
-            : "rcx", "r11", "memory"
-        );
+            : "rcx", "r11", "memory");
         return (NTSTATUS)r_rax;
     }
 
@@ -231,8 +221,8 @@ public:
     {
         register USIZE r_r10 __asm__("r10") = a1;
         register USIZE r_rdx __asm__("rdx") = a2;
-        register USIZE r_r8  __asm__("r8")  = a3;
-        register USIZE r_r9  __asm__("r9")  = a4;
+        register USIZE r_r8 __asm__("r8") = a3;
+        register USIZE r_r9 __asm__("r9") = a4;
         register USIZE r_rax __asm__("rax") = (USIZE)entry.ssn;
         __asm__ volatile(
             "sub $0x50, %%rsp\n"
@@ -248,8 +238,7 @@ public:
             : "r"(r_r10), "r"(r_rdx), "r"(r_r8), "r"(r_r9),
               [a5] "r"(a5), [a6] "r"(a6), [a7] "r"(a7), [a8] "r"(a8),
               [a9] "r"(a9), [a10] "r"(a10), [gadget] "r"(entry.syscallAddress)
-            : "rcx", "r11", "memory"
-        );
+            : "rcx", "r11", "memory");
         return (NTSTATUS)r_rax;
     }
 
@@ -258,8 +247,8 @@ public:
     {
         register USIZE r_r10 __asm__("r10") = a1;
         register USIZE r_rdx __asm__("rdx") = a2;
-        register USIZE r_r8  __asm__("r8")  = a3;
-        register USIZE r_r9  __asm__("r9")  = a4;
+        register USIZE r_r8 __asm__("r8") = a3;
+        register USIZE r_r9 __asm__("r9") = a4;
         register USIZE r_rax __asm__("rax") = (USIZE)entry.ssn;
         __asm__ volatile(
             "sub $0x58, %%rsp\n"
@@ -277,8 +266,7 @@ public:
             : "r"(r_r10), "r"(r_rdx), "r"(r_r8), "r"(r_r9),
               [a5] "r"(a5), [a6] "r"(a6), [a7] "r"(a7), [a8] "r"(a8),
               [a9] "r"(a9), [a10] "r"(a10), [a11] "m"(a11), [gadget] "r"(entry.syscallAddress)
-            : "rcx", "r11", "memory"
-        );
+            : "rcx", "r11", "memory");
         return (NTSTATUS)r_rax;
     }
 
@@ -312,8 +300,7 @@ public:
             "addl $4, %%esp\n"
             : "+a"(r_eax)
             : [gadget] "r"(entry.syscallAddress)
-            : "ecx", "edx", "memory"
-        );
+            : "ecx", "edx", "memory");
         return (NTSTATUS)r_eax;
     }
 
@@ -329,8 +316,7 @@ public:
             "addl $8, %%esp\n"
             : "+a"(r_eax)
             : [gadget] "r"(entry.syscallAddress), [a1] "r"(a1)
-            : "ecx", "edx", "memory"
-        );
+            : "ecx", "edx", "memory");
         return (NTSTATUS)r_eax;
     }
 
@@ -348,8 +334,7 @@ public:
             "addl $12, %%esp\n"
             : "+a"(r_eax)
             : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
-            : "ecx", "edx", "memory"
-        );
+            : "ecx", "edx", "memory");
         return (NTSTATUS)r_eax;
     }
 
@@ -368,8 +353,7 @@ public:
             "addl $16, %%esp\n"
             : "+a"(r_eax)
             : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
-            : "ecx", "edx", "memory"
-        );
+            : "ecx", "edx", "memory");
         return (NTSTATUS)r_eax;
     }
 
@@ -389,8 +373,7 @@ public:
             "addl $20, %%esp\n"
             : "+a"(r_eax)
             : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
-            : "ecx", "edx", "memory"
-        );
+            : "ecx", "edx", "memory");
         return (NTSTATUS)r_eax;
     }
 
@@ -411,8 +394,7 @@ public:
             "addl $24, %%esp\n"
             : "+a"(r_eax)
             : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
-            : "ecx", "edx", "memory"
-        );
+            : "ecx", "edx", "memory");
         return (NTSTATUS)r_eax;
     }
 
@@ -434,8 +416,7 @@ public:
             "addl $28, %%esp\n"
             : "+a"(r_eax)
             : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
-            : "ecx", "edx", "memory"
-        );
+            : "ecx", "edx", "memory");
         return (NTSTATUS)r_eax;
     }
 
@@ -458,8 +439,7 @@ public:
             "addl $32, %%esp\n"
             : "+a"(r_eax)
             : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
-            : "ecx", "edx", "memory"
-        );
+            : "ecx", "edx", "memory");
         return (NTSTATUS)r_eax;
     }
 
@@ -483,8 +463,7 @@ public:
             "addl $36, %%esp\n"
             : "+a"(r_eax)
             : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
-            : "ecx", "edx", "memory"
-        );
+            : "ecx", "edx", "memory");
         return (NTSTATUS)r_eax;
     }
 
@@ -509,8 +488,7 @@ public:
             "addl $40, %%esp\n"
             : "+a"(r_eax)
             : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
-            : "ecx", "edx", "memory"
-        );
+            : "ecx", "edx", "memory");
         return (NTSTATUS)r_eax;
     }
 
@@ -536,8 +514,7 @@ public:
             "addl $44, %%esp\n"
             : "+a"(r_eax)
             : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
-            : "ecx", "edx", "memory"
-        );
+            : "ecx", "edx", "memory");
         return (NTSTATUS)r_eax;
     }
 
@@ -564,8 +541,7 @@ public:
             "addl $48, %%esp\n"
             : "+a"(r_eax)
             : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
-            : "ecx", "edx", "memory"
-        );
+            : "ecx", "edx", "memory");
         return (NTSTATUS)r_eax;
     }
 
@@ -580,8 +556,7 @@ public:
             "svc #1\n"
             : "=r"(x0)
             : "r"(x8)
-            : "x1", "x2", "x3", "x4", "x5", "x6", "x7", "memory"
-        );
+            : "x1", "x2", "x3", "x4", "x5", "x6", "x7", "memory");
         return (NTSTATUS)x0;
     }
 
@@ -594,8 +569,7 @@ public:
             "svc #1\n"
             : "+r"(x0)
             : "r"(x8)
-            : "x1", "x2", "x3", "x4", "x5", "x6", "x7", "memory"
-        );
+            : "x1", "x2", "x3", "x4", "x5", "x6", "x7", "memory");
         return (NTSTATUS)x0;
     }
 
@@ -609,8 +583,7 @@ public:
             "svc #1\n"
             : "+r"(x0)
             : "r"(x1), "r"(x8)
-            : "x2", "x3", "x4", "x5", "x6", "x7", "memory"
-        );
+            : "x2", "x3", "x4", "x5", "x6", "x7", "memory");
         return (NTSTATUS)x0;
     }
 
@@ -625,8 +598,7 @@ public:
             "svc #1\n"
             : "+r"(x0)
             : "r"(x1), "r"(x2), "r"(x8)
-            : "x3", "x4", "x5", "x6", "x7", "memory"
-        );
+            : "x3", "x4", "x5", "x6", "x7", "memory");
         return (NTSTATUS)x0;
     }
 
@@ -642,8 +614,7 @@ public:
             "svc #1\n"
             : "+r"(x0)
             : "r"(x1), "r"(x2), "r"(x3), "r"(x8)
-            : "x4", "x5", "x6", "x7", "memory"
-        );
+            : "x4", "x5", "x6", "x7", "memory");
         return (NTSTATUS)x0;
     }
 
@@ -660,8 +631,7 @@ public:
             "svc #1\n"
             : "+r"(x0)
             : "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x8)
-            : "x5", "x6", "x7", "memory"
-        );
+            : "x5", "x6", "x7", "memory");
         return (NTSTATUS)x0;
     }
 
@@ -679,8 +649,7 @@ public:
             "svc #1\n"
             : "+r"(x0)
             : "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x5), "r"(x8)
-            : "x6", "x7", "memory"
-        );
+            : "x6", "x7", "memory");
         return (NTSTATUS)x0;
     }
 
@@ -699,8 +668,7 @@ public:
             "svc #1\n"
             : "+r"(x0)
             : "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x5), "r"(x6), "r"(x8)
-            : "x7", "memory"
-        );
+            : "x7", "memory");
         return (NTSTATUS)x0;
     }
 
@@ -720,8 +688,7 @@ public:
             "svc #1\n"
             : "+r"(x0)
             : "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x5), "r"(x6), "r"(x7), "r"(x8)
-            : "memory"
-        );
+            : "memory");
         return (NTSTATUS)x0;
     }
 
@@ -745,8 +712,7 @@ public:
             : "+r"(x0)
             : "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x5), "r"(x6), "r"(x7), "r"(x8),
               [a9] "r"(a9)
-            : "memory"
-        );
+            : "memory");
         return (NTSTATUS)x0;
     }
 
@@ -771,8 +737,7 @@ public:
             : "+r"(x0)
             : "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x5), "r"(x6), "r"(x7), "r"(x8),
               [a9] "r"(a9), [a10] "r"(a10)
-            : "memory"
-        );
+            : "memory");
         return (NTSTATUS)x0;
     }
 
@@ -798,15 +763,13 @@ public:
             : "+r"(x0)
             : "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x5), "r"(x6), "r"(x7), "r"(x8),
               [a9] "r"(a9), [a10] "r"(a10), [a11] "r"(a11)
-            : "memory"
-        );
+            : "memory");
         return (NTSTATUS)x0;
     }
 
 #else
-    #error "Unsupported architecture"
+#error "Unsupported architecture"
 #endif
-
 };
 
 #define ResolveSyscall(functionName) System::ResolveSyscallEntry(Djb2::HashCompileTime(functionName))
