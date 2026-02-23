@@ -21,39 +21,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install LLVM and Ninja
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: /opt/llvm
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
+
+      - name: Install LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           set -e
-          LLVM_VER=$(echo "${{ env.LLVM_VERSION }}" | cut -d. -f1)
+          TARBALL="LLVM-${{ env.LLVM_VERSION }}-Linux-X64.tar.xz"
+          URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/${TARBALL}"
+          wget -q "$URL"
+          sudo mkdir -p /opt/llvm
+          sudo tar xf "$TARBALL" -C /opt/llvm --strip-components=1
+          rm "$TARBALL"
 
+      - name: Install build tools
+        run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build wget lsb-release ca-certificates gnupg cmake
-          ninja --version
+          sudo apt-get install -y ninja-build cmake
 
-          sudo mkdir -p /etc/apt/keyrings
-          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/apt.llvm.org.gpg >/dev/null
-          echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.gpg] http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-${LLVM_VER} main" | sudo tee /etc/apt/sources.list.d/llvm.list
-          sudo apt-get update
-
-          sudo apt-get install -y clang-${LLVM_VER} clang++-${LLVM_VER} lld-${LLVM_VER} llvm-${LLVM_VER}
-
-          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${LLVM_VER} 100
-          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${LLVM_VER} 100
-          sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-${LLVM_VER} 100
-          sudo update-alternatives --install /usr/bin/ld.lld ld.lld /usr/bin/ld.lld-${LLVM_VER} 100
-          sudo update-alternatives --install /usr/bin/llvm-objdump llvm-objdump /usr/bin/llvm-objdump-${LLVM_VER} 100
-          sudo update-alternatives --install /usr/bin/llvm-objcopy llvm-objcopy /usr/bin/llvm-objcopy-${LLVM_VER} 100
-          sudo update-alternatives --install /usr/bin/llvm-strings llvm-strings /usr/bin/llvm-strings-${LLVM_VER} 100
-
-          sudo update-alternatives --set clang /usr/bin/clang-${LLVM_VER}
-          sudo update-alternatives --set clang++ /usr/bin/clang++-${LLVM_VER}
-          sudo update-alternatives --set lld /usr/bin/lld-${LLVM_VER}
-          sudo update-alternatives --set ld.lld /usr/bin/ld.lld-${LLVM_VER}
-          sudo update-alternatives --set llvm-objdump /usr/bin/llvm-objdump-${LLVM_VER}
-          sudo update-alternatives --set llvm-objcopy /usr/bin/llvm-objcopy-${LLVM_VER}
-          sudo update-alternatives --set llvm-strings /usr/bin/llvm-strings-${LLVM_VER}
-
-          clang --version
+      - name: Add LLVM to PATH
+        run: echo "/opt/llvm/bin" >> $GITHUB_PATH
 
       - name: Build, Upload, and Test all optimization levels
         run: |
