@@ -661,7 +661,7 @@ BOOL TLSClient::Open()
         LOG_DEBUG("Failed to connect to host: %s, for client: %p", host, this);
         return FALSE;
     }
-    LOG_DEBUG("Connected to host: %s,  for client: %p", host,this);
+    LOG_DEBUG("Connected to host: %s,  for client: %p", host, this);
 
     if (!(SendClientHello(host)))
     {
@@ -699,8 +699,6 @@ BOOL TLSClient::Close()
 
     LOG_DEBUG("Closing socket for client: %p", this);
     return context.Close();
-
-    return TRUE;
 }
 
 /// @brief Write data to the TLS channel, encrypting it if the handshake is complete and the encoding is enabled

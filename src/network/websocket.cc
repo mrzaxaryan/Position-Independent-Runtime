@@ -66,16 +66,19 @@ BOOL WebSocketClient::Open()
 
     if (!result && ipAddress.IsIPv6())
     {
+        result = TRUE; // Reset result to attempt IPv4 connection
+
         // If connection failed and it's an IPv6 address, try connecting to the IPv4 address
         IPAddress ipv4Address = DNS::Resolve(hostName, A);
         if (!ipv4Address.IsValid())
         {
-            LOG_ERROR("Failed to reslove IPv4 address for %s, cannot connect to WebSocket server", hostName);
+            LOG_ERROR("Failed to resolve IPv4 address for %s, cannot connect to WebSocket server", hostName);
             return FALSE;
         }
 
         if (isSecure)
         {
+            tlsContext.Close(); // Close previous TLS context before creating a new one
             tlsContext = TLSClient(hostName, ipv4Address, port);
 
             if (!tlsContext.Open())
@@ -86,6 +89,7 @@ BOOL WebSocketClient::Open()
         }
         else
         {
+            socketContext.Close(); // Close previous socket context before creating a new one
             socketContext = Socket(ipv4Address, port);
             if (!socketContext.Open())
             {
@@ -94,8 +98,10 @@ BOOL WebSocketClient::Open()
             }
         }
     }
-    else if (!result)
+
+    if (!result)
     {
+
         return FALSE;
     }
 
