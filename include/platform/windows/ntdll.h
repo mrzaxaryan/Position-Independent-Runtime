@@ -100,6 +100,12 @@ class NTDLL
 {
 private:
 public:
+    // This functiuon converts a DOS path name to an NT path name.
+    // Minimum supported client
+    static NTSTATUS RtlDosPathNameToNtPathName_U(const WCHAR *DosName, UNICODE_STRING *NtName, WCHAR **FilePart, PRTL_RELATIVE_NAME_U RelativeName);
+    // This function frees a Unicode string that was allocated.
+    // Minimum supported client Windows 2000 Professional [desktop apps only].
+    static NTSTATUS RtlFreeUnicodeString(PUNICODE_STRING UnicodeString);
     // This function creates or opens an event object.
     // Minimum supported client	Windows XP.
     static NTSTATUS ZwCreateEvent(PPVOID EventHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, EVENT_TYPE EventType, INT8 InitialState);
@@ -115,12 +121,12 @@ public:
     // This function creates a new file or directory, or opens an existing file, device, directory, or volume.
     // Minimum supported client	Windows XP [desktop apps | UWP apps]
     static NTSTATUS ZwCreateFile(PPVOID FileHandle, UINT32 DesiredAccess, PVOID ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, PLARGE_INTEGER AllocationSize, UINT32 FileAttributes, UINT32 ShareAccess, UINT32 CreateDisposition, UINT32 CreateOptions, PVOID EaBuffer, UINT32 EaLength);
-    // This function routine allocates a block of memory from a heap.
+    // This function allocates virtual memory in the address space of a process.
     // Minimum supported client	Windows XP.
-    static PVOID RtlAllocateHeap(PVOID HeapHandle, INT32 Flags, USIZE Size);
-    // This function frees a block of memory back to a heap.
+    static NTSTATUS ZwAllocateVirtualMemory(PVOID ProcessHandle, PPVOID BaseAddress, USIZE ZeroBits, PUSIZE RegionSize, UINT32 AllocationType, UINT32 Protect);
+    // This function releases virtual memory in the address space of a process.
     // Minimum supported client	Windows XP.
-    static BOOL RtlFreeHeap(PVOID HeapHandle, INT32 Flags, PVOID Pointer);
+    static NTSTATUS ZwFreeVirtualMemory(PVOID ProcessHandle, PPVOID BaseAddress, PUSIZE RegionSize, UINT32 FreeType);
     // This function terminates the specified process and all of its threads.
     // Target platform is universal.
     static NTSTATUS ZwTerminateProcess(PVOID ProcessHandle, NTSTATUS ExitStatus);
@@ -145,12 +151,6 @@ public:
     // This function opens an existing file, device, directory, or volume, and returns a handle for the file object.
     // Target Platform	Windows.
     static NTSTATUS ZwOpenFile(PPVOID FileHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, UINT32 ShareAccess, UINT32 OpenOptions);
-    // This functiuon converts a DOS path name to an NT path name.
-    // Minimum supported client
-    static NTSTATUS RtlDosPathNameToNtPathName_U(const WCHAR *DosName, UNICODE_STRING *NtName, WCHAR **FilePart, PRTL_RELATIVE_NAME_U RelativeName);
-    // This function frees a Unicode string that was allocated.
-    // Minimum supported client Windows 2000 Professional [desktop apps only].
-    static NTSTATUS RtlFreeUnicodeString(PUNICODE_STRING UnicodeString);
     // This function retrieves volume information for the specified file system.
     // Minimum supported client	Windows XP.
     static NTSTATUS ZwQueryVolumeInformationFile(PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FsInformation, UINT32 Length, UINT32 FsInformationClass);

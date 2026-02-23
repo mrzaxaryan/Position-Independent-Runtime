@@ -256,6 +256,120 @@ public:
         return (NTSTATUS)r_rax;
     }
 
+    // Indirect syscall with 12 arguments
+    static inline NTSTATUS Call(SYSCALL_ENTRY entry, USIZE a1, USIZE a2, USIZE a3, USIZE a4, USIZE a5, USIZE a6, USIZE a7, USIZE a8, USIZE a9, USIZE a10, USIZE a11, USIZE a12)
+    {
+        register USIZE r_r10 __asm__("r10") = a1;
+        register USIZE r_rdx __asm__("rdx") = a2;
+        register USIZE r_r8 __asm__("r8") = a3;
+        register USIZE r_r9 __asm__("r9") = a4;
+        register USIZE r_rax __asm__("rax") = (USIZE)entry.ssn;
+        USIZE args[] = {a5, a6, a7, a8, a9, a10, a11, a12};
+        __asm__ volatile(
+            "sub $0x60, %%rsp\n"
+            "mov (%[args]), %%rcx\n"
+            "mov %%rcx, 0x20(%%rsp)\n"
+            "mov 0x8(%[args]), %%rcx\n"
+            "mov %%rcx, 0x28(%%rsp)\n"
+            "mov 0x10(%[args]), %%rcx\n"
+            "mov %%rcx, 0x30(%%rsp)\n"
+            "mov 0x18(%[args]), %%rcx\n"
+            "mov %%rcx, 0x38(%%rsp)\n"
+            "mov 0x20(%[args]), %%rcx\n"
+            "mov %%rcx, 0x40(%%rsp)\n"
+            "mov 0x28(%[args]), %%rcx\n"
+            "mov %%rcx, 0x48(%%rsp)\n"
+            "mov 0x30(%[args]), %%rcx\n"
+            "mov %%rcx, 0x50(%%rsp)\n"
+            "mov 0x38(%[args]), %%rcx\n"
+            "mov %%rcx, 0x58(%%rsp)\n"
+            "call *%[gadget]\n"
+            "add $0x60, %%rsp\n"
+            : "+r"(r_rax)
+            : "r"(r_r10), "r"(r_rdx), "r"(r_r8), "r"(r_r9),
+              [args] "r"(args), [gadget] "r"(entry.syscallAddress)
+            : "rcx", "r11", "memory");
+        return (NTSTATUS)r_rax;
+    }
+
+    // Indirect syscall with 13 arguments
+    static inline NTSTATUS Call(SYSCALL_ENTRY entry, USIZE a1, USIZE a2, USIZE a3, USIZE a4, USIZE a5, USIZE a6, USIZE a7, USIZE a8, USIZE a9, USIZE a10, USIZE a11, USIZE a12, USIZE a13)
+    {
+        register USIZE r_r10 __asm__("r10") = a1;
+        register USIZE r_rdx __asm__("rdx") = a2;
+        register USIZE r_r8 __asm__("r8") = a3;
+        register USIZE r_r9 __asm__("r9") = a4;
+        register USIZE r_rax __asm__("rax") = (USIZE)entry.ssn;
+        USIZE args[] = {a5, a6, a7, a8, a9, a10, a11, a12, a13};
+        __asm__ volatile(
+            "sub $0x68, %%rsp\n"
+            "mov (%[args]), %%rcx\n"
+            "mov %%rcx, 0x20(%%rsp)\n"
+            "mov 0x8(%[args]), %%rcx\n"
+            "mov %%rcx, 0x28(%%rsp)\n"
+            "mov 0x10(%[args]), %%rcx\n"
+            "mov %%rcx, 0x30(%%rsp)\n"
+            "mov 0x18(%[args]), %%rcx\n"
+            "mov %%rcx, 0x38(%%rsp)\n"
+            "mov 0x20(%[args]), %%rcx\n"
+            "mov %%rcx, 0x40(%%rsp)\n"
+            "mov 0x28(%[args]), %%rcx\n"
+            "mov %%rcx, 0x48(%%rsp)\n"
+            "mov 0x30(%[args]), %%rcx\n"
+            "mov %%rcx, 0x50(%%rsp)\n"
+            "mov 0x38(%[args]), %%rcx\n"
+            "mov %%rcx, 0x58(%%rsp)\n"
+            "mov 0x40(%[args]), %%rcx\n"
+            "mov %%rcx, 0x60(%%rsp)\n"
+            "call *%[gadget]\n"
+            "add $0x68, %%rsp\n"
+            : "+r"(r_rax)
+            : "r"(r_r10), "r"(r_rdx), "r"(r_r8), "r"(r_r9),
+              [args] "r"(args), [gadget] "r"(entry.syscallAddress)
+            : "rcx", "r11", "memory");
+        return (NTSTATUS)r_rax;
+    }
+
+    // Indirect syscall with 14 arguments
+    static inline NTSTATUS Call(SYSCALL_ENTRY entry, USIZE a1, USIZE a2, USIZE a3, USIZE a4, USIZE a5, USIZE a6, USIZE a7, USIZE a8, USIZE a9, USIZE a10, USIZE a11, USIZE a12, USIZE a13, USIZE a14)
+    {
+        register USIZE r_r10 __asm__("r10") = a1;
+        register USIZE r_rdx __asm__("rdx") = a2;
+        register USIZE r_r8 __asm__("r8") = a3;
+        register USIZE r_r9 __asm__("r9") = a4;
+        register USIZE r_rax __asm__("rax") = (USIZE)entry.ssn;
+        USIZE args[] = {a5, a6, a7, a8, a9, a10, a11, a12, a13, a14};
+        __asm__ volatile(
+            "sub $0x70, %%rsp\n"
+            "mov (%[args]), %%rcx\n"
+            "mov %%rcx, 0x20(%%rsp)\n"
+            "mov 0x8(%[args]), %%rcx\n"
+            "mov %%rcx, 0x28(%%rsp)\n"
+            "mov 0x10(%[args]), %%rcx\n"
+            "mov %%rcx, 0x30(%%rsp)\n"
+            "mov 0x18(%[args]), %%rcx\n"
+            "mov %%rcx, 0x38(%%rsp)\n"
+            "mov 0x20(%[args]), %%rcx\n"
+            "mov %%rcx, 0x40(%%rsp)\n"
+            "mov 0x28(%[args]), %%rcx\n"
+            "mov %%rcx, 0x48(%%rsp)\n"
+            "mov 0x30(%[args]), %%rcx\n"
+            "mov %%rcx, 0x50(%%rsp)\n"
+            "mov 0x38(%[args]), %%rcx\n"
+            "mov %%rcx, 0x58(%%rsp)\n"
+            "mov 0x40(%[args]), %%rcx\n"
+            "mov %%rcx, 0x60(%%rsp)\n"
+            "mov 0x48(%[args]), %%rcx\n"
+            "mov %%rcx, 0x68(%%rsp)\n"
+            "call *%[gadget]\n"
+            "add $0x70, %%rsp\n"
+            : "+r"(r_rax)
+            : "r"(r_r10), "r"(r_rdx), "r"(r_r8), "r"(r_r9),
+              [args] "r"(args), [gadget] "r"(entry.syscallAddress)
+            : "rcx", "r11", "memory");
+        return (NTSTATUS)r_rax;
+    }
+
 #elif defined(ARCHITECTURE_I386)
 
     // Windows i386 syscalls are STACK-BASED: all arguments are pushed onto the stack,
@@ -531,6 +645,93 @@ public:
         return (NTSTATUS)r_eax;
     }
 
+    // Indirect syscall with 12 arguments
+    static inline NTSTATUS Call(SYSCALL_ENTRY entry, USIZE a1, USIZE a2, USIZE a3, USIZE a4, USIZE a5, USIZE a6, USIZE a7, USIZE a8, USIZE a9, USIZE a10, USIZE a11, USIZE a12)
+    {
+        USIZE args[] = {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12};
+        register USIZE r_eax __asm__("eax") = (USIZE)entry.ssn;
+        __asm__ volatile(
+            "pushl 44(%[args])\n"
+            "pushl 40(%[args])\n"
+            "pushl 36(%[args])\n"
+            "pushl 32(%[args])\n"
+            "pushl 28(%[args])\n"
+            "pushl 24(%[args])\n"
+            "pushl 20(%[args])\n"
+            "pushl 16(%[args])\n"
+            "pushl 12(%[args])\n"
+            "pushl 8(%[args])\n"
+            "pushl 4(%[args])\n"
+            "pushl (%[args])\n"
+            "pushl $0\n"
+            "movl %[gadget], %%edx\n"
+            "call *%%edx\n"
+            "addl $52, %%esp\n"
+            : "+a"(r_eax)
+            : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
+            : "ecx", "edx", "memory");
+        return (NTSTATUS)r_eax;
+    }
+
+    // Indirect syscall with 13 arguments
+    static inline NTSTATUS Call(SYSCALL_ENTRY entry, USIZE a1, USIZE a2, USIZE a3, USIZE a4, USIZE a5, USIZE a6, USIZE a7, USIZE a8, USIZE a9, USIZE a10, USIZE a11, USIZE a12, USIZE a13)
+    {
+        USIZE args[] = {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13};
+        register USIZE r_eax __asm__("eax") = (USIZE)entry.ssn;
+        __asm__ volatile(
+            "pushl 48(%[args])\n"
+            "pushl 44(%[args])\n"
+            "pushl 40(%[args])\n"
+            "pushl 36(%[args])\n"
+            "pushl 32(%[args])\n"
+            "pushl 28(%[args])\n"
+            "pushl 24(%[args])\n"
+            "pushl 20(%[args])\n"
+            "pushl 16(%[args])\n"
+            "pushl 12(%[args])\n"
+            "pushl 8(%[args])\n"
+            "pushl 4(%[args])\n"
+            "pushl (%[args])\n"
+            "pushl $0\n"
+            "movl %[gadget], %%edx\n"
+            "call *%%edx\n"
+            "addl $56, %%esp\n"
+            : "+a"(r_eax)
+            : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
+            : "ecx", "edx", "memory");
+        return (NTSTATUS)r_eax;
+    }
+
+    // Indirect syscall with 14 arguments
+    static inline NTSTATUS Call(SYSCALL_ENTRY entry, USIZE a1, USIZE a2, USIZE a3, USIZE a4, USIZE a5, USIZE a6, USIZE a7, USIZE a8, USIZE a9, USIZE a10, USIZE a11, USIZE a12, USIZE a13, USIZE a14)
+    {
+        USIZE args[] = {a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14};
+        register USIZE r_eax __asm__("eax") = (USIZE)entry.ssn;
+        __asm__ volatile(
+            "pushl 52(%[args])\n"
+            "pushl 48(%[args])\n"
+            "pushl 44(%[args])\n"
+            "pushl 40(%[args])\n"
+            "pushl 36(%[args])\n"
+            "pushl 32(%[args])\n"
+            "pushl 28(%[args])\n"
+            "pushl 24(%[args])\n"
+            "pushl 20(%[args])\n"
+            "pushl 16(%[args])\n"
+            "pushl 12(%[args])\n"
+            "pushl 8(%[args])\n"
+            "pushl 4(%[args])\n"
+            "pushl (%[args])\n"
+            "pushl $0\n"
+            "movl %[gadget], %%edx\n"
+            "call *%%edx\n"
+            "addl $60, %%esp\n"
+            : "+a"(r_eax)
+            : [gadget] "r"(entry.syscallAddress), [args] "r"(args)
+            : "ecx", "edx", "memory");
+        return (NTSTATUS)r_eax;
+    }
+
 #elif defined(ARCHITECTURE_AARCH64)
 
     // Windows ARM64 indirect syscall via BLR to ntdll stub.
@@ -780,6 +981,90 @@ public:
             "add sp, sp, #32\n"
             : "+r"(x0), "+r"(x1), "+r"(x2), "+r"(x3), "+r"(x4), "+r"(x5), "+r"(x6), "+r"(x7), [stub] "+r"(stub)
             : [a9] "r"(a9), [a10] "r"(a10), [a11] "r"(a11)
+            : "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15",
+              "x17", "x30", "memory");
+        return (NTSTATUS)x0;
+    }
+
+    // Indirect syscall with 12 arguments
+    static inline NTSTATUS Call(SYSCALL_ENTRY entry, USIZE a1, USIZE a2, USIZE a3, USIZE a4, USIZE a5, USIZE a6, USIZE a7, USIZE a8, USIZE a9, USIZE a10, USIZE a11, USIZE a12)
+    {
+        register USIZE x0 __asm__("x0") = a1;
+        register USIZE x1 __asm__("x1") = a2;
+        register USIZE x2 __asm__("x2") = a3;
+        register USIZE x3 __asm__("x3") = a4;
+        register USIZE x4 __asm__("x4") = a5;
+        register USIZE x5 __asm__("x5") = a6;
+        register USIZE x6 __asm__("x6") = a7;
+        register USIZE x7 __asm__("x7") = a8;
+        register USIZE stub __asm__("x16") = (USIZE)entry.syscallAddress;
+        __asm__ volatile(
+            "sub sp, sp, #32\n"
+            "str %[a9], [sp]\n"
+            "str %[a10], [sp, #8]\n"
+            "str %[a11], [sp, #16]\n"
+            "str %[a12], [sp, #24]\n"
+            "blr %[stub]\n"
+            "add sp, sp, #32\n"
+            : "+r"(x0), "+r"(x1), "+r"(x2), "+r"(x3), "+r"(x4), "+r"(x5), "+r"(x6), "+r"(x7), [stub] "+r"(stub)
+            : [a9] "r"(a9), [a10] "r"(a10), [a11] "r"(a11), [a12] "r"(a12)
+            : "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15",
+              "x17", "x30", "memory");
+        return (NTSTATUS)x0;
+    }
+
+    // Indirect syscall with 13 arguments
+    static inline NTSTATUS Call(SYSCALL_ENTRY entry, USIZE a1, USIZE a2, USIZE a3, USIZE a4, USIZE a5, USIZE a6, USIZE a7, USIZE a8, USIZE a9, USIZE a10, USIZE a11, USIZE a12, USIZE a13)
+    {
+        register USIZE x0 __asm__("x0") = a1;
+        register USIZE x1 __asm__("x1") = a2;
+        register USIZE x2 __asm__("x2") = a3;
+        register USIZE x3 __asm__("x3") = a4;
+        register USIZE x4 __asm__("x4") = a5;
+        register USIZE x5 __asm__("x5") = a6;
+        register USIZE x6 __asm__("x6") = a7;
+        register USIZE x7 __asm__("x7") = a8;
+        register USIZE stub __asm__("x16") = (USIZE)entry.syscallAddress;
+        __asm__ volatile(
+            "sub sp, sp, #48\n"
+            "str %[a9], [sp]\n"
+            "str %[a10], [sp, #8]\n"
+            "str %[a11], [sp, #16]\n"
+            "str %[a12], [sp, #24]\n"
+            "str %[a13], [sp, #32]\n"
+            "blr %[stub]\n"
+            "add sp, sp, #48\n"
+            : "+r"(x0), "+r"(x1), "+r"(x2), "+r"(x3), "+r"(x4), "+r"(x5), "+r"(x6), "+r"(x7), [stub] "+r"(stub)
+            : [a9] "r"(a9), [a10] "r"(a10), [a11] "r"(a11), [a12] "r"(a12), [a13] "r"(a13)
+            : "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15",
+              "x17", "x30", "memory");
+        return (NTSTATUS)x0;
+    }
+
+    // Indirect syscall with 14 arguments
+    static inline NTSTATUS Call(SYSCALL_ENTRY entry, USIZE a1, USIZE a2, USIZE a3, USIZE a4, USIZE a5, USIZE a6, USIZE a7, USIZE a8, USIZE a9, USIZE a10, USIZE a11, USIZE a12, USIZE a13, USIZE a14)
+    {
+        register USIZE x0 __asm__("x0") = a1;
+        register USIZE x1 __asm__("x1") = a2;
+        register USIZE x2 __asm__("x2") = a3;
+        register USIZE x3 __asm__("x3") = a4;
+        register USIZE x4 __asm__("x4") = a5;
+        register USIZE x5 __asm__("x5") = a6;
+        register USIZE x6 __asm__("x6") = a7;
+        register USIZE x7 __asm__("x7") = a8;
+        register USIZE stub __asm__("x16") = (USIZE)entry.syscallAddress;
+        __asm__ volatile(
+            "sub sp, sp, #48\n"
+            "str %[a9], [sp]\n"
+            "str %[a10], [sp, #8]\n"
+            "str %[a11], [sp, #16]\n"
+            "str %[a12], [sp, #24]\n"
+            "str %[a13], [sp, #32]\n"
+            "str %[a14], [sp, #40]\n"
+            "blr %[stub]\n"
+            "add sp, sp, #48\n"
+            : "+r"(x0), "+r"(x1), "+r"(x2), "+r"(x3), "+r"(x4), "+r"(x5), "+r"(x6), "+r"(x7), [stub] "+r"(stub)
+            : [a9] "r"(a9), [a10] "r"(a10), [a11] "r"(a11), [a12] "r"(a12), [a13] "r"(a13), [a14] "r"(a14)
             : "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15",
               "x17", "x30", "memory");
         return (NTSTATUS)x0;
