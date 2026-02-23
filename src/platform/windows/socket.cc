@@ -156,7 +156,7 @@ BOOL Socket::Bind(SockAddr *SocketAddress, INT32 ShareType)
 
     if (Status == STATUS_PENDING)
     {
-        NTDLL::NtWaitForSingleObject(SockEvent, 0, NULL);
+        NTDLL::ZwWaitForSingleObject(SockEvent, 0, NULL);
         Status = IOSB.Status;
     }
 
@@ -251,7 +251,7 @@ BOOL Socket::Open()
 
     if (Status == STATUS_PENDING)
     {
-        NTDLL::NtWaitForSingleObject(SockEvent, 0, NULL);
+        NTDLL::ZwWaitForSingleObject(SockEvent, 0, NULL);
         Status = IOSB.Status;
     }
 
@@ -324,7 +324,7 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferSize)
         LARGE_INTEGER Timeout;
         Timeout.QuadPart = 5 * 60 * 1000 * -10000LL;
 
-        NTSTATUS waitStatus = NTDLL::NtWaitForSingleObject(SockEvent, 0, &Timeout);
+        NTSTATUS waitStatus = NTDLL::ZwWaitForSingleObject(SockEvent, 0, &Timeout);
 
         if (waitStatus == 0x00000102)
         {
@@ -401,7 +401,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
         {
             LARGE_INTEGER Timeout;
             Timeout.QuadPart = 1 * 60 * 1000 * -10000LL;
-            NTDLL::NtWaitForSingleObject(SockEvent, 0, &Timeout);
+            NTDLL::ZwWaitForSingleObject(SockEvent, 0, &Timeout);
         }
 
         Status = IOSB.Status;

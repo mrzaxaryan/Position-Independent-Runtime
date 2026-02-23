@@ -108,7 +108,7 @@ public:
     static NTSTATUS ZwDeviceIoControlFile(PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, UINT32 IoControlCode, PVOID InputBuffer, UINT32 InputBufferLength, PVOID OutputBuffer, UINT32 OutputBufferLength);
     // This function waits until the specified object attains a state of signaled.
     // Minimum supported client	Windows 2000 Professional [desktop apps only]
-    static NTSTATUS NtWaitForSingleObject(PVOID Object, INT8 Alertable, PLARGE_INTEGER Timeout);
+    static NTSTATUS ZwWaitForSingleObject(PVOID Object, INT8 Alertable, PLARGE_INTEGER Timeout);
     // This function closes a handle to an object.
     // Minimum supported client	Windows 2000 Professional [desktop apps only]
     static NTSTATUS ZwClose(PVOID Handle);
