@@ -16,7 +16,7 @@ File::File(PVOID handle) : fileHandle(handle), fileSize(0)
         Memory::Zero(&fileStandardInfo, sizeof(FILE_STANDARD_INFORMATION));
         Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
 
-        NTSTATUS status = NTDLL::NtQueryInformationFile(fileHandle, &ioStatusBlock, &fileStandardInfo, sizeof(fileStandardInfo), FileStandardInformation);
+        NTSTATUS status = NTDLL::ZwQueryInformationFile(fileHandle, &ioStatusBlock, &fileStandardInfo, sizeof(fileStandardInfo), FileStandardInformation);
 
         if (NT_SUCCESS(status))
         {
@@ -76,7 +76,7 @@ UINT32 File::Read(PVOID buffer, UINT32 size)
     // Properly initialize IO_STATUS_BLOCK with all fields
     IO_STATUS_BLOCK ioStatusBlock;
 
-    NTSTATUS status = NTDLL::NtReadFile((PVOID)fileHandle, NULL, NULL, NULL, &ioStatusBlock, buffer, (UINT32)size, NULL, NULL);
+    NTSTATUS status = NTDLL::ZwReadFile((PVOID)fileHandle, NULL, NULL, NULL, &ioStatusBlock, buffer, (UINT32)size, NULL, NULL);
 
     if (NT_SUCCESS(status))
     {
@@ -93,7 +93,7 @@ UINT32 File::Write(PCVOID buffer, USIZE size)
 
     IO_STATUS_BLOCK ioStatusBlock;
 
-    NTSTATUS status = NTDLL::NtWriteFile((PVOID)fileHandle, NULL, NULL, NULL, &ioStatusBlock, (PVOID)buffer, (UINT32)size, NULL, NULL);
+    NTSTATUS status = NTDLL::ZwWriteFile((PVOID)fileHandle, NULL, NULL, NULL, &ioStatusBlock, (PVOID)buffer, (UINT32)size, NULL, NULL);
 
     if (NT_SUCCESS(status))
     {
@@ -111,9 +111,9 @@ USIZE File::GetOffset() const
     FILE_POSITION_INFORMATION posFIle;
     IO_STATUS_BLOCK ioStatusBlock;
     // In Win32, moving 0 bytes from the current position returns the current offset
-    NTSTATUS status = NTDLL::NtQueryInformationFile((PVOID)fileHandle, &ioStatusBlock, &posFIle, sizeof(posFIle), FilePositionInformation);
-    
-    if(NT_SUCCESS(status))
+    NTSTATUS status = NTDLL::ZwQueryInformationFile((PVOID)fileHandle, &ioStatusBlock, &posFIle, sizeof(posFIle), FilePositionInformation);
+
+    if (NT_SUCCESS(status))
     {
         return (USIZE)posFIle.CurrentByteOffset.QuadPart;
     }
@@ -131,8 +131,8 @@ void File::SetOffset(USIZE absoluteOffset)
     Memory::Zero(&posInfo, sizeof(FILE_POSITION_INFORMATION));
     Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
     posInfo.CurrentByteOffset.QuadPart = INT64((INT64)absoluteOffset);
-    // Set the file pointer to the specified absolute offset using NtSetInformationFile
-    NTDLL::NtSetInformationFile((PVOID)fileHandle, &ioStatusBlock, &posInfo, sizeof(posInfo), FilePositionInformation);
+    // Set the file pointer to the specified absolute offset using ZwSetInformationFile
+    NTDLL::ZwSetInformationFile((PVOID)fileHandle, &ioStatusBlock, &posInfo, sizeof(posInfo), FilePositionInformation);
 }
 
 // Move the file offset by a relative amount based on the specified origin
@@ -149,7 +149,7 @@ void File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
     Memory::Zero(&fileStandardInfo, sizeof(FILE_STANDARD_INFORMATION));
     INT64 distance = 0;
 
-    NTSTATUS status = NTDLL::NtQueryInformationFile((PVOID)fileHandle, &ioStatusBlock, &posInfo, sizeof(posInfo), FilePositionInformation);
+    NTSTATUS status = NTDLL::ZwQueryInformationFile((PVOID)fileHandle, &ioStatusBlock, &posInfo, sizeof(posInfo), FilePositionInformation);
     if (!NT_SUCCESS(status))
         return;
 
@@ -162,7 +162,7 @@ void File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
         distance = posInfo.CurrentByteOffset.QuadPart + relativeAmount;
         break;
     case OffsetOrigin::End:
-        status = NTDLL::NtQueryInformationFile(fileHandle, &ioStatusBlock, &fileStandardInfo, sizeof(fileStandardInfo), FileStandardInformation);
+        status = NTDLL::ZwQueryInformationFile(fileHandle, &ioStatusBlock, &fileStandardInfo, sizeof(fileStandardInfo), FileStandardInformation);
         if (!NT_SUCCESS(status))
             return;
         distance = fileStandardInfo.EndOfFile.QuadPart + relativeAmount;
@@ -172,7 +172,7 @@ void File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
         break;
     }
     posInfo.CurrentByteOffset.QuadPart = distance;
-    NTDLL::NtSetInformationFile((PVOID)fileHandle, &ioStatusBlock, &posInfo, sizeof(posInfo), FilePositionInformation);
+    NTDLL::ZwSetInformationFile((PVOID)fileHandle, &ioStatusBlock, &posInfo, sizeof(posInfo), FilePositionInformation);
 }
 
 // --- FileSystem Implementation ---
@@ -257,7 +257,7 @@ BOOL FileSystem::Delete(PCWCHAR path)
     NTSTATUS status;
     PVOID hFile = NULL;
     IO_STATUS_BLOCK io;
-    
+
     status = NTDLL::RtlDosPathNameToNtPathName_U(path, &ntName, NULL, NULL);
     if (!NT_SUCCESS(status))
         return FALSE;
@@ -287,7 +287,7 @@ BOOL FileSystem::Exists(PCWCHAR path)
         return FALSE;
 
     InitializeObjectAttributes(&objAttr, &uniName, 0, NULL, NULL);
-    status = NTDLL::NtQueryAttributesFile(&objAttr, &fileBasicInfo);
+    status = NTDLL::ZwQueryAttributesFile(&objAttr, &fileBasicInfo);
 
     NTDLL::RtlFreeUnicodeString(&uniName);
 
@@ -354,14 +354,14 @@ BOOL FileSystem::DeleteDirectory(PCWCHAR path)
 
     if (!NT_SUCCESS(status))
         return FALSE;
-    
+
     InitializeObjectAttributes(&objAttr, &uniName, 0, NULL, NULL);
 
-    status = NTDLL::NtOpenFile(&hDir, DELETE | SYNCHRONIZE, &objAttr, &ioStatusBlock, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT);
+    status = NTDLL::ZwOpenFile(&hDir, DELETE | SYNCHRONIZE, &objAttr, &ioStatusBlock, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT);
     if (!NT_SUCCESS(status))
         return FALSE;
 
-    status = NTDLL::NtSetInformationFile(
+    status = NTDLL::ZwSetInformationFile(
         hDir,
         &ioStatusBlock,
         &disp,
@@ -415,7 +415,7 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path) : handle((PVOID)-1), first(TR
     if (!path || path[0] == L'\0')
     {
         PROCESS_DEVICEMAP_INFORMATION ProcessDeviceMapInfo;
-        status = NTDLL::NtQueryInformationProcess(
+        status = NTDLL::ZwQueryInformationProcess(
             NTDLL::NtCurrentProcess(),
             ProcessDeviceMap,
             &ProcessDeviceMapInfo.Query,
@@ -441,13 +441,12 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path) : handle((PVOID)-1), first(TR
     status = NTDLL::RtlDosPathNameToNtPathName_U(path, &uniPath, NULL, NULL);
     if (!NT_SUCCESS(status))
         return;
-    
 
     OBJECT_ATTRIBUTES objAttr;
     InitializeObjectAttributes(&objAttr, &uniPath, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
     IO_STATUS_BLOCK ioStatusBlock;
-    status = NTDLL::NtOpenFile(
+    status = NTDLL::ZwOpenFile(
         &handle,
         FILE_LIST_DIRECTORY | SYNCHRONIZE,
         &objAttr,
@@ -467,7 +466,7 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path) : handle((PVOID)-1), first(TR
     alignas(alignof(FILE_BOTH_DIR_INFORMATION)) UINT8 buffer[sizeof(FILE_BOTH_DIR_INFORMATION) + 260 * sizeof(WCHAR)];
     Memory::Zero(buffer, sizeof(buffer));
 
-    status = NTDLL::NtQueryDirectoryFile(
+    status = NTDLL::ZwQueryDirectoryFile(
         handle,
         NULL,
         NULL,
@@ -524,7 +523,7 @@ BOOL DirectoryIterator::Next()
                 currentEntry.isDirectory = TRUE;
                 currentEntry.isDrive = TRUE;
 
-                NTDLL::NtQueryVolumeInformationFile(
+                NTDLL::ZwQueryVolumeInformationFile(
                     NTDLL::NtCurrentProcess(),
                     &ioStatusBlock,
                     &info,
@@ -578,7 +577,7 @@ BOOL DirectoryIterator::Next()
     alignas(alignof(FILE_BOTH_DIR_INFORMATION)) UINT8 buffer[sizeof(FILE_BOTH_DIR_INFORMATION) + 260 * sizeof(WCHAR)];
     Memory::Zero(buffer, sizeof(buffer));
 
-    NTSTATUS status = NTDLL::NtQueryDirectoryFile(
+    NTSTATUS status = NTDLL::ZwQueryDirectoryFile(
         handle,
         NULL,
         NULL,

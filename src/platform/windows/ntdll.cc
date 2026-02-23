@@ -64,33 +64,54 @@ NTSTATUS NTDLL::ZwTerminateProcess(PVOID ProcessHandle, NTSTATUS ExitStatus)
                : CALL_FUNCTION("ZwTerminateProcess", PVOID ProcessHandle, NTSTATUS ExitStatus);
 }
 
-NTSTATUS NTDLL::NtQueryInformationFile(PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass)
+NTSTATUS NTDLL::ZwQueryInformationFile(PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass)
 {
-    return ((NTSTATUS(STDCALL *)(PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass))ResolveNtdllExportAddress("NtQueryInformationFile"))(FileHandle, IoStatusBlock, FileInformation, Length, FileInformationClass);
+    SYSCALL_ENTRY entry = ResolveSyscall("ZwQueryInformationFile");
+    return entry.ssn != SYSCALL_SSN_INVALID
+               ? System::Call(entry, (USIZE)FileHandle, (USIZE)IoStatusBlock, (USIZE)FileInformation, Length, FileInformationClass)
+               : CALL_FUNCTION("ZwQueryInformationFile", PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass);
 }
-NTSTATUS NTDLL::NtReadFile(PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID Buffer, UINT32 Length, PLARGE_INTEGER ByteOffset, PUINT32 Key)
+NTSTATUS NTDLL::ZwReadFile(PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID Buffer, UINT32 Length, PLARGE_INTEGER ByteOffset, PUINT32 Key)
 {
-    return ((NTSTATUS(STDCALL *)(PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID Buffer, UINT32 Length, PLARGE_INTEGER ByteOffset, PUINT32 Key))ResolveNtdllExportAddress("NtReadFile"))(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, ByteOffset, Key);
+    SYSCALL_ENTRY entry = ResolveSyscall("ZwReadFile");
+    return entry.ssn != SYSCALL_SSN_INVALID
+               ? System::Call(entry, (USIZE)FileHandle, (USIZE)Event, (USIZE)ApcRoutine, (USIZE)ApcContext, (USIZE)IoStatusBlock, (USIZE)Buffer, Length, (USIZE)ByteOffset, (USIZE)Key)
+               : CALL_FUNCTION("ZwReadFile", PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID Buffer, UINT32 Length, PLARGE_INTEGER ByteOffset, PUINT32 Key);
 }
-NTSTATUS NTDLL::NtWriteFile(PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID Buffer, UINT32 Length, PLARGE_INTEGER ByteOffset, PUINT32 Key)
+NTSTATUS NTDLL::ZwWriteFile(PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID Buffer, UINT32 Length, PLARGE_INTEGER ByteOffset, PUINT32 Key)
 {
-    return ((NTSTATUS(STDCALL *)(PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID Buffer, UINT32 Length, PLARGE_INTEGER ByteOffset, PUINT32 Key))ResolveNtdllExportAddress("NtWriteFile"))(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, ByteOffset, Key);
+    SYSCALL_ENTRY entry = ResolveSyscall("ZwWriteFile");
+    return entry.ssn != SYSCALL_SSN_INVALID
+               ? System::Call(entry, (USIZE)FileHandle, (USIZE)Event, (USIZE)ApcRoutine, (USIZE)ApcContext, (USIZE)IoStatusBlock, (USIZE)Buffer, Length, (USIZE)ByteOffset, (USIZE)Key)
+               : CALL_FUNCTION("ZwWriteFile", PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID Buffer, UINT32 Length, PLARGE_INTEGER ByteOffset, PUINT32 Key);
 }
-NTSTATUS NTDLL::NtSetInformationFile(PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass)
+NTSTATUS NTDLL::ZwSetInformationFile(PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass)
 {
-    return ((NTSTATUS(STDCALL *)(PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass))ResolveNtdllExportAddress("NtSetInformationFile"))(FileHandle, IoStatusBlock, FileInformation, Length, FileInformationClass);
+    SYSCALL_ENTRY entry = ResolveSyscall("ZwSetInformationFile");
+    return entry.ssn != SYSCALL_SSN_INVALID
+               ? System::Call(entry, (USIZE)FileHandle, (USIZE)IoStatusBlock, (USIZE)FileInformation, Length, FileInformationClass)
+               : CALL_FUNCTION("ZwSetInformationFile", PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass);
 }
 BOOL NTDLL::ZwDeleteFile(POBJECT_ATTRIBUTES FileName)
 {
-    return ((BOOL(STDCALL *)(POBJECT_ATTRIBUTES FileName))ResolveNtdllExportAddress("NtDeleteFile"))(FileName);
+    SYSCALL_ENTRY entry = ResolveSyscall("ZwDeleteFile");
+    return entry.ssn != SYSCALL_SSN_INVALID
+               ? System::Call(entry, (USIZE)FileName)
+               : CALL_FUNCTION("ZwDeleteFile", POBJECT_ATTRIBUTES FileName);
 }
-NTSTATUS NTDLL::NtQueryAttributesFile(POBJECT_ATTRIBUTES ObjectAttributes, PFILE_BASIC_INFORMATION FileInformation)
+NTSTATUS NTDLL::ZwQueryAttributesFile(POBJECT_ATTRIBUTES ObjectAttributes, PFILE_BASIC_INFORMATION FileInformation)
 {
-    return ((NTSTATUS(STDCALL *)(POBJECT_ATTRIBUTES ObjectAttributes, PFILE_BASIC_INFORMATION FileInformation))ResolveNtdllExportAddress("NtQueryAttributesFile"))(ObjectAttributes, FileInformation);
+    SYSCALL_ENTRY entry = ResolveSyscall("ZwQueryAttributesFile");
+    return entry.ssn != SYSCALL_SSN_INVALID
+               ? System::Call(entry, (USIZE)ObjectAttributes, (USIZE)FileInformation)
+               : CALL_FUNCTION("ZwQueryAttributesFile", POBJECT_ATTRIBUTES ObjectAttributes, PFILE_BASIC_INFORMATION FileInformation);
 }
-NTSTATUS NTDLL::NtOpenFile(PPVOID FileHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, UINT32 ShareAccess, UINT32 OpenOptions)
+NTSTATUS NTDLL::ZwOpenFile(PPVOID FileHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, UINT32 ShareAccess, UINT32 OpenOptions)
 {
-    return ((NTSTATUS(STDCALL *)(PPVOID FileHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, UINT32 ShareAccess, UINT32 OpenOptions))ResolveNtdllExportAddress("NtOpenFile"))(FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock, ShareAccess, OpenOptions);
+    SYSCALL_ENTRY entry = ResolveSyscall("ZwOpenFile");
+    return entry.ssn != SYSCALL_SSN_INVALID
+               ? System::Call(entry, (USIZE)FileHandle, (USIZE)DesiredAccess, (USIZE)ObjectAttributes, (USIZE)IoStatusBlock, (USIZE)ShareAccess, (USIZE)OpenOptions)
+               : CALL_FUNCTION("ZwOpenFile", PPVOID FileHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, UINT32 ShareAccess, UINT32 OpenOptions);
 }
 NTSTATUS NTDLL::RtlDosPathNameToNtPathName_U(const WCHAR *DosName, UNICODE_STRING *NtName, WCHAR **FilePart, PRTL_RELATIVE_NAME_U RelativeName)
 {
@@ -100,25 +121,37 @@ NTSTATUS NTDLL::RtlFreeUnicodeString(PUNICODE_STRING UnicodeString)
 {
     return ((NTSTATUS(STDCALL *)(PUNICODE_STRING UnicodeString))ResolveNtdllExportAddress("RtlFreeUnicodeString"))(UnicodeString);
 }
-NTSTATUS NTDLL::NtQueryVolumeInformationFile(PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FsInformation, UINT32 Length, UINT32 FsInformationClass)
+NTSTATUS NTDLL::ZwQueryVolumeInformationFile(PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FsInformation, UINT32 Length, UINT32 FsInformationClass)
 {
-    return ((NTSTATUS(STDCALL *)(PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FsInformation, UINT32 Length, UINT32 FsInformationClass))ResolveNtdllExportAddress("NtQueryVolumeInformationFile"))(FileHandle, IoStatusBlock, FsInformation, Length, FsInformationClass);
+    SYSCALL_ENTRY entry = ResolveSyscall("ZwQueryVolumeInformationFile");
+    return entry.ssn != SYSCALL_SSN_INVALID
+               ? System::Call(entry, (USIZE)FileHandle, (USIZE)IoStatusBlock, (USIZE)FsInformation, Length, FsInformationClass)
+               : CALL_FUNCTION("ZwQueryVolumeInformationFile", PVOID FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FsInformation, UINT32 Length, UINT32 FsInformationClass);
 }
-NTSTATUS NTDLL::NtQueryInformationProcess(PVOID ProcessHandle, UINT32 ProcessInformationClass, PVOID ProcessInformation, UINT32 ProcessInformationLength, PUINT32 ReturnLength)
+NTSTATUS NTDLL::ZwQueryInformationProcess(PVOID ProcessHandle, UINT32 ProcessInformationClass, PVOID ProcessInformation, UINT32 ProcessInformationLength, PUINT32 ReturnLength)
 {
-    return ((NTSTATUS(STDCALL *)(PVOID ProcessHandle, UINT32 ProcessInformationClass, PVOID ProcessInformation, UINT32 ProcessInformationLength, PUINT32 ReturnLength))ResolveNtdllExportAddress("NtQueryInformationProcess"))(ProcessHandle, ProcessInformationClass, ProcessInformation, ProcessInformationLength, ReturnLength);
+    SYSCALL_ENTRY entry = ResolveSyscall("ZwQueryInformationProcess");
+    return entry.ssn != SYSCALL_SSN_INVALID
+               ? System::Call(entry, (USIZE)ProcessHandle, (USIZE)ProcessInformationClass, (USIZE)ProcessInformation, ProcessInformationLength, (USIZE)ReturnLength)
+               : CALL_FUNCTION("ZwQueryInformationProcess", PVOID ProcessHandle, UINT32 ProcessInformationClass, PVOID ProcessInformation, UINT32 ProcessInformationLength, PUINT32 ReturnLength);
 }
 NTSTATUS NTDLL::NtCreateNamedPipeFile(PPVOID FileHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, UINT32 ShareAccess, UINT32 CreateDisposition, UINT32 CreateOptions, UINT32 NamedPipeType, UINT32 ReadMode, UINT32 CompletionMode, UINT32 MaximumInstances, UINT32 InboundQuota, UINT32 OutboundQuota, PLARGE_INTEGER DefaultTimeout)
 {
     return ((NTSTATUS(STDCALL *)(PPVOID FileHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, UINT32 ShareAccess, UINT32 CreateDisposition, UINT32 CreateOptions, UINT32 NamedPipeType, UINT32 ReadMode, UINT32 CompletionMode, UINT32 MaximumInstances, UINT32 InboundQuota, UINT32 OutboundQuota, PLARGE_INTEGER DefaultTimeout))ResolveNtdllExportAddress("NtCreateNamedPipeFile"))(FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock, ShareAccess, CreateDisposition, CreateOptions, NamedPipeType, ReadMode, CompletionMode, MaximumInstances, InboundQuota, OutboundQuota, DefaultTimeout);
 }
-NTSTATUS NTDLL::NtSetInformationObject(PVOID Handle, UINT32 ObjectInformationClass, PVOID ObjectInformation, UINT32 ObjectInformationLength)
+NTSTATUS NTDLL::ZwSetInformationObject(PVOID Handle, UINT32 ObjectInformationClass, PVOID ObjectInformation, UINT32 ObjectInformationLength)
 {
-    return ((NTSTATUS(STDCALL *)(PVOID Handle, UINT32 ObjectInformationClass, PVOID ObjectInformation, UINT32 ObjectInformationLength))ResolveNtdllExportAddress("NtSetInformationObject"))(Handle, ObjectInformationClass, ObjectInformation, ObjectInformationLength);
+    SYSCALL_ENTRY entry = ResolveSyscall("ZwSetInformationObject");
+    return entry.ssn != SYSCALL_SSN_INVALID
+               ? System::Call(entry, (USIZE)Handle, (USIZE)ObjectInformationClass, (USIZE)ObjectInformation, (USIZE)ObjectInformationLength)
+               : CALL_FUNCTION("ZwSetInformationObject", PVOID Handle, UINT32 ObjectInformationClass, PVOID ObjectInformation, UINT32 ObjectInformationLength);
 }
-NTSTATUS NTDLL::NtCreateUserProcess(PPVOID ProcessHandle, PPVOID ThreadHandle, UINT32 ProcessDesiredAccess, UINT32 ThreadDesiredAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, UINT32 ProcessFlags, UINT32 ThreadFlags, PVOID ProcessParameters, PVOID CreateInfo, PVOID AttributeList)
+NTSTATUS NTDLL::ZwCreateUserProcess(PPVOID ProcessHandle, PPVOID ThreadHandle, UINT32 ProcessDesiredAccess, UINT32 ThreadDesiredAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, UINT32 ProcessFlags, UINT32 ThreadFlags, PVOID ProcessParameters, PVOID CreateInfo, PVOID AttributeList)
 {
-    return ((NTSTATUS(STDCALL *)(PPVOID ProcessHandle, PPVOID ThreadHandle, UINT32 ProcessDesiredAccess, UINT32 ThreadDesiredAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, UINT32 ProcessFlags, UINT32 ThreadFlags, PVOID ProcessParameters, PVOID CreateInfo, PVOID AttributeList))ResolveNtdllExportAddress("NtCreateUserProcess"))(ProcessHandle, ThreadHandle, ProcessDesiredAccess, ThreadDesiredAccess, ProcessObjectAttributes, ThreadObjectAttributes, ProcessFlags, ThreadFlags, ProcessParameters, CreateInfo, AttributeList);
+    SYSCALL_ENTRY entry = ResolveSyscall("ZwCreateUserProcess");
+    return entry.ssn != SYSCALL_SSN_INVALID
+               ? System::Call(entry, (USIZE)ProcessHandle, (USIZE)ThreadHandle, (USIZE)ProcessDesiredAccess, (USIZE)ThreadDesiredAccess, (USIZE)ProcessObjectAttributes, (USIZE)ThreadObjectAttributes, (USIZE)ProcessFlags, (USIZE)ThreadFlags, (USIZE)ProcessParameters, (USIZE)CreateInfo, (USIZE)AttributeList)
+               : CALL_FUNCTION("ZwCreateUserProcess", PPVOID ProcessHandle, PPVOID ThreadHandle, UINT32 ProcessDesiredAccess, UINT32 ThreadDesiredAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, UINT32 ProcessFlags, UINT32 ThreadFlags, PVOID ProcessParameters, PVOID CreateInfo, PVOID AttributeList);
 }
 NTSTATUS NTDLL::RtlCreateProcessParametersEx(PVOID *ProcessParameters, PUNICODE_STRING ImagePathName, PUNICODE_STRING DllPath, PUNICODE_STRING CurrentDirectory, PUNICODE_STRING CommandLine, PVOID Environment, PUNICODE_STRING WindowTitle, PUNICODE_STRING DesktopInfo, PUNICODE_STRING ShellInfo, PUNICODE_STRING RuntimeData, UINT32 Flags)
 {
@@ -128,7 +161,10 @@ NTSTATUS NTDLL::RtlDestroyProcessParameters(PVOID ProcessParameters)
 {
     return ((NTSTATUS(STDCALL *)(PVOID ProcessParameters))ResolveNtdllExportAddress("RtlDestroyProcessParameters"))(ProcessParameters);
 }
-NTSTATUS NTDLL::NtQueryDirectoryFile(PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass, BOOL ReturnSingleEntry, PUNICODE_STRING FileName, BOOL RestartScan)
+NTSTATUS NTDLL::ZwQueryDirectoryFile(PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass, BOOL ReturnSingleEntry, PUNICODE_STRING FileName, BOOL RestartScan)
 {
-    return ((NTSTATUS(STDCALL *)(PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass, BOOL ReturnSingleEntry, PUNICODE_STRING FileName, BOOL RestartScan))ResolveNtdllExportAddress("NtQueryDirectoryFile"))(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, FileInformation, Length, FileInformationClass, ReturnSingleEntry, FileName, RestartScan);
+    SYSCALL_ENTRY entry = ResolveSyscall("ZwQueryDirectoryFile");
+    return entry.ssn != SYSCALL_SSN_INVALID
+               ? System::Call(entry, (USIZE)FileHandle, (USIZE)Event, (USIZE)ApcRoutine, (USIZE)ApcContext, (USIZE)IoStatusBlock, (USIZE)FileInformation, Length, FileInformationClass, (USIZE)ReturnSingleEntry, (USIZE)FileName, (USIZE)RestartScan)
+               : CALL_FUNCTION("ZwQueryDirectoryFile", PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, UINT32 Length, UINT32 FileInformationClass, BOOL ReturnSingleEntry, PUNICODE_STRING FileName, BOOL RestartScan);
 }

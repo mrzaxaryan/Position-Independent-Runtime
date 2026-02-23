@@ -4,7 +4,7 @@
  * Provides process creation with socket redirection via NTDLL.
  *
  * NOTE: Windows process creation with socket handle redirection is complex.
- * This implementation uses NtCreateUserProcess with redirected standard handles.
+ * This implementation uses ZwCreateUserProcess with redirected standard handles.
  */
 
 #include "process.h"
