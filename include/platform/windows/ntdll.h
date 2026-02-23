@@ -8,21 +8,22 @@
 #define NT_SUCCESS(Status) ((NTSTATUS)(Status) >= 0)
 #define OBJ_CASE_INSENSITIVE 0x00000040L
 
-
 // Structure for event type
 typedef enum _EVENT_TYPE
 {
     NotificationEvent,
     SynchronizationEvent
-} EVENT_TYPE,*PEVENT_TYPE;
+} EVENT_TYPE,
+    *PEVENT_TYPE;
 
 // Structure for file information classes - basic, standard, position and disposition information
-typedef struct _FILE_BASIC_INFORMATION {
-  LARGE_INTEGER CreationTime;
-  LARGE_INTEGER LastAccessTime;
-  LARGE_INTEGER LastWriteTime;
-  LARGE_INTEGER ChangeTime;
-  UINT32         FileAttributes;
+typedef struct _FILE_BASIC_INFORMATION
+{
+    LARGE_INTEGER CreationTime;
+    LARGE_INTEGER LastAccessTime;
+    LARGE_INTEGER LastWriteTime;
+    LARGE_INTEGER ChangeTime;
+    UINT32 FileAttributes;
 } FILE_BASIC_INFORMATION, *PFILE_BASIC_INFORMATION;
 
 typedef struct _FILE_STANDARD_INFORMATION
@@ -85,7 +86,7 @@ typedef struct _FILE_BOTH_DIR_INFORMATION
     WCHAR FileName[1];
 } FILE_BOTH_DIR_INFORMATION, *PFILE_BOTH_DIR_INFORMATION;
 
-// Information class 
+// Information class
 typedef enum _FILE_INFORMATION_CLASS_DIR
 {
     FileBothDirectoryInformation = 3,
@@ -95,14 +96,13 @@ typedef enum _FILE_INFORMATION_CLASS_DIR
     FilePositionInformation = 14,
 } FILE_INFORMATION_CLASS_DIR;
 
-
 class NTDLL
 {
 private:
 public:
     // This function creates or opens an event object.
     // Minimum supported client	Windows XP.
-    static NTSTATUS NtCreateEvent(PPVOID EventHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, EVENT_TYPE EventType, INT8 InitialState);
+    static NTSTATUS ZwCreateEvent(PPVOID EventHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, EVENT_TYPE EventType, INT8 InitialState);
     // This function builds descriptors for the supplied buffer(s) and passes the untyped data to the device driver associated with the file handle
     // Minimum supported client	Windows 2000 Professional [desktop apps only]
     static NTSTATUS NtDeviceIoControlFile(PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, UINT32 IoControlCode, PVOID InputBuffer, UINT32 InputBufferLength, PVOID OutputBuffer, UINT32 OutputBufferLength);
@@ -172,7 +172,7 @@ public:
     static NTSTATUS NtCreateUserProcess(PPVOID ProcessHandle, PPVOID ThreadHandle, UINT32 ProcessDesiredAccess, UINT32 ThreadDesiredAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, UINT32 ProcessFlags, UINT32 ThreadFlags, PVOID ProcessParameters, PVOID CreateInfo, PVOID AttributeList);
     // This function creates process parameters.
     // Minimum supported client Windows 2000.
-    static NTSTATUS RtlCreateProcessParametersEx(PVOID* ProcessParameters, PUNICODE_STRING ImagePathName, PUNICODE_STRING DllPath, PUNICODE_STRING CurrentDirectory, PUNICODE_STRING CommandLine, PVOID Environment, PUNICODE_STRING WindowTitle, PUNICODE_STRING DesktopInfo, PUNICODE_STRING ShellInfo, PUNICODE_STRING RuntimeData, UINT32 Flags);
+    static NTSTATUS RtlCreateProcessParametersEx(PVOID *ProcessParameters, PUNICODE_STRING ImagePathName, PUNICODE_STRING DllPath, PUNICODE_STRING CurrentDirectory, PUNICODE_STRING CommandLine, PVOID Environment, PUNICODE_STRING WindowTitle, PUNICODE_STRING DesktopInfo, PUNICODE_STRING ShellInfo, PUNICODE_STRING RuntimeData, UINT32 Flags);
     // This function destroys process parameters.
     // Minimum supported client Windows 2000.
     static NTSTATUS RtlDestroyProcessParameters(PVOID ProcessParameters);

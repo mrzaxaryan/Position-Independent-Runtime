@@ -100,7 +100,7 @@ BOOL Socket::Bind(SockAddr *SocketAddress, INT32 ShareType)
 
     NTSTATUS Status;
     PVOID SockEvent = NULL;
-    Status = NTDLL::NtCreateEvent(&SockEvent,
+    Status = NTDLL::ZwCreateEvent(&SockEvent,
                                   EVENT_ALL_ACCESS,
                                   NULL,
                                   SynchronizationEvent,
@@ -186,7 +186,7 @@ BOOL Socket::Open()
     LOG_DEBUG("Socket bound successfully\n");
 
     PVOID SockEvent = NULL;
-    Status = NTDLL::NtCreateEvent(&SockEvent,
+    Status = NTDLL::ZwCreateEvent(&SockEvent,
                                   EVENT_ALL_ACCESS,
                                   NULL,
                                   SynchronizationEvent,
@@ -283,7 +283,7 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferSize)
 
     PVOID SockEvent = NULL;
     NTSTATUS Status;
-    Status = NTDLL::NtCreateEvent(&SockEvent,
+    Status = NTDLL::ZwCreateEvent(&SockEvent,
                                   EVENT_ALL_ACCESS,
                                   NULL,
                                   SynchronizationEvent,
@@ -358,7 +358,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 
     PVOID SockEvent = NULL;
     NTSTATUS Status;
-    Status = NTDLL::NtCreateEvent(&SockEvent,
+    Status = NTDLL::ZwCreateEvent(&SockEvent,
                                   EVENT_ALL_ACCESS,
                                   NULL,
                                   SynchronizationEvent,
