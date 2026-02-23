@@ -29,6 +29,13 @@ ARCH = {
     'aarch64': {'bits': 64, 'family': 'arm', 'qemu': ['qemu-aarch64-static', 'qemu-aarch64']},
 }
 
+# PE machine type constants for PROC_THREAD_ATTRIBUTE_MACHINE_TYPE
+MACHINE_TYPE = {
+    'i386':    0x014c,  # IMAGE_FILE_MACHINE_I386
+    'x86_64':  0x8664,  # IMAGE_FILE_MACHINE_AMD64
+    'aarch64': 0xAA64,  # IMAGE_FILE_MACHINE_ARM64
+}
+
 
 def get_host():
     os_name = platform.system().lower()
@@ -158,8 +165,8 @@ def run_virtualalloc(shellcode):
     return code.value
 
 
-def run_injected(shellcode, target_arch):
-    """Run shellcode via process injection (for bitness mismatch on Windows)."""
+def run_injected(shellcode, target_arch, cross_family=False):
+    """Run shellcode via process injection (for architecture mismatch on Windows)."""
     from ctypes import wintypes
 
     host_procs = {
@@ -189,19 +196,77 @@ def run_injected(shellcode, target_arch):
             ("hStdError", wintypes.HANDLE),
         ]
 
+    class STARTUPINFOEXW(ctypes.Structure):
+        _fields_ = [
+            ("StartupInfo", STARTUPINFOW),
+            ("lpAttributeList", ctypes.c_void_p),
+        ]
+
     class PROCESS_INFORMATION(ctypes.Structure):
         _fields_ = [
             ("hProcess", wintypes.HANDLE), ("hThread", wintypes.HANDLE),
             ("dwProcessId", wintypes.DWORD), ("dwThreadId", wintypes.DWORD),
         ]
 
-    si = STARTUPINFOW()
-    si.cb = ctypes.sizeof(STARTUPINFOW)
     pi = PROCESS_INFORMATION()
-
     CREATE_SUSPENDED = 0x00000004
-    if not k32.CreateProcessW(host_exe, None, None, None, False, CREATE_SUSPENDED, None, None, ctypes.byref(si), ctypes.byref(pi)):
-        raise OSError(f"CreateProcessW failed: {k32.GetLastError()}")
+    EXTENDED_STARTUPINFO_PRESENT = 0x00080000
+    creation_flags = CREATE_SUSPENDED
+    attr_list_buf = None
+
+    if cross_family and target_arch in MACHINE_TYPE:
+        PROC_THREAD_ATTRIBUTE_MACHINE_TYPE = 0x00020019
+        machine = ctypes.c_ushort(MACHINE_TYPE[target_arch])
+
+        k32.InitializeProcThreadAttributeList.argtypes = [
+            ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, ctypes.POINTER(ctypes.c_size_t)
+        ]
+        k32.InitializeProcThreadAttributeList.restype = wintypes.BOOL
+
+        k32.UpdateProcThreadAttribute.argtypes = [
+            ctypes.c_void_p, wintypes.DWORD, ctypes.c_size_t,
+            ctypes.c_void_p, ctypes.c_size_t, ctypes.c_void_p, ctypes.c_void_p
+        ]
+        k32.UpdateProcThreadAttribute.restype = wintypes.BOOL
+
+        k32.DeleteProcThreadAttributeList.argtypes = [ctypes.c_void_p]
+        k32.DeleteProcThreadAttributeList.restype = None
+
+        # Query required buffer size
+        size = ctypes.c_size_t(0)
+        k32.InitializeProcThreadAttributeList(None, 1, 0, ctypes.byref(size))
+
+        # Allocate and initialize attribute list
+        attr_list_buf = (ctypes.c_byte * size.value)()
+        if not k32.InitializeProcThreadAttributeList(attr_list_buf, 1, 0, ctypes.byref(size)):
+            raise OSError(f"InitializeProcThreadAttributeList failed: {k32.GetLastError()}")
+
+        if not k32.UpdateProcThreadAttribute(
+            attr_list_buf, 0, PROC_THREAD_ATTRIBUTE_MACHINE_TYPE,
+            ctypes.byref(machine), ctypes.sizeof(machine), None, None
+        ):
+            k32.DeleteProcThreadAttributeList(attr_list_buf)
+            raise OSError(f"UpdateProcThreadAttribute failed: {k32.GetLastError()}")
+
+        siex = STARTUPINFOEXW()
+        siex.StartupInfo.cb = ctypes.sizeof(STARTUPINFOEXW)
+        siex.lpAttributeList = ctypes.addressof(attr_list_buf)
+        creation_flags |= EXTENDED_STARTUPINFO_PRESENT
+
+        print(f"[*] Machine type override: 0x{MACHINE_TYPE[target_arch]:04x}")
+
+        if not k32.CreateProcessW(
+            host_exe, None, None, None, False, creation_flags,
+            None, None, ctypes.byref(siex), ctypes.byref(pi)
+        ):
+            k32.DeleteProcThreadAttributeList(attr_list_buf)
+            raise OSError(f"CreateProcessW failed: {k32.GetLastError()}")
+    else:
+        si = STARTUPINFOW()
+        si.cb = ctypes.sizeof(STARTUPINFOW)
+
+        if not k32.CreateProcessW(host_exe, None, None, None, False, creation_flags, None, None, ctypes.byref(si), ctypes.byref(pi)):
+            raise OSError(f"CreateProcessW failed: {k32.GetLastError()}")
 
     print(f"[+] Created process PID: {pi.dwProcessId}")
 
@@ -236,6 +301,8 @@ def run_injected(shellcode, target_arch):
         k32.TerminateProcess(pi.hProcess, 0)
         k32.CloseHandle(pi.hThread)
         k32.CloseHandle(pi.hProcess)
+        if attr_list_buf is not None:
+            k32.DeleteProcThreadAttributeList(attr_list_buf)
 
 
 def get_python_bits():
@@ -261,9 +328,10 @@ def main():
     print(f"[+] Loaded: {len(shellcode)} bytes")
 
     if host_os == 'windows':
-        if python_bits != target['bits']:
-            print(f"[*] Bitness mismatch ({python_bits}bit Python, {target['bits']}bit target) - using injection")
-            code = run_injected(shellcode, args.arch)
+        cross_family = host_family != target['family']
+        if cross_family or python_bits != target['bits']:
+            print(f"[*] Architecture mismatch ({host_family}/{python_bits}bit → {target['family']}/{target['bits']}bit) - using injection")
+            code = run_injected(shellcode, args.arch, cross_family=cross_family)
         else:
             code = run_virtualalloc(shellcode)
     elif needs_qemu(host_family, host_bits, args.arch):

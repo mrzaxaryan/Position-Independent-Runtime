@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "windows-i386-release (PIC)",
+            "name": "windows-i386-pic",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/scripts/loader.py",
@@ -16,7 +16,7 @@
             "preLaunchTask": "windows-i386-release"
         },
         {
-            "name": "windows-x86_64-release (PIC)",
+            "name": "windows-x86_64-pic",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/scripts/loader.py",
@@ -30,7 +30,7 @@
             "preLaunchTask": "windows-x86_64-release"
         },
         {
-            "name": "windows-aarch64-release (PIC)",
+            "name": "windows-aarch64-pic",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/scripts/loader.py",
