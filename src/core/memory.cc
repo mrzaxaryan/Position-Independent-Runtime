@@ -1,6 +1,7 @@
 #include "memory.h"
+#include "compiler.h"
 
-extern "C" PVOID memset(PVOID dest, INT32 ch, USIZE count)
+extern "C" COMPILER_RUNTIME PVOID memset(PVOID dest, INT32 ch, USIZE count)
 {
     PCHAR p = (PCHAR)dest;
     CHAR byte = (CHAR)ch;
@@ -13,7 +14,7 @@ extern "C" PVOID memset(PVOID dest, INT32 ch, USIZE count)
     return dest;
 }
 
-extern "C" PVOID memcpy(PVOID dest, const VOID *src, USIZE count)
+extern "C" COMPILER_RUNTIME PVOID memcpy(PVOID dest, const VOID *src, USIZE count)
 {
     if (!dest || !src || count == 0)
         return dest;
@@ -27,7 +28,7 @@ extern "C" PVOID memcpy(PVOID dest, const VOID *src, USIZE count)
     return dest;
 }
 
-extern "C" INT32 memcmp(const VOID *ptr1, const VOID *ptr2, USIZE num)
+extern "C" COMPILER_RUNTIME INT32 memcmp(const VOID *ptr1, const VOID *ptr2, USIZE num)
 {
     const UCHAR *p1 = (const UCHAR *)ptr1;
     const UCHAR *p2 = (const UCHAR *)ptr2;
