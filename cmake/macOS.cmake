@@ -34,7 +34,6 @@ cpppic_add_link_flags(
 if(CPPPIC_BUILD_TYPE STREQUAL "release")
     cpppic_add_link_flags(
         -dead_strip
-        --icf=all
     )
 endif()
 

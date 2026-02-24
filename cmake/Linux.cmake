@@ -23,7 +23,6 @@ if(CPPPIC_BUILD_TYPE STREQUAL "release")
     cpppic_add_link_flags(
         --strip-all
         --gc-sections
-        --icf=all
     )
 endif()
 
