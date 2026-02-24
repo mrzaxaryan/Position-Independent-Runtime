@@ -7,13 +7,11 @@
 class HttpClient
 {
 private:
-    BOOL isSecure;
     CHAR hostName[1024];
     CHAR path[1024];
     IPAddress ipAddress;
     UINT16 port;
     TLSClient tlsContext;
-    Socket socketContext;
 
 public:
     VOID *operator new(USIZE) = delete;
@@ -28,7 +26,8 @@ public:
     HttpClient(HttpClient &&) = default;
     HttpClient &operator=(HttpClient &&) = default;
 
-    BOOL IsValid() const { return tlsContext.IsValid() || socketContext.IsValid(); }
+    BOOL IsValid() const { return tlsContext.IsValid(); }
+    BOOL IsSecure() const { return tlsContext.IsSecure(); }
     // Operations with HttpClient
     BOOL Open();
     BOOL Close();

@@ -27,14 +27,12 @@ class WebSocketClient
 {
 private:
     static BOOL FormatterCallback(PVOID context, CHAR ch);
-    BOOL isSecure;          // The WebSocket connection is secure (wss) or not (ws)
     CHAR hostName[1024];    // Host name extracted from the URL
     CHAR path[1024];        // Path extracted from the URL
     IPAddress ipAddress;    // IP address of the WebSocket server
     UINT16 port;            // Port number of the WebSocket server
 
-    TLSClient tlsContext;   // TLS client context for secure WebSocket connections
-    Socket socketContext;   // Socket context for non-secure WebSocket connections
+    TLSClient tlsContext;   // TLS/TCP client context for WebSocket connections
 
     BOOL isConnected;       // Indicates whether the WebSocket client is currently connected to the server
 
@@ -55,7 +53,8 @@ public:
     WebSocketClient(WebSocketClient &&) = default;
     WebSocketClient &operator=(WebSocketClient &&) = default;
 
-    BOOL IsValid() const { return tlsContext.IsValid() || socketContext.IsValid(); }
+    BOOL IsValid() const { return tlsContext.IsValid(); }
+    BOOL IsSecure() const { return tlsContext.IsSecure(); }
     // Open, Close, Read, and Write operations for WebSocketClient
     BOOL Open();
     BOOL Close();

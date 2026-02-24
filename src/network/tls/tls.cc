@@ -659,14 +659,20 @@ INT32 TLSClient::ReadChannel(PCHAR out, INT32 size)
 
 BOOL TLSClient::Open()
 {
-    LOG_DEBUG("Connecting to host: %s for client: %p", host, this);
+    LOG_DEBUG("Connecting to host: %s for client: %p, secure: %d", host, this, secure);
 
     if (!context.Open())
     {
         LOG_DEBUG("Failed to connect to host: %s, for client: %p", host, this);
         return FALSE;
     }
-    LOG_DEBUG("Connected to host: %s,  for client: %p", host,this);
+    LOG_DEBUG("Connected to host: %s,  for client: %p", host, this);
+
+    if (!secure)
+    {
+        LOG_DEBUG("Non-secure connection opened for client: %p", this);
+        return TRUE;
+    }
 
     if (!(SendClientHello(host)))
     {
@@ -692,15 +698,16 @@ BOOL TLSClient::Open()
 
 BOOL TLSClient::Close()
 {
-    // PNETWORK pNetwork = GetNetwork();
-
     stateIndex = 0;
-    recvBuffer.Clear();
-    channelBuffer.Clear();
-    sendBuffer.Clear();
-
     channelBytesRead = 0;
-    crypto.Destroy();
+
+    if (secure)
+    {
+        recvBuffer.Clear();
+        channelBuffer.Clear();
+        sendBuffer.Clear();
+        crypto.Destroy();
+    }
 
     LOG_DEBUG("Closing socket for client: %p", this);
     return context.Close();
@@ -714,6 +721,12 @@ BOOL TLSClient::Close()
 UINT32 TLSClient::Write(PCVOID buffer, UINT32 bufferLength)
 {
     LOG_DEBUG("Sending data for client: %p, size: %d bytes", this, bufferLength);
+
+    if (!secure)
+    {
+        return context.Write(buffer, bufferLength);
+    }
+
     if (stateIndex < 6)
     {
         LOG_DEBUG("send error, state index is %d", stateIndex);
@@ -746,6 +759,11 @@ UINT32 TLSClient::Write(PCVOID buffer, UINT32 bufferLength)
 
 SSIZE TLSClient::Read(PVOID buffer, UINT32 bufferLength)
 {
+    if (!secure)
+    {
+        return context.Read(buffer, bufferLength);
+    }
+
     if (stateIndex < 6)
     {
         LOG_DEBUG("recv error, state index is %d", stateIndex);
@@ -770,8 +788,8 @@ SSIZE TLSClient::Read(PVOID buffer, UINT32 bufferLength)
 /// @param ipAddress The IP address of the server to connect to
 /// @param port The port number of the server to connect to
 
-TLSClient::TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port)
-    : host(host), ip(ipAddress), context(ipAddress, port)
+TLSClient::TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port, BOOL secure)
+    : host(host), ip(ipAddress), context(ipAddress, port), secure(secure)
 {
     stateIndex = 0;
     channelBytesRead = 0;
@@ -779,5 +797,5 @@ TLSClient::TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port)
     Memory::Zero(&channelBuffer, sizeof(TlsBuffer));
     Memory::Zero(&sendBuffer, sizeof(TlsBuffer));
 
-    LOG_DEBUG("Initializing tls_cipher structure for cipher: %p", &crypto);
+    LOG_DEBUG("Initializing tls_cipher structure for cipher: %p, secure: %d", &crypto, secure);
 }

@@ -18,22 +18,13 @@ static USIZE AppendStr(CHAR* buf, USIZE pos, USIZE maxPos, const CHAR* str) noex
 
 HttpClient::HttpClient(PCCHAR url, PCCHAR ipAddress)
 {
-    // Attempt to parse the URL to extract the host name, path, port, and security setting
+    BOOL isSecure = FALSE;
+    if (!ParseUrl(url, hostName, path, port, isSecure))
     {
-        if (!ParseUrl(url, hostName, path, port, isSecure))
-        {
-            return;
-        }
-        this->ipAddress = IPAddress::FromString(ipAddress);
-        if (isSecure)
-        {
-            tlsContext = TLSClient(hostName, this->ipAddress, port);
-        }
-        else
-        {
-            socketContext = Socket(this->ipAddress, port);
-        }
+        return;
     }
+    this->ipAddress = IPAddress::FromString(ipAddress);
+    tlsContext = TLSClient(hostName, this->ipAddress, port, isSecure);
 }
 
 /// @brief Parameterized constructor for HttpClient class
@@ -41,14 +32,12 @@ HttpClient::HttpClient(PCCHAR url, PCCHAR ipAddress)
 
 HttpClient::HttpClient(PCCHAR url)
 {
-    // Attempt to parse the URL to extract the host name, path, port, and security setting
+    BOOL isSecure = FALSE;
     if (!ParseUrl(url, hostName, path, port, isSecure))
     {
-        // return FALSE;
+        return;
     }
 
-    // Buffer to hold the resolved IP address
-    // Attempt to resolve the host name to an IP address (tries IPv6 first, falls back to IPv4)
     ipAddress = DNS::Resolve(hostName);
 
     if (!ipAddress.IsValid())
@@ -56,14 +45,7 @@ HttpClient::HttpClient(PCCHAR url)
         LOG_ERROR("Failed to resolve hostname %s", hostName);
         return;
     }
-    if (isSecure)
-    {
-        tlsContext = TLSClient(hostName, ipAddress, port);
-    }
-    else
-    {
-        socketContext = Socket(ipAddress, port);
-    }
+    tlsContext = TLSClient(hostName, ipAddress, port, isSecure);
 }
 
 /// @brief Open a connection to the server
@@ -71,14 +53,7 @@ HttpClient::HttpClient(PCCHAR url)
 
 BOOL HttpClient::Open()
 {
-    if (isSecure)
-    {
-        return tlsContext.Open();
-    }
-    else
-    {
-        return socketContext.Open();
-    }
+    return tlsContext.Open();
 }
 
 /// @brief Closes the connection to the server and cleans up resources
@@ -86,14 +61,7 @@ BOOL HttpClient::Open()
 
 BOOL HttpClient::Close()
 {
-    if (isSecure)
-    {
-        return tlsContext.Close();
-    }
-    else
-    {
-        return socketContext.Close();
-    }
+    return tlsContext.Close();
 }
 
 /// @brief Read data from the server into the provided buffer, handling decryption if the connection is secure
@@ -103,14 +71,7 @@ BOOL HttpClient::Close()
 
 SSIZE HttpClient::Read(PVOID buffer, UINT32 bufferLength)
 {
-    if (isSecure)
-    {
-        return tlsContext.Read(buffer, bufferLength);
-    }
-    else
-    {
-        return socketContext.Read(buffer, bufferLength);
-    }
+    return tlsContext.Read(buffer, bufferLength);
 }
 
 /// @brief Write data to the server
@@ -120,14 +81,7 @@ SSIZE HttpClient::Read(PVOID buffer, UINT32 bufferLength)
 
 UINT32 HttpClient::Write(PCVOID buffer, UINT32 bufferLength)
 {
-    if (isSecure)
-    {
-        return tlsContext.Write(buffer, bufferLength);
-    }
-    else
-    {
-        return socketContext.Write(buffer, bufferLength);
-    }
+    return tlsContext.Write(buffer, bufferLength);
 }
 
 /// @brief Send an HTTP GET request to the server 

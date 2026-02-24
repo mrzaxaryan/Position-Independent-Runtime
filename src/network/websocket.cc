@@ -28,41 +28,17 @@ static BOOL web_socket_create_frame(WebSocketFrame &frame, INT32 fin, INT32 rsv1
 BOOL WebSocketClient::FormatterCallback(PVOID context, CHAR ch)
 {
     WebSocketClient *wsClient = (WebSocketClient *)context;
-    if (wsClient->isSecure)
-    {
-        return wsClient->tlsContext.Write(&ch, 1);
-    }
-    else
-    {
-        return wsClient->socketContext.Write(&ch, 1);
-    }
-    return TRUE;
+    return wsClient->tlsContext.Write(&ch, 1);
 }
 
 // This function connects a WebSocket client context to a specified IP address, host, path, port, and security setting.
 BOOL WebSocketClient::Open()
 {
     PCHAR headers = NULL;
+    BOOL isSecure = tlsContext.IsSecure();
     LOG_DEBUG("Opening WebSocket client to %s:%u%s (secure: %s)", hostName, port, path, isSecure ? "true"_embed : "false"_embed);
 
-    BOOL result = TRUE;
-
-    if (isSecure)
-    {
-        if (!tlsContext.Open())
-        {
-            LOG_DEBUG("Failed to open network transport for WebSocket client");
-            result = FALSE;
-        }
-    }
-    else
-    {
-        if (!socketContext.Open())
-        {
-            LOG_DEBUG("Failed to open network transport for WebSocket client");
-            result = FALSE;
-        }
-    }
+    BOOL result = tlsContext.Open();
 
     if (!result && ipAddress.IsIPv6())
     {
@@ -74,24 +50,12 @@ BOOL WebSocketClient::Open()
             return FALSE;
         }
 
-        if (isSecure)
-        {
-            tlsContext = TLSClient(hostName, ipv4Address, port);
+        tlsContext = TLSClient(hostName, ipv4Address, port, isSecure);
+        result = tlsContext.Open();
 
-            if (!tlsContext.Open())
-            {
-                LOG_DEBUG("Failed to open network transport for WebSocket client");
-                result = FALSE;
-            }
-        }
-        else
+        if (!result)
         {
-            socketContext = Socket(ipv4Address, port);
-            if (!socketContext.Open())
-            {
-                LOG_DEBUG("Failed to open network transport for WebSocket client");
-                result = FALSE;
-            }
+            LOG_DEBUG("Failed to open network transport for WebSocket client");
         }
     }
     else if (!result)
@@ -168,16 +132,7 @@ BOOL WebSocketClient::Open()
         }
 
         UINT32 bytesRead; // Variable to hold the number of bytes read
-
-        // Read 1 byte at a time from the WebSocket client context depending on whether it is secure or not
-        if (isSecure)
-        {
-            bytesRead = tlsContext.Read(handshakeResponse + totalBytesRead, 1);
-        }
-        else
-        {
-            bytesRead = socketContext.Read(handshakeResponse + totalBytesRead, 1);
-        }
+        bytesRead = tlsContext.Read(handshakeResponse + totalBytesRead, 1);
         // Check if no bytes were read, indicating an error
         if (bytesRead == 0)
         {
@@ -217,14 +172,7 @@ BOOL WebSocketClient::Open()
 BOOL WebSocketClient::Close()
 {
     isConnected = FALSE;
-    if (isSecure)
-    {
-        tlsContext.Close();
-    }
-    else
-    {
-        socketContext.Close();
-    }
+    tlsContext.Close();
     LOG_DEBUG("WebSocket client to %s:%u%s closed", hostName, port, path);
     return TRUE;
 }
@@ -294,16 +242,7 @@ UINT32 WebSocketClient::Write(PCVOID buffer, UINT32 bufferLength, INT8 opcode)
         framebuf[header_length + i] ^= masking_key[i % 4] & 0xff;
     }
 
-    INT32 result; // Variable to hold the result of the write operation
-
-    if (isSecure)
-    {
-        result = tlsContext.Write(framebuf, frame_length);
-    }
-    else
-    {
-        result = socketContext.Write(framebuf, frame_length);
-    }
+    INT32 result = tlsContext.Write(framebuf, frame_length);
 
     // Free the allocated memory for the header and frame buffer
     delete[] header;
@@ -329,14 +268,7 @@ BOOL WebSocketClient::ReceiveRestrict(PVOID buffer, INT32 size)
     // Loop until the total bytes read is less than the requested size
     while (totalBytesRead < size)
     {
-        if (isSecure)
-        {
-            bytesRead = tlsContext.Read((PCHAR)buffer + totalBytesRead, size - totalBytesRead);
-        }
-        else
-        {
-            bytesRead = socketContext.Read((PCHAR)buffer + totalBytesRead, size - totalBytesRead);
-        }
+        bytesRead = tlsContext.Read((PCHAR)buffer + totalBytesRead, size - totalBytesRead);
 
         // Checking if read operation was successful
         if (bytesRead > 0)
@@ -549,32 +481,23 @@ WebSocketClient::WebSocketClient(PCCHAR url, PCCHAR ipAddress)
     this->ipAddress = IPAddress::FromString(ipAddress);
     isConnected = FALSE;
 
-    // Attempt to parse the URL to extract the host name, path, port, and security setting
+    BOOL isSecure = FALSE;
     if (!HttpClient::ParseUrl(url, hostName, path, port, isSecure))
     {
-        // return FALSE;
+        return;
     }
-    if (isSecure)
-    {
-        tlsContext = TLSClient(hostName, this->ipAddress, port);
-    }
-    else
-    {
-        socketContext = Socket(this->ipAddress, port);
-    }
+    tlsContext = TLSClient(hostName, this->ipAddress, port, isSecure);
 }
 WebSocketClient::WebSocketClient(PCCHAR url)
 {
     isConnected = FALSE;
 
-    // Attempt to parse the URL to extract the host name, path, port, and security setting
+    BOOL isSecure = FALSE;
     if (!HttpClient::ParseUrl(url, hostName, path, port, isSecure))
     {
-        // return FALSE;
+        return;
     }
 
-    // Buffer to hold the resolved IP address
-    // Attempt to resolve the host name to an IP address (tries IPv6 first, falls back to IPv4)
     ipAddress = DNS::Resolve(hostName);
     if (!ipAddress.IsValid())
     {
@@ -582,12 +505,5 @@ WebSocketClient::WebSocketClient(PCCHAR url)
         return;
     }
 
-    if (isSecure)
-    {
-        tlsContext = TLSClient(hostName, ipAddress, port);
-    }
-    else
-    {
-        socketContext = Socket(ipAddress, port);
-    }
+    tlsContext = TLSClient(hostName, ipAddress, port, isSecure);
 }

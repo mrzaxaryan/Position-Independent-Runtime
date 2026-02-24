@@ -87,27 +87,33 @@ public:
     VOID operator delete(VOID *) = delete;
 
     ChaCha20Encoder(ChaCha20Encoder &&other)
-        : remoteCipher(other.remoteCipher)
-        , localCipher(other.localCipher)
+        : remoteCipher(static_cast<ChaChaPoly1305 &&>(other.remoteCipher))
+        , localCipher(static_cast<ChaChaPoly1305 &&>(other.localCipher))
         , ivLength(other.ivLength)
         , initialized(other.initialized)
     {
         Memory::Copy(remoteNonce, other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
         Memory::Copy(localNonce, other.localNonce, TLS_CHACHA20_IV_LENGTH);
-        Memory::Zero(&other, sizeof(ChaCha20Encoder));
+        other.ivLength = 0;
+        other.initialized = FALSE;
+        Memory::Zero(other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
+        Memory::Zero(other.localNonce, TLS_CHACHA20_IV_LENGTH);
     }
 
     ChaCha20Encoder &operator=(ChaCha20Encoder &&other)
     {
         if (this != &other)
         {
-            remoteCipher = other.remoteCipher;
-            localCipher = other.localCipher;
+            remoteCipher = static_cast<ChaChaPoly1305 &&>(other.remoteCipher);
+            localCipher = static_cast<ChaChaPoly1305 &&>(other.localCipher);
             ivLength = other.ivLength;
             initialized = other.initialized;
             Memory::Copy(remoteNonce, other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
             Memory::Copy(localNonce, other.localNonce, TLS_CHACHA20_IV_LENGTH);
-            Memory::Zero(&other, sizeof(ChaCha20Encoder));
+            other.ivLength = 0;
+            other.initialized = FALSE;
+            Memory::Zero(other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
+            Memory::Zero(other.localNonce, TLS_CHACHA20_IV_LENGTH);
         }
         return *this;
     }

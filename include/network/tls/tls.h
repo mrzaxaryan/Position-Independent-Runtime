@@ -18,6 +18,7 @@ private:
     IPAddress ip;
     Socket context;
     TlsCipher crypto;
+    BOOL secure;             // Whether to use TLS handshake or plain TCP
     INT32 stateIndex;        // Current state index
     TlsBuffer sendBuffer;    // Send buffer
     TlsBuffer recvBuffer;    // Receive buffer
@@ -39,8 +40,8 @@ private:
 public:
     VOID *operator new(USIZE) = delete;
     VOID operator delete(VOID *) = delete;
-    TLSClient() : host(nullptr), ip(), stateIndex(0), channelBytesRead(0) {}
-    TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port);
+    TLSClient() : host(nullptr), ip(), secure(TRUE), stateIndex(0), channelBytesRead(0) {}
+    TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port, BOOL secure = TRUE);
     ~TLSClient() { if (IsValid()) Close(); }
 
     TLSClient(const TLSClient &) = delete;
@@ -51,6 +52,7 @@ public:
         , ip(other.ip)
         , context(static_cast<Socket &&>(other.context))
         , crypto(static_cast<TlsCipher &&>(other.crypto))
+        , secure(other.secure)
         , stateIndex(other.stateIndex)
         , sendBuffer(static_cast<TlsBuffer &&>(other.sendBuffer))
         , recvBuffer(static_cast<TlsBuffer &&>(other.recvBuffer))
@@ -58,6 +60,7 @@ public:
         , channelBytesRead(other.channelBytesRead)
     {
         other.host = nullptr;
+        other.secure = TRUE;
         other.stateIndex = 0;
         other.channelBytesRead = 0;
     }
@@ -71,12 +74,14 @@ public:
             ip = other.ip;
             context = static_cast<Socket &&>(other.context);
             crypto = static_cast<TlsCipher &&>(other.crypto);
+            secure = other.secure;
             stateIndex = other.stateIndex;
             sendBuffer = static_cast<TlsBuffer &&>(other.sendBuffer);
             recvBuffer = static_cast<TlsBuffer &&>(other.recvBuffer);
             channelBuffer = static_cast<TlsBuffer &&>(other.channelBuffer);
             channelBytesRead = other.channelBytesRead;
             other.host = nullptr;
+            other.secure = TRUE;
             other.stateIndex = 0;
             other.channelBytesRead = 0;
         }
@@ -84,6 +89,7 @@ public:
     }
 
     BOOL IsValid() const { return context.IsValid(); }
+    BOOL IsSecure() const { return secure; }
     BOOL Open();
     BOOL Close();
     SSIZE Read(PVOID buffer, UINT32 bufferLength);
