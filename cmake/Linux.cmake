@@ -24,9 +24,6 @@ if(CPPPIC_BUILD_TYPE STREQUAL "release")
         --strip-all
         --gc-sections
         --icf=all
-        -z,norelro
-        --hash-style=none
-        -z,noseparate-code
     )
 endif()
 
