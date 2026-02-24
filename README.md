@@ -501,6 +501,8 @@ Position-Independent Runtime integrates deeply with Windows internals to provide
 
 ### Low-Level Native Interfaces
 
+A core goal of the Windows implementation is to provide comprehensive wrappers for all `ntdll.dll` functionality and its underlying system calls. By building directly on top of the NT Native API, Position-Independent Runtime avoids higher-level Win32 abstractions and maintains the thinnest possible layer between application code and the kernel. On x86_64 and i386, Zw* wrappers use indirect syscalls—resolving System Service Numbers (SSNs) at runtime and executing through `syscall`/`sysenter` gadgets found in ntdll—to invoke kernel services without calling ntdll directly. On ARM64, where the kernel validates that the `svc` instruction originates from within ntdll, wrappers resolve and call the ntdll export address directly. This gives callers full access to the capabilities exposed by `ntdll`—file I/O, memory management, process and thread control, registry operations, synchronization, and more—while preserving position-independence guarantees.
+
 By completely eliminating static import tables and bypassing loader-dependent API resolution mechanisms such as `GetProcAddress`, Position-Independent Runtime removes all dependencies on the operating system's runtime initialization and dynamic linking processes. This ensures that all required function addresses are resolved internally at runtime, using hash-based lookups of exported symbols in loaded modules. As a result, the generated binaries are fully self-contained, do not rely on predefined memory locations, and can execute correctly from any arbitrary memory address without requiring relocation tables or loader-managed fixups.
 
 ### File System Support
@@ -535,7 +537,7 @@ Position-Indepenedent Runtime is designed for execution environments where tradi
 ## To Do
 This project is still a work in progress. Below is a list of remaining tasks and planned improvements. Any help or contributions are greatly appreciated.
 - Support for additional platforms (macOS, FreeBSD)
-- Windows direct syscall implementations (bypassing ntdll)
+- Windows more direct syscall implementations (bypassing ntdll)
 - Compile-time polymorphism
 
 ## Conclusion

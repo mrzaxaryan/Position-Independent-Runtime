@@ -192,6 +192,8 @@ Architecture-only guards:
 
 ## Adding a Windows API Wrapper
 
+A core project goal is to provide comprehensive wrappers for all `ntdll.dll` exports and their underlying system calls. On x86_64 and i386 the wrappers use indirect syscalls (SSN + gadget); on ARM64 they call the resolved ntdll export directly. Contributions that add missing Zw*/Nt* wrappers are always welcome.
+
 Windows APIs are resolved dynamically at runtime via hash-based PEB walking. There are two patterns:
 
 ### Kernel32 / Win32 APIs
