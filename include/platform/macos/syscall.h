@@ -154,8 +154,9 @@ struct timespec
 };
 
 // Timeval structure (for gettimeofday and socket timeouts)
+// macOS uses int (4 bytes) for tv_usec, unlike Linux which uses long (8 bytes)
 struct timeval
 {
 	SSIZE tv_sec;
-	SSIZE tv_usec;
+	INT32 tv_usec;
 };
