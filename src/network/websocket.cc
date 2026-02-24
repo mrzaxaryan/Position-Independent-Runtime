@@ -127,7 +127,9 @@ BOOL WebSocketClient::Close()
     if (isConnected)
     {
         // Send a WebSocket CLOSE frame (status code 1000 = normal closure, big-endian)
-        UINT8 closePayload[2] = {0x03, 0xE8};
+        UINT8 closePayload[2];
+        closePayload[0] = 0x03;
+        closePayload[1] = 0xE8;
         Write(closePayload, sizeof(closePayload), OPCODE_CLOSE);
     }
 
