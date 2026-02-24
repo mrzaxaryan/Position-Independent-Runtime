@@ -326,7 +326,7 @@ VOID TlsCipher::ComputeVerify(TlsBuffer &out, INT32 verifySize, INT32 localOrRem
 VOID TlsCipher::Encode(TlsBuffer &sendbuf, const CHAR *packet, INT32 packetSize, BOOL keepOriginal)
 {
     //	CLock lock(lockdata);
-    if (!this->isEncoding || !this->chacha20Context.IsInitialized() || keepOriginal)
+    if (!this->isEncoding || !this->chacha20Context.IsValid() || keepOriginal)
     {
         LOG_DEBUG("Encoding not enabled or encoder is NULL, appending packet directly to sendbuf");
         sendbuf.Append(packet, packetSize);
@@ -353,7 +353,7 @@ VOID TlsCipher::Encode(TlsBuffer &sendbuf, const CHAR *packet, INT32 packetSize,
 
 BOOL TlsCipher::Decode(TlsBuffer &inout, INT32 version)
 {
-    if (!this->isEncoding || !this->chacha20Context.IsInitialized())
+    if (!this->isEncoding || !this->chacha20Context.IsValid())
     {
         LOG_DEBUG("Encoding not enabled or encoder is NULL, cannot Decode packet");
         return TRUE;

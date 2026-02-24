@@ -240,6 +240,25 @@ public:
     Ecc();
 
     /**
+     * @brief Destructor - securely clears private key material
+     */
+    ~Ecc();
+
+    // Non-copyable -- prevent duplication of private key material
+    Ecc(const Ecc &) = delete;
+    Ecc &operator=(const Ecc &) = delete;
+
+    // Non-movable -- Ecc objects are heap-allocated and managed through pointers
+    Ecc(Ecc &&) = delete;
+    Ecc &operator=(Ecc &&) = delete;
+
+    /**
+     * @brief Checks if the ECC instance is initialized with a valid curve
+     * @return TRUE if initialized, FALSE otherwise
+     */
+    BOOL IsValid() const { return eccBytes != 0; }
+
+    /**
      * @brief Initializes ECC with specified curve
      * @param bytes Key size in bytes: 32 for P-256, 48 for P-384
      * @return 0 on success, non-zero on error

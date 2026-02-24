@@ -862,6 +862,11 @@ Ecc::Ecc()
     Memory::Zero(this, sizeof(Ecc));
 }
 
+Ecc::~Ecc()
+{
+    Memory::Zero(this, sizeof(Ecc));
+}
+
 INT32 Ecc::ComputeSharedSecret(const UINT8 *publicKey, UINT32 publicKeySize, UINT8 *secret)
 {
     if (publicKeySize != this->eccBytes * 2 + 1 || publicKey[0] != 0x04)

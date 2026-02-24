@@ -601,6 +601,27 @@ BOOL DirectoryIterator::Next()
 }
 
 // Destructor
+DirectoryIterator::DirectoryIterator(DirectoryIterator &&other) noexcept
+    : handle(other.handle), currentEntry(other.currentEntry), first(other.first), isBitMaskMode(other.isBitMaskMode)
+{
+    other.handle = (PVOID)-1;
+}
+
+DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexcept
+{
+    if (this != &other)
+    {
+        if (IsValid() && !isBitMaskMode)
+            NTDLL::ZwClose(handle);
+        handle = other.handle;
+        currentEntry = other.currentEntry;
+        first = other.first;
+        isBitMaskMode = other.isBitMaskMode;
+        other.handle = (PVOID)-1;
+    }
+    return *this;
+}
+
 DirectoryIterator::~DirectoryIterator()
 {
     // If handle is a bitmask (less than a valid memory address), don't close it

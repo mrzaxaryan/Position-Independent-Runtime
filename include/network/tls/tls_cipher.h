@@ -67,6 +67,10 @@ public:
     TlsCipher(const TlsCipher &) = delete;
     TlsCipher &operator=(const TlsCipher &) = delete;
 
+    // Stack-only
+    VOID *operator new(USIZE) = delete;
+    VOID operator delete(VOID *) = delete;
+
     TlsCipher(TlsCipher &&other)
         : cipherCount(other.cipherCount)
         , clientSeqNum(other.clientSeqNum)
@@ -131,6 +135,8 @@ public:
     VOID SetEncoding(BOOL encoding);
     // Function to reset sequence numbers
     VOID ResetSequenceNumber();
+    // Check if the cipher is in a valid state
+    BOOL IsValid() const { return cipherCount > 0; }
     // Accessor functions
     BOOL GetEncoding() { return isEncoding; };
     INT32 GetCipherCount() { return cipherCount; };

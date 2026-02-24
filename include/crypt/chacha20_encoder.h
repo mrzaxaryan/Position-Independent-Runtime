@@ -82,6 +82,10 @@ public:
     ChaCha20Encoder(const ChaCha20Encoder &) = delete;
     ChaCha20Encoder &operator=(const ChaCha20Encoder &) = delete;
 
+    // Stack-only
+    VOID *operator new(USIZE) = delete;
+    VOID operator delete(VOID *) = delete;
+
     ChaCha20Encoder(ChaCha20Encoder &&other)
         : remoteCipher(other.remoteCipher)
         , localCipher(other.localCipher)
@@ -171,10 +175,10 @@ public:
     INT32 GetIvLength() { return ivLength; }
 
     /**
-     * @brief Checks if encoder is initialized
+     * @brief Checks if encoder is initialized and valid
      * @return TRUE if initialized, FALSE otherwise
      */
-    BOOL IsInitialized() { return initialized; }
+    BOOL IsValid() const { return initialized; }
 };
 
 /** @} */ // end of chacha20_encoder group

@@ -48,6 +48,10 @@ public:
     File(File &&other) noexcept;
     File &operator=(File &&other) noexcept;
 
+    // Stack-only
+    VOID *operator new(USIZE) = delete;
+    VOID operator delete(VOID *) = delete;
+
     // Check if the file handle is valid
     BOOL IsValid() const;
     // Close the file handle
@@ -101,6 +105,14 @@ public:
     // Non-copyable
     DirectoryIterator(const DirectoryIterator &) = delete;
     DirectoryIterator &operator=(const DirectoryIterator &) = delete;
+
+    // Movable (transfer ownership of directory handle)
+    DirectoryIterator(DirectoryIterator &&other) noexcept;
+    DirectoryIterator &operator=(DirectoryIterator &&other) noexcept;
+
+    // Stack-only
+    VOID *operator new(USIZE) = delete;
+    VOID operator delete(VOID *) = delete;
 };
 
 // Class to handle file system operations
