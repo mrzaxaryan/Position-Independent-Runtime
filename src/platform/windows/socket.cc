@@ -161,6 +161,10 @@ BOOL Socket::Bind(SockAddr &SocketAddress, INT32 ShareType)
     }
 
     NTDLL::ZwClose(SockEvent);
+    if (!NT_SUCCESS(Status))
+    {
+        LOG_ERROR("AFD_BIND failed with NTSTATUS: 0x%08X\n", Status);
+    }
     return NT_SUCCESS(Status);
 }
 
