@@ -140,7 +140,7 @@ public:
      * @return TRUE if strings are equal, FALSE otherwise
      */
     template <TCHAR TChar>
-    static inline BOOL Compare(const TChar *s1, const TChar *s2, BOOL ignoreCase = FALSE) noexcept;
+    static BOOL Compare(const TChar *s1, const TChar *s2, BOOL ignoreCase = FALSE) noexcept;
 
     /**
      * @brief Compare two strings with explicit lengths
@@ -152,7 +152,7 @@ public:
      * @return TRUE if strings are equal, FALSE otherwise
      */
     template <TCHAR TChar>
-    static inline BOOL Equals(const TChar *a, USIZE aLen, const TChar *b, USIZE bLen) noexcept;
+    static BOOL Equals(const TChar *a, USIZE aLen, const TChar *b, USIZE bLen) noexcept;
 
     /**
      * @brief Compare two null-terminated strings for equality
@@ -172,7 +172,7 @@ public:
      * @return TRUE if string starts with prefix, FALSE otherwise
      */
     template <TCHAR TChar>
-    static inline BOOL StartsWith(const TChar *pChar, const TChar *pSubString) noexcept;
+    static BOOL StartsWith(const TChar *pChar, const TChar *pSubString) noexcept;
 
     /**
      * @brief Check if string starts with prefix (with explicit lengths)
@@ -210,7 +210,7 @@ public:
      * @return Pointer to first occurrence, or NULL if not found
      */
     template <TCHAR TChar>
-    static inline const TChar *AddressOf(TChar c, const TChar *pChar) noexcept;
+    static const TChar *AddressOf(TChar c, const TChar *pChar) noexcept;
 
     /**
      * @brief Find index of character in string
@@ -233,7 +233,7 @@ public:
      * @return Index of first occurrence, or -1 if not found
      */
     template <TCHAR TChar>
-    static inline SSIZE IndexOf(const TChar *str, USIZE strLen, const TChar *sub, USIZE subLen) noexcept;
+    static SSIZE IndexOf(const TChar *str, USIZE strLen, const TChar *sub, USIZE subLen) noexcept;
 
     /// @}
     /// @name String Copy Operations
@@ -260,7 +260,7 @@ public:
      * @return Number of characters copied (excluding null terminator)
      */
     template <TCHAR TChar>
-    static inline USIZE Copy(TChar *dest, USIZE destSize, const TChar *src, USIZE srcLen) noexcept;
+    static USIZE Copy(TChar *dest, USIZE destSize, const TChar *src, USIZE srcLen) noexcept;
 
     /**
      * @brief Safe string copy with compile-time buffer size
@@ -283,7 +283,7 @@ public:
      * @return Number of characters copied (excluding null terminator)
      */
     template <typename T>
-    static inline USIZE CopyEmbed(const T &src, CHAR *buffer, USIZE bufSize) noexcept;
+    static USIZE CopyEmbed(const T &src, CHAR *buffer, USIZE bufSize) noexcept;
 
     /// @}
     /// @name String Manipulation
@@ -296,7 +296,7 @@ public:
      * @return New length including null terminator
      */
     template <TCHAR TChar>
-    static inline USIZE TrimEnd(TChar *str) noexcept;
+    static USIZE TrimEnd(TChar *str) noexcept;
 
     /**
      * @brief Trim whitespace from end (with explicit length)
@@ -339,9 +339,9 @@ public:
      * @return Total number of characters written (excluding null terminator)
      */
     template <TCHAR TChar>
-    static inline USIZE Concat(TChar *buffer, USIZE bufSize,
-                               const TChar *s1, USIZE len1,
-                               const TChar *s2, USIZE len2) noexcept;
+    static USIZE Concat(TChar *buffer, USIZE bufSize,
+                        const TChar *s1, USIZE len1,
+                        const TChar *s2, USIZE len2) noexcept;
 
     /// @}
     /// @name Number Conversion
@@ -524,7 +524,7 @@ constexpr FORCE_INLINE USIZE String::Length(const TChar *p) noexcept
 }
 
 template <TCHAR TChar>
-inline BOOL String::Compare(const TChar *s1, const TChar *s2, BOOL ignoreCase) noexcept
+BOOL String::Compare(const TChar *s1, const TChar *s2, BOOL ignoreCase) noexcept
 {
     const TChar *str1 = s1;
     const TChar *str2 = s2;
@@ -543,7 +543,7 @@ inline BOOL String::Compare(const TChar *s1, const TChar *s2, BOOL ignoreCase) n
 }
 
 template <TCHAR TChar>
-inline BOOL String::Equals(const TChar *a, USIZE aLen, const TChar *b, USIZE bLen) noexcept
+BOOL String::Equals(const TChar *a, USIZE aLen, const TChar *b, USIZE bLen) noexcept
 {
     if (aLen != bLen) return FALSE;
     for (USIZE i = 0; i < aLen; i++)
@@ -567,7 +567,7 @@ FORCE_INLINE BOOL String::Equals(const TChar *a, const TChar *b) noexcept
 }
 
 template <TCHAR TChar>
-inline BOOL String::StartsWith(const TChar *pChar, const TChar *pSubString) noexcept
+BOOL String::StartsWith(const TChar *pChar, const TChar *pSubString) noexcept
 {
     USIZE i = 0;
     while (pChar[i] != '\0' && pSubString[i] != '\0')
@@ -613,7 +613,7 @@ FORCE_INLINE BOOL String::EndsWith(const TChar *str, USIZE strLen, const TChar *
 // ============================================================================
 
 template <TCHAR TChar>
-inline const TChar *String::AddressOf(TChar c, const TChar *pChar) noexcept
+const TChar *String::AddressOf(TChar c, const TChar *pChar) noexcept
 {
     USIZE i = 0;
     while (pChar[i] != '\0')
@@ -638,7 +638,7 @@ FORCE_INLINE SSIZE String::IndexOfChar(const TChar *str, USIZE strLen, TChar ch)
 }
 
 template <TCHAR TChar>
-inline SSIZE String::IndexOf(const TChar *str, USIZE strLen, const TChar *sub, USIZE subLen) noexcept
+SSIZE String::IndexOf(const TChar *str, USIZE strLen, const TChar *sub, USIZE subLen) noexcept
 {
     if (subLen == 0) return 0;
     if (subLen > strLen) return -1;
@@ -674,7 +674,7 @@ FORCE_INLINE TChar *String::Copy(TChar *dest, const TChar *src) noexcept
 }
 
 template <TCHAR TChar>
-inline USIZE String::Copy(TChar *dest, USIZE destSize, const TChar *src, USIZE srcLen) noexcept
+USIZE String::Copy(TChar *dest, USIZE destSize, const TChar *src, USIZE srcLen) noexcept
 {
     if (!dest || destSize == 0) return 0;
     if (!src || srcLen == 0)
@@ -699,7 +699,7 @@ FORCE_INLINE USIZE String::Copy(TChar (&dest)[MaxLen], const TChar *src, USIZE s
 }
 
 template <typename T>
-inline USIZE String::CopyEmbed(const T &src, CHAR *buffer, USIZE bufSize) noexcept
+USIZE String::CopyEmbed(const T &src, CHAR *buffer, USIZE bufSize) noexcept
 {
     if (!buffer || bufSize == 0) return 0;
 
@@ -719,7 +719,7 @@ inline USIZE String::CopyEmbed(const T &src, CHAR *buffer, USIZE bufSize) noexce
 // ============================================================================
 
 template <TCHAR TChar>
-inline USIZE String::TrimEnd(TChar *str) noexcept
+USIZE String::TrimEnd(TChar *str) noexcept
 {
     if (!str)
         return 0;
@@ -770,9 +770,9 @@ FORCE_INLINE const TChar *String::Trim(const TChar *str, USIZE &len) noexcept
 }
 
 template <TCHAR TChar>
-inline USIZE String::Concat(TChar *buffer, USIZE bufSize,
-                            const TChar *s1, USIZE len1,
-                            const TChar *s2, USIZE len2) noexcept
+USIZE String::Concat(TChar *buffer, USIZE bufSize,
+                     const TChar *s1, USIZE len1,
+                     const TChar *s2, USIZE len2) noexcept
 {
     if (!buffer || bufSize == 0) return 0;
 
