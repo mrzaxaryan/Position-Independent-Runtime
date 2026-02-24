@@ -1,4 +1,5 @@
 #include "file_system.h"
+#include "memory.h"
 #include "syscall.h"
 #include "system.h"
 #include "string.h"
