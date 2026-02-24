@@ -161,7 +161,7 @@ public:
 
     // Convert day-of-year (0-based) to month and day
     // Returns month (1-12) and day (1-31) via output parameters
-    static FORCE_INLINE VOID DaysToMonthDay(UINT64 dayOfYear, UINT64 year, UINT32& outMonth, UINT32& outDay) noexcept
+    static VOID DaysToMonthDay(UINT64 dayOfYear, UINT64 year, UINT32& outMonth, UINT32& outDay) noexcept
     {
         BOOL isLeap = IsLeapYear(year);
         UINT32 month = 1;
@@ -182,8 +182,8 @@ public:
 
     // Convert days-since-epoch + time-of-day into a populated DateTime.
     // Shared by Windows and Linux Now() implementations.
-    static FORCE_INLINE VOID FromDaysAndTime(DateTime& dt, UINT64 days, UINT64 baseYear,
-                                             UINT64 timeOfDaySeconds, UINT64 subSecondNanoseconds) noexcept
+    static VOID FromDaysAndTime(DateTime& dt, UINT64 days, UINT64 baseYear,
+                               UINT64 timeOfDaySeconds, UINT64 subSecondNanoseconds) noexcept
     {
         // Fast-forward through years
         UINT64 year = baseYear;
