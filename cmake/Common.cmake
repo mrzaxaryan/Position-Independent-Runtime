@@ -139,7 +139,6 @@ else()
         -fno-unwind-tables
         -flto=full
         -finline-functions
-        -fno-semantic-interposition
         -fwhole-program-vtables
         -${CPPPIC_OPT_LEVEL}
     )
