@@ -7,34 +7,15 @@
 #include "http.h"
 #include "embedded_string.h"
 
-// This function creates a WebSocket frame with the specified parameters.
-static BOOL web_socket_create_frame(WebSocketFrame &frame, INT32 fin, INT32 rsv1, INT32 rsv2, INT32 rsv3, INT32 opcode, INT32 has_mask, PVOID data, INT32 len)
-{
-
-    // Initialize the frame structure
-    frame.fin = fin;
-    frame.rsv1 = rsv1;
-    frame.rsv2 = rsv2;
-    frame.rsv3 = rsv3;
-    frame.mask = has_mask;
-    frame.opcode = opcode;
-    frame.data = (PCHAR)data;
-    frame.length = len;
-
-    return TRUE; // Frame created successfully
-}
-
-// Callback function for formatting WebSocket handshake request headers, used with StringFormatter
+// Callback for streaming WebSocket handshake headers through StringFormatter
 BOOL WebSocketClient::FormatterCallback(PVOID context, CHAR ch)
 {
     WebSocketClient *wsClient = (WebSocketClient *)context;
     return wsClient->tlsContext.Write(&ch, 1);
 }
 
-// This function connects a WebSocket client context to a specified IP address, host, path, port, and security setting.
 BOOL WebSocketClient::Open()
 {
-    PCHAR headers = NULL;
     BOOL isSecure = tlsContext.IsSecure();
     LOG_DEBUG("Opening WebSocket client to %s:%u%s (secure: %s)", hostName, port, path, isSecure ? "true"_embed : "false"_embed);
 
@@ -42,11 +23,11 @@ BOOL WebSocketClient::Open()
 
     if (!result && ipAddress.IsIPv6())
     {
-        // If connection failed and it's an IPv6 address, try connecting to the IPv4 address
+        // IPv6 failed, fall back to IPv4
         IPAddress ipv4Address = DNS::Resolve(hostName, A);
         if (!ipv4Address.IsValid())
         {
-            LOG_ERROR("Failed to reslove IPv4 address for %s, cannot connect to WebSocket server", hostName);
+            LOG_ERROR("Failed to resolve IPv4 address for %s, cannot connect to WebSocket server", hostName);
             return FALSE;
         }
 
@@ -56,6 +37,7 @@ BOOL WebSocketClient::Open()
         if (!result)
         {
             LOG_DEBUG("Failed to open network transport for WebSocket client");
+            return FALSE;
         }
     }
     else if (!result)
@@ -63,38 +45,25 @@ BOOL WebSocketClient::Open()
         return FALSE;
     }
 
+    // Generate random 16-byte WebSocket key
     CHAR key[16];
     CHAR alphanum[63];
     for (INT32 i = 0; i < 10; i++)
-    {
         alphanum[i] = '0' + i;
-    }
-
     for (INT32 i = 0; i < 26; i++)
-    {
         alphanum[i + 10] = 'A' + i;
-    }
-
     for (INT32 i = 0; i < 26; i++)
-    {
         alphanum[i + 36] = 'a' + i;
-    }
-
-    // set \0
     alphanum[62] = '\0';
 
     Random random;
-    // Generate a random 16-byte key
     for (INT32 i = 0; i < 16; i++)
-    {
         key[i] = alphanum[random.Get() % 61];
-    }
 
-    // Allocate memory for the encoded string
     PCHAR secureKey = new CHAR[Base64::GetEncodeOutSize(16)];
     Base64::Encode(key, 16, secureKey);
 
-    // Prepare the WebSocket handshake request
+    // Send WebSocket upgrade request
     auto format = "GET %s HTTP/1.1\r\n"_embed
                   "Host: %s\r\n"_embed
                   "Upgrade: WebSocket\r\n"_embed
@@ -107,23 +76,17 @@ BOOL WebSocketClient::Open()
     delete[] secureKey;
 
     if (isSecure)
-        StringFormatter::Format<CHAR>(fixed, this, "Origin: https://%s\r\n"_embed, hostName);
+        StringFormatter::Format<CHAR>(fixed, this, "Origin: https://%s\r\n\r\n"_embed, hostName);
     else
-        StringFormatter::Format<CHAR>(fixed, this, "Origin: http://%s\r\n"_embed, hostName);
+        StringFormatter::Format<CHAR>(fixed, this, "Origin: http://%s\r\n\r\n"_embed, hostName);
 
-    // End headers
-    if (headers != NULL)
-        StringFormatter::Format<CHAR>(fixed, this, "%s\r\n\r\n"_embed, headers);
-    else
-        StringFormatter::Format<CHAR>(fixed, this, "\r\n"_embed);
-
-    UINT16 handshakeResponseBufferSize = 4096;                       // Buffer size for the handshake response
-    PCHAR handshakeResponse = new CHAR[handshakeResponseBufferSize]; // Allocate memory for the handshake response
-    UINT32 totalBytesRead = 0;                                       // Total bytes read from the handshake response
+    // Read handshake response
+    constexpr UINT16 handshakeResponseBufferSize = 4096;
+    PCHAR handshakeResponse = new CHAR[handshakeResponseBufferSize];
+    UINT32 totalBytesRead = 0;
 
     for (;;)
     {
-        // Check if the total bytes read exceeds the buffer size
         if (totalBytesRead >= handshakeResponseBufferSize)
         {
             delete[] handshakeResponse;
@@ -131,9 +94,7 @@ BOOL WebSocketClient::Open()
             return FALSE;
         }
 
-        UINT32 bytesRead; // Variable to hold the number of bytes read
-        bytesRead = tlsContext.Read(handshakeResponse + totalBytesRead, 1);
-        // Check if no bytes were read, indicating an error
+        UINT32 bytesRead = tlsContext.Read(handshakeResponse + totalBytesRead, 1);
         if (bytesRead == 0)
         {
             delete[] handshakeResponse;
@@ -141,22 +102,16 @@ BOOL WebSocketClient::Open()
             return FALSE;
         }
 
-        totalBytesRead += bytesRead; // Update the total bytes read
+        totalBytesRead += bytesRead;
 
-        // Check if the handshake response ends with the HTTP response end sequence
-        if (totalBytesRead >= 4
-            //  { '\r', '\n', '\r', '\n } in UINT32 == 168626701
-            && *(PUINT32)(handshakeResponse + totalBytesRead - 4) ==
-                   168626701)
-        {
+        // Check for \r\n\r\n end-of-headers (0x0D0A0D0A as little-endian UINT32 = 168626701)
+        if (totalBytesRead >= 4 && *(PUINT32)(handshakeResponse + totalBytesRead - 4) == 168626701)
             break;
-        }
     }
-    handshakeResponse[totalBytesRead] = '\0'; // Null-terminate the handshake response string
+    handshakeResponse[totalBytesRead] = '\0';
 
-    if (totalBytesRead < 12
-        // { ' ', '1','0','1' } in UINT32 = 540094513
-        || *(PUINT32)(handshakeResponse + 9) != 540094513)
+    // Verify "HTTP/1.1 101" response (" 101" at offset 8 as little-endian UINT32 = 540094513)
+    if (totalBytesRead < 12 || *(PUINT32)(handshakeResponse + 9) != 540094513)
     {
         delete[] handshakeResponse;
         Close();
@@ -168,7 +123,6 @@ BOOL WebSocketClient::Open()
     return TRUE;
 }
 
-// This function disconnects a WebSocket client context
 BOOL WebSocketClient::Close()
 {
     isConnected = FALSE;
@@ -177,314 +131,265 @@ BOOL WebSocketClient::Close()
     return TRUE;
 }
 
-// This function writes data to a WebSocket client context, handling masking and framing according to the WebSocket protocol.
 UINT32 WebSocketClient::Write(PCVOID buffer, UINT32 bufferLength, INT8 opcode)
 {
-    // Variable to hold the length of the WebSocket frame header
-    // 6 for the first 2 bytes, 2 for the extended payload length if needed, and 4 for the masking key if masking is used
-    // if bufferLength is greater than 125, we need to add 2 bytes for the extended payload length
-    // if bufferLength is greater than 0xffff, we need to add 6 bytes for the extended payload length
-    UINT32 header_length = 6 + (bufferLength > 125 ? 2 : 0) + (bufferLength > 0xffff ? 6 : 0);
+    // Frame layout: [opcode+FIN][length+MASK][ext length?][mask key][payload]
+    // Header sizes: <=125 → 6, 126..65535 → 8, >65535 → 14
+    UINT32 headerLength;
+    if (bufferLength <= 125)
+        headerLength = 6;
+    else if (bufferLength <= 0xFFFF)
+        headerLength = 8;
+    else
+        headerLength = 14;
+
+    UINT32 frameLength = headerLength + bufferLength;
+    PUINT8 frame = new UINT8[frameLength];
+
+    // FIN bit + opcode
+    frame[0] = (UINT8)(opcode | 0x80);
+
+    // Generate masking key
     Random random;
+    UINT8 maskKey[4];
+    for (USIZE i = 0; i < 4; i++)
+        maskKey[i] = random.Get() & 0xFF;
 
-    UINT8 masking_key[4];
-    // Fill the masking key with random bytes
-    for (USIZE i = 0; i < sizeof(masking_key); ++i)
-    {
-        masking_key[i] = random.Get() & 0xff;
-    }
-    // Allocate memory for the WebSocket frame header
-    PUINT8 header = new UINT8[header_length];
-    header[0] = (opcode | 0x80);
-
-    // Handle the masking and payload length according to the WebSocket protocol
+    // Encode payload length + mask bit
     if (bufferLength <= 125)
     {
-
-        header[1] = (UINT8)(bufferLength | 0x80);
-        Memory::Copy(header + 2, masking_key, 4);
+        frame[1] = (UINT8)(bufferLength | 0x80);
+        Memory::Copy(frame + 2, maskKey, 4);
     }
-    else if (bufferLength > 125 && bufferLength <= 0xffff)
-    { // 125 && 65535
-
-        header[1] = (126 | 0x80);
-
+    else if (bufferLength <= 0xFFFF)
+    {
+        frame[1] = (126 | 0x80);
         UINT16 len16 = UINT16SwapByteOrder((UINT16)bufferLength);
-        Memory::Copy(header + 2, &len16, 2);
-        Memory::Copy(header + 4, masking_key, 4);
-    }
-    else if (bufferLength > 0xffff)
-    { // 65535 && 18446744073709551615
-
-        // Use pointer arithmetic to extract the high and low 32-bit parts
-        UINT64 len64 = UINT64SwapByteOrder(bufferLength);
-        // Set the header fields
-        header[1] = (127 | 0x80);
-        Memory::Copy(header + 2, &len64, 8);
-        Memory::Copy(header + 10, masking_key, 4); // Copy masking key
-    }
-
-    // Prepare the WebSocket frame length
-    INT32 frame_length = header_length + bufferLength;
-    // Allocate memory for the WebSocket frame
-    PCHAR framebuf = new CHAR[frame_length];
-    // Initialize the frame buffer with zeros and copy the header into it
-    Memory::Zero(framebuf, frame_length);
-    Memory::Copy(framebuf, header, header_length);
-    // If the buffer is not NULL, copy the data into the frame buffer after the header
-    if (buffer != NULL)
-        Memory::Copy(framebuf + header_length, buffer, bufferLength);
-
-    UINT32 i; // Iteration variable for the loop
-    // Loop through the frame buffer and apply the masking key to the data
-    for (i = 0; i < bufferLength; i++)
-    {
-        framebuf[header_length + i] ^= masking_key[i % 4] & 0xff;
-    }
-
-    INT32 result = tlsContext.Write(framebuf, frame_length);
-
-    // Free the allocated memory for the header and frame buffer
-    delete[] header;
-    delete[] framebuf;
-
-    // Return the payload length (bufferLength) if write succeeded, 0 on failure
-    if (result > 0)
-    {
-        return bufferLength;
+        Memory::Copy(frame + 2, &len16, 2);
+        Memory::Copy(frame + 4, maskKey, 4);
     }
     else
     {
-        return 0;
+        frame[1] = (127 | 0x80);
+        UINT64 len64 = UINT64SwapByteOrder((UINT64)bufferLength);
+        Memory::Copy(frame + 2, &len64, 8);
+        Memory::Copy(frame + 10, maskKey, 4);
     }
+
+    // Copy and mask payload in a single buffer
+    if (buffer != NULL)
+        Memory::Copy(frame + headerLength, buffer, bufferLength);
+    else
+        Memory::Zero(frame + headerLength, bufferLength);
+
+    for (UINT32 i = 0; i < bufferLength; i++)
+        frame[headerLength + i] ^= maskKey[i % 4];
+
+    UINT32 result = tlsContext.Write(frame, frameLength);
+    delete[] frame;
+
+    return (result > 0) ? bufferLength : 0;
 }
 
-// This function receives data from a WebSocket client context
+// Read exactly `size` bytes from the TLS transport
 BOOL WebSocketClient::ReceiveRestrict(PVOID buffer, INT32 size)
 {
-    INT32 totalBytesRead = 0; // Total bytes read from the WebSocket client context
-    INT32 bytesRead = 0;      // Variable to hold the number of bytes read in each iteration
-
-    // Loop until the total bytes read is less than the requested size
+    INT32 totalBytesRead = 0;
     while (totalBytesRead < size)
     {
-        bytesRead = tlsContext.Read((PCHAR)buffer + totalBytesRead, size - totalBytesRead);
-
-        // Checking if read operation was successful
-        if (bytesRead > 0)
-        {
-            totalBytesRead += bytesRead; // Update the total bytes read
-        }
-        else
-        {
+        INT32 bytesRead = tlsContext.Read((PCHAR)buffer + totalBytesRead, size - totalBytesRead);
+        if (bytesRead <= 0)
             return FALSE;
-        }
+        totalBytesRead += bytesRead;
     }
-
-    return TRUE; // Indicating successful read operation
+    return TRUE;
 }
 
-// This function masks a WebSocket frame using the provided mask key and data.
-static PVOID web_socket_mask_frame(UINT32 mask_key, PVOID data, INT32 len)
+static PVOID web_socket_mask_frame(UINT32 maskKey, PVOID data, UINT32 len)
 {
-    INT32 i = 0;                   // Iteration variable for the loop
-    PUINT8 _m = (PUINT8)&mask_key; // Cast the mask key to a byte array
-    PUINT8 _d = (PUINT8)data;      // Cast the data pointer to a byte array
-    // Loop through the data and apply the mask to each byte
-    for (; i < len; i++)
-    {
-        _d[i] ^= _m[i % 4];
-    }
-    return _d;
+    PUINT8 mask = (PUINT8)&maskKey;
+    PUINT8 d = (PUINT8)data;
+    for (UINT32 i = 0; i < len; i++)
+        d[i] ^= mask[i % 4];
+    return d;
 }
 
-// This function receives a WebSocket frame from the client context and fills the provided frame structure with the received data.
 BOOL WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 {
-    UINT8 b1, b2, fin, rsv1, rsv2, rsv3, opcode, has_mask; // these are the bits of the frame header
-    UINT64 frame_length = 0;
-    UINT16 length_data_16 = 0;
-    UINT64 length_data_64 = 0;
-    UINT32 frame_mask = 0;
-    UINT8 length_bits = 0;
-    UINT8 frame_header[2] = {0};
-    PCHAR payload = NULL;
-
-    // Attempt to receive the first 2 bytes of the WebSocket frame header
-    if (!ReceiveRestrict(&frame_header, 2))
-    {
+    UINT8 header[2] = {0};
+    if (!ReceiveRestrict(&header, 2))
         return FALSE;
-    }
 
-    // Initialize the frame header bits from the received data
-    b1 = frame_header[0];
-    b2 = frame_header[1];
-    length_bits = b2 & 0x7f;
-    fin = b1 >> 7 & 1;
-    rsv1 = b1 >> 6 & 1;
-    rsv2 = b1 >> 5 & 1;
-    rsv3 = b1 >> 4 & 1;
-    opcode = b1 & 0xf;
-    has_mask = b2 >> 7 & 1;
+    UINT8 b1 = header[0];
+    UINT8 b2 = header[1];
 
-    // Checking if the length bits indicate an extended payload length
-    if (length_bits == 0x7e)
+    frame.fin = (b1 >> 7) & 1;
+    frame.rsv1 = (b1 >> 6) & 1;
+    frame.rsv2 = (b1 >> 5) & 1;
+    frame.rsv3 = (b1 >> 4) & 1;
+    frame.opcode = b1 & 0x0F;
+    frame.mask = (b2 >> 7) & 1;
+
+    UINT8 lengthBits = b2 & 0x7F;
+
+    // Decode payload length
+    if (lengthBits == 126)
     {
-        // Attempt to receive 2 bytes for the extended payload length
-        if (!ReceiveRestrict(&length_data_16, 2))
-        {
+        UINT16 len16 = 0;
+        if (!ReceiveRestrict(&len16, 2))
             return FALSE;
-        }
-        // Swap the byte order of the received length data
-        frame_length = UINT16SwapByteOrder(length_data_16);
+        frame.length = UINT16SwapByteOrder(len16);
     }
-    else if (length_bits == 0x7f)
+    else if (lengthBits == 127)
     {
-        // Attempt to receive 8 bytes for the extended payload length
-        if (!ReceiveRestrict(&length_data_64, 8))
-        {
+        UINT64 len64 = 0;
+        if (!ReceiveRestrict(&len64, 8))
             return FALSE;
-        }
-        // Swap the byte order of the received length data
-        frame_length = UINT64SwapByteOrder(length_data_64);
+        frame.length = UINT64SwapByteOrder(len64);
     }
     else
     {
-        frame_length = length_bits; // If the length bits are not extended, use the length bits directly
+        frame.length = lengthBits;
     }
 
-    // Check if it has a mask
-    if (has_mask)
+    // Read mask key if present
+    UINT32 frameMask = 0;
+    if (frame.mask)
     {
-        // Attempt to receive 4 bytes for the masking key
-        if (!ReceiveRestrict(&frame_mask, 4))
-        {
+        if (!ReceiveRestrict(&frameMask, 4))
             return FALSE;
-        }
     }
 
-    // Check if the frame length is valid
-    if (frame_length > 0)
-    {
-        payload = new CHAR[(INT32)frame_length]; // Allocate memory for the payload
-        // Attempt to receive the payload data
-        if (!ReceiveRestrict(payload, (INT32)frame_length))
-        {
-            delete[] payload;
-            return FALSE;
-        }
-    }
-    /*else {
+    // Reject frames that would require an absurd allocation (>64 MB)
+    if (frame.length > 0x4000000)
         return FALSE;
 
-    }*/
-
-    if (has_mask)
+    // Allocate and read payload
+    frame.data = NULL;
+    if (frame.length > 0)
     {
-        web_socket_mask_frame(frame_mask, payload, (UINT32)frame_length);
+        frame.data = new CHAR[(UINT32)frame.length];
+        if (!ReceiveRestrict(frame.data, (INT32)frame.length))
+        {
+            delete[] frame.data;
+            frame.data = NULL;
+            return FALSE;
+        }
     }
 
-    return web_socket_create_frame(frame, fin, rsv1, rsv2, rsv3, opcode, has_mask, payload, (UINT32)frame_length);
+    if (frame.mask && frame.data)
+        web_socket_mask_frame(frameMask, frame.data, (UINT32)frame.length);
+
+    return TRUE;
 }
+
 PVOID WebSocketClient::Read(USIZE &dwBufferLength, INT8 &opcode)
 {
-    // Initialize the WebSocket frame structure and buffer for received data
-    WebSocketFrame webSocketFrame;
-    Memory::Zero(&webSocketFrame, sizeof(webSocketFrame));
+    WebSocketFrame frame;
+    Memory::Zero(&frame, sizeof(frame));
+
     PVOID pvBuffer = NULL;
     dwBufferLength = 0;
+    INT8 messageOpcode = 0; // Captured from the first data frame
 
     while (1)
     {
-        Memory::Zero(&webSocketFrame, sizeof(webSocketFrame)); // Reset the WebSocket frame structure
-        // Attempt to receive a WebSocket frame from the client context
-        if (!ReceiveFrame(webSocketFrame))
+        Memory::Zero(&frame, sizeof(frame));
+        if (!ReceiveFrame(frame))
+            break;
+
+        if (frame.opcode == OPCODE_TEXT || frame.opcode == OPCODE_BINARY || frame.opcode == OPCODE_CONTINUE)
         {
-            goto end; // Error handling: if receiving the frame fails, exit the loop
-        }
-        // Checking the opcode of the received WebSocket frame
-        if (webSocketFrame.opcode == OPCODE_TEXT || webSocketFrame.opcode == OPCODE_BINARY || webSocketFrame.opcode == OPCODE_CONTINUE)
-        {
-            if (webSocketFrame.opcode == OPCODE_CONTINUE && pvBuffer == NULL)
+            // CONTINUE without a preceding data frame is invalid
+            if (frame.opcode == OPCODE_CONTINUE && pvBuffer == NULL)
             {
-                goto end;
+                delete[] frame.data;
+                break;
             }
-            if (webSocketFrame.length == 0)
+
+            if (frame.length == 0)
             {
-                goto end;
+                delete[] frame.data;
+                break;
             }
+
+            // Capture opcode from the initial (non-continuation) frame
+            if (frame.opcode != OPCODE_CONTINUE)
+                messageOpcode = frame.opcode;
+
             if (pvBuffer)
             {
-                // Reallocate the buffer to hold the new data
-                PCHAR tempBuffer = new CHAR[dwBufferLength + (UINT32)webSocketFrame.length];
+                // Append to existing buffer
+                PCHAR tempBuffer = new CHAR[dwBufferLength + (UINT32)frame.length];
                 Memory::Copy(tempBuffer, (PCHAR)pvBuffer, dwBufferLength);
+                Memory::Copy(tempBuffer + dwBufferLength, frame.data, (UINT32)frame.length);
+                dwBufferLength += (UINT32)frame.length;
                 delete[] (PCHAR)pvBuffer;
                 pvBuffer = tempBuffer;
-                // Otherwise, copy the new data into the existing buffer
-                Memory::Copy((PCHAR)pvBuffer + dwBufferLength, webSocketFrame.data, (UINT32)webSocketFrame.length);
-                dwBufferLength += (UINT32)webSocketFrame.length;
-                delete[] webSocketFrame.data;
             }
             else
             {
-                // Otherwise, allocate a new buffer to hold the received data
-                pvBuffer = new CHAR[(UINT32)webSocketFrame.length];
-                // Check if the allocation was successful
-                if (pvBuffer == NULL)
-                {
-                    goto end;
-                }
-                // Copy the received data into the newly allocated buffer
-                Memory::Copy(pvBuffer, webSocketFrame.data, (UINT32)webSocketFrame.length);
-                dwBufferLength = (UINT32)webSocketFrame.length;
-                delete[] webSocketFrame.data;
+                pvBuffer = new CHAR[(UINT32)frame.length];
+                Memory::Copy(pvBuffer, frame.data, (UINT32)frame.length);
+                dwBufferLength = (UINT32)frame.length;
             }
-            // Check if the opcode is a final frame (fin bit is set)
-            if (webSocketFrame.fin)
+            delete[] frame.data;
+
+            if (frame.fin)
             {
-                opcode = webSocketFrame.opcode; // Set the opcode to the received frame's opcode
-                goto end;                       // Exit the loop if the frame is final
+                opcode = messageOpcode;
+                break;
             }
         }
-        else if (webSocketFrame.opcode == OPCODE_CLOSE)
+        else if (frame.opcode == OPCODE_CLOSE)
         {
-            pvBuffer = NULL;
-            dwBufferLength = 0;
-            CHAR reason[126];
-            Memory::Zero(reason, sizeof(reason));
-            Memory::Copy(reason, webSocketFrame.data + 2, (UINT32)((USIZE)webSocketFrame.length - 2));
-            delete[] webSocketFrame.data;
-            goto end;
+            if (frame.length >= 2)
+            {
+                CHAR reason[126];
+                UINT32 reasonLen = (UINT32)frame.length - 2;
+                if (reasonLen > sizeof(reason) - 1)
+                    reasonLen = sizeof(reason) - 1;
+                Memory::Zero(reason, sizeof(reason));
+                Memory::Copy(reason, frame.data + 2, reasonLen);
+            }
+            delete[] frame.data;
+
+            // Free any accumulated buffer from prior continuation frames
+            if (pvBuffer)
+            {
+                delete[] (PCHAR)pvBuffer;
+                pvBuffer = NULL;
+                dwBufferLength = 0;
+            }
+            break;
         }
-        // If opcode is OPCODE_PING, send a pong response
-        else if (webSocketFrame.opcode == OPCODE_PING)
+        else if (frame.opcode == OPCODE_PING)
         {
-            Write(webSocketFrame.data, webSocketFrame.length, OPCODE_PONG);
-            delete[] webSocketFrame.data;
+            Write(frame.data, (UINT32)frame.length, OPCODE_PONG);
+            delete[] frame.data;
         }
-        // If opcode is OPCODE_PONG,
-        else if (webSocketFrame.opcode == OPCODE_PONG)
+        else if (frame.opcode == OPCODE_PONG)
         {
+            delete[] frame.data;
         }
         else
         {
-
-            goto end;
+            // Unknown opcode
+            delete[] frame.data;
+            break;
         }
     }
 
-end:
     return pvBuffer;
 }
+
 WebSocketClient::WebSocketClient(PCCHAR url)
 {
     isConnected = FALSE;
 
     BOOL isSecure = FALSE;
     if (!HttpClient::ParseUrl(url, hostName, path, port, isSecure))
-    {
         return;
-    }
 
     ipAddress = DNS::Resolve(hostName);
     if (!ipAddress.IsValid())
