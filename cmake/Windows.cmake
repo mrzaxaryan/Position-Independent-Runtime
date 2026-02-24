@@ -41,4 +41,4 @@ else()
     cpppic_add_link_flags(--strip-all /OPT:REF /OPT:ICF /RELEASE /LTCG)
 endif()
 
-list(APPEND CPPPIC_BASE_LINK_FLAGS -target ${CPPPIC_TRIPLE})
+list(APPEND CPPPIC_BASE_LINK_FLAGS -target ${CPPPIC_TRIPLE} -fuse-ld=lld)
