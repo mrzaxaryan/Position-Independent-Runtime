@@ -523,6 +523,20 @@ Position-Independent Runtime provides a complete cryptographic and networking st
 
 All functionality is implemented using low-level native interfaces to avoid external dependencies.
 
+## Usage Instructions
+
+### 1. Install Dependencies
+Ensure the following tools are installed on your system:
+- **CMake** – version 4.2.3  
+- **Ninja** – version 1.13.2  
+- **Clang** – version 22.1.0  
+
+### 2. Add to PATH
+Add **CMake**, **Ninja**, and **Clang** to your system’s `PATH` environment variable so they can be run from the command line.
+
+### 3. Build the Project
+Once the dependencies are installed and `PATH` is set up, configure and build the project.
+
 ## Practical Use Cases
 
 Position-Indepenedent Runtime is designed for execution environments where traditional runtime assumptions do not apply. Its architecture makes it particularly suitable for the following domains:
