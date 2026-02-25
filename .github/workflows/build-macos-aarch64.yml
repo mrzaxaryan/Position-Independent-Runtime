@@ -1,0 +1,72 @@
+name: macOS AArch64
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - "**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install LLVM and build tools
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: |
+          for i in 1 2 3; do
+            brew install llvm ninja cmake && break
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
+
+      - name: Build, Upload, and Test all optimization levels
+        run: |
+          set -e
+          OPTS="O0 O1 O2 O3 Os Oz Og"
+          FAILED=""
+          for opt in $OPTS; do
+            echo "========== Building -$opt =========="
+            rm -rf build
+            cmake --preset macos-aarch64-release -DOPTIMIZATION_LEVEL=$opt
+            cmake --build --preset macos-aarch64-release
+            if [ $? -ne 0 ]; then FAILED="$FAILED $opt-build"; continue; fi
+
+            echo "========== Saving -$opt =========="
+            mkdir -p "artifacts/$opt"
+            cp -r build/* "artifacts/$opt/"
+
+            echo "========== Testing Mach-O -$opt =========="
+            TEST_BIN=$(find build -type f -name "output" ! -name "*.bin" ! -name "*.txt" | head -n 1)
+            chmod +x "$TEST_BIN"
+            codesign --sign - --force "$TEST_BIN"
+            if ! "$TEST_BIN"; then FAILED="$FAILED $opt-macho"; continue; fi
+
+            echo "========== Testing PIC -$opt =========="
+            if ! python3 scripts/loader.py --arch aarch64 $(find build -type f -name "output.bin" | head -n 1); then FAILED="$FAILED $opt-pic"; continue; fi
+
+            echo "========== $opt passed =========="
+          done
+          if [ -n "$FAILED" ]; then
+            echo "Failed:$FAILED"
+            exit 1
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-macos-aarch64
+          retention-days: 1
+          path: |
+            artifacts/
+            !artifacts/**/cmake/

@@ -34,11 +34,18 @@ if(_content MATCHES "\\.text\n[^\n]+\\(\\.text\\.entry_point\\)")
     set(entry_point_first TRUE)
 endif()
 
+# macOS (Mach-O format): Check _entry_point is the first symbol listed
+# ld64.lld map format: "# Symbols:" header, then "# Address..." header line, then symbols
+# The first actual symbol should be _entry_point
+if(_content MATCHES "# Symbols:\n#[^\n]*\n[^\n]*_entry_point")
+    set(entry_point_first TRUE)
+endif()
+
 if(NOT entry_point_first)
     message(FATAL_ERROR
         "CRITICAL: entry_point is not the first function in .text section!\n\n"
         "The entry point must be at the beginning of the code section.\n"
-        "Check that cmake/function.order contains 'entry_point' and is being used.\n\n"
+        "Check that cmake/function.order (or function.order.macos) contains 'entry_point' and is being used.\n\n"
         "Map file: ${MAP_FILE}"
     )
 endif()
@@ -58,6 +65,19 @@ foreach(_sec ${_sections})
         list(APPEND _found ".${_sec}")
     endif()
 endforeach()
+
+# macOS (Mach-O format): Check for __DATA segment user data sections
+# ld64.lld map uses tab-separated "Segment\tSection" format
+# Only flag user data sections, not linker-generated ones (__got, __la_symbol_ptr)
+if(_content MATCHES "__DATA[ \t]+__data")
+    list(APPEND _found "__DATA,__data")
+endif()
+if(_content MATCHES "__DATA[ \t]+__bss")
+    list(APPEND _found "__DATA,__bss")
+endif()
+if(_content MATCHES "__DATA_CONST[ \t]+__const")
+    list(APPEND _found "__DATA_CONST,__const")
+endif()
 
 if(_found)
     list(JOIN _found ", " _list)

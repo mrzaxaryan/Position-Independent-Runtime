@@ -9,8 +9,8 @@
  * - Position-independent code (PIC)
  * - Environments where .rdata is not accessible
  *
- * Characters are packed into UINT64 words (8 chars or 4 wchars per word) at compile
- * time and written as immediate values, reducing instruction count by up to 8x
+ * Characters are packed into UINT64 words (sizeof(UINT64)/sizeof(TChar) chars per
+ * word) at compile time and written as immediate values, reducing instruction count
  * compared to character-by-character writes.
  *
  * @note Uses C++23 user-defined string literal operator for ergonomic syntax.
@@ -56,7 +56,7 @@ concept TCHAR = __is_same_as(TChar, CHAR) || __is_same_as(TChar, WCHAR);
  * @par Memory Layout:
  * Characters are packed into UINT64 words:
  * - CHAR: 8 characters per word
- * - WCHAR: 4 characters per word (with -fshort-wchar)
+ * - WCHAR: sizeof(UINT64)/sizeof(WCHAR) characters per word
  *
  * @par Assembly Output Example (x86_64):
  * @code
@@ -100,7 +100,8 @@ private:
         {
             USIZE idx = base + i;
             TChar c = (idx < N) ? chars[idx] : TChar(0);
-            result |= static_cast<UINT64>(static_cast<UINT16>(c)) << (i * shift);
+            constexpr UINT64 charMask = (1ULL << (sizeof(TChar) * 8)) - 1;
+            result |= (static_cast<UINT64>(c) & charMask) << (i * shift);
         }
         return result;
     }
@@ -135,6 +136,22 @@ public:
     NOINLINE DISABLE_OPTIMIZATION EMBEDDED_STRING() noexcept : data{}
     {
         WritePackedWord();
+    }
+
+    /**
+     * @brief Destructor that prevents the compiler from reusing the stack storage
+     * @details At -O1+ the compiler may determine the object is "dead" after
+     * conversion to a raw pointer, and reuse its stack slot for other temporaries.
+     * The "+m" (read+write) constraint tells the compiler the asm both reads and
+     * modifies the data array, making it impossible to reuse the stack slot or
+     * reorder stores into it before the destructor runs at end of full-expression.
+     *
+     * The operand type must be TChar(*)[AllocN] to match the actual data type,
+     * ensuring the constraint and caller reads are in the same TBAA alias set.
+     */
+    FORCE_INLINE ~EMBEDDED_STRING() noexcept
+    {
+        __asm__ volatile("" : "+m"(*(TChar (*)[AllocN])data));
     }
 
     /**

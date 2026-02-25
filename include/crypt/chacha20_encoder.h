@@ -131,7 +131,7 @@ public:
      * For client: local = client_write, remote = server_write
      * For server: local = server_write, remote = client_write
      */
-    BOOL Initialize(PUCHAR localKey, PUCHAR remoteKey, PUCHAR localIv, PUCHAR remoteIv, INT32 keyLength);
+    BOOL Initialize(PUCHAR localKey, PUCHAR remoteKey, const UCHAR (&localIv)[TLS_CHACHA20_IV_LENGTH], const UCHAR (&remoteIv)[TLS_CHACHA20_IV_LENGTH], INT32 keyLength);
 
     /**
      * @brief Encrypts and authenticates a TLS record

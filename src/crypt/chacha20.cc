@@ -350,7 +350,7 @@ VOID ChaChaPoly1305::KeySetup(const UINT8 *k, UINT32 kbits)
     this->input[3] = _private_tls_U8TO32_LITTLE(constants + 12);
 }
 
-VOID ChaChaPoly1305::Key(UINT8 *k)
+VOID ChaChaPoly1305::Key(UINT8 (&k)[32])
 {
     _private_tls_U32TO8_LITTLE(k, this->input[4]);
     _private_tls_U32TO8_LITTLE(k + 4, this->input[5]);
@@ -363,7 +363,7 @@ VOID ChaChaPoly1305::Key(UINT8 *k)
     _private_tls_U32TO8_LITTLE(k + 28, this->input[11]);
 }
 
-VOID ChaChaPoly1305::Nonce(UINT8 *nonce)
+VOID ChaChaPoly1305::Nonce(UINT8 (&nonce)[TLS_CHACHA20_IV_LENGTH])
 {
     _private_tls_U32TO8_LITTLE(nonce + 0, this->input[13]);
     _private_tls_U32TO8_LITTLE(nonce + 4, this->input[14]);

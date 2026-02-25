@@ -164,12 +164,6 @@ private:
     /** @brief Modular subtraction: pResult = (pLeft - pRight) mod pMod */
     VOID VliModSub(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight, UINT64 *pMod);
 
-    /** @brief Fast reduction mod p for 128-bit curves (P-128) */
-    VOID VliMmodFast128(UINT64 *pResult, UINT64 *pProduct);
-
-    /** @brief Fast reduction mod p for 192-bit curves (P-192) */
-    VOID VliMmodFast192(UINT64 *pResult, UINT64 *pProduct);
-
     /** @brief Fast reduction mod p for 256-bit curves (P-256) */
     VOID VliMmodFast256(UINT64 *pResult, UINT64 *pProduct);
 

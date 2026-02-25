@@ -27,7 +27,6 @@ struct WebSocketFrame
 class WebSocketClient
 {
 private:
-    static BOOL FormatterCallback(PVOID context, CHAR ch);
     CHAR hostName[254];  // RFC 1035: max 253 chars + null
     CHAR path[2048];     // De facto max URL path length
     IPAddress ipAddress;
@@ -37,6 +36,7 @@ private:
 
     BOOL ReceiveRestrict(PVOID buffer, UINT32 size);
     BOOL ReceiveFrame(WebSocketFrame &frame);
+    static VOID MaskFrame(UINT32 maskKey, PVOID data, UINT32 len);
 
 public:
     VOID *operator new(USIZE) = delete;
@@ -46,8 +46,8 @@ public:
 
     WebSocketClient(const WebSocketClient &) = delete;
     WebSocketClient &operator=(const WebSocketClient &) = delete;
-    WebSocketClient(WebSocketClient &&) = default;
-    WebSocketClient &operator=(WebSocketClient &&) = default;
+    WebSocketClient(WebSocketClient &&) = delete;
+    WebSocketClient &operator=(WebSocketClient &&) = delete;
 
     BOOL IsValid() const { return tlsContext.IsValid(); }
     BOOL IsSecure() const { return tlsContext.IsSecure(); }
