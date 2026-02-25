@@ -20,14 +20,14 @@ list(APPEND CPPPIC_BASE_FLAGS -fno-stack-protector)
 
 if(CPPPIC_ARCH STREQUAL "x86_64")
     # Disable the red zone for x86_64. The System V ABI allows leaf functions to
-    # use 128 bytes below RSP without adjusting RSP (the "red zone"). However,
-    # PIR executes syscalls via inline asm, and under Rosetta 2 (Apple Silicon
-    # emulating x86_64) the syscall translation can clobber the red zone. At -O1+
-    # with LTO, the optimizer may inline System::Call into what becomes a leaf
-    # function, placing syscall buffers in the red zone — leading to SIGSEGV when
-    # Rosetta 2 overwrites them. This flag is already used for UEFI x86_64
-    # (where interrupts have the same effect) and is standard practice for
-    # position-independent code that makes direct syscalls.
+    # use 128 bytes below RSP without adjusting RSP (the "red zone"). PIR is
+    # designed as position-independent shellcode that executes syscalls via inline
+    # asm. When injected into arbitrary contexts the red zone may not be available
+    # (signal handlers, exception contexts, foreign stacks). At -O1+ with LTO the
+    # optimizer may inline System::Call into what becomes a leaf function, placing
+    # syscall buffers in the red zone. This flag is already used for UEFI x86_64
+    # (where interrupts clobber the red zone) and is standard practice for
+    # freestanding / position-independent code that makes direct syscalls.
     list(APPEND CPPPIC_BASE_FLAGS -mno-red-zone)
 elseif(CPPPIC_ARCH STREQUAL "aarch64")
     list(APPEND CPPPIC_BASE_FLAGS -mstack-probe-size=0)

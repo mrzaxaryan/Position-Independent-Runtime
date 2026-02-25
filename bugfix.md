@@ -41,6 +41,8 @@ and Socket tests 1-4 (socket creation, connection, HTTP request, multiple connec
 
 **At O1**, Socket tests 1-4 also pass successfully. The crash first manifests in test 5 (IP address conversion), which suggests the issue is cumulative (stack pressure, register allocation, etc.) rather than an immediate crash on the first operation.
 
+**Note:** The crash prevents the remaining test suites from running. The full test order after Socket is: TLS, DNS, WebSocket, **FileSystem** (last). None of these execute at O1 due to the SIGSEGV in Socket test 5.
+
 ---
 
 ## What's Left to Find Out
@@ -379,12 +381,7 @@ The 2-arg version (`TimestampedLogOutput<wchar_t, char const*, unsigned int>`) a
 
 #### Critical Discovery: CI Runner Environment
 
-The `macos-15-intel` runner specified in `.github/workflows/build-macos-x86_64.yml` is **NOT a standard GitHub Actions runner**. GitHub's standard `macos-15` runner uses Apple Silicon (M-series). The `macos-15-intel` designation likely means Apple Silicon running x86_64 code via **Rosetta 2**.
-
-This is significant because:
-- Rosetta 2 translates x86_64 instructions to ARM64 on the fly
-- The `syscall` instruction is translated to `svc` for the ARM64 kernel
-- Red zone handling during the syscall translation may differ from native x86_64
+The `macos-15-intel` runner specified in `.github/workflows/build-macos-x86_64.yml` is a **native x86_64 container** (not Rosetta 2 emulation). The crash occurs on real Intel hardware, ruling out Rosetta 2 translation artifacts as the root cause.
 
 #### ConsoleCallback Red Zone Usage
 
@@ -394,7 +391,7 @@ At O1, `ConsoleCallback<wchar_t>` (and likely `<char>`) compiles as a **leaf fun
 2. Convert to UTF-8 in red zone buffer
 3. Execute `syscall` instruction for `SYS_WRITE` with buffer pointer pointing into the red zone
 
-This is technically legal on native x86_64 (the kernel doesn't touch user stack during syscall). However, under Rosetta 2, the translation of `syscall` involves additional runtime state management that may clobber the red zone.
+This is technically legal per the ABI (the kernel preserves the red zone during syscall on native x86_64). However, PIR is designed as position-independent shellcode — when injected into arbitrary contexts (signal handler frames, exception contexts, foreign stacks), the red zone may not be available. Additionally, at -O1+ with LTO, aggressive inlining can create unexpected leaf functions containing syscalls where red zone usage interacts poorly with the optimizer's assumptions about memory lifetimes.
 
 ### Fixes Applied
 
@@ -426,7 +423,7 @@ static NOINLINE UINT32 Write(const WCHAR *text, USIZE length);
 - ConsoleCallback must issue a `call` instruction → requires a proper stack frame
 - The `ch` parameter is stored in ConsoleCallback's frame (not the red zone)
 - The syscall happens inside Console::Write's own context
-- Eliminates any potential red zone/Rosetta 2 syscall interaction
+- Eliminates any potential red zone / syscall interaction in leaf contexts
 
 **Performance impact:** Negligible. Adds one `call`/`ret` pair per character written, dwarfed by the syscall overhead.
 
@@ -435,9 +432,8 @@ static NOINLINE UINT32 Write(const WCHAR *text, USIZE length);
 ### What Remains Unknown
 
 1. **Whether this fixes the macOS O1 crash** — Needs CI run to confirm
-2. **Whether the runner is truly Rosetta 2** — `macos-15-intel` is not a documented standard GitHub runner
-3. **Whether there's a Clang 21 miscompilation** specific to the 1-arg template instantiation at O1
-4. **Whether O2-Og are also affected** — CI pipeline stops after first failure
+2. **Whether there's a Clang 21 miscompilation** specific to the 1-arg template instantiation at O1
+3. **Whether O2-Og are also affected** — CI pipeline stops after first failure
 
 #### Fix 3: CI Workflow `set -e` Bug (all platforms)
 
@@ -471,7 +467,7 @@ Added `LOG_INFO` markers between each major operation in `TestIpConversion` to n
 
 If CI shows `[D1]` but not `[D2]`, the crash is in the first invalid IP test. If all markers appear, the crash is in the final IPv6 block. This also tests whether adding LOG_INFO calls (which change the stack layout) moves or masks the bug — a positive result either way.
 
-#### Fix 5: `-mno-red-zone` for macOS x86_64 (definitive SIGSEGV fix)
+#### Fix 5: `-mno-red-zone` for macOS x86_64 (robustness fix)
 
 **File:** `cmake/macOS.cmake`
 
@@ -484,31 +480,29 @@ elseif(CPPPIC_ARCH STREQUAL "aarch64")
 endif()
 ```
 
-**Root cause:** The x86_64 System V ABI defines a 128-byte "red zone" below RSP that leaf functions can use without adjusting RSP. At `-O1` with `-flto=full`, LLVM aggressively inlines `System::Call` (which contains the inline asm `syscall` instruction) into what becomes leaf functions. The compiler then places syscall buffer/local variables in the red zone.
+**Rationale:** The x86_64 System V ABI defines a 128-byte "red zone" below RSP that leaf functions can use without adjusting RSP. At `-O1` with `-flto=full`, LLVM aggressively inlines `System::Call` (which contains the inline asm `syscall` instruction) into what becomes leaf functions. The compiler then places syscall buffer/local variables (timeval structs, EMBEDDED_STRING data, char buffers) in the red zone.
 
-The `macos-15-intel` CI runner runs under **Rosetta 2** (Apple Silicon emulating x86_64). Rosetta 2 translates x86_64 `syscall` instructions through a user-space runtime layer that **clobbers the red zone**. When the compiler placed a `timeval` struct, EMBEDDED_STRING data, or a `ch` variable in the red zone and then a `syscall` instruction executed, Rosetta 2's translation layer overwrote that memory, producing:
+PIR is designed as position-independent shellcode. When injected into arbitrary execution contexts — signal handler frames, exception contexts, foreign stacks — the red zone may not be available. Disabling the red zone ensures correctness in all deployment scenarios.
 
-- **SIGSEGV** — garbage pointer dereference from corrupted red zone data
-- **Corrupted log strings** — EMBEDDED_STRING data overwritten mid-output
-- **Wrong timestamps** — `timeval` struct in red zone corrupted by gettimeofday syscall translation
+The `macos-15-intel` CI runner is a **native x86_64 container** (not Rosetta 2). On native x86_64 the kernel preserves the red zone during syscall. However, `-mno-red-zone` is still the correct choice because:
+1. PIR as shellcode cannot assume the red zone is safe in its execution context
+2. At -O1+ with LTO, the optimizer's aggressive inlining can create unexpected leaf functions containing syscalls where the compiler's assumptions about stack memory lifetimes may interact subtly with inline asm constraints
+3. It eliminates an entire class of potential bugs proactively, including any future code paths that inline System::Call into a leaf context
 
 **Why Fix 2 (NOINLINE) alone is insufficient:** NOINLINE on `Console::Write` only prevents ONE code path from becoming a leaf function (ConsoleCallback → Console::Write). But with LTO, other paths remain vulnerable:
 - `DateTime::Now()` contains a `gettimeofday` syscall; if partially inlined by LTO into a context where no further calls follow, the `timeval` struct can end up in the red zone
 - Any future code that calls `System::Call` in a leaf context would be affected
 - The optimizer can create arbitrary leaf functions by merging/inlining across translation units
 
-**Why this is the definitive fix:** `-mno-red-zone` tells the compiler to NEVER use the red zone. All local variables are allocated on the stack via `sub rsp, ...` with proper frame setup. This eliminates the entire class of red zone corruption bugs, regardless of which specific function or optimization level triggers them.
-
 **Precedent:** The project already uses `-mno-red-zone` for UEFI x86_64 (`cmake/UEFI.cmake:20`) for the same class of reasons — interrupts/firmware calls can clobber the red zone.
 
 **Why aarch64 is unaffected:** The ARM64 ABI (AAPCS64) does not define a red zone. All stack allocations require explicit `sub sp, ...` instructions. This is why the macOS aarch64 build passes after the RDX/X1 clobbering fix (commit `daad480`) — there was never a red zone issue on aarch64.
-
-**Why Linux x86_64 is unaffected:** Linux CI runs on native x86_64 hardware. On native x86_64, the kernel properly preserves the user-space red zone during syscall (the kernel has its own stack). There is no Rosetta 2 translation layer.
 
 **Performance impact:** Minimal. Functions that previously used the red zone now allocate stack space with `sub rsp`/`add rsp` pairs. For PIR's use case (position-independent shellcode), this is acceptable — robustness outweighs a few extra instructions.
 
 ### Recommended Next Steps
 
-1. Push changes and run macOS CI to verify the `-mno-red-zone` fix resolves O1-Og crashes
-2. With the CI workflow fix (Fix 3), confirm all optimization levels (O0-Og) now pass
-3. Diagnostic markers (Fix 4) will show in the CI output for verification even if tests pass
+1. Push changes and run macOS CI to test all fixes (COMPILER_RUNTIME + NOINLINE + `-mno-red-zone`)
+2. With the CI workflow fix (Fix 3), all optimization levels (O0-Og) will be tested even if one fails
+3. Diagnostic markers (Fix 4) will show in the CI output to pinpoint crash location if crash persists
+4. If crash persists despite `-mno-red-zone`, the root cause is NOT red-zone-related — investigate Clang 21 miscompilation at O1 (add `-g` for debug symbols, use `lldb` for stack trace)
