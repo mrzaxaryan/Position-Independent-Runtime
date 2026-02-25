@@ -574,14 +574,14 @@ BOOL TLSClient::ProcessReceive()
 {
     LOG_DEBUG("Processing received data for client: %p, current state index: %d", this, stateIndex);
     recvBuffer.CheckSize(recvBuffer.GetSize() + 4096 * 4);
-    INT64 len = context.Read((PUCHAR)(recvBuffer.GetBuffer() + recvBuffer.GetSize()), 4096 * 4);
-    LOG_DEBUG("Read %lld bytes from socket for client: %p", len, this);
-    if (len <= 0)
+    auto readResult = context.Read((PUCHAR)(recvBuffer.GetBuffer() + recvBuffer.GetSize()), 4096 * 4);
+    if (!readResult || readResult.Value() <= 0)
     {
-        LOG_DEBUG("Failed to read data from socket for client: %p, bytes read: %lld", this, len);
+        LOG_DEBUG("Failed to read data from socket for client: %p", this);
         Close();
         return false;
     }
+    INT64 len = readResult.Value();
     LOG_DEBUG("Received %lld bytes from socket for client: %p", len, this);
     recvBuffer.AppendSize(len);
 
@@ -750,7 +750,8 @@ SSIZE TLSClient::Read(PVOID buffer, UINT32 bufferLength)
 {
     if (!secure)
     {
-        return context.Read(buffer, bufferLength);
+        auto readResult = context.Read(buffer, bufferLength);
+        return readResult ? readResult.Value() : -1;
     }
 
     if (stateIndex < 6)

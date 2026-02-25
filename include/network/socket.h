@@ -2,13 +2,38 @@
 
 #include "core.h"
 
-enum SocketError : UINT32
+struct SocketError
 {
-	SOCKET_ERROR_CREATE_FAILED  = 1,
-	SOCKET_ERROR_BIND_FAILED    = 2,
-	SOCKET_ERROR_CONNECT_FAILED = 3,
-	SOCKET_ERROR_SEND_FAILED    = 4,
-	SOCKET_ERROR_CLOSE_FAILED   = 5
+	enum Kind : UINT32
+	{
+		// Socket creation (constructor)
+		CreateFailed_Open         = 1,  // ZwCreateFile / socket() failed
+
+		// Bind
+		BindFailed_EventCreate    = 2,  // ZwCreateEvent failed (Windows only)
+		BindFailed_Bind           = 3,  // AFD_BIND / bind() syscall failed
+
+		// Open / Connect
+		OpenFailed_HandleInvalid  = 4,  // socket was never created successfully
+		OpenFailed_EventCreate    = 5,  // ZwCreateEvent failed (Windows only)
+		OpenFailed_Connect        = 6,  // AFD_CONNECT / connect() syscall failed
+
+		// Close
+		CloseFailed_Close         = 7,  // ZwClose / close() failed
+
+		// Read
+		ReadFailed_HandleInvalid  = 8,  // socket handle invalid
+		ReadFailed_EventCreate    = 9,  // ZwCreateEvent failed (Windows only)
+		ReadFailed_Timeout        = 10, // receive timed out
+		ReadFailed_Recv           = 11, // AFD_RECV / recv() syscall failed
+
+		// Write
+		WriteFailed_HandleInvalid = 12, // socket handle invalid
+		WriteFailed_EventCreate   = 13, // ZwCreateEvent failed (Windows only)
+		WriteFailed_Timeout       = 14, // send timed out
+		WriteFailed_Send          = 15, // AFD_SEND / send() syscall failed
+	} kind;
+	UINT32 nativeError; // NTSTATUS on Windows; negated errno on POSIX; 0 if unavailable
 };
 
 /* Socket address families */
@@ -132,7 +157,7 @@ private:
 	IPAddress ip;
 	UINT16 port;
 	PVOID m_socket;
-	[[nodiscard]] BOOL Bind(SockAddr &SocketAddress, INT32 ShareType);
+	[[nodiscard]] Result<void, SocketError> Bind(SockAddr &SocketAddress, INT32 ShareType);
 
 public:
 	VOID *operator new(USIZE) = delete;
@@ -170,6 +195,6 @@ public:
 	SSIZE GetFd() const { return (SSIZE)m_socket; }
 	[[nodiscard]] Result<void, SocketError> Open();
 	[[nodiscard]] Result<void, SocketError> Close();
-	[[nodiscard]] SSIZE Read(PVOID buffer, UINT32 bufferLength);
+	[[nodiscard]] Result<SSIZE, SocketError> Read(PVOID buffer, UINT32 bufferLength);
 	[[nodiscard]] Result<UINT32, SocketError> Write(PCVOID buffer, UINT32 bufferLength);
 };

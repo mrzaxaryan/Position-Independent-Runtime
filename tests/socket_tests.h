@@ -13,6 +13,7 @@ class SocketTests
 private:
 // Test server IP address: 1.1.1.1 (one.one.one.one)
 #define TEST_SERVER_IP 0x01010101
+
 	// Test 1: Socket creation
 	static BOOL TestSocketCreation()
 	{
@@ -32,9 +33,11 @@ private:
 
 		Socket sock(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
 
-		if (!sock.Open())
+		auto openResult = sock.Open();
+		if (!openResult)
 		{
-			LOG_ERROR("Socket connection failed");
+			LOG_ERROR("Socket connection failed (kind=%u nativeError=0x%08X)",
+			          (UINT32)openResult.Error().kind, openResult.Error().nativeError);
 			(void)sock.Close();
 			return false;
 		}
@@ -57,7 +60,6 @@ private:
 			return false;
 		}
 
-		// Send HTTP GET request
 		auto request = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n"_embed;
 		auto writeResult = sock.Write((PCVOID)(PCCHAR)request, request.Length());
 
@@ -69,14 +71,15 @@ private:
 			return false;
 		}
 
-		// Receive response
 		CHAR buffer[512];
 		Memory::Zero(buffer, sizeof(buffer));
-		SSIZE bytesRead = sock.Read(buffer, sizeof(buffer) - 1);
+		auto readResult = sock.Read(buffer, sizeof(buffer) - 1);
 
-		if (bytesRead <= 0)
+		if (!readResult || readResult.Value() <= 0)
 		{
-			LOG_ERROR("Failed to receive HTTP response");
+			LOG_ERROR("Failed to receive HTTP response (kind=%u nativeError=0x%08X)",
+			          readResult ? 0u : (UINT32)readResult.Error().kind,
+			          readResult ? 0u : readResult.Error().nativeError);
 			(void)sock.Close();
 			return false;
 		}
@@ -100,7 +103,6 @@ private:
 				return false;
 			}
 
-			// Send minimal HTTP request
 			auto request = "GET / HTTP/1.0\r\n\r\n"_embed;
 			auto writeResult = sock.Write((PCVOID)(PCCHAR)request, request.Length());
 
@@ -111,12 +113,11 @@ private:
 				return false;
 			}
 
-			// Read some response
 			CHAR buffer[128];
 			Memory::Zero(buffer, sizeof(buffer));
-			SSIZE bytesRead = sock.Read(buffer, sizeof(buffer) - 1);
+			auto readResult = sock.Read(buffer, sizeof(buffer) - 1);
 
-			if (bytesRead <= 0)
+			if (!readResult || readResult.Value() <= 0)
 			{
 				LOG_ERROR("Connection %d: failed to receive response", i + 1);
 				(void)sock.Close();
@@ -135,7 +136,6 @@ private:
 	{
 		LOG_INFO("Test: IP Address Conversion");
 
-		// Test IPAddress::FromString with test server address
 		auto ipStr = "1.1.1.1"_embed;
 		IPAddress convertedIp = IPAddress::FromString((PCCHAR)ipStr);
 
@@ -153,7 +153,6 @@ private:
 
 		LOG_INFO("IP conversion successful: %s -> 0x%08X", (PCCHAR)ipStr, convertedIp.ToIPv4());
 
-		// Test invalid IP addresses — diagnostic markers to narrow crash location
 		LOG_INFO("  [D1] Testing invalid IP: 256.1.1.1");
 		auto invalidIp1 = "256.1.1.1"_embed;
 		IPAddress result1 = IPAddress::FromString((PCCHAR)invalidIp1);
@@ -181,7 +180,6 @@ private:
 			return false;
 		}
 
-		// Test IPv6 address parsing
 		LOG_INFO("  [D4] Testing IPv6: 2001:db8::1");
 		auto ipv6Str = "2001:db8::1"_embed;
 		LOG_INFO("  [D5] Calling FromString");
@@ -204,7 +202,6 @@ private:
 	{
 		LOG_INFO("Test: IPv6 Socket Connection (HTTP:80)");
 
-		// Use Cloudflare DNS IPv6 address: 2606:4700:4700::1111
 		auto ipv6Str = "2606:4700:4700::1111"_embed;
 		IPAddress ipv6Address = IPAddress::FromString((PCCHAR)ipv6Str);
 
@@ -220,12 +217,11 @@ private:
 		{
 			LOG_WARNING("IPv6 socket connection failed (IPv6 may not be available in this environment)");
 			(void)sock.Close();
-			return true; // Return true to avoid failing the test suite when IPv6 is unavailable
+			return true; // non-fatal: IPv6 may be unavailable
 		}
 
 		LOG_INFO("IPv6 socket connected successfully to %s:80", (PCCHAR)ipv6Str);
 
-		// Send minimal HTTP request
 		auto request = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n"_embed;
 		auto writeResult = sock.Write((PCVOID)(PCCHAR)request, request.Length());
 
@@ -237,12 +233,11 @@ private:
 			return false;
 		}
 
-		// Receive response
 		CHAR buffer[512];
 		Memory::Zero(buffer, sizeof(buffer));
-		SSIZE bytesRead = sock.Read(buffer, sizeof(buffer) - 1);
+		auto readResult = sock.Read(buffer, sizeof(buffer) - 1);
 
-		if (bytesRead <= 0)
+		if (!readResult || readResult.Value() <= 0)
 		{
 			LOG_ERROR("Failed to receive HTTP response over IPv6");
 			(void)sock.Close();
@@ -253,7 +248,7 @@ private:
 		return true;
 	}
 
-	// Test 7: HTTP GET request to httpbin.org (tests real-world connectivity and DNS resolution)
+	// Test 7: HTTP GET request to httpbin.org
 	static BOOL TestHttpBin()
 	{
 		auto dnsResult = DNS::Resolve("httpbin.org"_embed);
@@ -262,12 +257,14 @@ private:
 			LOG_ERROR("Failed to resolve httpbin.org (error: %u)", dnsResult.Error());
 			return false;
 		}
+
 		Socket sock(dnsResult.Value(), 80);
 		if (!sock.Open())
 		{
 			LOG_ERROR("Failed to open socket to httpbin.org");
 			return false;
 		}
+
 		auto request = "GET /get HTTP/1.1\r\nHost: httpbin.org\r\nConnection: close\r\n\r\n"_embed;
 		auto writeResult = sock.Write((PCVOID)(PCCHAR)request, request.Length());
 		if (!writeResult || writeResult.Value() != request.Length())
@@ -277,22 +274,23 @@ private:
 			(void)sock.Close();
 			return false;
 		}
+
 		CHAR buffer[1024];
 		Memory::Zero(buffer, sizeof(buffer));
-		SSIZE bytesRead = sock.Read(buffer, sizeof(buffer) - 1);
-		if (bytesRead <= 0)
+		auto readResult = sock.Read(buffer, sizeof(buffer) - 1);
+		if (!readResult || readResult.Value() <= 0)
 		{
 			LOG_ERROR("Failed to receive HTTP response from httpbin.org");
 			(void)sock.Close();
 			return false;
 		}
-		LOG_INFO("Received %d bytes from httpbin.org", bytesRead);
+
+		LOG_INFO("Received %d bytes from httpbin.org", readResult.Value());
 		(void)sock.Close();
 		return true;
 	}
 
 public:
-	// Run all socket tests
 	static BOOL RunAll()
 	{
 		BOOL allPassed = true;
@@ -300,13 +298,13 @@ public:
 		LOG_INFO("Running Socket Tests...");
 		LOG_INFO("  Test Server: one.one.one.one (1.1.1.1 / 2606:4700:4700::1111)");
 
-		RunTest(allPassed, EMBED_FUNC(TestSocketCreation), L"Socket creation"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestSocketConnection), L"Socket connection (HTTP:80)"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestHttpRequest), L"HTTP GET request"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestSocketCreation),    L"Socket creation"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestSocketConnection),  L"Socket connection (HTTP:80)"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestHttpRequest),       L"HTTP GET request"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestMultipleConnections), L"Multiple sequential connections"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestIpConversion), L"IP address conversion"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestIPv6Connection), L"IPv6 connection"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestHttpBin), L"HTTP GET request to httpbin.org"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestIpConversion),     L"IP address conversion"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestIPv6Connection),   L"IPv6 connection"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestHttpBin),          L"HTTP GET request to httpbin.org"_embed);
 
 		if (allPassed)
 			LOG_INFO("All Socket tests passed!");

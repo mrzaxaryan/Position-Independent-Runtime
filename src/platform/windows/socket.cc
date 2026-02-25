@@ -5,496 +5,399 @@
 #include "ntdll.h"
 #include "memory.h"
 
-#define IOCTL_AFD_BIND ((0x00000012) << 12 | (0 << 2) | 3)
-#define IOCTL_AFD_CONNECT ((0x00000012) << 12 | (1 << 2) | 3)
-#define IOCTL_AFD_SEND ((0x00000012) << 12 | (7 << 2) | 3)
-#define IOCTL_AFD_RECV ((0x00000012) << 12 | (5 << 2) | 3)
+#define IOCTL_AFD_BIND       ((0x00000012) << 12 | (0  << 2) | 3)
+#define IOCTL_AFD_CONNECT    ((0x00000012) << 12 | (1  << 2) | 3)
+#define IOCTL_AFD_SEND       ((0x00000012) << 12 | (7  << 2) | 3)
+#define IOCTL_AFD_RECV       ((0x00000012) << 12 | (5  << 2) | 3)
 #define IOCTL_AFD_DISCONNECT ((0x00000012) << 12 | (10 << 2) | 3)
 
-#define AFD_SHARE_REUSE 0x1L
-#define AFD_DISCONNECT_SEND 0x01L
-#define AFD_DISCONNECT_RECV 0x02L
-#define AFD_DISCONNECT_ABORT 0x04L
+#define AFD_SHARE_REUSE         0x1L
+#define AFD_DISCONNECT_SEND     0x01L
+#define AFD_DISCONNECT_RECV     0x02L
+#define AFD_DISCONNECT_ABORT    0x04L
 #define AFD_DISCONNECT_DATAGRAM 0x08L
 
-#define OBJ_INHERIT 0x00000002L
-
-#define STATUS_PENDING  ((UINT32)0x00000103L)
-#define STATUS_TIMEOUT  ((UINT32)0x00000102L)
-#define CRYPT_STRING_BASE64 0x00000001
-#define IPPROTO_TCP 6
-#define ERROR_SUCCESS 0L
-#define SOCKET_ERROR (-1)
+#define OBJ_INHERIT    0x00000002L
+#define STATUS_PENDING ((UINT32)0x00000103L)
+#define STATUS_TIMEOUT ((UINT32)0x00000102L)
+#define IPPROTO_TCP    6
 
 typedef struct AfdBindData
 {
-    UINT32 ShareType;
-    SockAddr Address;
+	UINT32  ShareType;
+	SockAddr Address;
 } AfdBindData;
 
 typedef struct AfdBindData6
 {
-    UINT32 ShareType;
-    SockAddr6 Address;
+	UINT32   ShareType;
+	SockAddr6 Address;
 } AfdBindData6;
 
 typedef struct AfdConnectInfo
 {
-    SSIZE UseSAN;
-    SSIZE Root;
-    SSIZE Unknown;
-    SockAddr Address;
+	SSIZE    UseSAN;
+	SSIZE    Root;
+	SSIZE    Unknown;
+	SockAddr Address;
 } AfdConnectInfo;
 
 typedef struct AfdConnectInfo6
 {
-    SSIZE UseSAN;
-    SSIZE Root;
-    SSIZE Unknown;
-    SockAddr6 Address;
+	SSIZE     UseSAN;
+	SSIZE     Root;
+	SSIZE     Unknown;
+	SockAddr6 Address;
 } AfdConnectInfo6;
-
-typedef struct AfdDataBuffer
-{
-    UINT32 DataLength;
-    PUINT8 Data;
-} AfdDataBuffer;
-
-typedef struct AfdSendRecvInfo
-{
-    PVOID BufferArray;
-    UINT32 BufferCount;
-    UINT32 AfdFlags;
-    UINT32 TdiFlags;
-} AfdSendRecvInfo;
 
 typedef struct AfdWsaBuf
 {
-    UINT32 Length;
-    PVOID Buffer;
+	UINT32 Length;
+	PVOID  Buffer;
 } AfdWsaBuf;
+
+typedef struct AfdSendRecvInfo
+{
+	PVOID  BufferArray;
+	UINT32 BufferCount;
+	UINT32 AfdFlags;
+	UINT32 TdiFlags;
+} AfdSendRecvInfo;
 
 typedef struct AfdSocketParams
 {
-    INT32 Reserved;
-    UINT16 EaNameLength;
-    UINT16 EaValueLength;
-    CHAR AfdOperation[16];
-    UINT32 Flags;
-    INT32 GroupId;
-    INT32 AddressFamily;
-    INT32 SocketType;
-    INT32 Protocol;
-    UINT32 ProviderInfoLength;
-    WCHAR ProviderInfo[8];
+	INT32  Reserved;
+	UINT16 EaNameLength;
+	UINT16 EaValueLength;
+	CHAR   AfdOperation[16];
+	UINT32 Flags;
+	INT32  GroupId;
+	INT32  AddressFamily;
+	INT32  SocketType;
+	INT32  Protocol;
+	UINT32 ProviderInfoLength;
+	WCHAR  ProviderInfo[8];
 } AfdSocketParams;
 
-BOOL Socket::Bind(SockAddr &SocketAddress, INT32 ShareType)
+// Wait for a pending AFD IOCTL to complete via the signaled event.
+// On completion, reads IOSB.Status back into Status.
+// Returns STATUS_TIMEOUT if timed out (Status is NOT updated in that case).
+static NTSTATUS AfdWait(PVOID SockEvent, IO_STATUS_BLOCK &IOSB, NTSTATUS &Status, LARGE_INTEGER *Timeout)
 {
-    LOG_DEBUG("Bind(pNTSocket: 0x%p, SocketAddress: 0x%p, ShareType: %d)\n", m_socket, &SocketAddress, ShareType);
+	NTSTATUS waitStatus = NTDLL::ZwWaitForSingleObject(SockEvent, 0, Timeout);
+	if (waitStatus != (NTSTATUS)STATUS_TIMEOUT)
+		Status = IOSB.Status;
+	return waitStatus;
+}
 
-    if (!IsValid())
-    {
-        LOG_ERROR("Socket not initialized\n");
-        return false;
-    }
+Result<void, SocketError> Socket::Bind(SockAddr &SocketAddress, INT32 ShareType)
+{
+	LOG_DEBUG("Bind(handle: 0x%p, family: %d, ShareType: %d)\n", m_socket, SocketAddress.sin_family, ShareType);
 
-    NTSTATUS Status;
-    PVOID SockEvent = nullptr;
-    Status = NTDLL::ZwCreateEvent(&SockEvent,
-                                  EVENT_ALL_ACCESS,
-                                  nullptr,
-                                  SynchronizationEvent,
-                                  false);
+	PVOID SockEvent = nullptr;
+	NTSTATUS Status = NTDLL::ZwCreateEvent(&SockEvent,
+	                                       EVENT_ALL_ACCESS,
+	                                       nullptr,
+	                                       SynchronizationEvent,
+	                                       false);
+	if (!NT_SUCCESS(Status))
+		return Result<void, SocketError>::Err(SocketError{SocketError::BindFailed_EventCreate, (UINT32)Status});
 
-    if (!NT_SUCCESS(Status))
-    {
-        LOG_ERROR("Failed to create event for socket binding: 0x%08X\n", Status);
-        return false;
-    }
-    LOG_DEBUG("Event successfully created for socket binding\n");
+	IO_STATUS_BLOCK IOSB;
+	Memory::Zero(&IOSB, sizeof(IOSB));
 
-    IO_STATUS_BLOCK IOSB;
-    UINT8 OutputBlock[40];
-    Memory::Zero(&OutputBlock, sizeof(OutputBlock));
+	UINT8 OutputBlock[40];
+	Memory::Zero(&OutputBlock, sizeof(OutputBlock));
 
-    if (SocketAddress.sin_family == AF_INET6)
-    {
-        AfdBindData6 BindConfig;
-        Memory::Zero(&BindConfig, sizeof(BindConfig));
-        BindConfig.ShareType = ShareType;
-        BindConfig.Address = (SockAddr6 &)SocketAddress;
+	if (SocketAddress.sin_family == AF_INET6)
+	{
+		AfdBindData6 BindConfig;
+		Memory::Zero(&BindConfig, sizeof(BindConfig));
+		BindConfig.ShareType = ShareType;
+		BindConfig.Address   = (SockAddr6 &)SocketAddress;
 
-        Status = NTDLL::ZwDeviceIoControlFile(m_socket,
-                                              SockEvent,
-                                              nullptr,
-                                              nullptr,
-                                              &IOSB,
-                                              IOCTL_AFD_BIND,
-                                              &BindConfig,
-                                              sizeof(BindConfig),
-                                              &OutputBlock,
-                                              sizeof(OutputBlock));
-    }
-    else
-    {
-        AfdBindData BindConfig;
-        Memory::Zero(&BindConfig, sizeof(BindConfig));
-        BindConfig.ShareType = ShareType;
-        BindConfig.Address = SocketAddress;
+		Status = NTDLL::ZwDeviceIoControlFile(m_socket, SockEvent, nullptr, nullptr, &IOSB,
+		                                      IOCTL_AFD_BIND,
+		                                      &BindConfig, sizeof(BindConfig),
+		                                      &OutputBlock, sizeof(OutputBlock));
+	}
+	else
+	{
+		AfdBindData BindConfig;
+		Memory::Zero(&BindConfig, sizeof(BindConfig));
+		BindConfig.ShareType = ShareType;
+		BindConfig.Address   = SocketAddress;
 
-        Status = NTDLL::ZwDeviceIoControlFile(m_socket,
-                                              SockEvent,
-                                              nullptr,
-                                              nullptr,
-                                              &IOSB,
-                                              IOCTL_AFD_BIND,
-                                              &BindConfig,
-                                              sizeof(BindConfig),
-                                              &OutputBlock,
-                                              sizeof(OutputBlock));
-    }
+		Status = NTDLL::ZwDeviceIoControlFile(m_socket, SockEvent, nullptr, nullptr, &IOSB,
+		                                      IOCTL_AFD_BIND,
+		                                      &BindConfig, sizeof(BindConfig),
+		                                      &OutputBlock, sizeof(OutputBlock));
+	}
 
-    if (Status == STATUS_PENDING)
-    {
-        (void)NTDLL::ZwWaitForSingleObject(SockEvent, 0, nullptr);
-        Status = IOSB.Status;
-    }
+	if (Status == (NTSTATUS)STATUS_PENDING)
+		(void)AfdWait(SockEvent, IOSB, Status, nullptr);
 
-    (void)NTDLL::ZwClose(SockEvent);
-    if (!NT_SUCCESS(Status))
-    {
-        LOG_ERROR("AFD_BIND failed with NTSTATUS: 0x%08X\n", Status);
-    }
-    return NT_SUCCESS(Status);
+	(void)NTDLL::ZwClose(SockEvent);
+
+	if (!NT_SUCCESS(Status))
+		return Result<void, SocketError>::Err(SocketError{SocketError::BindFailed_Bind, (UINT32)Status});
+
+	return Result<void, SocketError>::Ok();
 }
 
 Result<void, SocketError> Socket::Open()
 {
-    LOG_DEBUG("Open(pNTSocket: 0x%p, port: %d)\n", this, port);
+	LOG_DEBUG("Open(handle: 0x%p, port: %d)\n", this, port);
 
-    if (!IsValid())
-    {
-        LOG_ERROR("Socket not initialized\n");
-        return Result<void, SocketError>::Err(SOCKET_ERROR_CONNECT_FAILED);
-    }
+	if (!IsValid())
+		return Result<void, SocketError>::Err(SocketError{SocketError::OpenFailed_HandleInvalid, 0});
 
-    // Prepare bind address using helper
-    union
-    {
-        SockAddr addr4;
-        SockAddr6 addr6;
-    } bindBuffer;
+	// AFD requires an explicit bind to a wildcard local address before connect
+	union
+	{
+		SockAddr  addr4;
+		SockAddr6 addr6;
+	} bindBuffer;
 
-    SocketAddressHelper::PrepareBindAddress(ip.IsIPv6(), 0, &bindBuffer, sizeof(bindBuffer));
-    if (!Bind((SockAddr &)bindBuffer, AFD_SHARE_REUSE))
-    {
-        LOG_ERROR("Failed to bind socket\n");
-        return Result<void, SocketError>::Err(SOCKET_ERROR_BIND_FAILED);
-    }
-    LOG_DEBUG("Socket bound successfully\n");
+	SocketAddressHelper::PrepareBindAddress(ip.IsIPv6(), 0, &bindBuffer, sizeof(bindBuffer));
 
-    PVOID SockEvent = nullptr;
-    NTSTATUS Status = NTDLL::ZwCreateEvent(&SockEvent,
-                                           EVENT_ALL_ACCESS,
-                                           nullptr,
-                                           SynchronizationEvent,
-                                           false);
+	auto bindResult = Bind((SockAddr &)bindBuffer, AFD_SHARE_REUSE);
+	if (!bindResult)
+		return bindResult; // propagates BindFailed_* with its NTSTATUS
 
-    if (!NT_SUCCESS(Status))
-    {
-        LOG_ERROR("Failed to create event\n");
-        return Result<void, SocketError>::Err(SOCKET_ERROR_CONNECT_FAILED);
-    }
-    LOG_DEBUG("Event successfully created for socket connection\n");
+	PVOID SockEvent = nullptr;
+	NTSTATUS Status = NTDLL::ZwCreateEvent(&SockEvent,
+	                                       EVENT_ALL_ACCESS,
+	                                       nullptr,
+	                                       SynchronizationEvent,
+	                                       false);
+	if (!NT_SUCCESS(Status))
+		return Result<void, SocketError>::Err(SocketError{SocketError::OpenFailed_EventCreate, (UINT32)Status});
 
-    IO_STATUS_BLOCK IOSB;
+	IO_STATUS_BLOCK IOSB;
+	Memory::Zero(&IOSB, sizeof(IOSB));
 
-    // Prepare connect address using helper
-    union
-    {
-        SockAddr addr4;
-        SockAddr6 addr6;
-    } addrBuffer;
+	union
+	{
+		SockAddr  addr4;
+		SockAddr6 addr6;
+	} addrBuffer;
 
-    SocketAddressHelper::PrepareAddress(ip, port, &addrBuffer, sizeof(addrBuffer));
+	SocketAddressHelper::PrepareAddress(ip, port, &addrBuffer, sizeof(addrBuffer));
 
-    if (ip.IsIPv6())
-    {
-        AfdConnectInfo6 ConnectInfo;
-        ConnectInfo.UseSAN = 0;
-        ConnectInfo.Root = 0;
-        ConnectInfo.Unknown = 0;
-        ConnectInfo.Address = addrBuffer.addr6;
+	if (ip.IsIPv6())
+	{
+		AfdConnectInfo6 ConnectInfo;
+		Memory::Zero(&ConnectInfo, sizeof(ConnectInfo));
+		ConnectInfo.Address = addrBuffer.addr6;
 
-        Status = NTDLL::ZwDeviceIoControlFile(m_socket,
-                                              SockEvent,
-                                              nullptr,
-                                              nullptr,
-                                              &IOSB,
-                                              IOCTL_AFD_CONNECT,
-                                              &ConnectInfo,
-                                              sizeof(ConnectInfo),
-                                              nullptr,
-                                              0);
-    }
-    else
-    {
-        AfdConnectInfo ConnectInfo;
-        ConnectInfo.UseSAN = 0;
-        ConnectInfo.Root = 0;
-        ConnectInfo.Unknown = 0;
-        ConnectInfo.Address = addrBuffer.addr4;
+		Status = NTDLL::ZwDeviceIoControlFile(m_socket, SockEvent, nullptr, nullptr, &IOSB,
+		                                      IOCTL_AFD_CONNECT,
+		                                      &ConnectInfo, sizeof(ConnectInfo),
+		                                      nullptr, 0);
+	}
+	else
+	{
+		AfdConnectInfo ConnectInfo;
+		Memory::Zero(&ConnectInfo, sizeof(ConnectInfo));
+		ConnectInfo.Address = addrBuffer.addr4;
 
-        Status = NTDLL::ZwDeviceIoControlFile(m_socket,
-                                              SockEvent,
-                                              nullptr,
-                                              nullptr,
-                                              &IOSB,
-                                              IOCTL_AFD_CONNECT,
-                                              &ConnectInfo,
-                                              sizeof(ConnectInfo),
-                                              nullptr,
-                                              0);
-    }
+		Status = NTDLL::ZwDeviceIoControlFile(m_socket, SockEvent, nullptr, nullptr, &IOSB,
+		                                      IOCTL_AFD_CONNECT,
+		                                      &ConnectInfo, sizeof(ConnectInfo),
+		                                      nullptr, 0);
+	}
 
-    if (Status == STATUS_PENDING)
-    {
-        (void)NTDLL::ZwWaitForSingleObject(SockEvent, 0, nullptr);
-        Status = IOSB.Status;
-    }
+	if (Status == (NTSTATUS)STATUS_PENDING)
+		(void)AfdWait(SockEvent, IOSB, Status, nullptr);
 
-    (void)NTDLL::ZwClose(SockEvent);
+	(void)NTDLL::ZwClose(SockEvent);
 
-    if (!NT_SUCCESS(Status))
-    {
-        LOG_DEBUG("AFD_CONNECT failed with NTSTATUS: 0x%08X\n", Status);
-        return Result<void, SocketError>::Err(SOCKET_ERROR_CONNECT_FAILED);
-    }
-    return Result<void, SocketError>::Ok();
+	if (!NT_SUCCESS(Status))
+		return Result<void, SocketError>::Err(SocketError{SocketError::OpenFailed_Connect, (UINT32)Status});
+
+	LOG_DEBUG("Open: connected successfully\n");
+	return Result<void, SocketError>::Ok();
 }
 
 Result<void, SocketError> Socket::Close()
 {
-    LOG_DEBUG("Close(pNTSocket: 0x%p)\n", this);
+	LOG_DEBUG("Close(handle: 0x%p)\n", this);
 
-    if (!IsValid())
-        return Result<void, SocketError>::Ok();
+	NTSTATUS Status = NTDLL::ZwClose(m_socket);
+	m_socket = nullptr;
 
-    NTSTATUS status = NTDLL::ZwClose(m_socket);
-    m_socket = nullptr;
+	if (!NT_SUCCESS(Status))
+		return Result<void, SocketError>::Err(SocketError{SocketError::CloseFailed_Close, (UINT32)Status});
 
-    if (!NT_SUCCESS(status))
-    {
-        LOG_ERROR("ZwClose failed with NTSTATUS: 0x%08X\n", status);
-        return Result<void, SocketError>::Err(SOCKET_ERROR_CLOSE_FAILED);
-    }
-    return Result<void, SocketError>::Ok();
+	return Result<void, SocketError>::Ok();
 }
 
-SSIZE Socket::Read(PVOID buffer, UINT32 bufferSize)
+Result<SSIZE, SocketError> Socket::Read(PVOID buffer, UINT32 bufferSize)
 {
-    LOG_DEBUG("Read(pNTSocket: 0x%p, buffer: 0x%p, bufferSize: %d)\n", this, buffer, bufferSize);
+	LOG_DEBUG("Read(handle: 0x%p, bufferSize: %d)\n", this, bufferSize);
 
-    if (!IsValid())
-    {
-        LOG_ERROR("Socket not initialized\n");
-        return -1;
-    }
+	if (!IsValid())
+		return Result<SSIZE, SocketError>::Err(SocketError{SocketError::ReadFailed_HandleInvalid, 0});
 
-    PVOID SockEvent = nullptr;
-    NTSTATUS Status = NTDLL::ZwCreateEvent(&SockEvent,
-                                           EVENT_ALL_ACCESS,
-                                           nullptr,
-                                           SynchronizationEvent,
-                                           false);
+	PVOID SockEvent = nullptr;
+	NTSTATUS Status = NTDLL::ZwCreateEvent(&SockEvent,
+	                                       EVENT_ALL_ACCESS,
+	                                       nullptr,
+	                                       SynchronizationEvent,
+	                                       false);
+	if (!NT_SUCCESS(Status))
+		return Result<SSIZE, SocketError>::Err(SocketError{SocketError::ReadFailed_EventCreate, (UINT32)Status});
 
-    if (!NT_SUCCESS(Status))
-    {
-        LOG_ERROR("Failed to create event\n");
-        return -1;
-    }
-    LOG_DEBUG("Event successfully created for socket read\n");
+	AfdWsaBuf RecvBuffer;
+	RecvBuffer.Length = bufferSize;
+	RecvBuffer.Buffer = buffer;
 
-    AfdWsaBuf SendRecvBuffer;
-    SendRecvBuffer.Length = bufferSize;
-    SendRecvBuffer.Buffer = buffer;
+	AfdSendRecvInfo RecvInfo;
+	Memory::Zero(&RecvInfo, sizeof(RecvInfo));
+	RecvInfo.BufferArray = &RecvBuffer;
+	RecvInfo.BufferCount = 1;
+	RecvInfo.TdiFlags    = 0x20;
 
-    AfdSendRecvInfo SendRecvInfo;
-    SendRecvInfo.BufferArray = &SendRecvBuffer;
-    SendRecvInfo.BufferCount = 1;
-    SendRecvInfo.AfdFlags = 0;
-    SendRecvInfo.TdiFlags = 0x20;
+	IO_STATUS_BLOCK IOSB;
+	Memory::Zero(&IOSB, sizeof(IOSB));
 
-    IO_STATUS_BLOCK IOSB;
-    Status = NTDLL::ZwDeviceIoControlFile(m_socket,
-                                          SockEvent,
-                                          nullptr,
-                                          nullptr,
-                                          &IOSB,
-                                          IOCTL_AFD_RECV,
-                                          &SendRecvInfo,
-                                          sizeof(SendRecvInfo),
-                                          nullptr,
-                                          0);
+	Status = NTDLL::ZwDeviceIoControlFile(m_socket, SockEvent, nullptr, nullptr, &IOSB,
+	                                      IOCTL_AFD_RECV,
+	                                      &RecvInfo, sizeof(RecvInfo),
+	                                      nullptr, 0);
 
-    if (Status == STATUS_PENDING)
-    {
-        LARGE_INTEGER Timeout;
-        Timeout.QuadPart = 5 * 60 * 1000 * -10000LL;
+	if (Status == (NTSTATUS)STATUS_PENDING)
+	{
+		// 5-minute receive timeout (100-ns units, negative = relative to now)
+		LARGE_INTEGER Timeout;
+		Timeout.QuadPart = 5 * 60 * 1000 * -10000LL;
 
-        NTSTATUS waitStatus = NTDLL::ZwWaitForSingleObject(SockEvent, 0, &Timeout);
+		if (AfdWait(SockEvent, IOSB, Status, &Timeout) == (NTSTATUS)STATUS_TIMEOUT)
+		{
+			(void)NTDLL::ZwClose(SockEvent);
+			return Result<SSIZE, SocketError>::Err(SocketError{SocketError::ReadFailed_Timeout, (UINT32)STATUS_TIMEOUT});
+		}
+	}
 
-        if (waitStatus == STATUS_TIMEOUT)
-        {
-            (void)NTDLL::ZwClose(SockEvent);
-            return -1;
-        }
-        Status = IOSB.Status;
-    }
+	(void)NTDLL::ZwClose(SockEvent);
 
-    (void)NTDLL::ZwClose(SockEvent);
+	if (!NT_SUCCESS(Status))
+		return Result<SSIZE, SocketError>::Err(SocketError{SocketError::ReadFailed_Recv, (UINT32)Status});
 
-    if (!NT_SUCCESS(Status))
-    {
-        LOG_ERROR("AFD_RECV failed with NTSTATUS: 0x%08X\n", Status);
-        return -1;
-    }
-    return (SSIZE)IOSB.Information;
+	return Result<SSIZE, SocketError>::Ok((SSIZE)IOSB.Information);
 }
 
 Result<UINT32, SocketError> Socket::Write(PCVOID buffer, UINT32 bufferLength)
 {
-    LOG_DEBUG("Write(pNTSocket: 0x%p, pData: 0x%p, length: %d)\n", this, buffer, bufferLength);
+	LOG_DEBUG("Write(handle: 0x%p, length: %d)\n", this, bufferLength);
 
-    if (!IsValid())
-    {
-        LOG_ERROR("Socket not initialized\n");
-        return Result<UINT32, SocketError>::Err(SOCKET_ERROR_SEND_FAILED);
-    }
+	if (!IsValid())
+		return Result<UINT32, SocketError>::Err(SocketError{SocketError::WriteFailed_HandleInvalid, 0});
 
-    PVOID SockEvent = nullptr;
-    NTSTATUS Status = NTDLL::ZwCreateEvent(&SockEvent,
-                                           EVENT_ALL_ACCESS,
-                                           nullptr,
-                                           SynchronizationEvent,
-                                           false);
+	PVOID SockEvent = nullptr;
+	NTSTATUS Status = NTDLL::ZwCreateEvent(&SockEvent,
+	                                       EVENT_ALL_ACCESS,
+	                                       nullptr,
+	                                       SynchronizationEvent,
+	                                       false);
+	if (!NT_SUCCESS(Status))
+		return Result<UINT32, SocketError>::Err(SocketError{SocketError::WriteFailed_EventCreate, (UINT32)Status});
 
-    if (!NT_SUCCESS(Status))
-    {
-        LOG_ERROR("Failed to create event for socket write: 0x%08X\n", Status);
-        return Result<UINT32, SocketError>::Err(SOCKET_ERROR_SEND_FAILED);
-    }
-    LOG_DEBUG("Event successfully created for socket write\n");
+	AfdSendRecvInfo SendInfo;
+	Memory::Zero(&SendInfo, sizeof(SendInfo));
+	SendInfo.BufferCount = 1;
 
-    AfdSendRecvInfo SendRecvInfo;
-    Memory::Zero(&SendRecvInfo, sizeof(SendRecvInfo));
-    SendRecvInfo.BufferCount = 1;
-    SendRecvInfo.AfdFlags = 0;
-    SendRecvInfo.TdiFlags = 0;
+	AfdWsaBuf      SendBuffer;
+	IO_STATUS_BLOCK IOSB;
+	UINT32          totalSent = 0;
 
-    IO_STATUS_BLOCK IOSB;
-    AfdWsaBuf SendRecvBuffer;
-    UINT32 totalSent = 0;
+	do
+	{
+		Memory::Zero(&IOSB, sizeof(IOSB));
+		SendBuffer.Buffer    = (PVOID)((PCHAR)buffer + totalSent);
+		SendBuffer.Length    = bufferLength - totalSent;
+		SendInfo.BufferArray = &SendBuffer;
 
-    do
-    {
-        SendRecvBuffer.Buffer = (PVOID)((PCHAR)buffer + totalSent);
-        SendRecvBuffer.Length = bufferLength - totalSent;
-        SendRecvInfo.BufferArray = &SendRecvBuffer;
+		Status = NTDLL::ZwDeviceIoControlFile(m_socket, SockEvent, nullptr, nullptr, &IOSB,
+		                                      IOCTL_AFD_SEND,
+		                                      &SendInfo, sizeof(SendInfo),
+		                                      nullptr, 0);
 
-        Status = NTDLL::ZwDeviceIoControlFile(m_socket,
-                                              SockEvent,
-                                              nullptr,
-                                              nullptr,
-                                              &IOSB,
-                                              IOCTL_AFD_SEND,
-                                              &SendRecvInfo,
-                                              sizeof(SendRecvInfo),
-                                              nullptr,
-                                              0);
+		if (Status == (NTSTATUS)STATUS_PENDING)
+		{
+			// 1-minute send timeout
+			LARGE_INTEGER Timeout;
+			Timeout.QuadPart = 1 * 60 * 1000 * -10000LL;
 
-        if (Status == STATUS_PENDING)
-        {
-            LARGE_INTEGER Timeout;
-            Timeout.QuadPart = 1 * 60 * 1000 * -10000LL;
-            NTSTATUS waitStatus = NTDLL::ZwWaitForSingleObject(SockEvent, 0, &Timeout);
-            if (waitStatus == STATUS_TIMEOUT)
-            {
-                (void)NTDLL::ZwClose(SockEvent);
-                LOG_ERROR("Timeout waiting for socket write\n");
-                return Result<UINT32, SocketError>::Err(SOCKET_ERROR_SEND_FAILED);
-            }
-            Status = IOSB.Status;
-        }
+			if (AfdWait(SockEvent, IOSB, Status, &Timeout) == (NTSTATUS)STATUS_TIMEOUT)
+			{
+				(void)NTDLL::ZwClose(SockEvent);
+				return Result<UINT32, SocketError>::Err(SocketError{SocketError::WriteFailed_Timeout, (UINT32)STATUS_TIMEOUT});
+			}
+		}
 
-        if (!NT_SUCCESS(Status))
-        {
-            (void)NTDLL::ZwClose(SockEvent);
-            LOG_ERROR("Failed to write to socket: 0x%08X\n", Status);
-            return Result<UINT32, SocketError>::Err(SOCKET_ERROR_SEND_FAILED);
-        }
+		if (!NT_SUCCESS(Status))
+		{
+			(void)NTDLL::ZwClose(SockEvent);
+			return Result<UINT32, SocketError>::Err(SocketError{SocketError::WriteFailed_Send, (UINT32)Status});
+		}
 
-        totalSent += (UINT32)IOSB.Information;
-    } while (totalSent < bufferLength);
+		totalSent += (UINT32)IOSB.Information;
+	} while (totalSent < bufferLength);
 
-    (void)NTDLL::ZwClose(SockEvent);
-    LOG_DEBUG("Successfully wrote %d bytes to socket\n", totalSent);
-    return Result<UINT32, SocketError>::Ok(totalSent);
+	(void)NTDLL::ZwClose(SockEvent);
+	LOG_DEBUG("Write: sent %d bytes\n", totalSent);
+	return Result<UINT32, SocketError>::Ok(totalSent);
 }
 
 Socket::Socket(const IPAddress &ipAddress, UINT16 port) : ip(ipAddress), port(port), m_socket(nullptr)
 {
-    LOG_DEBUG("Create(pNTSocket: 0x%p)\n", this);
+	LOG_DEBUG("Create(this: 0x%p)\n", this);
 
-    NTSTATUS Status = 0;
+	AfdSocketParams EaBuffer;
+	Memory::Zero(&EaBuffer, sizeof(EaBuffer));
+	EaBuffer.EaNameLength  = 0x0F1E;
+	EaBuffer.EaValueLength = 0x001E;
 
-    INT32 AddressFamily = SocketAddressHelper::GetAddressFamily(ip);
-    INT32 SocketType = SOCK_STREAM;
-    INT32 Protocol = IPPROTO_TCP;
+	auto afdOpSource = "AfdOpenPacketXX"_embed;
+	Memory::Copy(EaBuffer.AfdOperation, afdOpSource, 16);
+	EaBuffer.AfdOperation[15] = '\0';
 
-    AfdSocketParams EaBuffer;
-    Memory::Zero(&(EaBuffer), sizeof(EaBuffer));
-    EaBuffer.EaNameLength = 0x0F1E;
-    EaBuffer.EaValueLength = 0x001E;
+	EaBuffer.AddressFamily = SocketAddressHelper::GetAddressFamily(ip);
+	EaBuffer.SocketType    = SOCK_STREAM;
+	EaBuffer.Protocol      = IPPROTO_TCP;
 
-    auto afdOpSource = "AfdOpenPacketXX"_embed;
-    Memory::Copy(EaBuffer.AfdOperation, afdOpSource, 16);
-    EaBuffer.AfdOperation[15] = '\0';
+	UNICODE_STRING AfdName;
+	auto afdNameSource  = L"\\Device\\Afd\\Endpoint"_embed;
+	AfdName.Buffer      = (PWCHAR)(PCWCHAR)afdNameSource;
+	AfdName.Length      = afdNameSource.Length() * sizeof(WCHAR);
+	AfdName.MaximumLength = afdNameSource.Length() * sizeof(WCHAR);
 
-    EaBuffer.AddressFamily = AddressFamily;
-    EaBuffer.SocketType = SocketType;
-    EaBuffer.Protocol = Protocol;
+	OBJECT_ATTRIBUTES   Object;
+	IO_STATUS_BLOCK     IOSB;
+	Memory::Zero(&IOSB, sizeof(IOSB));
+	InitializeObjectAttributes(&Object, &AfdName, OBJ_CASE_INSENSITIVE | OBJ_INHERIT, 0, 0);
 
-    UNICODE_STRING AfdName;
-    auto afdNameSource = L"\\Device\\Afd\\Endpoint"_embed;
-    AfdName.Buffer = (PWCHAR)(PCWCHAR)afdNameSource;
-    AfdName.Length = afdNameSource.Length() * sizeof(WCHAR);
-    AfdName.MaximumLength = afdNameSource.Length() * sizeof(WCHAR);
-
-    OBJECT_ATTRIBUTES Object;
-    IO_STATUS_BLOCK IOSB;
-    InitializeObjectAttributes(&Object,
-                               &AfdName,
-                               OBJ_CASE_INSENSITIVE | OBJ_INHERIT,
-                               0,
-                               0);
-
-    Status = NTDLL::ZwCreateFile(&m_socket,
-                                 GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE,
-                                 &Object,
-                                 &IOSB,
-                                 nullptr,
-                                 0,
-                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                 FILE_OPEN_IF,
-                                 0,
-                                 &(EaBuffer),
-                                 sizeof(EaBuffer));
-
-    if (!NT_SUCCESS(Status))
-    {
-        LOG_ERROR("Failed to create socket. Status: 0x%08X\n", Status);
-    }
-    LOG_DEBUG("Socket created successfully: 0x%p\n", m_socket);
+	NTSTATUS Status = NTDLL::ZwCreateFile(&m_socket,
+	                                      GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE,
+	                                      &Object,
+	                                      &IOSB,
+	                                      nullptr,
+	                                      0,
+	                                      FILE_SHARE_READ | FILE_SHARE_WRITE,
+	                                      FILE_OPEN_IF,
+	                                      0,
+	                                      &EaBuffer,
+	                                      sizeof(EaBuffer));
+	if (!NT_SUCCESS(Status))
+	{
+		// Caller will detect failure via IsValid() → Open() returns OpenFailed_HandleInvalid
+		LOG_DEBUG("Create: ZwCreateFile failed: 0x%08X\n", Status);
+		m_socket = nullptr;
+	}
+	else
+	{
+		LOG_DEBUG("Create: handle: 0x%p\n", m_socket);
+	}
 }
