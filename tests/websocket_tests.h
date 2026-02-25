@@ -51,7 +51,7 @@ private:
 		}
 
 		LOG_INFO("WebSocket connection established successfully");
-		wsClient.Close();
+		(void)wsClient.Close();
 		return TRUE;
 	}
 
@@ -71,7 +71,7 @@ private:
 		}
 
 		LOG_INFO("Secure WebSocket connection established successfully");
-		wsClient.Close();
+		(void)wsClient.Close();
 		return TRUE;
 	}
 
@@ -103,7 +103,7 @@ private:
 		if (!writeResult)
 		{
 			LOG_ERROR("Failed to send message (error: %u)", writeResult.Error());
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -113,7 +113,7 @@ private:
 		if (!readResult)
 		{
 			LOG_ERROR("Failed to receive echo response (error: %u)", readResult.Error());
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -122,7 +122,7 @@ private:
 		if (response.opcode != OPCODE_TEXT)
 		{
 			LOG_ERROR("Unexpected opcode: expected %d (TEXT), got %d", OPCODE_TEXT, response.opcode);
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -130,7 +130,7 @@ private:
 		BOOL matches = (response.length == testMessage.Length()) &&
 					   (Memory::Compare(response.data, (PCVOID)(PCCHAR)testMessage, testMessage.Length()) == 0);
 
-		wsClient.Close();
+		(void)wsClient.Close();
 
 		if (!matches)
 		{
@@ -177,7 +177,7 @@ private:
 		if (!writeResult)
 		{
 			LOG_ERROR("Failed to send binary message (error: %u)", writeResult.Error());
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -189,7 +189,7 @@ private:
 		if (!readResult)
 		{
 			LOG_ERROR("Failed to receive echo response (error: %u)", readResult.Error());
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -198,7 +198,7 @@ private:
 		if (response.opcode != OPCODE_BINARY)
 		{
 			LOG_ERROR("Unexpected opcode: expected %d (BINARY), got %d", OPCODE_BINARY, response.opcode);
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -208,7 +208,7 @@ private:
 		BOOL matches = (response.length == dataLength) &&
 					   (Memory::Compare(response.data, (PCVOID)binaryData, dataLength) == 0);
 
-		wsClient.Close();
+		(void)wsClient.Close();
 
 		if (!matches)
 		{
@@ -248,7 +248,7 @@ private:
 		if (!write1)
 		{
 			LOG_ERROR("Failed to send message 1");
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -256,7 +256,7 @@ private:
 		if (!read1 || read1.Value().length != msg1.Length())
 		{
 			LOG_ERROR("Failed to receive echo for message 1");
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -265,7 +265,7 @@ private:
 		if (!write2)
 		{
 			LOG_ERROR("Failed to send message 2");
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -273,7 +273,7 @@ private:
 		if (!read2 || read2.Value().length != msg2.Length())
 		{
 			LOG_ERROR("Failed to receive echo for message 2");
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -282,7 +282,7 @@ private:
 		if (!write3)
 		{
 			LOG_ERROR("Failed to send message 3");
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -290,12 +290,12 @@ private:
 		if (!read3 || read3.Value().length != msg3.Length())
 		{
 			LOG_ERROR("Failed to receive echo for message 3");
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
 		LOG_INFO("Multiple message test passed");
-		wsClient.Close();
+		(void)wsClient.Close();
 		return TRUE;
 	}
 
@@ -323,7 +323,7 @@ private:
 		if (!largeMessage)
 		{
 			LOG_ERROR("Failed to allocate memory for large message");
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -341,7 +341,7 @@ private:
 		{
 			LOG_ERROR("Failed to send large message (error: %u)", writeResult.Error());
 			delete[] largeMessage;
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -354,7 +354,7 @@ private:
 		{
 			LOG_ERROR("Failed to receive large echo response (error: %u)", readResult.Error());
 			delete[] largeMessage;
-			wsClient.Close();
+			(void)wsClient.Close();
 			return FALSE;
 		}
 
@@ -367,7 +367,7 @@ private:
 					   (Memory::Compare(response.data, (PCVOID)largeMessage, largeMessageSize) == 0);
 
 		delete[] largeMessage;
-		wsClient.Close();
+		(void)wsClient.Close();
 
 		if (!matches)
 		{

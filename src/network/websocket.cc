@@ -64,14 +64,14 @@ Result<void, WebSocketError> WebSocketClient::Open()
 		!writeStr(hostName) ||
 		!writeStr("\r\n\r\n"_embed))
 	{
-		Close();
+		(void)Close();
 		return Result<void, WebSocketError>::Err(WS_ERROR_WRITE_FAILED);
 	}
 
 	INT64 contentLength = -1;
 	if (!HttpClient::ReadResponseHeaders(tlsContext, 101, contentLength))
 	{
-		Close();
+		(void)Close();
 		return Result<void, WebSocketError>::Err(WS_ERROR_HANDSHAKE_FAILED);
 	}
 

@@ -99,7 +99,7 @@ public:
 	VOID *operator new(USIZE) = delete;
 	VOID operator delete(VOID *) = delete;
 	WebSocketClient(PCCHAR url);
-	~WebSocketClient() { if (IsValid()) Close(); }
+	~WebSocketClient() { if (IsValid()) (void)Close(); }
 
 	WebSocketClient(const WebSocketClient &) = delete;
 	WebSocketClient &operator=(const WebSocketClient &) = delete;
