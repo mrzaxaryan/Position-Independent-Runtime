@@ -233,20 +233,6 @@ BOOL HttpClient::ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&path)[2048], UIN
 
         Memory::Copy(host, pHostStart, hostLen);
         host[hostLen] = '\0';
-
-        if (*pathStart == '\0')
-        {
-            path[0] = '/';
-            path[1] = '\0';
-        }
-        else
-        {
-            USIZE pLen = (USIZE)String::Length(pathStart);
-            if (pLen > 2047)
-                return FALSE;
-            Memory::Copy(path, pathStart, pLen);
-            path[pLen] = '\0';
-        }
     }
     else
     {
@@ -272,20 +258,21 @@ BOOL HttpClient::ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&path)[2048], UIN
         if (pnum == 0 || pnum > 65535)
             return FALSE;
         port = (UINT16)pnum;
+    }
 
-        if (*pathStart == '\0')
-        {
-            path[0] = '/';
-            path[1] = '\0';
-        }
-        else
-        {
-            USIZE pLen = (USIZE)String::Length(pathStart);
-            if (pLen > 2047)
-                return FALSE;
-            Memory::Copy(path, pathStart, pLen);
-            path[pLen] = '\0';
-        }
+    // Extract path (common to both branches)
+    if (*pathStart == '\0')
+    {
+        path[0] = '/';
+        path[1] = '\0';
+    }
+    else
+    {
+        USIZE pLen = (USIZE)String::Length(pathStart);
+        if (pLen > 2047)
+            return FALSE;
+        Memory::Copy(path, pathStart, pLen);
+        path[pLen] = '\0';
     }
 
     return TRUE;

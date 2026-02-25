@@ -193,6 +193,13 @@ static BOOL ParseDnsResponse(const UINT8 *buffer, INT32 len, IPAddress &ipAddres
         return FALSE;
     }
 
+    UINT8 rcode = flags & 0x000F;
+    if (rcode != 0)
+    {
+        LOG_WARNING("ParseDnsResponse: server returned error (rcode=%d)", rcode);
+        return FALSE;
+    }
+
     UINT16 qCount = ReadU16BE(buffer, 4);
     UINT16 ansCount = ReadU16BE(buffer, 6);
 
@@ -243,6 +250,8 @@ static INT32 FormatDnsName(UINT8 *dns, INT32 dnsSize, PCCHAR host)
     {
         if (host[i] == '.')
         {
+            if (i == t)
+                return -1; // empty label (leading dot or consecutive dots)
             if (written + 1 + (INT32)(i - t) >= dnsSize)
                 return -1;
             dns[written++] = (UINT8)(i - t);
@@ -253,6 +262,8 @@ static INT32 FormatDnsName(UINT8 *dns, INT32 dnsSize, PCCHAR host)
     }
     if (hostLen > 0 && host[hostLen - 1] != '.')
     {
+        if (i == t)
+            return -1; // trailing empty segment (shouldn't happen, but guard)
         if (written + 1 + (INT32)(i - t) >= dnsSize)
             return -1;
         dns[written++] = (UINT8)(i - t);
@@ -378,19 +389,15 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR
 IPAddress DNS::CloudflareResolve(PCCHAR host, RequestType dnstype)
 {
     auto serverName = "one.one.one.one"_embed;
-    IPAddress ip = ResolveOverHttp(host, IPAddress::FromIPv4(0x01010101), (PCCHAR)serverName, dnstype);
-    if (!ip.IsValid())
-        ip = ResolveOverHttp(host, IPAddress::FromIPv4(0x01000001), (PCCHAR)serverName, dnstype);
-    return ip;
+    IPAddress ips[] = { IPAddress::FromIPv4(0x01010101), IPAddress::FromIPv4(0x01000001) };
+    return ResolveWithFallback(host, ips, (PCCHAR)serverName, dnstype);
 }
 
 IPAddress DNS::GoogleResolve(PCCHAR host, RequestType dnstype)
 {
     auto serverName = "dns.google"_embed;
-    IPAddress ip = ResolveOverHttp(host, IPAddress::FromIPv4(0x08080808), (PCCHAR)serverName, dnstype);
-    if (!ip.IsValid())
-        ip = ResolveOverHttp(host, IPAddress::FromIPv4(0x04040808), (PCCHAR)serverName, dnstype);
-    return ip;
+    IPAddress ips[] = { IPAddress::FromIPv4(0x08080808), IPAddress::FromIPv4(0x04040808) };
+    return ResolveWithFallback(host, ips, (PCCHAR)serverName, dnstype);
 }
 
 IPAddress DNS::Resolve(PCCHAR host, RequestType dnstype)
@@ -398,21 +405,15 @@ IPAddress DNS::Resolve(PCCHAR host, RequestType dnstype)
     LOG_DEBUG("Resolve(host: %s) called", host);
 
     IPAddress ip = CloudflareResolve(host, dnstype);
-    if (ip.IsValid())
-        return ip;
+    if (!ip.IsValid())
+        ip = GoogleResolve(host, dnstype);
 
-    ip = GoogleResolve(host, dnstype);
-    if (ip.IsValid())
-        return ip;
-
-    if (dnstype == AAAA)
+    if (!ip.IsValid() && dnstype == AAAA)
     {
         LOG_DEBUG("IPv6 resolution failed, falling back to IPv4 (A) for %s", host);
         ip = CloudflareResolve(host, A);
-        if (ip.IsValid())
-            return ip;
-
-        return GoogleResolve(host, A);
+        if (!ip.IsValid())
+            ip = GoogleResolve(host, A);
     }
 
     return ip;

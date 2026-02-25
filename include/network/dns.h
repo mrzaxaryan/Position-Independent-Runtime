@@ -23,7 +23,19 @@ class DNS
 {
 private:
     // Function to resolve a hostname using HTTP POST (defaults to IPv6/AAAA)
-    static IPAddress ResolveOverHttp(PCCHAR host, const IPAddress& DNSServerIp, PCCHAR DNSServerName, RequestType dnstype = AAAA);
+    static IPAddress ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR DNSServerName, RequestType dnstype = AAAA);
+    // Try each DNS server IP in order until one succeeds
+    template <UINT32 N>
+    static IPAddress ResolveWithFallback(PCCHAR host, const IPAddress (&ips)[N], PCCHAR serverName, RequestType dnstype)
+    {
+        for (UINT32 i = 0; i < N; i++)
+        {
+            IPAddress ip = ResolveOverHttp(host, ips[i], serverName, dnstype);
+            if (ip.IsValid())
+                return ip;
+        }
+        return IPAddress::Invalid();
+    }
 
 public:
     // Function to resolve a hostname to an IP address (tries IPv6 first, then IPv4)

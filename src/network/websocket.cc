@@ -40,36 +40,31 @@ BOOL WebSocketClient::Open()
     }
 
     // Generate random 16-byte WebSocket key (RFC 6455: 16 random bytes, base64-encoded)
-    CHAR key[16];
+    UINT32 key[4];
     Random random;
-    for (INT32 i = 0; i < 16; i++)
-        key[i] = (CHAR)(random.Get() & 0xFF);
+    for (INT32 i = 0; i < 4; i++)
+        key[i] = (UINT32)random.Get();
 
     CHAR secureKey[25]; // Base64 of 16 bytes = 24 chars + null
-    Base64::Encode(key, 16, secureKey);
+    Base64::Encode((PCHAR)key, 16, secureKey);
 
-    // Build the entire HTTP upgrade request in a single buffer to minimize TLS records
-    auto appendStr = [](CHAR *buf, USIZE pos, PCCHAR s) -> USIZE
+    // Write the HTTP upgrade request directly to the TLS transport
+    auto writeStr = [&](PCCHAR s) -> BOOL
     {
         UINT32 len = String::Length(s);
-        Memory::Copy(buf + pos, s, len);
-        return pos + len;
+        return tlsContext.Write(s, len) == len;
     };
 
-    CHAR request[3072];
-    USIZE pos = 0;
-    pos = appendStr(request, pos, "GET "_embed);
-    pos = appendStr(request, pos, path);
-    pos = appendStr(request, pos, " HTTP/1.1\r\nHost: "_embed);
-    pos = appendStr(request, pos, hostName);
-    pos = appendStr(request, pos, "\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: "_embed);
-    pos = appendStr(request, pos, secureKey);
-    pos = appendStr(request, pos, "\r\nSec-WebSocket-Version: 13\r\nOrigin: "_embed);
-    pos = appendStr(request, pos, isSecure ? "https://"_embed : "http://"_embed);
-    pos = appendStr(request, pos, hostName);
-    pos = appendStr(request, pos, "\r\n\r\n"_embed);
-
-    if (tlsContext.Write(request, (UINT32)pos) != pos)
+    if (!writeStr("GET "_embed) ||
+        !writeStr(path) ||
+        !writeStr(" HTTP/1.1\r\nHost: "_embed) ||
+        !writeStr(hostName) ||
+        !writeStr("\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: "_embed) ||
+        !writeStr(secureKey) ||
+        !writeStr("\r\nSec-WebSocket-Version: 13\r\nOrigin: "_embed) ||
+        !writeStr(isSecure ? "https://"_embed : "http://"_embed) ||
+        !writeStr(hostName) ||
+        !writeStr("\r\n\r\n"_embed))
     {
         Close();
         return FALSE;
@@ -105,6 +100,9 @@ BOOL WebSocketClient::Close()
 
 UINT32 WebSocketClient::Write(PCVOID buffer, UINT32 bufferLength, WebSocketOpcode opcode)
 {
+    if (!isConnected && opcode != OPCODE_CLOSE)
+        return 0;
+
     // Frame layout: [opcode+FIN][length+MASK][ext length?][mask key][payload]
     // Header sizes: <=125 -> 6, 126..65535 -> 8, >65535 -> 14
     UINT32 headerLength;
