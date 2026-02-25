@@ -117,7 +117,6 @@ set(CPPPIC_BASE_FLAGS
     -fno-rtti
     -fno-builtin
     -fno-stack-check
-    -fno-strict-aliasing
     -fno-jump-tables
     -ffunction-sections
     -fdata-sections
@@ -126,9 +125,9 @@ set(CPPPIC_BASE_FLAGS
 
 # Architecture-specific
 if(CPPPIC_ARCH MATCHES "^(i386|x86_64)$")
-    list(APPEND CPPPIC_BASE_FLAGS -mno-stack-arg-probe)
+    list(APPEND CPPPIC_BASE_FLAGS -mno-stack-arg-probe -mno-implicit-float)
 else()
-    list(APPEND CPPPIC_BASE_FLAGS)
+    list(APPEND CPPPIC_BASE_FLAGS -mno-implicit-float)
 endif()
 
 # Build-type-specific
