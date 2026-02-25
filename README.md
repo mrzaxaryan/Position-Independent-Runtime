@@ -489,7 +489,6 @@ Achieving true position-independence requires specific compiler flags that preve
 -fno-builtin          # Disable compiler built-in functions
 -ffunction-sections   # Each function in own section (enables dead code elimination)
 -fdata-sections       # Each data item in own section (enables garbage collection)
--fshort-wchar         # 2-byte wchar_t (Windows ABI compatibility)
 ```
 
 The `-fno-jump-tables` flag is particularly critical—without it, `switch` statements generate jump tables stored in `.rdata`, breaking position-independence.

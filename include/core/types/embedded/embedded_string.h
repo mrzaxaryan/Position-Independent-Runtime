@@ -9,8 +9,8 @@
  * - Position-independent code (PIC)
  * - Environments where .rdata is not accessible
  *
- * Characters are packed into UINT64 words (8 chars or 4 wchars per word) at compile
- * time and written as immediate values, reducing instruction count by up to 8x
+ * Characters are packed into UINT64 words (sizeof(UINT64)/sizeof(TChar) chars per
+ * word) at compile time and written as immediate values, reducing instruction count
  * compared to character-by-character writes.
  *
  * @note Uses C++23 user-defined string literal operator for ergonomic syntax.
@@ -56,7 +56,7 @@ concept TCHAR = __is_same_as(TChar, CHAR) || __is_same_as(TChar, WCHAR);
  * @par Memory Layout:
  * Characters are packed into UINT64 words:
  * - CHAR: 8 characters per word
- * - WCHAR: 4 characters per word (with -fshort-wchar)
+ * - WCHAR: sizeof(UINT64)/sizeof(WCHAR) characters per word
  *
  * @par Assembly Output Example (x86_64):
  * @code
@@ -100,7 +100,8 @@ private:
         {
             USIZE idx = base + i;
             TChar c = (idx < N) ? chars[idx] : TChar(0);
-            result |= static_cast<UINT64>(static_cast<UINT16>(c)) << (i * shift);
+            constexpr UINT64 charMask = (1ULL << (sizeof(TChar) * 8)) - 1;
+            result |= (static_cast<UINT64>(c) & charMask) << (i * shift);
         }
         return result;
     }

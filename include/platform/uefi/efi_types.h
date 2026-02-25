@@ -32,7 +32,7 @@ typedef UINT64 EFI_PHYSICAL_ADDRESS;
 typedef UINT64 EFI_VIRTUAL_ADDRESS;
 typedef USIZE EFI_TPL;
 
-// CHAR16 maps to WCHAR (both 2-byte with -fshort-wchar)
+// CHAR16 maps to WCHAR (both 2-byte on UEFI/Windows targets)
 typedef WCHAR CHAR16;
 
 // =============================================================================

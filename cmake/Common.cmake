@@ -120,7 +120,6 @@ set(CPPPIC_BASE_FLAGS
     -fno-jump-tables
     -ffunction-sections
     -fdata-sections
-    -fshort-wchar
 )
 
 # Architecture-specific

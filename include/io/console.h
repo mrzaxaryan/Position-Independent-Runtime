@@ -98,7 +98,7 @@ public:
 	 *
 	 * IMPORTANT:
 	 *   Length is in characters, not bytes!
-	 *   For WCHAR, each character is 2 bytes (UTF-16 code unit)
+	 *   For WCHAR, each character is sizeof(WCHAR) bytes
 	 */
 	static NOINLINE UINT32 Write(const WCHAR *text, USIZE length);
 
