@@ -110,7 +110,7 @@ public:
 	[[nodiscard]] BOOL IsSecure() const { return tlsContext.IsSecure(); }
 	[[nodiscard]] BOOL IsConnected() const { return isConnected; }
 	[[nodiscard]] Result<void, WebSocketError> Open();
-	BOOL Close();
+	[[nodiscard]] BOOL Close();
 	[[nodiscard]] Result<WebSocketMessage, WebSocketError> Read();
 	[[nodiscard]] Result<UINT32, WebSocketError> Write(PCVOID buffer, UINT32 bufferLength, WebSocketOpcode opcode = OPCODE_BINARY);
 };

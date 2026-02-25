@@ -321,6 +321,8 @@ Result<WebSocketMessage, WebSocketError> WebSocketClient::Read()
 					if (!tempBuffer)
 					{
 						delete[] frame.data;
+						delete[] message.data;
+						message.data = NULL;
 						break;
 					}
 					Memory::Copy(tempBuffer, message.data, message.length);
