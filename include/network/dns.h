@@ -18,31 +18,39 @@ typedef enum
     // CERT = 37   // do we need it here? anyway, RFC to follow would be https://tools.ietf.org/html/rfc4398
 } RequestType;
 
-// Struct to represent a DNS client
+enum DnsError : UINT32
+{
+    DNS_ERROR_CONNECT_FAILED  = 1,
+    DNS_ERROR_QUERY_FAILED    = 2,
+    DNS_ERROR_SEND_FAILED     = 3,
+    DNS_ERROR_RESPONSE_FAILED = 4,
+    DNS_ERROR_PARSE_FAILED    = 5,
+    DNS_ERROR_RESOLVE_FAILED  = 6
+};
+
 class DNS
 {
 private:
-    // Function to resolve a hostname using HTTP POST (defaults to IPv6/AAAA)
-    [[nodiscard]] static IPAddress ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR DNSServerName, RequestType dnstype = AAAA);
-    // Try each DNS server IP in order until one succeeds
+    [[nodiscard]] static Result<IPAddress, DnsError> ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR DNSServerName, RequestType dnstype = AAAA);
+
     template <UINT32 N>
-    [[nodiscard]] static IPAddress ResolveWithFallback(PCCHAR host, const IPAddress (&ips)[N], PCCHAR serverName, RequestType dnstype)
+    [[nodiscard]] static Result<IPAddress, DnsError> ResolveWithFallback(PCCHAR host, const IPAddress (&ips)[N], PCCHAR serverName, RequestType dnstype)
     {
         for (UINT32 i = 0; i < N; i++)
         {
-            IPAddress ip = ResolveOverHttp(host, ips[i], serverName, dnstype);
-            if (ip.IsValid())
-                return ip;
+            auto result = ResolveOverHttp(host, ips[i], serverName, dnstype);
+            if (result)
+                return result;
         }
-        return IPAddress::Invalid();
+        return Result<IPAddress, DnsError>::Err(DNS_ERROR_RESOLVE_FAILED);
     }
 
 public:
     // Function to resolve a hostname to an IP address (tries IPv6 first, then IPv4)
-    [[nodiscard]] static IPAddress Resolve(PCCHAR host, RequestType dnstype = AAAA);
+    [[nodiscard]] static Result<IPAddress, DnsError> Resolve(PCCHAR host, RequestType dnstype = AAAA);
     // Cloudflare DNS over HTTPS [IP:1.1.1.1|1.0.0.1] [POST:/dns-query] [content-type:application/dns-message]
-    [[nodiscard]] static IPAddress CloudflareResolve(PCCHAR host, RequestType dnstype = AAAA);
+    [[nodiscard]] static Result<IPAddress, DnsError> CloudflareResolve(PCCHAR host, RequestType dnstype = AAAA);
     // Google DNS over HTTPS [IP:8.8.8.8|8.8.4.4] [POST:/dns-query] [content-type:application/dns-message]
-    [[nodiscard]] static IPAddress GoogleResolve(PCCHAR host, RequestType dnstype = AAAA);
+    [[nodiscard]] static Result<IPAddress, DnsError> GoogleResolve(PCCHAR host, RequestType dnstype = AAAA);
 };
 

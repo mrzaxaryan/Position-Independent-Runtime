@@ -99,84 +99,69 @@ CORE (Core Abstraction Layer)
   Includes: core/ headers
 ```
 
-## The Golden Rule: No Data Sections
+---
 
-**The binary must contain only a `.text` section.** No `.rdata`, `.rodata`, `.data`, or `.bss` sections are allowed. The build system verifies this automatically via `cmake/VerifyPICMode.cmake` and will fail if any data section is detected.
+## Code Requirements Checklist
 
-This means you **cannot** use:
+Every new file, function, or edit must satisfy the rules below. If a build or post-build check fails, one of these rules was violated.
+
+### Position-Independence Rules
+
+The binary must contain **only** a `.text` section. No `.rdata`, `.rodata`, `.data`, or `.bss`. The build system verifies this automatically via `cmake/VerifyPICMode.cmake`.
 
 | Forbidden | Why | Use Instead |
 |-----------|-----|-------------|
 | String literals (`"hello"`) | Placed in `.rdata` | `"hello"_embed` |
 | Wide string literals (`L"hello"`) | Placed in `.rdata` | `L"hello"_embed` |
 | Floating-point literals (`3.14`) | Constant in `.rdata` | `3.14_embed` |
-| `switch` with jump tables | Jump table in `.rdata` | `if/else` chains, or compiler uses `-fno-jump-tables` |
 | Global/static variables | `.data` or `.bss` | Local variables on the stack |
 | Function pointers (`&MyFunc`) | Relocation entry | `EMBED_FUNC(MyFunc)` |
 | `const` arrays at file scope | `.rodata` | `MakeEmbedArray(...)` or stack-local arrays |
-| STL containers/algorithms | Links CRT | Custom implementations |
-| Exceptions (`throw`/`try`/`catch`) | `.pdata`/`.xdata` tables | Return error codes |
+| STL containers/algorithms | Links CRT | Custom implementations in PIR |
+| Exceptions (`throw`/`try`/`catch`) | `.pdata`/`.xdata` tables | Return error codes or `Result<T, E>` |
 | RTTI (`dynamic_cast`, `typeid`) | `.rdata` typeinfo | Static dispatch |
 
-### Embedded Types Quick Reference
+**Embedded types quick reference:**
 
 ```cpp
-// Strings -- characters packed into 64-bit immediates in the instruction stream
-auto msg = "Hello, World!"_embed;
-auto wide = L"Hello"_embed;
+auto msg  = "Hello, World!"_embed;              // String (CHAR)
+auto wide = L"Hello"_embed;                     // String (WCHAR)
+auto pi   = 3.14159_embed;                      // Double (IEEE-754 immediate)
+auto fn   = EMBED_FUNC(MyFunction);             // Function pointer (PC-relative)
 
-// Floating-point -- IEEE-754 bits as a 64-bit immediate
-auto pi = 3.14159_embed;
-
-// Function pointers -- PC-relative offset, no relocation
-auto fn = EMBED_FUNC(MyFunction);
-
-// Arrays -- elements packed into machine words at compile time
 constexpr UINT32 table[] = {0x11, 0x22, 0x33};
-auto embedded = MakeEmbedArray(table);
-UINT32 val = embedded[0]; // Unpacked at runtime
+auto embedded = MakeEmbedArray(table);           // Array (packed into machine words)
+UINT32 val = embedded[0];                        // Unpacked at runtime
 ```
 
-## Code Style
+### Code Style Rules
 
-- **Indentation:** Tabs
-- **Braces:** Allman style (opening brace on its own line) for classes, functions, and control flow
-- **Include guard:** `#pragma once` in all headers
-- **No namespaces:** Use static class methods instead of free functions in namespaces
+- **Indentation:** Tabs (not spaces)
+- **Braces:** Allman style -- opening brace on its own line for classes, functions, and control flow
+- **Include guard:** `#pragma once` in every header
+- **No namespaces:** Use `static` class methods instead of free functions in namespaces
 - **No STL:** Everything is implemented from scratch
 - **No exceptions:** Use `Result<T, E>` for fallible operations
 - **Prefer `static` methods** on classes over free functions
-- **Use `FORCE_INLINE`** for force inline functions
-- **Use `NOINLINE`** when you need to prevent inlining (e.g., for function pointer embedding)
-- **Cast to `USIZE`** when passing pointer arguments to syscall wrappers
-- **Prefer `constexpr`** for variables and functions that can be evaluated at compile time. Use `consteval` when evaluation *must* happen at compile time (e.g., embedded type constructors, hash computations). This moves work from runtime to compile time, reducing code size and eliminating potential `.rdata` generation
-- **Use `[[nodiscard]]`** on functions whose return value must not be ignored. Since PIR has no exceptions, return codes are the only way to signal failure -- a missed check means a silent bug. Apply it to all functions returning `BOOL` success/failure, `NTSTATUS`, `SSIZE` (where negative means error), and factory methods returning objects that must be used:
+- **Use `FORCE_INLINE`** for force-inlined functions
+- **Use `NOINLINE`** when inlining must be prevented (e.g., for function pointer embedding)
+- **Use `constexpr`** for compile-time-evaluable variables and functions. Use `consteval` when evaluation *must* happen at compile time (embedded type constructors, hash computations)
+- **Cast to `USIZE`** when passing pointer/handle arguments to `System::Call`
 
-```cpp
-// GOOD -- compiler warns if caller ignores the result
-[[nodiscard]] BOOL Open();
-[[nodiscard]] NTSTATUS ZwCreateFile(PPVOID FileHandle, ...);
-[[nodiscard]] static IPAddress FromIPv4(UINT32 address);
+### Naming Rules
 
-// NOT needed -- void functions, pure setters, or functions called only for side effects
-VOID Close();
-VOID SetPort(UINT16 port);
-```
-
-### Naming Conventions
-
-#### Types
+**Types:**
 
 | Kind | Convention | Examples |
 |------|-----------|----------|
 | Primitive typedefs | `UPPER_CASE` | `UINT32`, `INT64`, `WCHAR`, `PVOID`, `NTSTATUS`, `BOOL` |
-| Pointer typedefs | `P` prefix (or `PP` for double pointer) | `PCHAR`, `PWCHAR`, `PPVOID`, `PCCHAR` (const) |
+| Pointer typedefs | `P` prefix (`PP` for double pointer) | `PCHAR`, `PWCHAR`, `PPVOID`, `PCCHAR` (const) |
 | Classes | `PascalCase` or `UPPER_CASE` | `String`, `Allocator`, `NTDLL`, `Kernel32` |
 | Structs (Windows-style) | `_NAME` with typedef | `typedef struct _OBJECT_ATTRIBUTES { ... } OBJECT_ATTRIBUTES;` |
-| Template types | `UPPER_CASE` with template params | `EMBEDDED_STRING<CHAR, 'H', 'e', 'l', 'l', 'o'>` |
+| Template types | `UPPER_CASE` | `EMBEDDED_STRING<CHAR, 'H', 'e', 'l', 'l', 'o'>` |
 | Enums | `UPPER_CASE` | `EVENT_TYPE` |
 
-#### Functions and Variables
+**Functions and variables:**
 
 | Kind | Convention | Examples |
 |------|-----------|----------|
@@ -185,7 +170,7 @@ VOID SetPort(UINT16 port);
 | Macro constants | `UPPER_CASE` | `HANDLE_FLAG_INHERIT`, `STARTF_USESTDHANDLES` |
 | Attributes/macros | `UPPER_CASE` | `FORCE_INLINE`, `NOINLINE`, `STDCALL`, `ENTRYPOINT` |
 
-#### Files
+**Files:**
 
 | Kind | Convention | Examples |
 |------|-----------|----------|
@@ -194,7 +179,7 @@ VOID SetPort(UINT16 port);
 | Platform-specific | `name.platform.cc` | `allocator.windows.cc`, `syscall.linux.h` |
 | Test files | `snake_case_tests.h` | `djb2_tests.h`, `socket_tests.h` |
 
-### Include Order
+### Include Rules
 
 ```cpp
 #include "runtime.h"     // or "platform.h" or specific core headers
@@ -203,22 +188,34 @@ VOID SetPort(UINT16 port);
 
 - `runtime.h` includes everything (CORE + PLATFORM + RUNTIME)
 - `platform.h` includes CORE + PLATFORM
-- For implementation files, include your own header first, then `platform.h` or `runtime.h` as needed
+- Implementation files: include your own header first, then `platform.h` or `runtime.h` as needed
 
-### Parameter Passing
+### Parameter & Return Rules
 
-Follow these rules for passing data between functions.
+**`[[nodiscard]]`** -- Apply to every function whose return value must not be ignored. Since PIR has no exceptions, return codes are the only failure signal -- a missed check is a silent bug:
 
-**Pass by value** for small types that fit in registers:
+```cpp
+// GOOD -- compiler warns if caller ignores the result
+[[nodiscard]] BOOL Open();
+[[nodiscard]] NTSTATUS ZwCreateFile(PPVOID FileHandle, ...);
+[[nodiscard]] static IPAddress FromIPv4(UINT32 address);
+
+// NOT needed -- void, pure setters, or side-effect-only functions
+VOID Close();
+VOID SetPort(UINT16 port);
+```
+
+Apply `[[nodiscard]]` to all functions returning: `BOOL` success/failure, `NTSTATUS`, `SSIZE` (negative = error), `Result<T, E>`, and factory methods returning objects that must be used.
+
+**Pass by value** -- small types that fit in registers:
 
 ```cpp
 UINT32 ComputeHash(UINT32 input);
 BOOL IsValid(PVOID handle);
 IPAddress FromIPv4(UINT32 address);       // Return small structs by value
-IPAddress addr = DNS::Resolve(hostName);  // Factory methods return by value
 ```
 
-**Pass by pointer** for output parameters, nullable parameters, and Windows API compatibility:
+**Pass by pointer** -- output parameters, nullable parameters, Windows API compatibility:
 
 ```cpp
 NTSTATUS ZwCreateFile(PPVOID FileHandle, ...);           // Output parameter
@@ -228,7 +225,7 @@ NTSTATUS ZwCreateEvent(PPVOID EventHandle, UINT32 Access,
 BOOL Read(PVOID buffer, UINT32 bufferSize);              // Buffer pointer
 ```
 
-**Pass by reference** whenever a parameter must not be null. References enforce non-null at compile time, eliminating an entire class of null-pointer bugs. Only use pointers when `nullptr` is a valid, meaningful value (output parameters, optional arguments, Windows API compatibility):
+**Pass by reference** -- whenever a parameter must not be null. Only use pointers when `nullptr` is a valid, meaningful value:
 
 ```cpp
 // GOOD -- reference guarantees non-null
@@ -237,20 +234,44 @@ BOOL operator==(const IPAddress &other) const;
 BOOL Send(const TlsBuffer &buffer);
 
 // BAD -- pointer allows null when null is never valid
-Socket(const IPAddress *ipAddress, UINT16 port);  // Caller could pass nullptr
-BOOL Send(const TlsBuffer *buffer);               // Would crash on nullptr
+Socket(const IPAddress *ipAddress, UINT16 port);
+BOOL Send(const TlsBuffer *buffer);
 ```
 
-## Memory & Resource Management
+**`Result<T, E>`** -- Use for functions that can fail and need to return a value or an error:
 
-PIR executes in constrained environments -- injected shellcode, early boot, or loaderless contexts -- where neither heap nor stack can be assumed large or reliable. All code must be written with strict memory discipline.
+```cpp
+[[nodiscard]] Result<IPAddress, UINT32> Resolve(PCCHAR host)
+{
+    if (failed)
+        return Result<IPAddress, UINT32>::Err(errorCode);
+    return Result<IPAddress, UINT32>::Ok(address);
+}
 
-### Keep Code Heap-Free
+auto result = Resolve(hostName);
+if (result.IsErr())
+    return;                     // error path
+IPAddress &ip = result.Value(); // borrow; Result still owns it
 
-Avoid heap allocation entirely unless there is no alternative. The vast majority of PIR code must run without touching the heap:
+// Use Result<void, E> when there is no value to return
+[[nodiscard]] Result<void, UINT32> Open();
+```
 
-- **Prefer stack-local variables and fixed-size buffers** over dynamically allocated memory
-- **Embed objects as class members by value** rather than holding pointers to heap-allocated objects:
+Key `Result` behaviors:
+- `Value()` returns a reference -- the `Result` owns the object and destroys it at scope exit
+- Non-trivially destructible types: destructor called automatically
+- Trivially destructible types: destructor is a no-op (zero codegen)
+- `operator BOOL()` is implicit, so `if (result)` and `if (!result)` work naturally
+
+### Memory & Resource Rules
+
+PIR executes in constrained environments (injected shellcode, early boot, loaderless contexts). All code must follow strict memory discipline.
+
+**Heap:**
+- Avoid heap allocation unless there is no alternative
+- Prefer stack-local variables and fixed-size buffers
+- Embed objects as class members by value, not as pointers to heap-allocated objects
+- When heap is unavoidable: allocate late, release early, never leak across boundaries
 
 ```cpp
 class HttpClient
@@ -263,21 +284,14 @@ private:
 };
 ```
 
-When heap allocation is unavoidable, keep it localized: allocate as late as possible, release as early as possible, and never let allocated memory leak across abstraction boundaries.
+**Stack:**
+- Avoid large local arrays -- use `Allocator::AllocateMemory` for kilobyte+ buffers
+- Be mindful of `EMBEDDED_STRING` temporaries (each materializes packed words on the stack)
+- Avoid deep recursion -- prefer iterative algorithms
+- Watch aggregate sizes -- large fixed-size members consume stack when instantiated as locals
+- Test under `-Oz` (release builds) to catch stack issues early
 
-### Minimize Stack Usage
-
-Shellcode often runs on a small or foreign stack. Excessive stack consumption causes silent corruption or crashes:
-
-- **Avoid large local arrays** -- if you need a large buffer, use `Allocator::AllocateMemory` instead of putting kilobytes on the stack
-- **Be mindful of `EMBEDDED_STRING` temporaries** -- each one materializes packed words on the stack. Avoid deeply nested or repeated `_embed` literals in a single function; extract them to separate helper functions if needed
-- **Avoid deep recursion** -- prefer iterative algorithms. Every call frame adds to stack pressure
-- **Watch aggregate sizes** -- classes with large fixed-size member buffers (e.g., `CHAR hostName[1024]`) consume that space on the stack when instantiated as locals. Keep buffer sizes as small as practical
-- **Profile with `-Oz`** -- size-optimized builds omit frame pointers, making stack overflows harder to diagnose. Test your code under `-Oz` to catch stack issues early
-
-### RAII Pattern
-
-PIR uses RAII for resource management, adapted for a freestanding environment with no exceptions and no STL. Acquire resources in constructors, release them in destructors:
+**RAII pattern** -- Acquire resources in constructors, release in destructors:
 
 ```cpp
 class MyResource
@@ -324,13 +338,12 @@ public:
 };
 ```
 
-**Key rules:**
-
-1. **Destructor calls `Close()`** -- resources released automatically when the object leaves scope
-2. **Delete copy operations** -- prevents double-close
-3. **Implement move semantics** -- allows transferring ownership (nullify source after move)
-4. **`IsValid()` checks both `nullptr` and `-1`** -- Windows uses `INVALID_HANDLE_VALUE` as an error sentinel
-5. **Delete `new`/`delete` for stack-only types** -- forces stack allocation where RAII cleanup is guaranteed:
+RAII rules:
+1. Destructor calls `Close()` -- resources released when the object leaves scope
+2. Delete copy operations -- prevents double-close
+3. Implement move semantics -- nullify source after move
+4. `IsValid()` checks both `nullptr` and `-1` (Windows `INVALID_HANDLE_VALUE`)
+5. Delete `new`/`delete` for stack-only types:
 
 ```cpp
 class Socket
@@ -341,44 +354,7 @@ public:
 };
 ```
 
-### Result Pattern
-
-Use `Result<T, E>` for functions that can fail and need to return a value or an error. It acts as a tagged union — either `Ok(value)` or `Err(error)` — with RAII: the active member's destructor runs automatically when the `Result` goes out of scope.
-
-```cpp
-// Return a value or error
-[[nodiscard]] Result<IPAddress, UINT32> Resolve(PCCHAR host)
-{
-    // ...
-    if (failed)
-        return Result<IPAddress, UINT32>::Err(errorCode);
-    return Result<IPAddress, UINT32>::Ok(address);
-}
-
-// Caller
-auto result = Resolve(hostName);
-if (result.IsErr())
-    return;                     // error path — no value to clean up
-IPAddress &ip = result.Value(); // borrow the value; Result still owns it
-
-// Use Result<void, E> when there is no value to return
-[[nodiscard]] Result<void, UINT32> Open()
-{
-    if (failed)
-        return Result<void, UINT32>::Err(errorCode);
-    return Result<void, UINT32>::Ok();
-}
-```
-
-**Key rules:**
-- `Value()` returns a reference — the `Result` owns the object and destroys it at scope exit
-- For non-trivially destructible types (e.g., `Socket`), the destructor is called automatically
-- For trivially destructible types (e.g., `UINT32`), the destructor is a no-op (zero codegen)
-- `operator BOOL()` is implicit, so `if (result)` and `if (!result)` work naturally
-
-### Secure Cleanup for Sensitive Data
-
-Cryptographic classes zero their memory on destruction to prevent key material from lingering:
+**Secure cleanup** -- Cryptographic classes must zero memory on destruction:
 
 ```cpp
 ChaCha20Encoder::~ChaCha20Encoder()
@@ -388,9 +364,7 @@ ChaCha20Encoder::~ChaCha20Encoder()
 }
 ```
 
-### Conditional Ownership
-
-When a class may or may not own its buffer, use an ownership flag:
+**Conditional ownership** -- Use an ownership flag when a class may or may not own its buffer:
 
 ```cpp
 class TlsBuffer
@@ -407,9 +381,7 @@ public:
 };
 ```
 
-### Manual Allocation with `Allocator`
-
-For dynamic memory, use `Allocator::AllocateMemory` / `Allocator::ReleaseMemory`. You must track the size yourself:
+**Manual allocation** -- Use `Allocator::AllocateMemory` / `Allocator::ReleaseMemory`. Track the size yourself. Match every allocation with a release on every return path:
 
 ```cpp
 USIZE size = 4096;
@@ -422,9 +394,7 @@ if (buffer == nullptr)
 Allocator::ReleaseMemory(buffer, size);
 ```
 
-You are responsible for matching every allocation with a release. Since there are no exceptions, the only way to skip cleanup is an early `return` -- make sure every return path releases its resources.
-
-## Platform-Specific Code
+### Platform-Specific Code Rules
 
 Use preprocessor guards for platform/architecture-specific code:
 
@@ -453,6 +423,8 @@ Architecture-only guards:
 #elif defined(ARCHITECTURE_ARMV7A)
 #endif
 ```
+
+---
 
 ## Adding a Windows API Wrapper
 
@@ -553,6 +525,7 @@ Then register it:
 
 1. **Inline asm register clobbers** -- On x86_64, all volatile registers (RAX, RCX, RDX, R8-R11) must be declared as outputs or clobbers in inline assembly
 2. **Memory operands with RSP modification** -- Never use `"m"` (memory) constraints in asm blocks that modify RSP. Under `-Oz`, the compiler uses RSP-relative addressing which breaks after `sub rsp`
+3. **i386 `EMBEDDED_STRING` indexing** -- Cast indices to `USIZE` when indexing `EMBEDDED_STRING` on 32-bit targets to avoid ambiguous overload between the custom `operator[]` and built-in pointer decay
 
 ## Submitting Changes
 

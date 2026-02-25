@@ -30,10 +30,10 @@ private:
 
 		// Force IPv4 resolution since CI environments may not have IPv6 connectivity
 		auto domain = "echo.websocket.org"_embed;
-		IPAddress resolvedIp = DNS::CloudflareResolve((PCCHAR)domain, A);
-		if (resolvedIp.IsValid() == FALSE)
+		auto dnsResult = DNS::CloudflareResolve((PCCHAR)domain, A);
+		if (!dnsResult)
 		{
-			LOG_ERROR("DNS resolution failed for %s", (PCCHAR)domain);
+			LOG_ERROR("DNS resolution failed for %s (error: %u)", (PCCHAR)domain, dnsResult.Error());
 			LOG_ERROR("WebSocket tests require network connectivity");
 			return FALSE;
 		}

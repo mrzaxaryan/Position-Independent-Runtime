@@ -254,13 +254,13 @@ private:
 	// Test 7: HTTP GET request to httpbin.org (tests real-world connectivity and DNS resolution)
 	static BOOL TestHttpBin()
 	{
-		IPAddress ip = DNS::Resolve("httpbin.org"_embed);
-		if (!ip.IsValid())
+		auto dnsResult = DNS::Resolve("httpbin.org"_embed);
+		if (!dnsResult)
 		{
-			LOG_ERROR("Failed to resolve httpbin.org");
+			LOG_ERROR("Failed to resolve httpbin.org (error: %u)", dnsResult.Error());
 			return FALSE;
 		}
-		Socket sock(ip, 80);
+		Socket sock(dnsResult.Value(), 80);
 		if (!sock.Open())
 		{
 			LOG_ERROR("Failed to open socket to httpbin.org");

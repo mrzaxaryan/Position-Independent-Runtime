@@ -38,7 +38,7 @@ typedef struct DNS_REQUEST_QUESTION
 static_assert(sizeof(DNS_REQUEST_HEADER) == 12, "DNS header must be 12 bytes (no padding)");
 static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (no padding)");
 
-static inline BOOL IsLocalhost(PCCHAR host, IPAddress &result, RequestType type)
+[[nodiscard]] FORCE_INLINE static BOOL IsLocalhost(PCCHAR host, IPAddress &result, RequestType type)
 {
     auto localhost = "localhost"_embed;
     if (String::Compare(host, (PCCHAR)localhost))
@@ -49,14 +49,14 @@ static inline BOOL IsLocalhost(PCCHAR host, IPAddress &result, RequestType type)
     return FALSE;
 }
 
-static inline UINT16 ReadU16BE(const UINT8 *p, INT32 index)
+FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
 {
     return (UINT16)((p[index] << 8) | p[index + 1]);
 }
 
 // Skip over a DNS name in wire format. maxLen is bytes remaining from ptr.
 // Returns bytes consumed, or -1 on error.
-static INT32 SkipName(const UINT8 *ptr, INT32 maxLen)
+[[nodiscard]] static INT32 SkipName(const UINT8 *ptr, INT32 maxLen)
 {
     INT32 offset = 0;
     while (offset < maxLen)
@@ -84,9 +84,9 @@ static INT32 SkipName(const UINT8 *ptr, INT32 maxLen)
     return -1;
 }
 
-// Parse DNS answer section, extract A/AAAA address. Sets parsedLen to bytes consumed.
+// Parse DNS answer section, extract A/AAAA address.
 // bufferLen is the total bytes available from ptr.
-[[nodiscard]] static BOOL ParseAnswer(const UINT8 *ptr, INT32 cnt, INT32 bufferLen, IPAddress &ipAddress, INT32 &parsedLen)
+[[nodiscard]] static BOOL ParseAnswer(const UINT8 *ptr, INT32 cnt, INT32 bufferLen, IPAddress &ipAddress)
 {
     // type(2) + class(2) + ttl(4) + rdlength(2)
     constexpr INT32 FIXED_FIELDS_SIZE = 10;
@@ -131,13 +131,11 @@ static INT32 SkipName(const UINT8 *ptr, INT32 maxLen)
             UINT32 ipv4;
             Memory::Copy(&ipv4, rdata, 4);
             ipAddress = IPAddress::FromIPv4(ipv4);
-            parsedLen = len + recordSize;
             return TRUE;
         }
         else if (type == AAAA && rdlength == 16)
         {
             ipAddress = IPAddress::FromIPv6(rdata);
-            parsedLen = len + recordSize;
             return TRUE;
         }
 
@@ -145,11 +143,10 @@ static INT32 SkipName(const UINT8 *ptr, INT32 maxLen)
         cnt--;
     }
 
-    parsedLen = len;
     return FALSE;
 }
 
-static INT32 ParseQuery(const UINT8 *ptr, INT32 cnt, INT32 bufferLen)
+[[nodiscard]] static INT32 ParseQuery(const UINT8 *ptr, INT32 cnt, INT32 bufferLen)
 {
     INT32 offset = 0;
     while (cnt > 0)
@@ -237,13 +234,12 @@ static INT32 ParseQuery(const UINT8 *ptr, INT32 cnt, INT32 bufferLen)
         return FALSE;
     }
 
-    INT32 parsedLen = 0;
-    return ParseAnswer(buffer + recordOffset, ansCount, len - recordOffset, ipAddress, parsedLen);
+    return ParseAnswer(buffer + recordOffset, ansCount, len - recordOffset, ipAddress);
 }
 
 // Convert hostname to DNS wire format (length-prefixed labels).
 // Returns bytes written (including null terminator), or -1 on overflow.
-static INT32 FormatDnsName(UINT8 *dns, INT32 dnsSize, PCCHAR host)
+[[nodiscard]] static INT32 FormatDnsName(UINT8 *dns, INT32 dnsSize, PCCHAR host)
 {
     if (!dns || !host || dnsSize <= 0)
         return -1;
@@ -291,7 +287,7 @@ static INT32 FormatDnsName(UINT8 *dns, INT32 dnsSize, PCCHAR host)
 
 // Generate a DNS-over-HTTPS query packet (no TCP length prefix).
 // Returns query size in bytes, or 0 on error (buffer too small).
-static UINT32 GenerateQuery(PCCHAR host, RequestType dnstype, PCHAR buffer, UINT32 bufferSize)
+[[nodiscard]] static UINT32 GenerateQuery(PCCHAR host, RequestType dnstype, PCHAR buffer, UINT32 bufferSize)
 {
     if (bufferSize < sizeof(DNS_REQUEST_HEADER) + sizeof(DNS_REQUEST_QUESTION) + 2)
         return 0;
@@ -330,17 +326,17 @@ static UINT32 GenerateQuery(PCCHAR host, RequestType dnstype, PCHAR buffer, UINT
     return (UINT32)(sizeof(DNS_REQUEST_HEADER) + nameLen + sizeof(DNS_REQUEST_QUESTION));
 }
 
-IPAddress DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR DNSServerName, RequestType dnstype)
+Result<IPAddress, DnsError> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR DNSServerName, RequestType dnstype)
 {
-    IPAddress result;
-    if (IsLocalhost(host, result, dnstype))
-        return result;
+    IPAddress localhostResult;
+    if (IsLocalhost(host, localhostResult, dnstype))
+        return Result<IPAddress, DnsError>::Ok(localhostResult);
 
     TLSClient tlsClient(DNSServerName, DNSServerIp, 443);
     if (!tlsClient.Open())
     {
         LOG_WARNING("Failed to connect to DNS server");
-        return IPAddress::Invalid();
+        return Result<IPAddress, DnsError>::Err(DNS_ERROR_CONNECT_FAILED);
     }
 
     UINT8 queryBuffer[256];
@@ -348,7 +344,7 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR
     if (querySize == 0)
     {
         LOG_WARNING("Failed to generate DNS query");
-        return IPAddress::Invalid();
+        return Result<IPAddress, DnsError>::Err(DNS_ERROR_QUERY_FAILED);
     }
 
     auto writeStr = [&tlsClient](PCCHAR s) -> BOOL {
@@ -367,7 +363,7 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR
         tlsClient.Write(queryBuffer, querySize) != querySize)
     {
         LOG_WARNING("Failed to send DNS query");
-        return IPAddress::Invalid();
+        return Result<IPAddress, DnsError>::Err(DNS_ERROR_SEND_FAILED);
     }
 
     INT64 contentLength = -1;
@@ -375,13 +371,13 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR
     if (!HttpClient::ReadResponseHeaders(tlsClient, 200, contentLength))
     {
         LOG_WARNING("DNS server returned non-200 response");
-        return IPAddress::Invalid();
+        return Result<IPAddress, DnsError>::Err(DNS_ERROR_RESPONSE_FAILED);
     }
 
     if (contentLength <= 0 || contentLength > 512)
     {
         LOG_WARNING("Invalid or missing Content-Length header");
-        return IPAddress::Invalid();
+        return Result<IPAddress, DnsError>::Err(DNS_ERROR_RESPONSE_FAILED);
     }
 
     CHAR binaryResponse[512];
@@ -392,7 +388,7 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR
         if (bytesRead <= 0)
         {
             LOG_WARNING("Failed to read DNS binary response");
-            return IPAddress::Invalid();
+            return Result<IPAddress, DnsError>::Err(DNS_ERROR_RESPONSE_FAILED);
         }
         totalRead += (UINT32)bytesRead;
     }
@@ -401,41 +397,41 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR
     if (!ParseDnsResponse((const UINT8 *)binaryResponse, (INT32)contentLength, ipAddress))
     {
         LOG_WARNING("Failed to parse DNS response");
-        return IPAddress::Invalid();
+        return Result<IPAddress, DnsError>::Err(DNS_ERROR_PARSE_FAILED);
     }
 
-    return ipAddress;
+    return Result<IPAddress, DnsError>::Ok(ipAddress);
 }
 
-IPAddress DNS::CloudflareResolve(PCCHAR host, RequestType dnstype)
+Result<IPAddress, DnsError> DNS::CloudflareResolve(PCCHAR host, RequestType dnstype)
 {
     auto serverName = "one.one.one.one"_embed;
     IPAddress ips[] = { IPAddress::FromIPv4(0x01010101), IPAddress::FromIPv4(0x01000001) };
     return ResolveWithFallback(host, ips, (PCCHAR)serverName, dnstype);
 }
 
-IPAddress DNS::GoogleResolve(PCCHAR host, RequestType dnstype)
+Result<IPAddress, DnsError> DNS::GoogleResolve(PCCHAR host, RequestType dnstype)
 {
     auto serverName = "dns.google"_embed;
     IPAddress ips[] = { IPAddress::FromIPv4(0x08080808), IPAddress::FromIPv4(0x04040808) };
     return ResolveWithFallback(host, ips, (PCCHAR)serverName, dnstype);
 }
 
-IPAddress DNS::Resolve(PCCHAR host, RequestType dnstype)
+Result<IPAddress, DnsError> DNS::Resolve(PCCHAR host, RequestType dnstype)
 {
     LOG_DEBUG("Resolve(host: %s) called", host);
 
-    IPAddress ip = CloudflareResolve(host, dnstype);
-    if (!ip.IsValid())
-        ip = GoogleResolve(host, dnstype);
+    auto result = CloudflareResolve(host, dnstype);
+    if (!result)
+        result = GoogleResolve(host, dnstype);
 
-    if (!ip.IsValid() && dnstype == AAAA)
+    if (!result && dnstype == AAAA)
     {
         LOG_DEBUG("IPv6 resolution failed, falling back to IPv4 (A) for %s", host);
-        ip = CloudflareResolve(host, A);
-        if (!ip.IsValid())
-            ip = GoogleResolve(host, A);
+        result = CloudflareResolve(host, A);
+        if (!result)
+            result = GoogleResolve(host, A);
     }
 
-    return ip;
+    return result;
 }

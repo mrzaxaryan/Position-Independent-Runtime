@@ -18,14 +18,14 @@ Result<void, WebSocketError> WebSocketClient::Open()
 	{
 		LOG_DEBUG("Failed to open network transport for WebSocket client using IPv6 address, attempting IPv4 fallback");
 
-		IPAddress ipv4Address = DNS::Resolve(hostName, A);
-		if (!ipv4Address.IsValid())
+		auto dnsResult = DNS::Resolve(hostName, A);
+		if (!dnsResult)
 		{
 			LOG_ERROR("Failed to resolve IPv4 address for %s, cannot connect to WebSocket server", hostName);
 			return Result<void, WebSocketError>::Err(WS_ERROR_DNS_FAILED);
 		}
 
-		ipAddress = ipv4Address;
+		ipAddress = dnsResult.Value();
 
 		tlsContext.Close();
 		tlsContext = TLSClient(hostName, ipAddress, port, isSecure);
@@ -289,7 +289,7 @@ BOOL WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 Result<WebSocketMessage, WebSocketError> WebSocketClient::Read()
 {
 	if (!isConnected)
-		return Result::Err(WS_ERROR_NOT_CONNECTED);
+		return Result<WebSocketMessage, WebSocketError>::Err(WS_ERROR_NOT_CONNECTED);
 
 	WebSocketFrame frame;
 	WebSocketMessage message;
@@ -384,12 +384,13 @@ WebSocketClient::WebSocketClient(PCCHAR url)
 	if (!HttpClient::ParseUrl(url, hostName, path, port, isSecure))
 		return;
 
-	ipAddress = DNS::Resolve(hostName);
-	if (!ipAddress.IsValid())
+	auto dnsResult = DNS::Resolve(hostName);
+	if (!dnsResult)
 	{
 		LOG_ERROR("Failed to resolve hostname %s", hostName);
 		return;
 	}
+	ipAddress = dnsResult.Value();
 
 	tlsContext = TLSClient(hostName, ipAddress, port, isSecure);
 }

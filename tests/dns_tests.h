@@ -12,7 +12,13 @@ private:
 	{
 		LOG_INFO("Test: Localhost Resolution");
 
-		IPAddress ip = DNS::CloudflareResolve("localhost"_embed, A);
+		auto result = DNS::CloudflareResolve("localhost"_embed, A);
+		if (!result)
+		{
+			LOG_ERROR("Localhost A resolution failed (error: %u)", result.Error());
+			return FALSE;
+		}
+		IPAddress ip = result.Value();
 
 		// localhost should resolve to 127.0.0.1 = 0x7F000001 in network byte order = 0x0100007F
 		if (ip.ToIPv4() != 0x0100007F)
@@ -21,7 +27,14 @@ private:
 			return FALSE;
 		}
 
-		IPAddress ip6 = DNS::CloudflareResolve("localhost"_embed, AAAA);
+		auto result6 = DNS::CloudflareResolve("localhost"_embed, AAAA);
+		if (!result6)
+		{
+			LOG_ERROR("Localhost AAAA resolution failed (error: %u)", result6.Error());
+			return FALSE;
+		}
+		IPAddress ip6 = result6.Value();
+
 		// localhost should resolve to ::1 for IPv6
 		UINT8 expectedIPv6[16]{};
 		expectedIPv6[15] = 1; // ::1 in IPv6
@@ -40,13 +53,13 @@ private:
 	{
 		LOG_INFO("Test: Cloudflare DNS Resolution (dns.google)");
 
-		IPAddress ip = DNS::CloudflareResolve("dns.google"_embed, A);
-
-		if (ip.IsValid() == FALSE)
+		auto result = DNS::CloudflareResolve("dns.google"_embed, A);
+		if (!result)
 		{
-			LOG_ERROR("Cloudflare DNS resolution failed");
+			LOG_ERROR("Cloudflare DNS resolution failed (error: %u)", result.Error());
 			return FALSE;
 		}
+		IPAddress ip = result.Value();
 
 		// dns.google should resolve to 8.8.8.8 or 8.8.4.4
 		// 8.8.8.8 in network byte order = 0x08080808
@@ -66,13 +79,13 @@ private:
 	{
 		LOG_INFO("Test: Google DNS Resolution (one.one.one.one)");
 
-		IPAddress ip = DNS::GoogleResolve("one.one.one.one"_embed, A);
-
-		if (ip.IsValid() == FALSE)
+		auto result = DNS::GoogleResolve("one.one.one.one"_embed, A);
+		if (!result)
 		{
-			LOG_ERROR("Google DNS resolution failed");
+			LOG_ERROR("Google DNS resolution failed (error: %u)", result.Error());
 			return FALSE;
 		}
+		IPAddress ip = result.Value();
 
 		// one.one.one.one should resolve to 1.1.1.1 or 1.0.0.1
 		// 1.1.1.1 in network byte order = 0x01010101
@@ -92,11 +105,10 @@ private:
 	{
 		LOG_INFO("Test: Main DNS Resolve Function");
 
-		IPAddress ip = DNS::Resolve("example.com"_embed);
-
-		if (ip.IsValid() == FALSE)
+		auto result = DNS::Resolve("example.com"_embed);
+		if (!result)
 		{
-			LOG_ERROR("Main DNS resolution failed");
+			LOG_ERROR("Main DNS resolution failed (error: %u)", result.Error());
 			return FALSE;
 		}
 
@@ -105,16 +117,15 @@ private:
 		return TRUE;
 	}
 
-	// Test 7: Resolution with known static IP (IPv6 first, falls back to IPv4)
+	// Test 5: Resolution with known static IP (IPv6 first, falls back to IPv4)
 	static BOOL TestKnownIpResolution()
 	{
 		LOG_INFO("Test: Known IP Resolution (dns.google)");
 
-		IPAddress ip = DNS::Resolve("dns.google"_embed);
-
-		if (ip.IsValid() == FALSE)
+		auto result = DNS::Resolve("dns.google"_embed);
+		if (!result)
 		{
-			LOG_ERROR("DNS resolution for dns.google failed");
+			LOG_ERROR("DNS resolution for dns.google failed (error: %u)", result.Error());
 			return FALSE;
 		}
 

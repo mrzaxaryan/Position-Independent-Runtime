@@ -39,13 +39,13 @@ HttpClient::HttpClient(PCCHAR url)
         return;
     }
 
-    ipAddress = DNS::Resolve(hostName);
-
-    if (!ipAddress.IsValid())
+    auto dnsResult = DNS::Resolve(hostName);
+    if (!dnsResult)
     {
         LOG_ERROR("Failed to resolve hostname %s", hostName);
         return;
     }
+    ipAddress = dnsResult.Value();
     tlsContext = TLSClient(hostName, ipAddress, port, isSecure);
 }
 
