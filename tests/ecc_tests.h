@@ -14,8 +14,6 @@ public:
 		LOG_INFO("Running ECC Tests...");
 
 		RunTest(allPassed, EMBED_FUNC(TestEccInitialization), L"ECC initialization"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestEccSecp128r1), L"ECC secp128r1"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestEccSecp192r1), L"ECC secp192r1"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestEccSecp256r1), L"ECC secp256r1"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestEccSecp384r1), L"ECC secp384r1"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestPublicKeyExport), L"Public key export"_embed);
@@ -44,45 +42,7 @@ private:
 		return result == 0;
 	}
 
-	// Test 2: secp128r1 curve (16 bytes)
-	static BOOL TestEccSecp128r1()
-	{
-		Ecc ecc;
-		INT32 result = ecc.Initialize(16);
-		if (result != 0)
-			return FALSE;
-
-		// Verify we can export a public key
-		UINT8 publicKey[16 * 2 + 1]; // 16 bytes * 2 (x,y) + 1 (format byte)
-		result = ecc.ExportPublicKey(publicKey, sizeof(publicKey));
-
-		// Should successfully export
-		if (result == 0)
-			return FALSE;
-
-		// Public key should start with 0x04 (uncompressed format)
-		return publicKey[0] == 0x04;
-	}
-
-	// Test 3: secp192r1 curve (24 bytes)
-	static BOOL TestEccSecp192r1()
-	{
-		Ecc ecc;
-		INT32 result = ecc.Initialize(24);
-		if (result != 0)
-			return FALSE;
-
-		// Verify we can export a public key
-		UINT8 publicKey[24 * 2 + 1];
-		result = ecc.ExportPublicKey(publicKey, sizeof(publicKey));
-
-		if (result == 0)
-			return FALSE;
-
-		return publicKey[0] == 0x04;
-	}
-
-	// Test 4: secp256r1 curve (32 bytes)
+	// Test 2: secp256r1 curve (32 bytes)
 	static BOOL TestEccSecp256r1()
 	{
 		Ecc ecc;

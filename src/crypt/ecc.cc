@@ -6,23 +6,11 @@
 #include "memory.h"
 
 /* Curve selection options. */
-#define secp128r1 16
-#define secp192r1 24
 #define secp256r1 32
 #define secp384r1 48
 #define MAX_TRIES 16
 
 #define EVEN(vli) (!(vli[0] & 1))
-
-constexpr UINT64 Curve_P_16[] = {0xFFFFFFFFFFFFFFFF, 0xFFFFFFFDFFFFFFFF};
-constexpr UINT64 Curve_B_16[] = {0xD824993C2CEE5ED3, 0xE87579C11079F43D};
-constexpr EccPoint Curve_G_16 = {{0x0C28607CA52C5B86, 0x161FF7528B899B2D}, {0xC02DA292DDED7A83, 0xCF5AC8395BAFEB13}};
-constexpr UINT64 Curve_N_16[] = {0x75A30D1B9038A115, 0xFFFFFFFE00000000};
-
-constexpr UINT64 Curve_P_24[] = {0xFFFFFFFFFFFFFFFFull, 0xFFFFFFFFFFFFFFFEull, 0xFFFFFFFFFFFFFFFFull};
-constexpr UINT64 Curve_B_24[] = {0xFEB8DEECC146B9B1ull, 0x0FA7E9AB72243049ull, 0x64210519E59C80E7ull};
-constexpr EccPoint Curve_G_24 = {{0xF4FF0AFD82FF1012ull, 0x7CBF20EB43A18800ull, 0x188DA80EB03090F6ull}, {0x73F977A11E794811ull, 0x631011ED6B24CDD5ull, 0x07192B95FFC8DA78ull}};
-constexpr UINT64 Curve_N_24[] = {0x146BC9B1B4D22831ull, 0xFFFFFFFF99DEF836ull, 0xFFFFFFFFFFFFFFFFull};
 
 constexpr UINT64 Curve_P_32[] = {0xFFFFFFFFFFFFFFFF, 0x00000000FFFFFFFF, 0x0000000000000000, 0xFFFFFFFF00000001};
 constexpr UINT64 Curve_B_32[] = {0x3BCE3C3E27D2604B, 0x651D06B0CC53B0F6, 0xB3EBBD55769886BC, 0x5AC635D8AA3A93E7};
@@ -267,68 +255,6 @@ VOID Ecc::VliModSub(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight, UINT64 *pMod
     }
 }
 
-/* Computes result = product % curve_p.
-   See algorithm 5 and 6 from http://www.isys.uni-klu.ac.at/PDF/2001-0126-MT.pdf */
-VOID Ecc::VliMmodFast128(UINT64 *pResult, UINT64 *pProduct)
-{
-    UINT64 l_tmp[MAX_NUM_ECC_DIGITS];
-    INT64 l_carry;
-
-    this->VliSet(pResult, pProduct);
-
-    l_tmp[0] = pProduct[2];
-    l_tmp[1] = (pProduct[3] & 0x1FFFFFFFFull) | (pProduct[2] << 33);
-    l_carry = this->VliAdd(pResult, pResult, l_tmp);
-
-    l_tmp[0] = (pProduct[2] >> 31) | (pProduct[3] << 33);
-    l_tmp[1] = (pProduct[3] >> 31) | ((pProduct[2] & 0xFFFFFFFF80000000ull) << 2);
-    l_carry += this->VliAdd(pResult, pResult, l_tmp);
-    l_tmp[0] = (pProduct[2] >> 62) | (pProduct[3] << 2);
-    l_tmp[1] = (pProduct[3] >> 62) | ((pProduct[2] & 0xC000000000000000ull) >> 29) | (pProduct[3] << 35);
-    l_carry += this->VliAdd(pResult, pResult, l_tmp);
-
-    l_tmp[0] = (pProduct[3] >> 29);
-    l_tmp[1] = ((pProduct[3] & 0xFFFFFFFFE0000000ull) << 4);
-    l_carry += this->VliAdd(pResult, pResult, l_tmp);
-    l_tmp[0] = (pProduct[3] >> 60);
-    l_tmp[1] = (pProduct[3] & 0xFFFFFFFE00000000ull);
-    l_carry += this->VliAdd(pResult, pResult, l_tmp);
-
-    l_tmp[0] = 0;
-    l_tmp[1] = ((pProduct[3] & 0xF000000000000000ull) >> 27);
-    l_carry += this->VliAdd(pResult, pResult, l_tmp);
-    while (l_carry || this->VliCmp(this->curveP, pResult) != 1)
-    {
-        l_carry -= this->VliSub(pResult, pResult, this->curveP);
-    }
-}
-
-/* Computes p_result = p_product % curveP.
-   See algorithm 5 and 6 from http://www.isys.uni-klu.ac.at/PDF/2001-0126-MT.pdf */
-VOID Ecc::VliMmodFast192(UINT64 *pResult, UINT64 *pProduct)
-{
-    UINT64 l_tmp[MAX_NUM_ECC_DIGITS];
-    INT64 l_carry;
-
-    this->VliSet(pResult, pProduct);
-
-    this->VliSet(l_tmp, &pProduct[3]);
-    l_carry = this->VliAdd(pResult, pResult, l_tmp);
-
-    l_tmp[0] = 0;
-    l_tmp[1] = pProduct[3];
-    l_tmp[2] = pProduct[4];
-    l_carry += this->VliAdd(pResult, pResult, l_tmp);
-
-    l_tmp[0] = l_tmp[1] = pProduct[5];
-    l_tmp[2] = 0;
-    l_carry += this->VliAdd(pResult, pResult, l_tmp);
-    while (l_carry || this->VliCmp(this->curveP, pResult) != 1)
-    {
-        l_carry -= this->VliSub(pResult, pResult, this->curveP);
-    }
-}
-
 /* Computes result = product % curveP
    from http://www.nsa.gov/ia/_files/nist-routines.pdf */
 VOID Ecc::VliMmodFast256(UINT64 *pResult, UINT64 *pProduct)
@@ -474,11 +400,7 @@ VOID Ecc::VliMmodFast384(UINT64 *pResult, UINT64 *pProduct)
 /* Dispatches to the curve-specific fast reduction. */
 VOID Ecc::MmodFast(UINT64 *pResult, UINT64 *pProduct)
 {
-    if (this->eccBytes == secp128r1)
-        this->VliMmodFast128(pResult, pProduct);
-    else if (this->eccBytes == secp192r1)
-        this->VliMmodFast192(pResult, pProduct);
-    else if (this->eccBytes == secp256r1)
+    if (this->eccBytes == secp256r1)
         this->VliMmodFast256(pResult, pProduct);
     else if (this->eccBytes == secp384r1)
         this->VliMmodFast384(pResult, pProduct);
@@ -893,23 +815,7 @@ INT32 Ecc::Initialize(INT32 curve)
 {
     this->eccBytes = curve;
     this->numEccDigits = curve >> 3;
-    if (curve == secp128r1)
-    {
-        Memory::Copy(this->curveP, MakeEmbedArray(Curve_P_16), sizeof(Curve_P_16));
-        Memory::Copy(this->curveB, MakeEmbedArray(Curve_B_16), sizeof(Curve_B_16));
-        Memory::Copy(this->curveG.x, MakeEmbedArray(Curve_G_16.x), sizeof(Curve_G_16.x));
-        Memory::Copy(this->curveG.y, MakeEmbedArray(Curve_G_16.y), sizeof(Curve_G_16.y));
-        Memory::Copy(this->curveN, MakeEmbedArray(Curve_N_16), sizeof(Curve_N_16));
-    }
-    else if (curve == secp192r1)
-    {
-        Memory::Copy(this->curveP, MakeEmbedArray(Curve_P_24), sizeof(Curve_P_24));
-        Memory::Copy(this->curveB, MakeEmbedArray(Curve_B_24), sizeof(Curve_B_24));
-        Memory::Copy(this->curveG.x, MakeEmbedArray(Curve_G_24.x), sizeof(Curve_G_24.x));
-        Memory::Copy(this->curveG.y, MakeEmbedArray(Curve_G_24.y), sizeof(Curve_G_24.y));
-        Memory::Copy(this->curveN, MakeEmbedArray(Curve_N_24), sizeof(Curve_N_24));
-    }
-    else if (curve == secp256r1)
+    if (curve == secp256r1)
     {
         Memory::Copy(this->curveP, MakeEmbedArray(Curve_P_32), sizeof(Curve_P_32));
         Memory::Copy(this->curveB, MakeEmbedArray(Curve_B_32), sizeof(Curve_B_32));
