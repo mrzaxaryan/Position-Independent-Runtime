@@ -8,7 +8,7 @@ class ArrayStorageTests
 public:
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running ArrayStorage Tests...");
 
@@ -35,14 +35,14 @@ private:
 
 		// Verify size
 		if (storage.Count != 5) // "Test" + null terminator
-			return FALSE;
+			return false;
 
 		// Verify data integrity using literals
 		if (storage[0] != L'T' || storage[1] != L'e' || storage[2] != L's' ||
-		    storage[3] != L't' || storage[4] != L'\0')
-			return FALSE;
+			storage[3] != L't' || storage[4] != L'\0')
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestUInt32ArrayStorage()
@@ -52,7 +52,7 @@ private:
 
 		// Verify size
 		if (storage.Count != 4)
-			return FALSE;
+			return false;
 
 		// Print values to console
 		LOG_INFO("    UINT32 values:");
@@ -63,9 +63,9 @@ private:
 
 		// Verify data integrity using literals
 		if (storage[0] != 1 || storage[1] != 2 || storage[2] != 3 || storage[3] != 4)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestUInt64ArrayStorage()
@@ -78,15 +78,15 @@ private:
 
 		// Verify size
 		if (storage.Count != 3)
-			return FALSE;
+			return false;
 
 		// Verify data integrity using literals
 		if (storage[0] != UINT64(0x123456789ABCDEF0ULL) ||
-		    storage[1] != UINT64(0xFEDCBA9876543210ULL) ||
-		    storage[2] != UINT64(0x0011223344556677ULL))
-			return FALSE;
+			storage[1] != UINT64(0xFEDCBA9876543210ULL) ||
+			storage[2] != UINT64(0x0011223344556677ULL))
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestArrayIndexing()
@@ -96,10 +96,10 @@ private:
 
 		// Test indexing operator
 		if (storage[0] != 100 || storage[1] != 200 || storage[2] != 300 ||
-		    storage[3] != 400 || storage[4] != 500)
-			return FALSE;
+			storage[3] != 400 || storage[4] != 500)
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestPointerConversionAndCopy()
@@ -112,9 +112,9 @@ private:
 		Memory::Copy(dest, storage, 3 * sizeof(UINT32));
 
 		if (dest[0] != 0xAAAAAAAA || dest[1] != 0xBBBBBBBB || dest[2] != 0xCCCCCCCC)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestCompileTimeConstants()
@@ -129,10 +129,10 @@ private:
 
 		// Verify runtime behavior matches compile-time expectations
 		if (storage.Count != 12)
-			return FALSE;
+			return false;
 		if (storage.SizeBytes != 12)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 };

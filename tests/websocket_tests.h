@@ -20,7 +20,7 @@ private:
 		WebSocketClient wsClient((PCCHAR)wsUrl);
 
 		LOG_INFO("WebSocket client created successfully");
-		return TRUE;
+		return true;
 	}
 
 	// Test 2: WebSocket connection with explicit DNS resolution
@@ -35,7 +35,7 @@ private:
 		{
 			LOG_ERROR("DNS resolution failed for %s (error: %u)", (PCCHAR)domain, dnsResult.Error());
 			LOG_ERROR("WebSocket tests require network connectivity");
-			return FALSE;
+			return false;
 		}
 		LOG_INFO("DNS resolved: %s successfully (IPv4)", (PCCHAR)domain);
 
@@ -47,12 +47,12 @@ private:
 		if (!openResult)
 		{
 			LOG_ERROR("WebSocket handshake failed - check if echo.websocket.org is accessible (error: %u)", openResult.Error());
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("WebSocket connection established successfully");
 		(void)wsClient.Close();
-		return TRUE;
+		return true;
 	}
 
 	// Test 3: Basic secure WebSocket connection and handshake (wss://)
@@ -67,12 +67,12 @@ private:
 		if (!openResult)
 		{
 			LOG_ERROR("Secure WebSocket handshake failed (error: %u)", openResult.Error());
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Secure WebSocket connection established successfully");
 		(void)wsClient.Close();
-		return TRUE;
+		return true;
 	}
 
 	// Test 4: WebSocket text message echo (OPCODE_TEXT)
@@ -87,7 +87,7 @@ private:
 		if (!openResult)
 		{
 			LOG_ERROR("WebSocket connection failed (error: %u)", openResult.Error());
-			return FALSE;
+			return false;
 		}
 
 		// Note: echo.websocket.org sends an initial "Request served by..." message
@@ -104,7 +104,7 @@ private:
 		{
 			LOG_ERROR("Failed to send message (error: %u)", writeResult.Error());
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		// Receive echo response
@@ -114,7 +114,7 @@ private:
 		{
 			LOG_ERROR("Failed to receive echo response (error: %u)", readResult.Error());
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		WebSocketMessage &response = readResult.Value();
@@ -123,7 +123,7 @@ private:
 		{
 			LOG_ERROR("Unexpected opcode: expected %d (TEXT), got %d", OPCODE_TEXT, response.opcode);
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		// Verify echo matches sent message
@@ -135,11 +135,11 @@ private:
 		if (!matches)
 		{
 			LOG_ERROR("Echo response does not match sent message");
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Text echo test passed");
-		return TRUE;
+		return true;
 	}
 
 	// Test 5: WebSocket binary message echo (OPCODE_BINARY)
@@ -154,7 +154,7 @@ private:
 		if (!openResult)
 		{
 			LOG_ERROR("WebSocket connection failed (error: %u)", openResult.Error());
-			return FALSE;
+			return false;
 		}
 
 		// Discard initial server message
@@ -178,7 +178,7 @@ private:
 		{
 			LOG_ERROR("Failed to send binary message (error: %u)", writeResult.Error());
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Sent binary message (%d bytes)", writeResult.Value());
@@ -190,7 +190,7 @@ private:
 		{
 			LOG_ERROR("Failed to receive echo response (error: %u)", readResult.Error());
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		WebSocketMessage &response = readResult.Value();
@@ -199,7 +199,7 @@ private:
 		{
 			LOG_ERROR("Unexpected opcode: expected %d (BINARY), got %d", OPCODE_BINARY, response.opcode);
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Received binary echo (opcode: %d, length: %d)", response.opcode, response.length);
@@ -213,11 +213,11 @@ private:
 		if (!matches)
 		{
 			LOG_ERROR("Binary echo response does not match sent data");
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Binary echo test passed");
-		return TRUE;
+		return true;
 	}
 
 	// Test 6: Multiple sequential messages
@@ -232,7 +232,7 @@ private:
 		if (!openResult)
 		{
 			LOG_ERROR("WebSocket connection failed (error: %u)", openResult.Error());
-			return FALSE;
+			return false;
 		}
 
 		// Discard initial server message
@@ -249,7 +249,7 @@ private:
 		{
 			LOG_ERROR("Failed to send message 1");
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		auto read1 = wsClient.Read();
@@ -257,7 +257,7 @@ private:
 		{
 			LOG_ERROR("Failed to receive echo for message 1");
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		// Send and receive message 2
@@ -266,7 +266,7 @@ private:
 		{
 			LOG_ERROR("Failed to send message 2");
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		auto read2 = wsClient.Read();
@@ -274,7 +274,7 @@ private:
 		{
 			LOG_ERROR("Failed to receive echo for message 2");
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		// Send and receive message 3
@@ -283,7 +283,7 @@ private:
 		{
 			LOG_ERROR("Failed to send message 3");
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		auto read3 = wsClient.Read();
@@ -291,12 +291,12 @@ private:
 		{
 			LOG_ERROR("Failed to receive echo for message 3");
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Multiple message test passed");
 		(void)wsClient.Close();
-		return TRUE;
+		return true;
 	}
 
 	// Test 7: Large message handling
@@ -311,7 +311,7 @@ private:
 		if (!openResult)
 		{
 			LOG_ERROR("WebSocket connection failed (error: %u)", openResult.Error());
-			return FALSE;
+			return false;
 		}
 
 		// Discard initial server message
@@ -324,7 +324,7 @@ private:
 		{
 			LOG_ERROR("Failed to allocate memory for large message");
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		// Fill with pattern
@@ -342,7 +342,7 @@ private:
 			LOG_ERROR("Failed to send large message (error: %u)", writeResult.Error());
 			delete[] largeMessage;
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Sent large message (%d bytes)", writeResult.Value());
@@ -355,7 +355,7 @@ private:
 			LOG_ERROR("Failed to receive large echo response (error: %u)", readResult.Error());
 			delete[] largeMessage;
 			(void)wsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		WebSocketMessage &response = readResult.Value();
@@ -372,11 +372,11 @@ private:
 		if (!matches)
 		{
 			LOG_ERROR("Large echo response does not match sent message");
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Large message test passed");
-		return TRUE;
+		return true;
 	}
 
 	// Test 8: WebSocket close handshake
@@ -391,7 +391,7 @@ private:
 		if (!openResult)
 		{
 			LOG_ERROR("WebSocket connection failed (error: %u)", openResult.Error());
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("WebSocket connected, initiating close handshake");
@@ -399,18 +399,18 @@ private:
 		if (!wsClient.Close())
 		{
 			LOG_ERROR("WebSocket close handshake failed");
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("WebSocket closed successfully");
-		return TRUE;
+		return true;
 	}
 
 public:
 	// Run all WebSocket tests
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running WebSocket Tests...");
 		LOG_INFO("  Test Server: echo.websocket.org (wss://)");

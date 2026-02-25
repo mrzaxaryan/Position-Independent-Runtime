@@ -9,19 +9,19 @@ PVOID GetExportAddress(PVOID hModule, USIZE functionNameHash)
     // Validate DOS header
     PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)hModule;
     if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE)
-        return NULL;
+        return nullptr;
 
     // Validate NT headers
     IMAGE_NT_HEADERS *ntHeader = (IMAGE_NT_HEADERS *)((PCHAR)dosHeader + dosHeader->e_lfanew);
     if (ntHeader->Signature != IMAGE_NT_SIGNATURE)
-        return NULL;
+        return nullptr;
     // Use the proper index for exports
     UINT32 exportRva = ntHeader->OptionalHeader
                            .DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT]
                            .VirtualAddress;
 
     if (exportRva == 0)
-        return NULL;
+        return nullptr;
 
     PIMAGE_EXPORT_DIRECTORY exportDirectory =
         (PIMAGE_EXPORT_DIRECTORY)((PCHAR)hModule + exportRva);
@@ -50,5 +50,5 @@ PVOID GetExportAddress(PVOID hModule, USIZE functionNameHash)
         }
     }
 
-    return NULL; // Function was not found
+    return nullptr; // Function was not found
 }

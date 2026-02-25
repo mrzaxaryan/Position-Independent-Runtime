@@ -31,8 +31,8 @@ typedef struct _FILE_STANDARD_INFORMATION
     LARGE_INTEGER AllocationSize; // Number of bytes allocated for the file
     LARGE_INTEGER EndOfFile;      // Actual file size in bytes
     UINT32 NumberOfLinks;         // Number of hard links
-    INT8 DeletePending;           // TRUE if file is marked for deletion
-    INT8 Directory;               // TRUE if it is a directory
+    INT8 DeletePending;           // true if file is marked for deletion
+    INT8 Directory;               // true if it is a directory
 } FILE_STANDARD_INFORMATION, *PFILE_STANDARD_INFORMATION;
 
 typedef struct _FILE_POSITION_INFORMATION

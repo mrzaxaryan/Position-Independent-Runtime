@@ -71,19 +71,19 @@ IPAddress IPAddress::Invalid()
 // Convert string to IPAddress (supports both IPv4 and IPv6)
 IPAddress IPAddress::FromString(PCCHAR ipString)
 {
-    if (ipString == NULL)
+    if (ipString == nullptr)
     {
         return Invalid();
     }
 
     // Check if it's IPv6 (contains ':')
     PCCHAR pChar = ipString;
-    BOOL hasColon = FALSE;
+    BOOL hasColon = false;
     while (*pChar != '\0')
     {
         if (*pChar == ':')
         {
-            hasColon = TRUE;
+            hasColon = true;
             break;
         }
         pChar++;
@@ -98,7 +98,7 @@ IPAddress IPAddress::FromString(PCCHAR ipString)
         // IPv6 parsing logic
         UINT32 groupIndex = 0;
         UINT32 doubleColonPos = 0xFFFFFFFF;
-        BOOL foundDoubleColon = FALSE;
+        BOOL foundDoubleColon = false;
         PCCHAR pCurrent = ipString;
         CHAR hexBuffer[5];
         UINT32 hexIndex = 0;
@@ -120,7 +120,7 @@ IPAddress IPAddress::FromString(PCCHAR ipString)
                         hexIndex = 0;
                     }
                     // Handle double colon
-                    foundDoubleColon = TRUE;
+                    foundDoubleColon = true;
                     doubleColonPos = groupIndex;
                     pCurrent += 2;
                     if (*pCurrent == '\0')
@@ -314,22 +314,22 @@ UINT32 IPAddress::ToIPv4() const
     return 0xFFFFFFFF; // INVALID_IPV4
 }
 
-// Get IPv6 address (returns NULL if not IPv6)
+// Get IPv6 address (returns nullptr if not IPv6)
 const UINT8 *IPAddress::ToIPv6() const
 {
     if (version == IPVersion::IPv6)
     {
         return address.ipv6;
     }
-    return NULL;
+    return nullptr;
 }
 
 // Convert IP address to string
 BOOL IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
 {
-    if (buffer == NULL || bufferSize == 0)
+    if (buffer == nullptr || bufferSize == 0)
     {
-        return FALSE;
+        return false;
     }
 
     if (version == IPVersion::IPv4)
@@ -337,7 +337,7 @@ BOOL IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
         // Convert IPv4 to string
         if (bufferSize < 16) // Minimum size for "255.255.255.255\0"
         {
-            return FALSE;
+            return false;
         }
 
         UINT8 octets[4];
@@ -357,14 +357,14 @@ BOOL IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
             offset += len;
         }
         buffer[offset] = '\0';
-        return TRUE;
+        return true;
     }
     else if (version == IPVersion::IPv6)
     {
         // Convert IPv6 to string (simplified format)
         if (bufferSize < 40) // Minimum size for full IPv6 address
         {
-            return FALSE;
+            return false;
         }
 
         UINT32 offset = 0;
@@ -384,10 +384,10 @@ BOOL IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
             offset += hexLen;
         }
         buffer[offset] = '\0';
-        return TRUE;
+        return true;
     }
 
-    return FALSE;
+    return false;
 }
 
 // Equality operator
@@ -395,7 +395,7 @@ BOOL IPAddress::operator==(const IPAddress &other) const
 {
     if (version != other.version)
     {
-        return FALSE;
+        return false;
     }
 
     if (version == IPVersion::IPv4)

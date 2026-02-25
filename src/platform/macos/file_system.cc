@@ -11,7 +11,7 @@ File::File(PVOID handle) : fileHandle(handle), fileSize(0)
 {
 }
 
-File::File(File&& other) noexcept : fileHandle(nullptr), fileSize(0)
+File::File(File &&other) noexcept : fileHandle(nullptr), fileSize(0)
 {
 	fileHandle = other.fileHandle;
 	fileSize = other.fileSize;
@@ -19,7 +19,7 @@ File::File(File&& other) noexcept : fileHandle(nullptr), fileSize(0)
 	other.fileSize = 0;
 }
 
-File& File::operator=(File&& other) noexcept
+File &File::operator=(File &&other) noexcept
 {
 	if (this != &other)
 	{
@@ -57,7 +57,7 @@ UINT32 File::Read(PVOID buffer, UINT32 size)
 	return (result >= 0) ? (UINT32)result : 0;
 }
 
-UINT32 File::Write(const VOID* buffer, USIZE size)
+UINT32 File::Write(const VOID *buffer, USIZE size)
 {
 	if (!IsValid())
 		return 0;
@@ -180,7 +180,7 @@ BOOL FileSystem::DeleteDirectory(PCWCHAR path)
 // --- DirectoryIterator Implementation ---
 
 DirectoryIterator::DirectoryIterator(PCWCHAR path)
-	: handle((PVOID)INVALID_FD), first(FALSE), nread(0), bpos(0)
+	: handle((PVOID)INVALID_FD), first(false), nread(0), bpos(0)
 {
 	CHAR utf8Path[1024];
 
@@ -201,7 +201,7 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path)
 	if (fd >= 0)
 	{
 		handle = (PVOID)fd;
-		first = TRUE;
+		first = true;
 	}
 }
 
@@ -241,37 +241,37 @@ DirectoryIterator::~DirectoryIterator()
 BOOL DirectoryIterator::Next()
 {
 	if (!IsValid())
-		return FALSE;
+		return false;
 
 	if (first || bpos >= nread)
 	{
-		first = FALSE;
+		first = false;
 		// macOS getdirentries64: fd, buf, bufsize, basep
 		USIZE basep = 0;
 		nread = (INT32)System::Call(SYS_GETDIRENTRIES64, (USIZE)handle, (USIZE)buffer, sizeof(buffer), (USIZE)&basep);
 
 		if (nread <= 0)
-			return FALSE;
+			return false;
 		bpos = 0;
 	}
 
-	bsd_dirent64* d = (bsd_dirent64*)(buffer + bpos);
+	bsd_dirent64 *d = (bsd_dirent64 *)(buffer + bpos);
 
 	String::Utf8ToWide(d->d_name, currentEntry.name, 256);
 
 	currentEntry.isDirectory = (d->d_type == DT_DIR);
-	currentEntry.isDrive = FALSE;
+	currentEntry.isDrive = false;
 	currentEntry.type = (UINT32)d->d_type;
 	currentEntry.isHidden = (d->d_name[0] == '.');
-	currentEntry.isSystem = FALSE;
-	currentEntry.isReadOnly = FALSE;
+	currentEntry.isSystem = false;
+	currentEntry.isReadOnly = false;
 	currentEntry.size = 0;
 	currentEntry.creationTime = 0;
 	currentEntry.lastModifiedTime = 0;
 
 	bpos += d->d_reclen;
 
-	return TRUE;
+	return true;
 }
 
 BOOL DirectoryIterator::IsValid() const

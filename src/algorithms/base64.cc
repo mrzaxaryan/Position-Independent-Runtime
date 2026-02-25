@@ -64,7 +64,7 @@ BOOL Base64::Encode(PCCHAR input, UINT32 inputSize, PCHAR output)
     }
 
     output[o] = 0;
-    return TRUE;
+    return true;
 }
 
 // Decoder for Base64 formatted data to original format
@@ -101,7 +101,7 @@ BOOL Base64::Decode(PCCHAR input, UINT32 inputSize, PCHAR output)
         i += 4u;
     }
 
-    return TRUE;
+    return true;
 }
 
 // Calculate the output size needed for Base64 encoding

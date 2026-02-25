@@ -41,12 +41,12 @@
  * @par Example Usage:
  * @code
  * // Character classification
- * BOOL isDigit = String::IsDigit('5');           // TRUE
- * BOOL isSpace = String::IsSpace('\t');          // TRUE
+ * BOOL isDigit = String::IsDigit('5');           // true
+ * BOOL isSpace = String::IsSpace('\t');          // true
  *
  * // String operations
  * USIZE len = String::Length("Hello");           // 5
- * BOOL eq = String::Equals("foo", "foo");        // TRUE
+ * BOOL eq = String::Equals("foo", "foo");        // true
  *
  * // Number conversion
  * CHAR buf[32];
@@ -64,7 +64,7 @@ public:
      * @brief Check if character is whitespace
      * @tparam TChar Character type (CHAR or WCHAR)
      * @param c Character to check
-     * @return TRUE if whitespace (space, tab, newline, etc.), FALSE otherwise
+     * @return true if whitespace (space, tab, newline, etc.), false otherwise
      */
     template <TCHAR TChar>
     static FORCE_INLINE BOOL IsSpace(TChar c) noexcept;
@@ -73,7 +73,7 @@ public:
      * @brief Check if character is a decimal digit (0-9)
      * @tparam TChar Character type (CHAR or WCHAR)
      * @param c Character to check
-     * @return TRUE if digit, FALSE otherwise
+     * @return true if digit, false otherwise
      */
     template <TCHAR TChar>
     static FORCE_INLINE BOOL IsDigit(TChar c) noexcept;
@@ -82,7 +82,7 @@ public:
      * @brief Check if character is alphabetic (a-z, A-Z)
      * @tparam TChar Character type (CHAR or WCHAR)
      * @param c Character to check
-     * @return TRUE if alphabetic, FALSE otherwise
+     * @return true if alphabetic, false otherwise
      */
     template <TCHAR TChar>
     static FORCE_INLINE BOOL IsAlpha(TChar c) noexcept;
@@ -91,7 +91,7 @@ public:
      * @brief Check if character is alphanumeric (a-z, A-Z, 0-9)
      * @tparam TChar Character type (CHAR or WCHAR)
      * @param c Character to check
-     * @return TRUE if alphanumeric, FALSE otherwise
+     * @return true if alphanumeric, false otherwise
      */
     template <TCHAR TChar>
     static FORCE_INLINE BOOL IsAlphaNum(TChar c) noexcept;
@@ -136,11 +136,11 @@ public:
      * @tparam TChar Character type (CHAR or WCHAR)
      * @param s1 First string
      * @param s2 Second string
-     * @param ignoreCase If TRUE, comparison is case-insensitive
-     * @return TRUE if strings are equal, FALSE otherwise
+     * @param ignoreCase If true, comparison is case-insensitive
+     * @return true if strings are equal, false otherwise
      */
     template <TCHAR TChar>
-    static BOOL Compare(const TChar *s1, const TChar *s2, BOOL ignoreCase = FALSE) noexcept;
+    static BOOL Compare(const TChar *s1, const TChar *s2, BOOL ignoreCase = false) noexcept;
 
     /**
      * @brief Compare two strings with explicit lengths
@@ -149,7 +149,7 @@ public:
      * @param aLen Length of first string
      * @param b Second string
      * @param bLen Length of second string
-     * @return TRUE if strings are equal, FALSE otherwise
+     * @return true if strings are equal, false otherwise
      */
     template <TCHAR TChar>
     static BOOL Equals(const TChar *a, USIZE aLen, const TChar *b, USIZE bLen) noexcept;
@@ -159,7 +159,7 @@ public:
      * @tparam TChar Character type (CHAR or WCHAR)
      * @param a First string
      * @param b Second string
-     * @return TRUE if strings are equal, FALSE otherwise
+     * @return true if strings are equal, false otherwise
      */
     template <TCHAR TChar>
     static BOOL Equals(const TChar *a, const TChar *b) noexcept;
@@ -169,7 +169,7 @@ public:
      * @tparam TChar Character type (CHAR or WCHAR)
      * @param pChar String to check
      * @param pSubString Prefix to look for
-     * @return TRUE if string starts with prefix, FALSE otherwise
+     * @return true if string starts with prefix, false otherwise
      */
     template <TCHAR TChar>
     static BOOL StartsWith(const TChar *pChar, const TChar *pSubString) noexcept;
@@ -181,7 +181,7 @@ public:
      * @param strLen Length of string
      * @param prefix Prefix to look for
      * @param prefixLen Length of prefix
-     * @return TRUE if string starts with prefix, FALSE otherwise
+     * @return true if string starts with prefix, false otherwise
      */
     template <TCHAR TChar>
     static BOOL StartsWith(const TChar *str, USIZE strLen, const TChar *prefix, USIZE prefixLen) noexcept;
@@ -193,7 +193,7 @@ public:
      * @param strLen Length of string
      * @param suffix Suffix to look for
      * @param suffixLen Length of suffix
-     * @return TRUE if string ends with suffix, FALSE otherwise
+     * @return true if string ends with suffix, false otherwise
      */
     template <TCHAR TChar>
     static BOOL EndsWith(const TChar *str, USIZE strLen, const TChar *suffix, USIZE suffixLen) noexcept;
@@ -207,7 +207,7 @@ public:
      * @tparam TChar Character type (CHAR or WCHAR)
      * @param c Character to find
      * @param pChar String to search
-     * @return Pointer to first occurrence, or NULL if not found
+     * @return Pointer to first occurrence, or nullptr if not found
      */
     template <TCHAR TChar>
     static const TChar *AddressOf(TChar c, const TChar *pChar) noexcept;
@@ -384,10 +384,10 @@ public:
      * @brief Write hexadecimal number to buffer
      * @param buffer Destination buffer
      * @param num Number to write
-     * @param uppercase TRUE for A-F, FALSE for a-f
+     * @param uppercase true for A-F, false for a-f
      * @return Pointer to null terminator
      */
-    static PCHAR WriteHex(PCHAR buffer, UINT32 num, BOOL uppercase = FALSE) noexcept;
+    static PCHAR WriteHex(PCHAR buffer, UINT32 num, BOOL uppercase = false) noexcept;
 
     /**
      * @brief Convert DOUBLE to string
@@ -404,7 +404,7 @@ public:
      * @param str String to parse
      * @param len Length of string
      * @param result Output parameter for parsed value
-     * @return TRUE on success, FALSE on failure
+     * @return true on success, false on failure
      */
     static BOOL ParseInt64(const CHAR *str, USIZE len, INT64 &result) noexcept;
 
@@ -420,7 +420,7 @@ public:
      * @param str String to parse
      * @param len Length of string
      * @param result Output parameter for parsed value
-     * @return TRUE on success, FALSE on failure
+     * @return true on success, false on failure
      */
     static BOOL StrToFloat(const CHAR *str, USIZE len, DOUBLE &result) noexcept;
 
@@ -514,7 +514,8 @@ constexpr FORCE_INLINE TChar String::ToUpperCase(TChar c) noexcept
 template <TCHAR TChar>
 constexpr USIZE String::Length(const TChar *p) noexcept
 {
-    if (!p) return 0;
+    if (!p)
+        return 0;
     USIZE i = 0;
     while (p[i] != (TChar)'\0')
     {
@@ -534,7 +535,7 @@ BOOL String::Compare(const TChar *s1, const TChar *s2, BOOL ignoreCase) noexcept
         TChar c2 = ignoreCase ? ToLowerCase(*str2) : *str2;
         if (c1 != c2)
         {
-            return FALSE;
+            return false;
         }
         str1++;
         str2++;
@@ -545,21 +546,25 @@ BOOL String::Compare(const TChar *s1, const TChar *s2, BOOL ignoreCase) noexcept
 template <TCHAR TChar>
 BOOL String::Equals(const TChar *a, USIZE aLen, const TChar *b, USIZE bLen) noexcept
 {
-    if (aLen != bLen) return FALSE;
+    if (aLen != bLen)
+        return false;
     for (USIZE i = 0; i < aLen; i++)
     {
-        if (a[i] != b[i]) return FALSE;
+        if (a[i] != b[i])
+            return false;
     }
-    return TRUE;
+    return true;
 }
 
 template <TCHAR TChar>
 BOOL String::Equals(const TChar *a, const TChar *b) noexcept
 {
-    if (!a || !b) return a == b;
+    if (!a || !b)
+        return a == b;
     while (*a != (TChar)'\0' && *b != (TChar)'\0')
     {
-        if (*a != *b) return FALSE;
+        if (*a != *b)
+            return false;
         a++;
         b++;
     }
@@ -574,38 +579,42 @@ BOOL String::StartsWith(const TChar *pChar, const TChar *pSubString) noexcept
     {
         if (pChar[i] != pSubString[i])
         {
-            return FALSE;
+            return false;
         }
         i++;
     }
     if (pSubString[i] != '\0')
     {
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 
 template <TCHAR TChar>
 BOOL String::StartsWith(const TChar *str, USIZE strLen, const TChar *prefix, USIZE prefixLen) noexcept
 {
-    if (prefixLen > strLen) return FALSE;
+    if (prefixLen > strLen)
+        return false;
     for (USIZE i = 0; i < prefixLen; i++)
     {
-        if (str[i] != prefix[i]) return FALSE;
+        if (str[i] != prefix[i])
+            return false;
     }
-    return TRUE;
+    return true;
 }
 
 template <TCHAR TChar>
 BOOL String::EndsWith(const TChar *str, USIZE strLen, const TChar *suffix, USIZE suffixLen) noexcept
 {
-    if (suffixLen > strLen) return FALSE;
+    if (suffixLen > strLen)
+        return false;
     USIZE offset = strLen - suffixLen;
     for (USIZE i = 0; i < suffixLen; i++)
     {
-        if (str[offset + i] != suffix[i]) return FALSE;
+        if (str[offset + i] != suffix[i])
+            return false;
     }
-    return TRUE;
+    return true;
 }
 
 // ============================================================================
@@ -624,7 +633,7 @@ const TChar *String::AddressOf(TChar c, const TChar *pChar) noexcept
         }
         i++;
     }
-    return NULL;
+    return nullptr;
 }
 
 template <TCHAR TChar>
@@ -632,7 +641,8 @@ SSIZE String::IndexOfChar(const TChar *str, USIZE strLen, TChar ch) noexcept
 {
     for (USIZE i = 0; i < strLen; i++)
     {
-        if (str[i] == ch) return (SSIZE)i;
+        if (str[i] == ch)
+            return (SSIZE)i;
     }
     return -1;
 }
@@ -640,18 +650,22 @@ SSIZE String::IndexOfChar(const TChar *str, USIZE strLen, TChar ch) noexcept
 template <TCHAR TChar>
 SSIZE String::IndexOf(const TChar *str, USIZE strLen, const TChar *sub, USIZE subLen) noexcept
 {
-    if (subLen == 0) return 0;
-    if (subLen > strLen) return -1;
+    if (subLen == 0)
+        return 0;
+    if (subLen > strLen)
+        return -1;
 
     USIZE limit = strLen - subLen + 1;
     for (USIZE i = 0; i < limit; i++)
     {
-        BOOL match = TRUE;
+        BOOL match = true;
         for (USIZE j = 0; j < subLen && match; j++)
         {
-            if (str[i + j] != sub[j]) match = FALSE;
+            if (str[i + j] != sub[j])
+                match = false;
         }
-        if (match) return (SSIZE)i;
+        if (match)
+            return (SSIZE)i;
     }
     return -1;
 }
@@ -676,7 +690,8 @@ TChar *String::Copy(TChar *dest, const TChar *src) noexcept
 template <TCHAR TChar>
 USIZE String::Copy(TChar *dest, USIZE destSize, const TChar *src, USIZE srcLen) noexcept
 {
-    if (!dest || destSize == 0) return 0;
+    if (!dest || destSize == 0)
+        return 0;
     if (!src || srcLen == 0)
     {
         dest[0] = (TChar)'\0';
@@ -701,7 +716,8 @@ FORCE_INLINE USIZE String::Copy(TChar (&dest)[MaxLen], const TChar *src, USIZE s
 template <typename T>
 USIZE String::CopyEmbed(const T &src, CHAR *buffer, USIZE bufSize) noexcept
 {
-    if (!buffer || bufSize == 0) return 0;
+    if (!buffer || bufSize == 0)
+        return 0;
 
     USIZE len = 0;
     const CHAR *s = src;
@@ -742,7 +758,8 @@ USIZE String::TrimEnd(TChar *str) noexcept
 template <TCHAR TChar>
 void String::TrimEnd(const TChar *str, USIZE &len) noexcept
 {
-    if (!str) return;
+    if (!str)
+        return;
     while (len > 0 && IsSpace(str[len - 1]))
     {
         len--;
@@ -752,7 +769,8 @@ void String::TrimEnd(const TChar *str, USIZE &len) noexcept
 template <TCHAR TChar>
 const TChar *String::TrimStart(const TChar *str, USIZE &len) noexcept
 {
-    if (!str) return str;
+    if (!str)
+        return str;
     while (len > 0 && IsSpace(*str))
     {
         str++;
@@ -774,7 +792,8 @@ USIZE String::Concat(TChar *buffer, USIZE bufSize,
                      const TChar *s1, USIZE len1,
                      const TChar *s2, USIZE len2) noexcept
 {
-    if (!buffer || bufSize == 0) return 0;
+    if (!buffer || bufSize == 0)
+        return 0;
 
     USIZE pos = 0;
 

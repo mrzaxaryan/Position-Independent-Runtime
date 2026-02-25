@@ -9,14 +9,14 @@ ChaCha20Encoder::~ChaCha20Encoder()
 {
     // LOG_DEBUG("Freeing encoder: %p", cipher->encoder);
     Memory::Zero(this, sizeof(ChaCha20Encoder));
-    this->initialized = FALSE;
+    this->initialized = false;
 }
 
 // Constructor
 ChaCha20Encoder::ChaCha20Encoder()
 {
     this->ivLength = TLS_CHACHA20_IV_LENGTH;
-    this->initialized = TRUE;
+    this->initialized = true;
     Memory::Zero(this->localNonce, TLS_CHACHA20_IV_LENGTH);
     Memory::Zero(this->remoteNonce, TLS_CHACHA20_IV_LENGTH);
 }
@@ -35,7 +35,7 @@ BOOL ChaCha20Encoder::Initialize(PUCHAR localKey, PUCHAR remoteKey, const UCHAR 
     this->remoteCipher.IVSetup96BitNonce(remoteIv, (PUCHAR)&counter);
     Memory::Copy(this->remoteNonce, remoteIv, sizeof(remoteIv));
 
-    return TRUE;
+    return true;
 }
 
 // Encode data using ChaCha20 and Poly1305
@@ -81,11 +81,11 @@ BOOL ChaCha20Encoder::Decode(TlsBuffer &in, TlsBuffer &out, const UCHAR *aad, IN
     if (size <= 0)
     {
         LOG_ERROR("Chacha20 Decode failed, size: %d", size);
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Chacha20 Decode succeeded, output size: %d bytes", size);
     out.SetSize(size);
-    return TRUE;
+    return true;
 }
 
 // Compute size for encoding or decoding

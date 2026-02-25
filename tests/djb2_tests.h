@@ -8,7 +8,7 @@ class Djb2Tests
 public:
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running DJB2 Hash Tests...");
 
@@ -32,8 +32,8 @@ private:
 	{
 		// Same input should always produce same hash
 		auto testStr = "hello"_embed;
-		UINT64 hash1 = Djb2::Hash((const CHAR*)testStr);
-		UINT64 hash2 = Djb2::Hash((const CHAR*)testStr);
+		UINT64 hash1 = Djb2::Hash((const CHAR *)testStr);
+		UINT64 hash2 = Djb2::Hash((const CHAR *)testStr);
 		return hash1 == hash2;
 	}
 
@@ -44,9 +44,9 @@ private:
 		auto mixed = "HeLLo"_embed;
 
 		// Hash should be case-insensitive
-		UINT64 hashLower = Djb2::Hash((const CHAR*)lower);
-		UINT64 hashUpper = Djb2::Hash((const CHAR*)upper);
-		UINT64 hashMixed = Djb2::Hash((const CHAR*)mixed);
+		UINT64 hashLower = Djb2::Hash((const CHAR *)lower);
+		UINT64 hashUpper = Djb2::Hash((const CHAR *)upper);
+		UINT64 hashMixed = Djb2::Hash((const CHAR *)mixed);
 
 		return (hashLower == hashUpper) && (hashLower == hashMixed);
 	}
@@ -56,7 +56,7 @@ private:
 		auto empty = ""_embed;
 
 		// Empty string should return the seed value
-		UINT64 hash = Djb2::Hash((const CHAR*)empty);
+		UINT64 hash = Djb2::Hash((const CHAR *)empty);
 		// Hash of empty string should be non-zero (it's the seed)
 		return hash != 0;
 	}
@@ -66,7 +66,7 @@ private:
 		// Compile-time hash should match runtime hash for same input
 		constexpr UINT64 compileTimeHash = Djb2::HashCompileTime("test");
 		auto runtimeStr = "test"_embed;
-		UINT64 runtimeHash = Djb2::Hash((const CHAR*)runtimeStr);
+		UINT64 runtimeHash = Djb2::Hash((const CHAR *)runtimeStr);
 		return compileTimeHash == runtimeHash;
 	}
 
@@ -77,9 +77,9 @@ private:
 		auto str3 = "test"_embed;
 
 		// Different strings should (almost always) produce different hashes
-		UINT64 hash1 = Djb2::Hash((const CHAR*)str1);
-		UINT64 hash2 = Djb2::Hash((const CHAR*)str2);
-		UINT64 hash3 = Djb2::Hash((const CHAR*)str3);
+		UINT64 hash1 = Djb2::Hash((const CHAR *)str1);
+		UINT64 hash2 = Djb2::Hash((const CHAR *)str2);
+		UINT64 hash3 = Djb2::Hash((const CHAR *)str3);
 
 		return (hash1 != hash2) && (hash2 != hash3) && (hash1 != hash3);
 	}
@@ -89,19 +89,19 @@ private:
 		auto wideStr = L"hello"_embed;
 
 		// Wide character strings should hash correctly
-		UINT64 hash1 = Djb2::Hash((const WCHAR*)wideStr);
-		UINT64 hash2 = Djb2::Hash((const WCHAR*)wideStr);
+		UINT64 hash1 = Djb2::Hash((const WCHAR *)wideStr);
+		UINT64 hash2 = Djb2::Hash((const WCHAR *)wideStr);
 
 		// Consistency check
 		if (hash1 != hash2)
-			return FALSE;
+			return false;
 
 		auto wideLower = L"hello"_embed;
 		auto wideUpper = L"HELLO"_embed;
 
 		// Case insensitivity for wide chars
-		UINT64 hashLower = Djb2::Hash((const WCHAR*)wideLower);
-		UINT64 hashUpper = Djb2::Hash((const WCHAR*)wideUpper);
+		UINT64 hashLower = Djb2::Hash((const WCHAR *)wideLower);
+		UINT64 hashUpper = Djb2::Hash((const WCHAR *)wideUpper);
 
 		return hashLower == hashUpper;
 	}

@@ -34,12 +34,12 @@ static VOID QemuDebugExit(UINT32 code)
 	// SYS_EXIT (0x18) with ADP_Stopped_ApplicationExit (0x20026)
 	// Register X0 = 0x18 (SYS_EXIT), X1 = pointer to parameter block
 	UINT64 params[2] = {0x20026, code}; // ADP_Stopped_ApplicationExit, exit code
-	__asm__ volatile("mov x0, #0x18\n"  // SYS_EXIT
-	                 "mov x1, %0\n"     // parameter block
-	                 "hlt #0xf000"      // semihosting call
-	                 :
-	                 : "r"(params)
-	                 : "x0", "x1");
+	__asm__ volatile("mov x0, #0x18\n"	// SYS_EXIT
+					 "mov x1, %0\n"		// parameter block
+					 "hlt #0xf000"		// semihosting call
+					 :
+					 : "r"(params)
+					 : "x0", "x1");
 #endif
 }
 
@@ -60,7 +60,7 @@ NO_RETURN VOID ExitProcess(USIZE code)
 	QemuDebugExit((UINT32)code);
 
 	// Shutdown the system
-	rs->ResetSystem(EfiResetShutdown, (EFI_STATUS)code, 0, NULL);
+	rs->ResetSystem(EfiResetShutdown, (EFI_STATUS)code, 0, nullptr);
 
 	// Should never reach here
 	__builtin_unreachable();

@@ -36,8 +36,7 @@
  *
  * Note: Force inline for maximum performance in critical path
  */
-__attribute__((always_inline))
-static inline UINT32 udiv32_internal(UINT32 numerator, UINT32 denominator, UINT32 *remainder)
+__attribute__((always_inline)) static inline UINT32 udiv32_internal(UINT32 numerator, UINT32 denominator, UINT32 *remainder)
 {
     // Division by zero: return 0 quotient, numerator as remainder
     if (__builtin_expect(denominator == 0, 0))
@@ -170,7 +169,7 @@ extern "C"
      */
     COMPILER_RUNTIME UINT32 __aeabi_uidiv(UINT32 numerator, UINT32 denominator)
     {
-        return udiv32_internal(numerator, denominator, NULL);
+        return udiv32_internal(numerator, denominator, nullptr);
     }
 
     /**
@@ -209,8 +208,7 @@ extern "C"
      *
      * Note: Force inline for maximum performance in critical path
      */
-    __attribute__((always_inline))
-    static inline INT64 idiv32_internal(INT32 numerator, INT32 denominator, bool want_remainder)
+    __attribute__((always_inline)) static inline INT64 idiv32_internal(INT32 numerator, INT32 denominator, bool want_remainder)
     {
         if (__builtin_expect(denominator == 0, 0))
             return want_remainder ? (((INT64)numerator << 32) | 0) : 0;
@@ -223,7 +221,7 @@ extern "C"
 
         // Perform unsigned division on absolute values
         UINT32 remainder = 0;
-        const UINT32 quotient = udiv32_internal(abs_num, abs_den, want_remainder ? &remainder : NULL);
+        const UINT32 quotient = udiv32_internal(abs_num, abs_den, want_remainder ? &remainder : nullptr);
 
         // Apply sign to quotient
         const INT32 signed_quot = neg_quot ? -(INT32)quotient : (INT32)quotient;
@@ -290,9 +288,8 @@ extern "C"
      * Note: __attribute__((used)) is required because the compiler cannot detect
      * the reference from inline assembly, preventing "unused function" warnings.
      */
-    __attribute__((used))
-    static void divmod64_helper(INT64 numerator, INT64 denominator,
-                                INT64 *quotient, INT64 *remainder, bool is_signed)
+    __attribute__((used)) static void divmod64_helper(INT64 numerator, INT64 denominator,
+                                                      INT64 *quotient, INT64 *remainder, bool is_signed)
     {
         if (__builtin_expect(denominator == 0, 0))
         {
@@ -348,20 +345,19 @@ extern "C"
      *   - Results are loaded directly into output registers per EABI spec
      */
     COMPILER_RUNTIME
-    __attribute__((naked))
-    void __aeabi_uldivmod(void)
+    __attribute__((naked)) void __aeabi_uldivmod(void)
     {
         __asm__ volatile(
-            "push   {r4, r5, lr}\n\t"       // Save callee-saved registers and return address
-            "sub    sp, sp, #16\n\t"        // Allocate 16 bytes: [quotient:8][remainder:8]
-            "mov    r4, sp\n\t"             // r4 = &quotient (pointer to stack)
-            "add    r5, sp, #8\n\t"         // r5 = &remainder (8 bytes after quotient)
-            "mov    r12, #0\n\t"            // r12 = is_signed = false (for unsigned division)
-            "push   {r4, r5, r12}\n\t"      // Push args 3, 4, 5 onto stack
-            "bl     divmod64_helper\n\t"    // Call helper(r0:r1, r2:r3, &quot, &rem, false)
-            "add    sp, sp, #12\n\t"        // Clean up 12 bytes of function arguments
-            "pop    {r0-r3}\n\t"            // Load results: quot->r0:r1, rem->r2:r3
-            "pop    {r4, r5, pc}\n\t"       // Restore registers and return
+            "push   {r4, r5, lr}\n\t"    // Save callee-saved registers and return address
+            "sub    sp, sp, #16\n\t"     // Allocate 16 bytes: [quotient:8][remainder:8]
+            "mov    r4, sp\n\t"          // r4 = &quotient (pointer to stack)
+            "add    r5, sp, #8\n\t"      // r5 = &remainder (8 bytes after quotient)
+            "mov    r12, #0\n\t"         // r12 = is_signed = false (for unsigned division)
+            "push   {r4, r5, r12}\n\t"   // Push args 3, 4, 5 onto stack
+            "bl     divmod64_helper\n\t" // Call helper(r0:r1, r2:r3, &quot, &rem, false)
+            "add    sp, sp, #12\n\t"     // Clean up 12 bytes of function arguments
+            "pop    {r0-r3}\n\t"         // Load results: quot->r0:r1, rem->r2:r3
+            "pop    {r4, r5, pc}\n\t"    // Restore registers and return
         );
     }
 
@@ -381,20 +377,19 @@ extern "C"
      *   - Results are loaded directly into output registers per EABI spec
      */
     COMPILER_RUNTIME
-    __attribute__((naked))
-    void __aeabi_ldivmod(void)
+    __attribute__((naked)) void __aeabi_ldivmod(void)
     {
         __asm__ volatile(
-            "push   {r4, r5, lr}\n\t"       // Save callee-saved registers and return address
-            "sub    sp, sp, #16\n\t"        // Allocate 16 bytes: [quotient:8][remainder:8]
-            "mov    r4, sp\n\t"             // r4 = &quotient (pointer to stack)
-            "add    r5, sp, #8\n\t"         // r5 = &remainder (8 bytes after quotient)
-            "mov    r12, #1\n\t"            // r12 = is_signed = true (for signed division)
-            "push   {r4, r5, r12}\n\t"      // Push args 3, 4, 5 onto stack
-            "bl     divmod64_helper\n\t"    // Call helper(r0:r1, r2:r3, &quot, &rem, true)
-            "add    sp, sp, #12\n\t"        // Clean up 12 bytes of function arguments
-            "pop    {r0-r3}\n\t"            // Load results: quot->r0:r1, rem->r2:r3
-            "pop    {r4, r5, pc}\n\t"       // Restore registers and return
+            "push   {r4, r5, lr}\n\t"    // Save callee-saved registers and return address
+            "sub    sp, sp, #16\n\t"     // Allocate 16 bytes: [quotient:8][remainder:8]
+            "mov    r4, sp\n\t"          // r4 = &quotient (pointer to stack)
+            "add    r5, sp, #8\n\t"      // r5 = &remainder (8 bytes after quotient)
+            "mov    r12, #1\n\t"         // r12 = is_signed = true (for signed division)
+            "push   {r4, r5, r12}\n\t"   // Push args 3, 4, 5 onto stack
+            "bl     divmod64_helper\n\t" // Call helper(r0:r1, r2:r3, &quot, &rem, true)
+            "add    sp, sp, #12\n\t"     // Clean up 12 bytes of function arguments
+            "pop    {r0-r3}\n\t"         // Load results: quot->r0:r1, rem->r2:r3
+            "pop    {r4, r5, pc}\n\t"    // Restore registers and return
         );
     }
 

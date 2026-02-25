@@ -9,8 +9,8 @@
 // These are handled via platform-conditional defines in socket.h
 
 // Socket constructor
-Socket::Socket(const IPAddress& ipAddress, UINT16 port)
-	: ip(ipAddress), port(port), m_socket(NULL)
+Socket::Socket(const IPAddress &ipAddress, UINT16 port)
+	: ip(ipAddress), port(port), m_socket(nullptr)
 {
 	INT32 addressFamily = SocketAddressHelper::GetAddressFamily(ip);
 	INT32 socketType = SOCK_STREAM;
@@ -29,10 +29,10 @@ Socket::Socket(const IPAddress& ipAddress, UINT16 port)
 // Bind socket to address
 BOOL Socket::Bind(SockAddr &socketAddress, INT32 shareType)
 {
-	(VOID)shareType;  // Not used on macOS
+	(VOID) shareType; // Not used on macOS
 
 	if (!IsValid())
-		return FALSE;
+		return false;
 
 	SSIZE sockfd = (SSIZE)m_socket;
 	UINT32 addrLen = (socketAddress.sin_family == AF_INET6) ? sizeof(SockAddr6) : sizeof(SockAddr);
@@ -44,19 +44,20 @@ BOOL Socket::Bind(SockAddr &socketAddress, INT32 shareType)
 BOOL Socket::Open()
 {
 	if (!IsValid())
-		return FALSE;
+		return false;
 
 	SSIZE sockfd = (SSIZE)m_socket;
 
 	// Use helper to prepare socket address
-	union {
+	union
+	{
 		SockAddr addr4;
 		SockAddr6 addr6;
 	} addrBuffer;
 
 	UINT32 addrLen = SocketAddressHelper::PrepareAddress(ip, port, &addrBuffer, sizeof(addrBuffer));
 	if (addrLen == 0)
-		return FALSE;
+		return false;
 
 	SSIZE result = System::Call(SYS_CONNECT, sockfd, (USIZE)&addrBuffer, addrLen);
 	return result == 0;
@@ -66,12 +67,12 @@ BOOL Socket::Open()
 BOOL Socket::Close()
 {
 	if (!IsValid())
-		return FALSE;
+		return false;
 
 	SSIZE sockfd = (SSIZE)m_socket;
 	System::Call(SYS_CLOSE, sockfd);
 	m_socket = (PVOID)INVALID_FD;
-	return TRUE;
+	return true;
 }
 
 // Read from socket
@@ -96,8 +97,8 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 
 	while (totalSent < bufferLength)
 	{
-		SSIZE sent = System::Call(SYS_SENDTO, sockfd, (USIZE)((const CHAR*)buffer + totalSent),
-		                         bufferLength - totalSent, 0, 0, 0);
+		SSIZE sent = System::Call(SYS_SENDTO, sockfd, (USIZE)((const CHAR *)buffer + totalSent),
+								  bufferLength - totalSent, 0, 0, 0);
 		if (sent <= 0)
 			break;
 

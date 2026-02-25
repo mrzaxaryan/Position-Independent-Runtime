@@ -13,24 +13,26 @@
 // Time Structures
 // =============================================================================
 
-typedef struct {
-	UINT16 Year;       // 1900 - 9999
-	UINT8 Month;       // 1 - 12
-	UINT8 Day;         // 1 - 31
-	UINT8 Hour;        // 0 - 23
-	UINT8 Minute;      // 0 - 59
-	UINT8 Second;      // 0 - 59
+typedef struct
+{
+	UINT16 Year;  // 1900 - 9999
+	UINT8 Month;  // 1 - 12
+	UINT8 Day;	  // 1 - 31
+	UINT8 Hour;	  // 0 - 23
+	UINT8 Minute; // 0 - 59
+	UINT8 Second; // 0 - 59
 	UINT8 Pad1;
 	UINT32 Nanosecond; // 0 - 999,999,999
-	INT16 TimeZone;    // -1440 to 1440 or EFI_UNSPECIFIED_TIMEZONE
+	INT16 TimeZone;	   // -1440 to 1440 or EFI_UNSPECIFIED_TIMEZONE
 	UINT8 Daylight;
 	UINT8 Pad2;
 } EFI_TIME;
 
-typedef struct {
+typedef struct
+{
 	UINT32 Resolution; // 1e-6 parts per million
 	UINT32 Accuracy;   // Error rate in 1e-6 parts per million
-	BOOL SetsToZero;   // TRUE if time is lost at reset
+	BOOL SetsToZero;   // true if time is lost at reset
 } EFI_TIME_CAPABILITIES;
 
 #define EFI_UNSPECIFIED_TIMEZONE 0x07FF
@@ -53,7 +55,8 @@ typedef struct {
 // Reset Types
 // =============================================================================
 
-typedef enum {
+typedef enum
+{
 	EfiResetCold,
 	EfiResetWarm,
 	EfiResetShutdown,
@@ -64,7 +67,8 @@ typedef enum {
 // Capsule Structures (minimal)
 // =============================================================================
 
-typedef struct {
+typedef struct
+{
 	EFI_GUID CapsuleGuid;
 	UINT32 HeaderSize;
 	UINT32 Flags;
@@ -154,7 +158,8 @@ typedef EFI_STATUS(EFIAPI *EFI_QUERY_VARIABLE_INFO)(
 // Runtime Services Table
 // =============================================================================
 
-typedef struct EFI_RUNTIME_SERVICES {
+typedef struct EFI_RUNTIME_SERVICES
+{
 	EFI_TABLE_HEADER Hdr;
 
 	// Time Services

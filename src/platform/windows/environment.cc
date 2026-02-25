@@ -27,11 +27,11 @@ struct RTL_USER_PROCESS_PARAMETERS_EX
     UNICODE_STRING DllPath;
     UNICODE_STRING ImagePathName;
     UNICODE_STRING CommandLine;
-    PWCHAR Environment;  // Pointer to environment block
+    PWCHAR Environment; // Pointer to environment block
 };
 
 // Helper to compare wide string with narrow string (case-insensitive for first part)
-static BOOL CompareEnvName(const WCHAR* wide, const CHAR* narrow) noexcept
+static BOOL CompareEnvName(const WCHAR *wide, const CHAR *narrow) noexcept
 {
     while (*narrow != '\0')
     {
@@ -39,12 +39,14 @@ static BOOL CompareEnvName(const WCHAR* wide, const CHAR* narrow) noexcept
         CHAR n = *narrow;
 
         // Convert to uppercase for comparison
-        if (w >= L'a' && w <= L'z') w -= 32;
-        if (n >= 'a' && n <= 'z') n -= 32;
+        if (w >= L'a' && w <= L'z')
+            w -= 32;
+        if (n >= 'a' && n <= 'z')
+            n -= 32;
 
         if (w != (WCHAR)n)
         {
-            return FALSE;
+            return false;
         }
         wide++;
         narrow++;
@@ -54,7 +56,7 @@ static BOOL CompareEnvName(const WCHAR* wide, const CHAR* narrow) noexcept
     return *wide == L'=';
 }
 
-USIZE Environment::GetVariable(const CHAR* name, CHAR* buffer, USIZE bufferSize) noexcept
+USIZE Environment::GetVariable(const CHAR *name, CHAR *buffer, USIZE bufferSize) noexcept
 {
     if (name == nullptr || buffer == nullptr || bufferSize == 0)
     {
@@ -69,7 +71,7 @@ USIZE Environment::GetVariable(const CHAR* name, CHAR* buffer, USIZE bufferSize)
     }
 
     // Get extended process parameters with Environment field
-    RTL_USER_PROCESS_PARAMETERS_EX* params = (RTL_USER_PROCESS_PARAMETERS_EX*)peb->ProcessParameters;
+    RTL_USER_PROCESS_PARAMETERS_EX *params = (RTL_USER_PROCESS_PARAMETERS_EX *)peb->ProcessParameters;
     PWCHAR envBlock = params->Environment;
 
     if (envBlock == nullptr)
@@ -85,14 +87,14 @@ USIZE Environment::GetVariable(const CHAR* name, CHAR* buffer, USIZE bufferSize)
         if (CompareEnvName(envBlock, name))
         {
             // Find the '=' and skip past it
-            const WCHAR* value = envBlock;
+            const WCHAR *value = envBlock;
             while (*value != L'=' && *value != L'\0')
             {
                 value++;
             }
             if (*value == L'=')
             {
-                value++;  // Skip the '='
+                value++; // Skip the '='
 
                 // Copy value to buffer (convert wide to narrow)
                 USIZE len = 0;
@@ -111,7 +113,7 @@ USIZE Environment::GetVariable(const CHAR* name, CHAR* buffer, USIZE bufferSize)
         {
             envBlock++;
         }
-        envBlock++;  // Skip the null terminator
+        envBlock++; // Skip the null terminator
     }
 
     // Variable not found

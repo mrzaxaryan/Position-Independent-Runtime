@@ -51,7 +51,7 @@ private:
 	 *
 	 * @param context - User context (unused, reserved for future use)
 	 * @param ch      - Character to write to console
-	 * @return TRUE on success, FALSE on error
+	 * @return true on success, false on error
 	 *
 	 * TEMPLATE PARAMETER:
 	 *   TChar - Character type (CHAR or WCHAR) determined at compile-time
@@ -206,7 +206,7 @@ BOOL Console::FormatterCallback(PVOID context, TChar ch)
 	(VOID) context; // Unused - reserved for future use (e.g., buffer pointer)
 
 	// Write single character to console
-	// Return value: TRUE = success, FALSE = error
+	// Return value: true = success, false = error
 	return Write(&ch, 1);
 }
 
@@ -246,8 +246,8 @@ UINT32 Console::WriteFormatted(const TChar *format, Args &&...args)
 	// Delegate to StringFormatter which handles all format specifier parsing
 	// Parameters:
 	//   fixed  - Position-independent callback function
-	//   NULL   - Context (unused, could be used for buffering)
+	//   nullptr   - Context (unused, could be used for buffering)
 	//   format - Format string (embedded, not in .rdata)
 	//   args   - Variadic template arguments (perfectly forwarded)
-	return StringFormatter::Format(fixed, NULL, format, static_cast<Args &&>(args)...);
+	return StringFormatter::Format(fixed, nullptr, format, static_cast<Args &&>(args)...);
 }

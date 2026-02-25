@@ -65,7 +65,7 @@ private:
     INT32 ivLength;                            /**< @brief IV length in bytes (12 for TLS 1.3) */
     UCHAR remoteNonce[TLS_CHACHA20_IV_LENGTH]; /**< @brief Base IV for remote (server) direction */
     UCHAR localNonce[TLS_CHACHA20_IV_LENGTH];  /**< @brief Base IV for local (client) direction */
-    BOOL initialized;                          /**< @brief TRUE if encoder is initialized */
+    BOOL initialized;                          /**< @brief true if encoder is initialized */
 
 public:
     /**
@@ -87,15 +87,12 @@ public:
     VOID operator delete(VOID *) = delete;
 
     ChaCha20Encoder(ChaCha20Encoder &&other)
-        : remoteCipher(static_cast<ChaChaPoly1305 &&>(other.remoteCipher))
-        , localCipher(static_cast<ChaChaPoly1305 &&>(other.localCipher))
-        , ivLength(other.ivLength)
-        , initialized(other.initialized)
+        : remoteCipher(static_cast<ChaChaPoly1305 &&>(other.remoteCipher)), localCipher(static_cast<ChaChaPoly1305 &&>(other.localCipher)), ivLength(other.ivLength), initialized(other.initialized)
     {
         Memory::Copy(remoteNonce, other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
         Memory::Copy(localNonce, other.localNonce, TLS_CHACHA20_IV_LENGTH);
         other.ivLength = 0;
-        other.initialized = FALSE;
+        other.initialized = false;
         Memory::Zero(other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
         Memory::Zero(other.localNonce, TLS_CHACHA20_IV_LENGTH);
     }
@@ -111,7 +108,7 @@ public:
             Memory::Copy(remoteNonce, other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
             Memory::Copy(localNonce, other.localNonce, TLS_CHACHA20_IV_LENGTH);
             other.ivLength = 0;
-            other.initialized = FALSE;
+            other.initialized = false;
             Memory::Zero(other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
             Memory::Zero(other.localNonce, TLS_CHACHA20_IV_LENGTH);
         }
@@ -125,7 +122,7 @@ public:
      * @param localIv IV for outgoing data (client_write_iv)
      * @param remoteIv IV for incoming data (server_write_iv)
      * @param keyLength Key length in bytes (must be 32 for ChaCha20)
-     * @return TRUE on success, FALSE on failure
+     * @return true on success, false on failure
      *
      * @details Keys and IVs are derived from the TLS 1.3 key schedule.
      * For client: local = client_write, remote = server_write
@@ -153,12 +150,12 @@ public:
      * @param out Output buffer for decrypted plaintext
      * @param aad Additional authenticated data (TLS record header)
      * @param aadSize Length of AAD in bytes
-     * @return TRUE if decryption and authentication succeed, FALSE otherwise
+     * @return true if decryption and authentication succeed, false otherwise
      *
      * @details Verifies Poly1305 tag over AAD and ciphertext, then decrypts
      * if authentication succeeds. Automatically increments the remote sequence number.
      *
-     * @warning Returns FALSE if authentication fails - output buffer contents
+     * @warning Returns false if authentication fails - output buffer contents
      * are undefined and MUST NOT be used.
      */
     BOOL Decode(TlsBuffer &in, TlsBuffer &out, const UCHAR *aad, INT32 aadSize);
@@ -182,7 +179,7 @@ public:
 
     /**
      * @brief Checks if encoder is initialized and valid
-     * @return TRUE if initialized, FALSE otherwise
+     * @return true if initialized, false otherwise
      */
     BOOL IsValid() const { return initialized; }
 };

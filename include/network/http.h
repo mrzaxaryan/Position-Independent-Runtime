@@ -7,8 +7,8 @@
 class HttpClient
 {
 private:
-    CHAR hostName[254];  // RFC 1035: max 253 chars + null
-    CHAR path[2048];     // De facto max URL path length
+    CHAR hostName[254]; // RFC 1035: max 253 chars + null
+    CHAR path[2048];    // De facto max URL path length
     IPAddress ipAddress;
     UINT16 port;
     TLSClient tlsContext;
@@ -19,7 +19,11 @@ public:
     // Constructors for HttpClient class, allowing initialization with a URL and optional IP address
     HttpClient(PCCHAR url, PCCHAR ipAddress);
     HttpClient(PCCHAR url);
-    ~HttpClient() { if (IsValid()) Close(); }
+    ~HttpClient()
+    {
+        if (IsValid())
+            Close();
+    }
 
     HttpClient(const HttpClient &) = delete;
     HttpClient &operator=(const HttpClient &) = delete;
@@ -39,7 +43,7 @@ public:
     // Static method to parse a URL into its components (host, path, port, secure) and validate the format
     static BOOL ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&path)[2048], UINT16 &port, BOOL &secure);
     // Read HTTP response headers using a rolling window (no buffer needed).
-    // Returns TRUE if headers were read and status matches expectedStatus.
+    // Returns true if headers were read and status matches expectedStatus.
     // contentLength is set to the Content-Length value or -1 if not present.
     static BOOL ReadResponseHeaders(TLSClient &client, UINT16 expectedStatus, INT64 &contentLength);
 };

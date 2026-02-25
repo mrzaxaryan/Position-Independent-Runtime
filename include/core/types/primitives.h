@@ -26,17 +26,6 @@
 #include "compiler.h"
 
 // =============================================================================
-// BOOLEAN AND NULL CONSTANTS
-// =============================================================================
-
-/** @brief Boolean true constant */
-#define TRUE true
-/** @brief Boolean false constant */
-#define FALSE false
-/** @brief Null pointer constant */
-#define NULL nullptr
-
-// =============================================================================
 // VOID AND POINTER TYPES
 // =============================================================================
 
@@ -166,9 +155,9 @@ typedef __builtin_va_list VA_LIST;
 #elif defined(PLATFORM_WINDOWS_AARCH64)
 #define STDCALL
 #elif defined(PLATFORM_LINUX)
-#define STDCALL  // Linux uses System V ABI, no special calling convention needed
+#define STDCALL // Linux uses System V ABI, no special calling convention needed
 #else
-#define STDCALL  // Default: no special calling convention
+#define STDCALL // Default: no special calling convention
 #endif
 
 /** @} */ // end of primitives group

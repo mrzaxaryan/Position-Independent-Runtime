@@ -8,7 +8,7 @@ class StringTests
 public:
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running String Tests...");
 
@@ -35,14 +35,14 @@ private:
 		auto str2 = "Hello, World!"_embed;
 		auto str3 = "A"_embed;
 
-		if (String::Length((const CHAR*)str1) != 5)
-			return FALSE;
-		if (String::Length((const CHAR*)str2) != 13)
-			return FALSE;
-		if (String::Length((const CHAR*)str3) != 1)
-			return FALSE;
+		if (String::Length((const CHAR *)str1) != 5)
+			return false;
+		if (String::Length((const CHAR *)str2) != 13)
+			return false;
+		if (String::Length((const CHAR *)str3) != 1)
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestLengthWide()
@@ -51,14 +51,14 @@ private:
 		auto str2 = L"Hello, World!"_embed;
 		auto str3 = L"A"_embed;
 
-		if (String::Length((const WCHAR*)str1) != 5)
-			return FALSE;
-		if (String::Length((const WCHAR*)str2) != 13)
-			return FALSE;
-		if (String::Length((const WCHAR*)str3) != 1)
-			return FALSE;
+		if (String::Length((const WCHAR *)str1) != 5)
+			return false;
+		if (String::Length((const WCHAR *)str2) != 13)
+			return false;
+		if (String::Length((const WCHAR *)str3) != 1)
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestLengthEmpty()
@@ -66,56 +66,56 @@ private:
 		auto emptyNarrow = ""_embed;
 		auto emptyWide = L""_embed;
 
-		if (String::Length((const CHAR*)emptyNarrow) != 0)
-			return FALSE;
-		if (String::Length((const WCHAR*)emptyWide) != 0)
-			return FALSE;
+		if (String::Length((const CHAR *)emptyNarrow) != 0)
+			return false;
+		if (String::Length((const WCHAR *)emptyWide) != 0)
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestToLowerCaseAscii()
 	{
 		// Test uppercase letters A-Z
 		if (String::ToLowerCase<CHAR>('A') != 'a')
-			return FALSE;
+			return false;
 		if (String::ToLowerCase<CHAR>('M') != 'm')
-			return FALSE;
+			return false;
 		if (String::ToLowerCase<CHAR>('Z') != 'z')
-			return FALSE;
+			return false;
 
 		// Test wide char version
 		if (String::ToLowerCase<WCHAR>(L'A') != L'a')
-			return FALSE;
+			return false;
 		if (String::ToLowerCase<WCHAR>(L'Z') != L'z')
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestToLowerCasePreserves()
 	{
 		// Already lowercase should stay lowercase
 		if (String::ToLowerCase<CHAR>('a') != 'a')
-			return FALSE;
+			return false;
 		if (String::ToLowerCase<CHAR>('z') != 'z')
-			return FALSE;
+			return false;
 
 		// Numbers should be unchanged
 		if (String::ToLowerCase<CHAR>('0') != '0')
-			return FALSE;
+			return false;
 		if (String::ToLowerCase<CHAR>('9') != '9')
-			return FALSE;
+			return false;
 
 		// Special characters should be unchanged
 		if (String::ToLowerCase<CHAR>('!') != '!')
-			return FALSE;
+			return false;
 		if (String::ToLowerCase<CHAR>('@') != '@')
-			return FALSE;
+			return false;
 		if (String::ToLowerCase<CHAR>(' ') != ' ')
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestUTF16ToUTF8BasicAscii()
@@ -123,20 +123,20 @@ private:
 		auto wide = L"Hello"_embed;
 		CHAR utf8[16];
 
-		USIZE wideLen = String::Length((const WCHAR*)wide);
-		USIZE len = UTF16::ToUTF8((const WCHAR*)wide, wideLen, utf8, sizeof(utf8) - 1);
+		USIZE wideLen = String::Length((const WCHAR *)wide);
+		USIZE len = UTF16::ToUTF8((const WCHAR *)wide, wideLen, utf8, sizeof(utf8) - 1);
 		utf8[len] = '\0';
 
 		// Should be 5 characters
 		if (len != 5)
-			return FALSE;
+			return false;
 
 		// Verify content
 		auto expected_hello = "Hello"_embed;
-		if (Memory::Compare(utf8, (const CHAR*)expected_hello, 6) != 0)
-			return FALSE;
+		if (Memory::Compare(utf8, (const CHAR *)expected_hello, 6) != 0)
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestUTF16ToUTF8Empty()
@@ -144,19 +144,19 @@ private:
 		auto wide = L""_embed;
 		CHAR utf8[16];
 
-		USIZE wideLen = String::Length((const WCHAR*)wide);
-		USIZE len = UTF16::ToUTF8((const WCHAR*)wide, wideLen, utf8, sizeof(utf8) - 1);
+		USIZE wideLen = String::Length((const WCHAR *)wide);
+		USIZE len = UTF16::ToUTF8((const WCHAR *)wide, wideLen, utf8, sizeof(utf8) - 1);
 		utf8[len] = '\0';
 
 		// Should be 0 characters
 		if (len != 0)
-			return FALSE;
+			return false;
 
 		// Should be null terminated
 		auto expected_empty = ""_embed;
-		if (Memory::Compare(utf8, (const CHAR*)expected_empty, 1) != 0)
-			return FALSE;
+		if (Memory::Compare(utf8, (const CHAR *)expected_empty, 1) != 0)
+			return false;
 
-		return TRUE;
+		return true;
 	}
 };

@@ -16,7 +16,7 @@ private:
 		if (!result)
 		{
 			LOG_ERROR("Localhost A resolution failed (error: %u)", result.Error());
-			return FALSE;
+			return false;
 		}
 		IPAddress ip = result.Value();
 
@@ -24,28 +24,28 @@ private:
 		if (ip.ToIPv4() != 0x0100007F)
 		{
 			LOG_ERROR("Localhost resolution failed: expected 0x0100007F, got 0x%08X", ip.ToIPv4());
-			return FALSE;
+			return false;
 		}
 
 		auto result6 = DNS::CloudflareResolve("localhost"_embed, AAAA);
 		if (!result6)
 		{
 			LOG_ERROR("Localhost AAAA resolution failed (error: %u)", result6.Error());
-			return FALSE;
+			return false;
 		}
 		IPAddress ip6 = result6.Value();
 
 		// localhost should resolve to ::1 for IPv6
 		UINT8 expectedIPv6[16]{};
 		expectedIPv6[15] = 1; // ::1 in IPv6
-		if (ip6.IsIPv6() == FALSE || Memory::Compare(ip6.ToIPv6(), expectedIPv6, 16) != 0)
+		if (ip6.IsIPv6() == false || Memory::Compare(ip6.ToIPv6(), expectedIPv6, 16) != 0)
 		{
 			LOG_ERROR("Localhost IPv6 resolution failed: expected ::1, got different address");
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Localhost resolved correctly");
-		return TRUE;
+		return true;
 	}
 
 	// Test 2: Cloudflare DNS resolution
@@ -57,7 +57,7 @@ private:
 		if (!result)
 		{
 			LOG_ERROR("Cloudflare DNS resolution failed (error: %u)", result.Error());
-			return FALSE;
+			return false;
 		}
 		IPAddress ip = result.Value();
 
@@ -67,11 +67,11 @@ private:
 		if (ip.ToIPv4() != 0x08080808 && ip.ToIPv4() != 0x04040808)
 		{
 			LOG_ERROR("Unexpected IP for dns.google: 0x%08X", ip.ToIPv4());
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Cloudflare resolved dns.google to 0x%08X", ip.ToIPv4());
-		return TRUE;
+		return true;
 	}
 
 	// Test 3: Google DNS resolution
@@ -83,7 +83,7 @@ private:
 		if (!result)
 		{
 			LOG_ERROR("Google DNS resolution failed (error: %u)", result.Error());
-			return FALSE;
+			return false;
 		}
 		IPAddress ip = result.Value();
 
@@ -93,11 +93,11 @@ private:
 		if (ip.ToIPv4() != 0x01010101 && ip.ToIPv4() != 0x01000001)
 		{
 			LOG_ERROR("Unexpected IP for one.one.one.one: 0x%08X", ip.ToIPv4());
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Google resolved one.one.one.one to 0x%08X", ip.ToIPv4());
-		return TRUE;
+		return true;
 	}
 
 	// Test 4: Main DNS Resolve function (tries IPv6 first, falls back to IPv4)
@@ -109,12 +109,12 @@ private:
 		if (!result)
 		{
 			LOG_ERROR("Main DNS resolution failed (error: %u)", result.Error());
-			return FALSE;
+			return false;
 		}
 
 		// example.com has both IPv4 and IPv6, so this may return either
 		LOG_INFO("Main Resolve resolved example.com successfully");
-		return TRUE;
+		return true;
 	}
 
 	// Test 5: Resolution with known static IP (IPv6 first, falls back to IPv4)
@@ -126,19 +126,19 @@ private:
 		if (!result)
 		{
 			LOG_ERROR("DNS resolution for dns.google failed (error: %u)", result.Error());
-			return FALSE;
+			return false;
 		}
 
 		// dns.google has both IPv4 and IPv6 addresses, so accept either
 		LOG_INFO("Known IP resolution passed: dns.google resolved successfully");
-		return TRUE;
+		return true;
 	}
 
 public:
 	// Run all DNS tests
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running DNS Tests...");
 		LOG_INFO("  Testing DNS resolution via DoH (binary wireformat)");

@@ -698,7 +698,7 @@ VOID Ecc::Mult(EccPoint &result, EccPoint &point, UINT64 *pScalar, UINT64 *pInit
     /* Find final 1/Z value. */
     this->VliModSub(z, Rx[1], Rx[0], this->curveP); /* X1 - X0 */
     this->VliModMultFast(z, z, Ry[1 - nb]);         /* Yb * (X1 - X0) */
-    this->VliModMultFast(z, z, point.x);             /* xP * Yb * (X1 - X0) */
+    this->VliModMultFast(z, z, point.x);            /* xP * Yb * (X1 - X0) */
     this->VliModInv(z, z, this->curveP);            /* 1 / (xP * Yb * (X1 - X0)) */
     this->VliModMultFast(z, z, point.y);            /* yP / (xP * Yb * (X1 - X0)) */
     this->VliModMultFast(z, z, Rx[1 - nb]);         /* Xb * yP / (xP * Yb * (X1 - X0)) */
@@ -849,7 +849,7 @@ INT32 Ecc::Initialize(INT32 curve)
         if (this->VliCmp(this->curveN, this->privateKey) != 1)
             this->VliSub(this->privateKey, this->privateKey, this->curveN);
 
-        this->Mult(this->publicKey, this->curveG, this->privateKey, NULL);
+        this->Mult(this->publicKey, this->curveG, this->privateKey, nullptr);
     } while (this->IsZero(this->publicKey));
     return 0;
 };

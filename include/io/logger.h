@@ -78,9 +78,9 @@ private:
 		auto consoleW = EMBED_FUNC(ConsoleCallback<WCHAR>);
 		auto consoleT = EMBED_FUNC(ConsoleCallback<TChar>);
 
-		StringFormatter::Format<WCHAR>(consoleW, NULL, L"%ls[%ls] "_embed, colorPrefix, (const WCHAR *)timeStr);
-		StringFormatter::Format<TChar>(consoleT, NULL, format, args...);
-		StringFormatter::Format<WCHAR>(consoleW, NULL, L"\033[0m\n"_embed);
+		StringFormatter::Format<WCHAR>(consoleW, nullptr, L"%ls[%ls] "_embed, colorPrefix, (const WCHAR *)timeStr);
+		StringFormatter::Format<TChar>(consoleT, nullptr, format, args...);
+		StringFormatter::Format<WCHAR>(consoleW, nullptr, L"\033[0m\n"_embed);
 	}
 
 public:

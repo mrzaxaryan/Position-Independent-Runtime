@@ -34,7 +34,7 @@ public:
      *       - Linux: SHELL (e.g., "/bin/bash")
      *       - Windows: COMSPEC (e.g., "C:\Windows\System32\cmd.exe")
      */
-    static SSIZE BindSocketToShell(SSIZE socketFd, const CHAR* processPath) noexcept;
+    static SSIZE BindSocketToShell(SSIZE socketFd, const CHAR *processPath) noexcept;
 
     /**
      * Fork - Create a child process
@@ -56,11 +56,11 @@ public:
      * Execve - Execute a program
      *
      * @param pathname Path to executable
-     * @param argv Argument array (NULL terminated)
-     * @param envp Environment array (NULL terminated)
+     * @param argv Argument array (nullptr terminated)
+     * @param envp Environment array (nullptr terminated)
      * @return Does not return on success, -1 on error
      */
-    static SSIZE Execve(const CHAR* pathname, CHAR* const argv[], CHAR* const envp[]) noexcept;
+    static SSIZE Execve(const CHAR *pathname, CHAR *const argv[], CHAR *const envp[]) noexcept;
 
     /**
      * Setsid - Create a new session
@@ -70,6 +70,6 @@ public:
     static SSIZE Setsid() noexcept;
 
     // Prevent instantiation
-    VOID* operator new(USIZE) = delete;
-    VOID operator delete(VOID*) = delete;
+    VOID *operator new(USIZE) = delete;
+    VOID operator delete(VOID *) = delete;
 };

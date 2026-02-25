@@ -204,7 +204,7 @@ BOOL FileSystem::DeleteDirectory(PCWCHAR path)
 // --- DirectoryIterator Implementation ---
 
 DirectoryIterator::DirectoryIterator(PCWCHAR path)
-    : handle((PVOID)INVALID_FD), first(FALSE), nread(0), bpos(0)
+    : handle((PVOID)INVALID_FD), first(false), nread(0), bpos(0)
 {
     CHAR utf8Path[1024];
 
@@ -230,7 +230,7 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path)
     if (fd >= 0)
     {
         handle = (PVOID)fd;
-        first = TRUE;
+        first = true;
     }
 }
 
@@ -270,15 +270,15 @@ DirectoryIterator::~DirectoryIterator()
 BOOL DirectoryIterator::Next()
 {
     if (!IsValid())
-        return FALSE;
+        return false;
 
     if (first || bpos >= nread)
     {
-        first = FALSE;
+        first = false;
         nread = (INT32)System::Call(SYS_GETDENTS64, (USIZE)handle, (USIZE)buffer, sizeof(buffer));
 
         if (nread <= 0)
-            return FALSE;
+            return false;
         bpos = 0;
     }
 
@@ -287,18 +287,18 @@ BOOL DirectoryIterator::Next()
     String::Utf8ToWide(d->d_name, currentEntry.name, 256);
 
     currentEntry.isDirectory = (d->d_type == DT_DIR);
-    currentEntry.isDrive = FALSE;
+    currentEntry.isDrive = false;
     currentEntry.type = (UINT32)d->d_type;
     currentEntry.isHidden = (d->d_name[0] == '.');
-    currentEntry.isSystem = FALSE;
-    currentEntry.isReadOnly = FALSE;
+    currentEntry.isSystem = false;
+    currentEntry.isReadOnly = false;
     currentEntry.size = 0;
     currentEntry.creationTime = 0;
     currentEntry.lastModifiedTime = 0;
 
     bpos += d->d_reclen;
 
-    return TRUE;
+    return true;
 }
 
 BOOL DirectoryIterator::IsValid() const

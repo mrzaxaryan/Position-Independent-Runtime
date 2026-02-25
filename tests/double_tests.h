@@ -8,7 +8,7 @@ class DoubleTests
 public:
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running DOUBLE Tests...");
 
@@ -36,27 +36,27 @@ private:
 		// Default constructor (zero)
 		DOUBLE a;
 		if (a.Bits() != 0)
-			return FALSE;
+			return false;
 
 		// Construction from embedded double
 		DOUBLE b = 1.0_embed;
 		// IEEE-754: 1.0 = 0x3FF0000000000000
 		if (b.Bits() != 0x3FF0000000000000ULL)
-			return FALSE;
+			return false;
 
 		// Construction from bit pattern
 		DOUBLE c(0x4000000000000000ULL); // 2.0
 		double native_c = (double)c;
 		if (native_c != (double)2.0_embed)
-			return FALSE;
+			return false;
 
 		// Construction from bit pattern (1.0 = 0x3FF0000000000000)
 		DOUBLE d(0x3FF0000000000000ULL); // 1.0
 		double native_d = (double)d;
 		if (native_d != (double)1.0_embed)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestIntToDouble()
@@ -64,33 +64,33 @@ private:
 		// Zero
 		DOUBLE zero(INT32(0));
 		if (zero.Bits() != 0)
-			return FALSE;
+			return false;
 
 		// Positive integer
 		DOUBLE one(INT32(1));
 		double native_one = (double)one;
 		if (native_one != (double)1.0_embed)
-			return FALSE;
+			return false;
 
 		// Larger positive integer
 		DOUBLE hundred(INT32(100));
 		double native_hundred = (double)hundred;
 		if (native_hundred != (double)100.0_embed)
-			return FALSE;
+			return false;
 
 		// Negative integer
 		DOUBLE neg_one(INT32(-1));
 		double native_neg = (double)neg_one;
 		if (native_neg != (double)-1.0_embed)
-			return FALSE;
+			return false;
 
 		// Power of 2
 		DOUBLE pow2(INT32(1024));
 		double native_pow2 = (double)pow2;
 		if (native_pow2 != (double)1024.0_embed)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestDoubleToInt()
@@ -99,33 +99,33 @@ private:
 		DOUBLE one = 1.0_embed;
 		INT32 int_one = (INT32)one;
 		if (int_one != 1)
-			return FALSE;
+			return false;
 
 		// 1.9 -> 1 (truncation)
 		DOUBLE one_nine = 1.9_embed;
 		INT32 int_one_nine = (INT32)one_nine;
 		if (int_one_nine != 1)
-			return FALSE;
+			return false;
 
 		// 100.5 -> 100
 		DOUBLE hundred = 100.5_embed;
 		INT32 int_hundred = (INT32)hundred;
 		if (int_hundred != 100)
-			return FALSE;
+			return false;
 
 		// -1.0 -> -1
 		DOUBLE neg_one = -1.0_embed;
 		INT32 int_neg_one = (INT32)neg_one;
 		if (int_neg_one != -1)
-			return FALSE;
+			return false;
 
 		// 0.5 -> 0
 		DOUBLE half = 0.5_embed;
 		INT32 int_half = (INT32)half;
 		if (int_half != 0)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestArithmetic()
@@ -136,49 +136,49 @@ private:
 		DOUBLE c = a + b;
 		double native_c = (double)c;
 		if (native_c != (double)5.0_embed)
-			return FALSE;
+			return false;
 
 		// Subtraction
 		DOUBLE d = b - a;
 		double native_d = (double)d;
 		if (native_d != (double)1.0_embed)
-			return FALSE;
+			return false;
 
 		// Multiplication
 		DOUBLE e = a * b;
 		double native_e = (double)e;
 		if (native_e != (double)6.0_embed)
-			return FALSE;
+			return false;
 
 		// Division
 		DOUBLE six = 6.0_embed;
 		DOUBLE f = six / a;
 		double native_f = (double)f;
 		if (native_f != (double)3.0_embed)
-			return FALSE;
+			return false;
 
 		// Compound assignment +=
 		DOUBLE g = 10.0_embed;
 		g += a;
 		if ((double)g != (double)12.0_embed)
-			return FALSE;
+			return false;
 
 		// Compound assignment -=
 		g -= a;
 		if ((double)g != (double)10.0_embed)
-			return FALSE;
+			return false;
 
 		// Compound assignment *=
 		g *= a;
 		if ((double)g != (double)20.0_embed)
-			return FALSE;
+			return false;
 
 		// Compound assignment /=
 		g /= a;
 		if ((double)g != (double)10.0_embed)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestComparisons()
@@ -189,49 +189,49 @@ private:
 
 		// Equality
 		if (!(a == c))
-			return FALSE;
+			return false;
 		if (a == b)
-			return FALSE;
+			return false;
 
 		// Not equal
 		if (a != c)
-			return FALSE;
+			return false;
 		if (!(a != b))
-			return FALSE;
+			return false;
 
 		// Less than
 		if (!(a < b))
-			return FALSE;
+			return false;
 		if (b < a)
-			return FALSE;
+			return false;
 		if (a < c)
-			return FALSE;
+			return false;
 
 		// Less than or equal
 		if (!(a <= b))
-			return FALSE;
+			return false;
 		if (!(a <= c))
-			return FALSE;
+			return false;
 		if (b <= a)
-			return FALSE;
+			return false;
 
 		// Greater than
 		if (!(b > a))
-			return FALSE;
+			return false;
 		if (a > b)
-			return FALSE;
+			return false;
 		if (a > c)
-			return FALSE;
+			return false;
 
 		// Greater than or equal
 		if (!(b >= a))
-			return FALSE;
+			return false;
 		if (!(a >= c))
-			return FALSE;
+			return false;
 		if (a >= b)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestNegation()
@@ -241,22 +241,22 @@ private:
 		DOUBLE neg = -pos;
 		double native_neg = (double)neg;
 		if (native_neg != (double)-5.0_embed)
-			return FALSE;
+			return false;
 
 		// Negate negative
 		DOUBLE neg2 = -3.0_embed;
 		DOUBLE pos2 = -neg2;
 		double native_pos2 = (double)pos2;
 		if (native_pos2 != (double)3.0_embed)
-			return FALSE;
+			return false;
 
 		// Double negation
 		DOUBLE val = 7.0_embed;
 		DOUBLE dbl_neg = -(-val);
 		if ((double)dbl_neg != (double)7.0_embed)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestEmbeddedLiterals()
@@ -264,28 +264,28 @@ private:
 		// Test _embed suffix for double literals
 		DOUBLE a = 1.5_embed;
 		if ((double)a != (double)1.5_embed)
-			return FALSE;
+			return false;
 
 		DOUBLE b = 3.14159_embed;
 		double native_b = (double)b;
 		// Allow small tolerance for floating point
 		if (native_b < (double)3.14158_embed || native_b > (double)3.14160_embed)
-			return FALSE;
+			return false;
 
 		DOUBLE c = 0.5_embed;
 		if ((double)c != (double)0.5_embed)
-			return FALSE;
+			return false;
 
 		DOUBLE d = 100.0_embed;
 		if ((double)d != (double)100.0_embed)
-			return FALSE;
+			return false;
 
 		// Negative embedded
 		DOUBLE e = -2.5_embed;
 		if ((double)e != (double)-2.5_embed)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestEdgeCases()
@@ -293,24 +293,24 @@ private:
 		// Zero
 		DOUBLE zero = 0.0_embed;
 		if ((double)zero != (double)0.0_embed)
-			return FALSE;
+			return false;
 
 		// Adding zero
 		DOUBLE val = 5.0_embed;
 		DOUBLE result = val + zero;
 		if ((double)result != (double)5.0_embed)
-			return FALSE;
+			return false;
 
 		// Multiplying by zero
 		result = val * zero;
 		if ((double)result != (double)0.0_embed)
-			return FALSE;
+			return false;
 
 		// Multiplying by one
 		DOUBLE one = 1.0_embed;
 		result = val * one;
 		if ((double)result != (double)5.0_embed)
-			return FALSE;
+			return false;
 
 		// Small values
 		DOUBLE small = 0.001_embed;
@@ -319,16 +319,16 @@ private:
 		double native_result = (double)result;
 		// Should be approximately 1.0
 		if (native_result < (double)0.999_embed || native_result > (double)1.001_embed)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestArrayFormatting()
 	{
 		// Test that DOUBLE arrays can be properly initialized and formatted
 		// This ensures the varargs casting works correctly with Logger
-		DOUBLE testArray[] = { 1.1_embed, 2.2_embed, 3.3_embed, 4.4_embed, 5.5_embed, 6.6_embed, 7.7_embed, 8.8_embed, 9.9_embed, 10.1_embed };
+		DOUBLE testArray[] = {1.1_embed, 2.2_embed, 3.3_embed, 4.4_embed, 5.5_embed, 6.6_embed, 7.7_embed, 8.8_embed, 9.9_embed, 10.1_embed};
 
 		// Verify array initialization by checking that values are non-zero
 		// We can't do exact comparisons without generating .rdata, so just verify they're initialized
@@ -338,26 +338,26 @@ private:
 			DOUBLE val = testArray[(INT64)index];
 			// Just verify non-zero (all values are > 1.0)
 			if (val.Bits() == 0)
-				return FALSE;
+				return false;
 		}
 
 		// Test formatting output (this also tests that the values are properly passed through varargs)
-		if(testArray[0] == 1.1_embed &&
-		   testArray[1] == 2.2_embed &&
-		   testArray[2] == 3.3_embed &&
-		   testArray[3] == 4.4_embed &&
-		   testArray[4] == 5.5_embed &&
-		   testArray[5] == 6.6_embed &&
-		   testArray[6] == 7.7_embed &&
-		   testArray[7] == 8.8_embed &&
-		   testArray[8] == 9.9_embed &&
-		   testArray[9] == 10.1_embed)
+		if (testArray[0] == 1.1_embed &&
+			testArray[1] == 2.2_embed &&
+			testArray[2] == 3.3_embed &&
+			testArray[3] == 4.4_embed &&
+			testArray[4] == 5.5_embed &&
+			testArray[5] == 6.6_embed &&
+			testArray[6] == 7.7_embed &&
+			testArray[7] == 8.8_embed &&
+			testArray[8] == 9.9_embed &&
+			testArray[9] == 10.1_embed)
 		{
-			return TRUE;
+			return true;
 		}
 		else
 		{
-			return FALSE;
+			return false;
 		}
 	}
 };

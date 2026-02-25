@@ -8,7 +8,7 @@ class MemoryTests
 public:
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running Memory Tests...");
 
@@ -35,15 +35,15 @@ private:
 		auto src = "Hello, World!"_embed;
 		CHAR dest[16];
 
-		Memory::Copy(dest, (const CHAR*)src, 14); // Include null terminator
+		Memory::Copy(dest, (const CHAR *)src, 14); // Include null terminator
 
 		// Verify each byte was copied correctly
 		for (INT32 i = 0; i < 14; i++)
 		{
-			if (dest[i] != ((const CHAR*)src)[i])
-				return FALSE;
+			if (dest[i] != ((const CHAR *)src)[i])
+				return false;
 		}
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestCopyNonOverlapping()
@@ -63,9 +63,9 @@ private:
 		for (INT32 i = 0; i < 16; i++)
 		{
 			if (dest[i] != (UINT8)i)
-				return FALSE;
+				return false;
 		}
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestZero()
@@ -85,9 +85,9 @@ private:
 		for (INT32 i = 0; i < 16; i++)
 		{
 			if (buffer[i] != 0)
-				return FALSE;
+				return false;
 		}
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestSet()
@@ -101,7 +101,7 @@ private:
 		for (INT32 i = 0; i < 16; i++)
 		{
 			if (buffer[i] != 0xAB)
-				return FALSE;
+				return false;
 		}
 
 		// Test setting to different value
@@ -109,16 +109,16 @@ private:
 		for (INT32 i = 0; i < 8; i++)
 		{
 			if (buffer[i] != 0x42)
-				return FALSE;
+				return false;
 		}
 		// Verify remaining bytes unchanged
 		for (INT32 i = 8; i < 16; i++)
 		{
 			if (buffer[i] != 0xAB)
-				return FALSE;
+				return false;
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestCompareEqual()
@@ -126,7 +126,7 @@ private:
 		auto str1 = "Hello"_embed;
 		auto str2 = "Hello"_embed;
 
-		INT32 result = Memory::Compare((const CHAR*)str1, (const CHAR*)str2, 5);
+		INT32 result = Memory::Compare((const CHAR *)str1, (const CHAR *)str2, 5);
 		return result == 0;
 	}
 
@@ -135,7 +135,7 @@ private:
 		auto str1 = "Apple"_embed;
 		auto str2 = "Banana"_embed;
 
-		INT32 result = Memory::Compare((const CHAR*)str1, (const CHAR*)str2, 5);
+		INT32 result = Memory::Compare((const CHAR *)str1, (const CHAR *)str2, 5);
 		return result < 0; // 'A' < 'B'
 	}
 
@@ -144,15 +144,21 @@ private:
 		auto str1 = "Zebra"_embed;
 		auto str2 = "Apple"_embed;
 
-		INT32 result = Memory::Compare((const CHAR*)str1, (const CHAR*)str2, 5);
+		INT32 result = Memory::Compare((const CHAR *)str1, (const CHAR *)str2, 5);
 		return result > 0; // 'Z' > 'A'
 	}
 
 	static BOOL TestZeroSize()
 	{
 		UINT8 src[8];
-		src[0] = 1; src[1] = 2; src[2] = 3; src[3] = 4;
-		src[4] = 5; src[5] = 6; src[6] = 7; src[7] = 8;
+		src[0] = 1;
+		src[1] = 2;
+		src[2] = 3;
+		src[3] = 4;
+		src[4] = 5;
+		src[5] = 6;
+		src[6] = 7;
+		src[7] = 8;
 
 		UINT8 dest[8];
 		Memory::Zero(dest, 8);
@@ -162,14 +168,14 @@ private:
 		for (INT32 i = 0; i < 8; i++)
 		{
 			if (dest[i] != 0)
-				return FALSE;
+				return false;
 		}
 
 		// Compare zero bytes should return 0 (equal)
 		INT32 cmp = Memory::Compare(src, dest, 0);
 		if (cmp != 0)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 };

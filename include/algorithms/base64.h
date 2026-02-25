@@ -53,7 +53,7 @@ public:
      * @param input Pointer to input binary data
      * @param inputSize Size of input data in bytes
      * @param output Pointer to output buffer (must be at least GetEncodeOutSize() bytes)
-     * @return TRUE on success, FALSE on failure
+     * @return true on success, false on failure
      *
      * @note Output buffer must be large enough to hold the encoded data.
      * Use GetEncodeOutSize() to determine required buffer size.
@@ -65,7 +65,7 @@ public:
      * @param input Pointer to Base64 encoded string
      * @param inputSize Size of input string in bytes (including padding)
      * @param output Pointer to output buffer (must be at least GetDecodeOutSize() bytes)
-     * @return TRUE on success, FALSE on failure (invalid Base64 input)
+     * @return true on success, false on failure (invalid Base64 input)
      *
      * @note Output buffer must be large enough to hold the decoded data.
      * Use GetDecodeOutSize() to determine required buffer size.

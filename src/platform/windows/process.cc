@@ -156,7 +156,7 @@ SSIZE Process::BindSocketToShell(SSIZE socketFd, const CHAR *cmd) noexcept
 
     if (!Kernel32::CreateProcessW(
             nullptr, cmdWide, nullptr, nullptr,
-            TRUE, // inherit handles
+            true, // inherit handles
             0, nullptr, nullptr, &si, &pi))
     {
         return PROCESS_INVALID_PID;

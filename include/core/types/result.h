@@ -23,13 +23,21 @@
 FORCE_INLINE PVOID operator new(USIZE, PVOID ptr) noexcept { return ptr; }
 
 /// Trivial sentinel replacing T when T is void
-struct VOID_TAG {};
+struct VOID_TAG
+{
+};
 
 template <typename T>
-struct VOID_TO_TAG { using Type = T; };
+struct VOID_TO_TAG
+{
+	using Type = T;
+};
 
 template <>
-struct VOID_TO_TAG<void> { using Type = VOID_TAG; };
+struct VOID_TO_TAG<void>
+{
+	using Type = VOID_TAG;
+};
 
 template <typename T, typename E>
 class [[nodiscard]] Result
@@ -37,7 +45,11 @@ class [[nodiscard]] Result
 	static constexpr bool IS_VOID = __is_same_as(T, void);
 	using STORED_TYPE = typename VOID_TO_TAG<T>::Type;
 
-	union { STORED_TYPE m_value; E m_error; };
+	union
+	{
+		STORED_TYPE m_value;
+		E m_error;
+	};
 	BOOL m_isOk;
 
 	FORCE_INLINE void DestroyActive() noexcept
@@ -62,26 +74,26 @@ public:
 	using ErrorType = E;
 
 	[[nodiscard]] static FORCE_INLINE Result Ok(STORED_TYPE value) noexcept
-		requires (!IS_VOID)
+		requires(!IS_VOID)
 	{
 		Result r;
-		r.m_isOk = TRUE;
+		r.m_isOk = true;
 		new (&r.m_value) STORED_TYPE(static_cast<STORED_TYPE &&>(value));
 		return r;
 	}
 
 	[[nodiscard]] static FORCE_INLINE Result Ok() noexcept
-		requires (IS_VOID)
+		requires(IS_VOID)
 	{
 		Result r;
-		r.m_isOk = TRUE;
+		r.m_isOk = true;
 		return r;
 	}
 
 	[[nodiscard]] static FORCE_INLINE Result Err(E error) noexcept
 	{
 		Result r;
-		r.m_isOk = FALSE;
+		r.m_isOk = false;
 		new (&r.m_error) E(static_cast<E &&>(error));
 		return r;
 	}
@@ -117,8 +129,16 @@ public:
 	[[nodiscard]] FORCE_INLINE BOOL IsErr() const noexcept { return !m_isOk; }
 	[[nodiscard]] FORCE_INLINE operator BOOL() const noexcept { return m_isOk; }
 
-	[[nodiscard]] FORCE_INLINE STORED_TYPE &Value() noexcept requires (!IS_VOID) { return m_value; }
-	[[nodiscard]] FORCE_INLINE const STORED_TYPE &Value() const noexcept requires (!IS_VOID) { return m_value; }
+	[[nodiscard]] FORCE_INLINE STORED_TYPE &Value() noexcept
+		requires(!IS_VOID)
+	{
+		return m_value;
+	}
+	[[nodiscard]] FORCE_INLINE const STORED_TYPE &Value() const noexcept
+		requires(!IS_VOID)
+	{
+		return m_value;
+	}
 	[[nodiscard]] FORCE_INLINE E &Error() noexcept { return m_error; }
 	[[nodiscard]] FORCE_INLINE const E &Error() const noexcept { return m_error; }
 

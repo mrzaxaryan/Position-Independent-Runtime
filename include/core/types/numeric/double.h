@@ -85,7 +85,9 @@ public:
 
 private:
     // Private consteval constructor for _embed literals (prevents .rdata)
-    struct CompileTimeLiteral {};
+    struct CompileTimeLiteral
+    {
+    };
     consteval DOUBLE(double val, CompileTimeLiteral) noexcept
     {
         UINT64 ull = __builtin_bit_cast(UINT64, val);
@@ -96,7 +98,14 @@ private:
     friend consteval DOUBLE operator""_embed(UINT64 value);
 
     // Comparison operation enum for shared helper
-    enum CmpOp { CMP_EQ, CMP_LT, CMP_LE, CMP_GT, CMP_GE };
+    enum CmpOp
+    {
+        CMP_EQ,
+        CMP_LT,
+        CMP_LE,
+        CMP_GT,
+        CMP_GE
+    };
 
     // Shared comparison helper to reduce code duplication
     NOINLINE DISABLE_OPTIMIZATION BOOL Compare(const DOUBLE &other, CmpOp op) const noexcept
@@ -107,17 +116,29 @@ private:
         double b = __builtin_bit_cast(double, ull_b);
         switch (op)
         {
-            case CMP_EQ: return a == b;
-            case CMP_LT: return a < b;
-            case CMP_LE: return a <= b;
-            case CMP_GT: return a > b;
-            case CMP_GE: return a >= b;
-            default: return FALSE;
+        case CMP_EQ:
+            return a == b;
+        case CMP_LT:
+            return a < b;
+        case CMP_LE:
+            return a <= b;
+        case CMP_GT:
+            return a > b;
+        case CMP_GE:
+            return a >= b;
+        default:
+            return false;
         }
     }
 
     // Arithmetic operation enum for shared helper
-    enum ArithOp { OP_ADD, OP_SUB, OP_MUL, OP_DIV };
+    enum ArithOp
+    {
+        OP_ADD,
+        OP_SUB,
+        OP_MUL,
+        OP_DIV
+    };
 
     // Shared arithmetic helper to reduce code duplication
     NOINLINE DISABLE_OPTIMIZATION DOUBLE Arithmetic(const DOUBLE &other, ArithOp op) const noexcept
@@ -129,11 +150,21 @@ private:
         double result;
         switch (op)
         {
-            case OP_ADD: result = a + b; break;
-            case OP_SUB: result = a - b; break;
-            case OP_MUL: result = a * b; break;
-            case OP_DIV: result = a / b; break;
-            default: result = 0.0; break;
+        case OP_ADD:
+            result = a + b;
+            break;
+        case OP_SUB:
+            result = a - b;
+            break;
+        case OP_MUL:
+            result = a * b;
+            break;
+        case OP_DIV:
+            result = a / b;
+            break;
+        default:
+            result = 0.0;
+            break;
         }
         UINT64 result_ull = __builtin_bit_cast(UINT64, result);
         return DOUBLE(result_ull);

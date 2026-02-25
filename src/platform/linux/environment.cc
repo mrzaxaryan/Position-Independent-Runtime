@@ -11,13 +11,13 @@
 #include "memory.h"
 
 // Helper to compare strings (case-sensitive for Linux)
-static BOOL CompareEnvName(const CHAR* envEntry, const CHAR* name) noexcept
+static BOOL CompareEnvName(const CHAR *envEntry, const CHAR *name) noexcept
 {
     while (*name != '\0')
     {
         if (*envEntry != *name)
         {
-            return FALSE;
+            return false;
         }
         envEntry++;
         name++;
@@ -27,7 +27,7 @@ static BOOL CompareEnvName(const CHAR* envEntry, const CHAR* name) noexcept
     return *envEntry == '=';
 }
 
-USIZE Environment::GetVariable(const CHAR* name, CHAR* buffer, USIZE bufferSize) noexcept
+USIZE Environment::GetVariable(const CHAR *name, CHAR *buffer, USIZE bufferSize) noexcept
 {
     if (name == nullptr || buffer == nullptr || bufferSize == 0)
     {
@@ -35,7 +35,7 @@ USIZE Environment::GetVariable(const CHAR* name, CHAR* buffer, USIZE bufferSize)
     }
 
     // Open /proc/self/environ
-    const CHAR* procEnvPath = "/proc/self/environ"_embed;
+    const CHAR *procEnvPath = "/proc/self/environ"_embed;
 #if defined(ARCHITECTURE_AARCH64)
     // aarch64 only has openat syscall
     SSIZE fd = System::Call(SYS_OPENAT, (USIZE)-100, (USIZE)procEnvPath, 0, 0);
@@ -72,22 +72,22 @@ USIZE Environment::GetVariable(const CHAR* name, CHAR* buffer, USIZE bufferSize)
     envBuf[bytesRead] = '\0';
 
     // Search for the variable
-    const CHAR* ptr = envBuf;
-    const CHAR* end = envBuf + bytesRead;
+    const CHAR *ptr = envBuf;
+    const CHAR *end = envBuf + bytesRead;
 
     while (ptr < end && *ptr != '\0')
     {
         if (CompareEnvName(ptr, name))
         {
             // Find the '=' and skip past it
-            const CHAR* value = ptr;
+            const CHAR *value = ptr;
             while (*value != '=' && *value != '\0')
             {
                 value++;
             }
             if (*value == '=')
             {
-                value++;  // Skip the '='
+                value++; // Skip the '='
 
                 // Copy value to buffer
                 USIZE len = 0;
@@ -105,7 +105,7 @@ USIZE Environment::GetVariable(const CHAR* name, CHAR* buffer, USIZE bufferSize)
         {
             ptr++;
         }
-        ptr++;  // Skip the null terminator
+        ptr++; // Skip the null terminator
     }
 
     // Variable not found

@@ -59,7 +59,7 @@ public:
 			addr6->sin6_scope_id = 0;
 
 			const UINT8 *ipv6Addr = ip.ToIPv6();
-			if (ipv6Addr != NULL)
+			if (ipv6Addr != nullptr)
 			{
 				Memory::Copy(addr6->sin6_addr, ipv6Addr, 16);
 			}
@@ -128,31 +128,36 @@ private:
 public:
 	VOID *operator new(USIZE) = delete;
 	VOID operator delete(VOID *) = delete;
-	Socket() : ip(), port(0), m_socket(NULL) {}
+	Socket() : ip(), port(0), m_socket(nullptr) {}
 	Socket(const IPAddress &ipAddress, UINT16 port);
-	~Socket() { if (IsValid()) Close(); }
+	~Socket()
+	{
+		if (IsValid())
+			Close();
+	}
 
 	Socket(const Socket &) = delete;
 	Socket &operator=(const Socket &) = delete;
 
 	Socket(Socket &&other) : ip(other.ip), port(other.port), m_socket(other.m_socket)
 	{
-		other.m_socket = NULL;
+		other.m_socket = nullptr;
 	}
 	Socket &operator=(Socket &&other)
 	{
 		if (this != &other)
 		{
-			if (IsValid()) Close();
+			if (IsValid())
+				Close();
 			ip = other.ip;
 			port = other.port;
 			m_socket = other.m_socket;
-			other.m_socket = NULL;
+			other.m_socket = nullptr;
 		}
 		return *this;
 	}
 
-	BOOL IsValid() const { return m_socket != NULL && m_socket != (PVOID)(SSIZE)(-1); }
+	BOOL IsValid() const { return m_socket != nullptr && m_socket != (PVOID)(SSIZE)(-1); }
 	SSIZE GetFd() const { return (SSIZE)m_socket; }
 	BOOL Open();
 	BOOL Close();

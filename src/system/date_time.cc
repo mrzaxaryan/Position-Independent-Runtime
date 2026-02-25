@@ -1,6 +1,6 @@
 #include "date_time.h"
 
-VOID DateTime::DaysToMonthDay(UINT64 dayOfYear, UINT64 year, UINT32& outMonth, UINT32& outDay) noexcept
+VOID DateTime::DaysToMonthDay(UINT64 dayOfYear, UINT64 year, UINT32 &outMonth, UINT32 &outDay) noexcept
 {
 	BOOL isLeap = IsLeapYear(year);
 	UINT32 month = 1;
@@ -16,15 +16,15 @@ VOID DateTime::DaysToMonthDay(UINT64 dayOfYear, UINT64 year, UINT32& outMonth, U
 	}
 
 	outMonth = month;
-	outDay = (UINT32)remainingDays + 1;  // Days are 1-indexed
+	outDay = (UINT32)remainingDays + 1; // Days are 1-indexed
 }
 
-VOID DateTime::FromDaysAndTime(DateTime& dt, UINT64 days, UINT64 baseYear,
-                               UINT64 timeOfDaySeconds, UINT64 subSecondNanoseconds) noexcept
+VOID DateTime::FromDaysAndTime(DateTime &dt, UINT64 days, UINT64 baseYear,
+							   UINT64 timeOfDaySeconds, UINT64 subSecondNanoseconds) noexcept
 {
 	// Fast-forward through years
 	UINT64 year = baseYear;
-	while (TRUE)
+	while (true)
 	{
 		UINT32 daysInYear = IsLeapYear(year) ? 366u : 365u;
 		if (days >= daysInYear)

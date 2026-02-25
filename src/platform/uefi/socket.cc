@@ -44,7 +44,7 @@ static VOID EFIAPI EmptyNotify(EFI_EVENT Event, PVOID Context)
 static BOOL InitializeNetworkInterface(EFI_CONTEXT &ctx)
 {
 	if (ctx.NetworkInitialized)
-		return TRUE;
+		return true;
 
 	LOG_DEBUG("Socket: InitializeNetworkInterface starting...");
 
@@ -64,23 +64,23 @@ static BOOL InitializeNetworkInterface(EFI_CONTEXT &ctx)
 	SnpGuid.Data4[6] = 0xC1;
 	SnpGuid.Data4[7] = 0x4D;
 	USIZE HandleCount = 0;
-	EFI_HANDLE *HandleBuffer = NULL;
+	EFI_HANDLE *HandleBuffer = nullptr;
 
-	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &SnpGuid, NULL, &HandleCount, &HandleBuffer)) || HandleCount == 0)
+	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &SnpGuid, nullptr, &HandleCount, &HandleBuffer)) || HandleCount == 0)
 	{
 		LOG_DEBUG("Socket: LocateHandleBuffer failed or no handles");
-		return FALSE;
+		return false;
 	}
 
 	LOG_DEBUG("Socket: Found %u SNP handles", (UINT32)HandleCount);
 
 	for (USIZE i = 0; i < HandleCount; i++)
 	{
-		EFI_SIMPLE_NETWORK_PROTOCOL *Snp = NULL;
-		if (EFI_ERROR_CHECK(bs->OpenProtocol(HandleBuffer[i], &SnpGuid, (PVOID *)&Snp, ctx.ImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL)) || Snp == NULL)
+		EFI_SIMPLE_NETWORK_PROTOCOL *Snp = nullptr;
+		if (EFI_ERROR_CHECK(bs->OpenProtocol(HandleBuffer[i], &SnpGuid, (PVOID *)&Snp, ctx.ImageHandle, nullptr, EFI_OPEN_PROTOCOL_GET_PROTOCOL)) || Snp == nullptr)
 			continue;
 
-		if (Snp->Mode != NULL)
+		if (Snp->Mode != nullptr)
 		{
 			if (Snp->Mode->State == EfiSimpleNetworkStopped)
 			{
@@ -95,7 +95,7 @@ static BOOL InitializeNetworkInterface(EFI_CONTEXT &ctx)
 			if (Snp->Mode->State == EfiSimpleNetworkInitialized)
 			{
 				LOG_DEBUG("Socket: SNP[%u] Initialized successfully", (UINT32)i);
-				ctx.NetworkInitialized = TRUE;
+				ctx.NetworkInitialized = true;
 				break;
 			}
 		}
@@ -109,7 +109,7 @@ static BOOL InitializeNetworkInterface(EFI_CONTEXT &ctx)
 static BOOL InitializeDhcp(EFI_CONTEXT &ctx)
 {
 	if (ctx.DhcpConfigured)
-		return TRUE;
+		return true;
 
 	LOG_DEBUG("Socket: InitializeDhcp starting...");
 
@@ -129,29 +129,29 @@ static BOOL InitializeDhcp(EFI_CONTEXT &ctx)
 	Ip4Config2Guid.Data4[6] = 0x60;
 	Ip4Config2Guid.Data4[7] = 0x80;
 	USIZE HandleCount = 0;
-	EFI_HANDLE *HandleBuffer = NULL;
+	EFI_HANDLE *HandleBuffer = nullptr;
 
-	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &Ip4Config2Guid, NULL, &HandleCount, &HandleBuffer)) || HandleCount == 0)
+	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &Ip4Config2Guid, nullptr, &HandleCount, &HandleBuffer)) || HandleCount == 0)
 	{
 		LOG_DEBUG("Socket: DHCP LocateHandleBuffer failed or no handles");
-		return FALSE;
+		return false;
 	}
 
 	LOG_DEBUG("Socket: Found %u Ip4Config2 handles", (UINT32)HandleCount);
 
 	for (USIZE i = 0; i < HandleCount; i++)
 	{
-		EFI_IP4_CONFIG2_PROTOCOL *Ip4Config2 = NULL;
-		if (EFI_ERROR_CHECK(bs->OpenProtocol(HandleBuffer[i], &Ip4Config2Guid, (PVOID *)&Ip4Config2, ctx.ImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL)) || Ip4Config2 == NULL)
+		EFI_IP4_CONFIG2_PROTOCOL *Ip4Config2 = nullptr;
+		if (EFI_ERROR_CHECK(bs->OpenProtocol(HandleBuffer[i], &Ip4Config2Guid, (PVOID *)&Ip4Config2, ctx.ImageHandle, nullptr, EFI_OPEN_PROTOCOL_GET_PROTOCOL)) || Ip4Config2 == nullptr)
 			continue;
 
 		// Check if gateway exists (DHCP already completed)
 		USIZE DataSize = 0;
-		EFI_STATUS Status = Ip4Config2->GetData(Ip4Config2, Ip4Config2DataTypeGateway, &DataSize, NULL);
+		EFI_STATUS Status = Ip4Config2->GetData(Ip4Config2, Ip4Config2DataTypeGateway, &DataSize, nullptr);
 		if (Status == EFI_BUFFER_TOO_SMALL && DataSize >= sizeof(EFI_IPv4_ADDRESS))
 		{
 			LOG_DEBUG("Socket: DHCP already configured (gateway exists, size=%u)", (UINT32)DataSize);
-			ctx.DhcpConfigured = TRUE;
+			ctx.DhcpConfigured = true;
 			break;
 		}
 
@@ -170,11 +170,11 @@ static BOOL InitializeDhcp(EFI_CONTEXT &ctx)
 		for (UINT32 retry = 0; retry < 50; retry++)
 		{
 			DataSize = 0;
-			Status = Ip4Config2->GetData(Ip4Config2, Ip4Config2DataTypeGateway, &DataSize, NULL);
+			Status = Ip4Config2->GetData(Ip4Config2, Ip4Config2DataTypeGateway, &DataSize, nullptr);
 			if (Status == EFI_BUFFER_TOO_SMALL && DataSize >= sizeof(EFI_IPv4_ADDRESS))
 			{
 				LOG_DEBUG("Socket: DHCP completed after %ums", retry * 100);
-				ctx.DhcpConfigured = TRUE;
+				ctx.DhcpConfigured = true;
 				break;
 			}
 			bs->Stall(100000); // 100ms
@@ -183,7 +183,7 @@ static BOOL InitializeDhcp(EFI_CONTEXT &ctx)
 		if (!ctx.DhcpConfigured)
 		{
 			LOG_DEBUG("Socket: DHCP timeout after 5s, proceeding anyway");
-			ctx.DhcpConfigured = TRUE; // Allow TCP to try with whatever config exists
+			ctx.DhcpConfigured = true; // Allow TCP to try with whatever config exists
 		}
 		break;
 	}
@@ -195,7 +195,7 @@ static BOOL InitializeDhcp(EFI_CONTEXT &ctx)
 	{
 		LOG_DEBUG("Socket: First connection - waiting 500ms for TCP stack readiness...");
 		bs->Stall(500000); // 500ms
-		ctx.TcpStackReady = TRUE;
+		ctx.TcpStackReady = true;
 	}
 
 	LOG_DEBUG("Socket: InitializeDhcp done, success=%d", (INT32)ctx.DhcpConfigured);
@@ -230,22 +230,22 @@ static EFI_STATUS WaitForCompletion(EFI_BOOT_SERVICES *bs, TCP_PROTOCOL *Tcp, EF
 // =============================================================================
 
 Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
-	: ip(ipAddress), port(portNum), m_socket(NULL)
+	: ip(ipAddress), port(portNum), m_socket(nullptr)
 {
 	LOG_DEBUG("Socket: Constructor starting for port %u...", (UINT32)portNum);
 
 	EFI_CONTEXT *ctx = GetEfiContext();
-	if (ctx == NULL || ctx->SystemTable == NULL)
+	if (ctx == nullptr || ctx->SystemTable == nullptr)
 	{
 		LOG_DEBUG("Socket: Constructor failed - no EFI context");
 		return;
 	}
 
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
-	UefiSocketContext *sockCtx = NULL;
+	UefiSocketContext *sockCtx = nullptr;
 
 	LOG_DEBUG("Socket: Allocating socket context...");
-	if (EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, sizeof(UefiSocketContext), (PVOID *)&sockCtx)) || sockCtx == NULL)
+	if (EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, sizeof(UefiSocketContext), (PVOID *)&sockCtx)) || sockCtx == nullptr)
 	{
 		LOG_DEBUG("Socket: AllocatePool failed");
 		return;
@@ -314,8 +314,8 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 
 	LOG_DEBUG("Socket: LocateHandleBuffer for TCP%d...", sockCtx->IsIPv6 ? 6 : 4);
 	USIZE HandleCount = 0;
-	EFI_HANDLE *HandleBuffer = NULL;
-	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &ServiceBindingGuid, NULL, &HandleCount, &HandleBuffer)) || HandleCount == 0)
+	EFI_HANDLE *HandleBuffer = nullptr;
+	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &ServiceBindingGuid, nullptr, &HandleCount, &HandleBuffer)) || HandleCount == 0)
 	{
 		LOG_DEBUG("Socket: LocateHandleBuffer failed or no handles");
 		bs->FreePool(sockCtx);
@@ -324,7 +324,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 
 	LOG_DEBUG("Socket: Found %u TCP service binding handles", (UINT32)HandleCount);
 	sockCtx->ServiceHandle = HandleBuffer[0];
-	EFI_STATUS Status = bs->OpenProtocol(sockCtx->ServiceHandle, &ServiceBindingGuid, (PVOID *)&sockCtx->ServiceBinding, ctx->ImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+	EFI_STATUS Status = bs->OpenProtocol(sockCtx->ServiceHandle, &ServiceBindingGuid, (PVOID *)&sockCtx->ServiceBinding, ctx->ImageHandle, nullptr, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 	bs->FreePool(HandleBuffer);
 
 	if (EFI_ERROR_CHECK(Status))
@@ -335,18 +335,18 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 	}
 
 	LOG_DEBUG("Socket: CreateChild...");
-	sockCtx->TcpHandle = NULL;
+	sockCtx->TcpHandle = nullptr;
 	if (EFI_ERROR_CHECK(sockCtx->ServiceBinding->CreateChild(sockCtx->ServiceBinding, &sockCtx->TcpHandle)))
 	{
 		LOG_DEBUG("Socket: CreateChild failed");
-		bs->CloseProtocol(sockCtx->ServiceHandle, &ServiceBindingGuid, ctx->ImageHandle, NULL);
+		bs->CloseProtocol(sockCtx->ServiceHandle, &ServiceBindingGuid, ctx->ImageHandle, nullptr);
 		bs->FreePool(sockCtx);
 		return;
 	}
 
 	LOG_DEBUG("Socket: OpenProtocol TCP interface...");
-	PVOID TcpInterface = NULL;
-	if (EFI_ERROR_CHECK(bs->OpenProtocol(sockCtx->TcpHandle, &ProtocolGuid, &TcpInterface, ctx->ImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL)))
+	PVOID TcpInterface = nullptr;
+	if (EFI_ERROR_CHECK(bs->OpenProtocol(sockCtx->TcpHandle, &ProtocolGuid, &TcpInterface, ctx->ImageHandle, nullptr, EFI_OPEN_PROTOCOL_GET_PROTOCOL)))
 	{
 		LOG_DEBUG("Socket: OpenProtocol TCP interface failed");
 		sockCtx->ServiceBinding->DestroyChild(sockCtx->ServiceBinding, sockCtx->TcpHandle);
@@ -374,14 +374,14 @@ BOOL Socket::Open()
 	if (!IsValid())
 	{
 		LOG_DEBUG("Socket: Open() failed - invalid socket");
-		return FALSE;
+		return false;
 	}
 
 	UefiSocketContext *sockCtx = (UefiSocketContext *)m_socket;
 	if (sockCtx->IsConnected)
 	{
 		LOG_DEBUG("Socket: Open() - already connected");
-		return TRUE;
+		return true;
 	}
 
 	EFI_CONTEXT *ctx = GetEfiContext();
@@ -392,14 +392,14 @@ BOOL Socket::Open()
 
 	LOG_DEBUG("Socket: Creating connect event...");
 	EFI_EVENT ConnectEvent;
-	if (EFI_ERROR_CHECK(bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, NULL, &ConnectEvent)))
+	if (EFI_ERROR_CHECK(bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, nullptr, &ConnectEvent)))
 	{
 		LOG_DEBUG("Socket: CreateEvent failed");
-		return FALSE;
+		return false;
 	}
 
 	EFI_STATUS Status;
-	BOOL success = FALSE;
+	BOOL success = false;
 
 	if (sockCtx->IsIPv6)
 	{
@@ -407,7 +407,7 @@ BOOL Socket::Open()
 		EFI_TCP6_CONFIG_DATA ConfigData;
 		Memory::Zero(&ConfigData, sizeof(ConfigData));
 		ConfigData.HopLimit = 64;
-		ConfigData.AccessPoint.ActiveFlag = TRUE;
+		ConfigData.AccessPoint.ActiveFlag = true;
 		ConfigData.AccessPoint.RemotePort = port;
 		const UINT8 *ipv6Addr = ip.ToIPv6();
 		if (ipv6Addr)
@@ -417,9 +417,9 @@ BOOL Socket::Open()
 		{
 			LOG_DEBUG("Socket: TCP6 Configure failed");
 			bs->CloseEvent(ConnectEvent);
-			return FALSE;
+			return false;
 		}
-		sockCtx->IsConfigured = TRUE;
+		sockCtx->IsConfigured = true;
 		LOG_DEBUG("Socket: TCP6 configured, connecting...");
 
 		EFI_TCP6_CONNECTION_TOKEN ConnectToken;
@@ -441,8 +441,8 @@ BOOL Socket::Open()
 		if (!success)
 		{
 			LOG_DEBUG("Socket: TCP6 connection failed, unconfiguring");
-			sockCtx->Tcp6->Configure(sockCtx->Tcp6, NULL);
-			sockCtx->IsConfigured = FALSE;
+			sockCtx->Tcp6->Configure(sockCtx->Tcp6, nullptr);
+			sockCtx->IsConfigured = false;
 		}
 	}
 	else
@@ -451,8 +451,8 @@ BOOL Socket::Open()
 		EFI_TCP4_CONFIG_DATA ConfigData;
 		Memory::Zero(&ConfigData, sizeof(ConfigData));
 		ConfigData.TimeToLive = 64;
-		ConfigData.AccessPoint.ActiveFlag = TRUE;
-		ConfigData.AccessPoint.UseDefaultAddress = TRUE;
+		ConfigData.AccessPoint.ActiveFlag = true;
+		ConfigData.AccessPoint.UseDefaultAddress = true;
 		ConfigData.AccessPoint.RemotePort = port;
 
 		UINT32 ipv4Addr = ip.ToIPv4();
@@ -473,9 +473,9 @@ BOOL Socket::Open()
 		{
 			LOG_DEBUG("Socket: TCP4 Configure failed: 0x%lx", (UINT64)Status);
 			bs->CloseEvent(ConnectEvent);
-			return FALSE;
+			return false;
 		}
-		sockCtx->IsConfigured = TRUE;
+		sockCtx->IsConfigured = true;
 		LOG_DEBUG("Socket: TCP4 configured, connecting...");
 
 		EFI_TCP4_CONNECTION_TOKEN ConnectToken;
@@ -497,8 +497,8 @@ BOOL Socket::Open()
 		if (!success)
 		{
 			LOG_DEBUG("Socket: TCP4 connection failed, unconfiguring");
-			sockCtx->Tcp4->Configure(sockCtx->Tcp4, NULL);
-			sockCtx->IsConfigured = FALSE;
+			sockCtx->Tcp4->Configure(sockCtx->Tcp4, nullptr);
+			sockCtx->IsConfigured = false;
 		}
 	}
 
@@ -519,7 +519,7 @@ BOOL Socket::Close()
 	if (!IsValid())
 	{
 		LOG_DEBUG("Socket: Close() invalid socket");
-		return FALSE;
+		return false;
 	}
 
 	UefiSocketContext *sockCtx = (UefiSocketContext *)m_socket;
@@ -530,19 +530,19 @@ BOOL Socket::Close()
 	{
 		// Cancel any pending I/O
 		LOG_DEBUG("Socket: TCP6 Cancel pending I/O...");
-		sockCtx->Tcp6->Cancel(sockCtx->Tcp6, NULL);
+		sockCtx->Tcp6->Cancel(sockCtx->Tcp6, nullptr);
 
 		if (sockCtx->IsConnected)
 		{
 			LOG_DEBUG("Socket: TCP6 closing connection...");
 			EFI_EVENT CloseEvent;
-			if (!EFI_ERROR_CHECK(bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, NULL, &CloseEvent)))
+			if (!EFI_ERROR_CHECK(bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, nullptr, &CloseEvent)))
 			{
 				EFI_TCP6_CLOSE_TOKEN CloseToken;
 				Memory::Zero(&CloseToken, sizeof(CloseToken));
 				CloseToken.CompletionToken.Event = CloseEvent;
 				CloseToken.CompletionToken.Status = EFI_NOT_READY;
-				CloseToken.AbortOnClose = TRUE; // Force abort to avoid waiting for remote ACK
+				CloseToken.AbortOnClose = true; // Force abort to avoid waiting for remote ACK
 
 				EFI_STATUS Status = sockCtx->Tcp6->Close(sockCtx->Tcp6, &CloseToken);
 				if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
@@ -555,27 +555,27 @@ BOOL Socket::Close()
 		if (sockCtx->IsConfigured)
 		{
 			LOG_DEBUG("Socket: TCP6 unconfiguring...");
-			[[maybe_unused]] EFI_STATUS cfgStatus = sockCtx->Tcp6->Configure(sockCtx->Tcp6, NULL);
-			LOG_DEBUG("Socket: TCP6 Configure(NULL) returned 0x%lx", (UINT64)cfgStatus);
+			[[maybe_unused]] EFI_STATUS cfgStatus = sockCtx->Tcp6->Configure(sockCtx->Tcp6, nullptr);
+			LOG_DEBUG("Socket: TCP6 Configure(nullptr) returned 0x%lx", (UINT64)cfgStatus);
 		}
 	}
 	else
 	{
 		// Cancel any pending I/O
 		LOG_DEBUG("Socket: TCP4 Cancel pending I/O...");
-		sockCtx->Tcp4->Cancel(sockCtx->Tcp4, NULL);
+		sockCtx->Tcp4->Cancel(sockCtx->Tcp4, nullptr);
 
 		if (sockCtx->IsConnected)
 		{
 			LOG_DEBUG("Socket: TCP4 closing connection...");
 			EFI_EVENT CloseEvent;
-			if (!EFI_ERROR_CHECK(bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, NULL, &CloseEvent)))
+			if (!EFI_ERROR_CHECK(bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, nullptr, &CloseEvent)))
 			{
 				EFI_TCP4_CLOSE_TOKEN CloseToken;
 				Memory::Zero(&CloseToken, sizeof(CloseToken));
 				CloseToken.CompletionToken.Event = CloseEvent;
 				CloseToken.CompletionToken.Status = EFI_NOT_READY;
-				CloseToken.AbortOnClose = TRUE; // Force abort to avoid waiting for remote ACK
+				CloseToken.AbortOnClose = true; // Force abort to avoid waiting for remote ACK
 
 				EFI_STATUS Status = sockCtx->Tcp4->Close(sockCtx->Tcp4, &CloseToken);
 				if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
@@ -588,8 +588,8 @@ BOOL Socket::Close()
 		if (sockCtx->IsConfigured)
 		{
 			LOG_DEBUG("Socket: TCP4 unconfiguring...");
-			[[maybe_unused]] EFI_STATUS cfgStatus = sockCtx->Tcp4->Configure(sockCtx->Tcp4, NULL);
-			LOG_DEBUG("Socket: TCP4 Configure(NULL) returned 0x%lx", (UINT64)cfgStatus);
+			[[maybe_unused]] EFI_STATUS cfgStatus = sockCtx->Tcp4->Configure(sockCtx->Tcp4, nullptr);
+			LOG_DEBUG("Socket: TCP4 Configure(nullptr) returned 0x%lx", (UINT64)cfgStatus);
 		}
 	}
 
@@ -651,7 +651,7 @@ BOOL Socket::Close()
 		ServiceBindingGuid.Data4[6] = 0x7C;
 		ServiceBindingGuid.Data4[7] = 0xC9;
 	}
-	[[maybe_unused]] EFI_STATUS closeStatus = bs->CloseProtocol(sockCtx->TcpHandle, &ProtocolGuid, ctx->ImageHandle, NULL);
+	[[maybe_unused]] EFI_STATUS closeStatus = bs->CloseProtocol(sockCtx->TcpHandle, &ProtocolGuid, ctx->ImageHandle, nullptr);
 	LOG_DEBUG("Socket: CloseProtocol returned 0x%lx", (UINT64)closeStatus);
 
 	LOG_DEBUG("Socket: DestroyChild...");
@@ -659,13 +659,13 @@ BOOL Socket::Close()
 	LOG_DEBUG("Socket: DestroyChild returned 0x%lx", (UINT64)destroyStatus);
 
 	LOG_DEBUG("Socket: CloseProtocol on ServiceHandle...");
-	bs->CloseProtocol(sockCtx->ServiceHandle, &ServiceBindingGuid, ctx->ImageHandle, NULL);
+	bs->CloseProtocol(sockCtx->ServiceHandle, &ServiceBindingGuid, ctx->ImageHandle, nullptr);
 
 	LOG_DEBUG("Socket: FreePool...");
 	bs->FreePool(sockCtx);
-	m_socket = NULL;
+	m_socket = nullptr;
 	LOG_DEBUG("Socket: Close() completed");
-	return TRUE;
+	return true;
 }
 
 // =============================================================================
@@ -676,7 +676,7 @@ BOOL Socket::Bind(SockAddr &SocketAddress, INT32 ShareType)
 {
 	(VOID) SocketAddress;
 	(VOID) ShareType;
-	return FALSE;
+	return false;
 }
 
 // =============================================================================
@@ -687,7 +687,7 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferLength)
 {
 	LOG_DEBUG("Socket: Read(%u bytes) starting...", bufferLength);
 
-	if (!IsValid() || buffer == NULL || bufferLength == 0)
+	if (!IsValid() || buffer == nullptr || bufferLength == 0)
 	{
 		LOG_DEBUG("Socket: Read() invalid params");
 		return -1;
@@ -704,7 +704,7 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferLength)
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
 
 	EFI_EVENT RxEvent;
-	if (EFI_ERROR_CHECK(bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, NULL, &RxEvent)))
+	if (EFI_ERROR_CHECK(bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, nullptr, &RxEvent)))
 	{
 		LOG_DEBUG("Socket: Read() CreateEvent failed");
 		return -1;
@@ -778,7 +778,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 {
 	LOG_DEBUG("Socket: Write(%u bytes) starting...", bufferLength);
 
-	if (!IsValid() || buffer == NULL || bufferLength == 0)
+	if (!IsValid() || buffer == nullptr || bufferLength == 0)
 	{
 		LOG_DEBUG("Socket: Write() invalid params");
 		return 0;
@@ -795,7 +795,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
 
 	EFI_EVENT TxEvent;
-	if (EFI_ERROR_CHECK(bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, NULL, &TxEvent)))
+	if (EFI_ERROR_CHECK(bs->CreateEvent(EVT_NOTIFY_SIGNAL, TPL_CALLBACK, EmptyNotify, nullptr, &TxEvent)))
 	{
 		LOG_DEBUG("Socket: Write() CreateEvent failed");
 		return 0;
@@ -807,7 +807,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 	{
 		EFI_TCP6_TRANSMIT_DATA TxData;
 		Memory::Zero(&TxData, sizeof(TxData));
-		TxData.Push = TRUE;
+		TxData.Push = true;
 		TxData.DataLength = bufferLength;
 		TxData.FragmentCount = 1;
 		TxData.FragmentTable[0].FragmentLength = bufferLength;
@@ -834,7 +834,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 	{
 		EFI_TCP4_TRANSMIT_DATA TxData;
 		Memory::Zero(&TxData, sizeof(TxData));
-		TxData.Push = TRUE;
+		TxData.Push = true;
 		TxData.DataLength = bufferLength;
 		TxData.FragmentCount = 1;
 		TxData.FragmentTable[0].FragmentLength = bufferLength;

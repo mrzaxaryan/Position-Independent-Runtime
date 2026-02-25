@@ -16,26 +16,26 @@
  * if the test fails.
  *
  * USAGE:
- *   BOOL allPassed = TRUE;
+ *   BOOL allPassed = true;
  *   RunTest(allPassed, TestFunction, L"Test description"_embed);
  *
  * @param allPassedVar - Boolean variable to track overall test status
  * @param testFunc     - Test function to execute (must return BOOL)
  * @param description  - Human-readable description of the test (wide embedded string)
- * @return TRUE if test passed, FALSE otherwise
+ * @return true if test passed, false otherwise
  */
 template <typename TestFunc>
-inline BOOL RunTest(BOOL& allPassedVar, TestFunc testFunc, PCWCHAR description)
+inline BOOL RunTest(BOOL &allPassedVar, TestFunc testFunc, PCWCHAR description)
 {
-	(VOID)description; // Suppress unused parameter warning if logging is disabled
+	(VOID) description; // Suppress unused parameter warning if logging is disabled
 	if (!testFunc())
 	{
-		allPassedVar = FALSE;
+		allPassedVar = false;
 		LOG_ERROR("  FAILED: %ls", description);
-		return FALSE;
+		return false;
 	}
 	LOG_INFO("  PASSED: %ls", description);
-	return TRUE;
+	return true;
 }
 
 /**
@@ -45,19 +45,19 @@ inline BOOL RunTest(BOOL& allPassedVar, TestFunc testFunc, PCWCHAR description)
  * Adds a blank line after the suite for visual separation.
  *
  * USAGE:
- *   BOOL allPassed = TRUE;
+ *   BOOL allPassed = true;
  *   RunTestSuite<MemoryTests>(allPassed);
  *   RunTestSuite<StringTests>(allPassed);
  *
  * @param allPassedVar - Boolean variable to track overall test status
- * @return TRUE if all tests in suite passed, FALSE otherwise
+ * @return true if all tests in suite passed, false otherwise
  */
 template <typename TestSuite>
-inline BOOL RunTestSuite(BOOL& allPassedVar)
+inline BOOL RunTestSuite(BOOL &allPassedVar)
 {
 	BOOL result = TestSuite::RunAll();
 	if (!result)
-		allPassedVar = FALSE;
+		allPassedVar = false;
 	LOG_INFO("");
 	return result;
 }
@@ -70,9 +70,9 @@ inline BOOL CompareBytes(const UINT8 *a, const UINT8 *b, UINT32 length)
 	for (UINT32 i = 0; i < length; i++)
 	{
 		if (a[i] != b[i])
-			return FALSE;
+			return false;
 	}
-	return TRUE;
+	return true;
 }
 
 /**
@@ -83,7 +83,7 @@ inline BOOL IsAllZeros(const UINT8 *data, UINT32 length)
 	for (UINT32 i = 0; i < length; i++)
 	{
 		if (data[i] != 0)
-			return FALSE;
+			return false;
 	}
-	return TRUE;
+	return true;
 }

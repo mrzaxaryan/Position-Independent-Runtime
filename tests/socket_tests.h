@@ -22,7 +22,7 @@ private:
 
 		LOG_INFO("Socket created successfully");
 		sock.Close();
-		return TRUE;
+		return true;
 	}
 
 	// Test 2: Socket connection to HTTP port
@@ -36,12 +36,12 @@ private:
 		{
 			LOG_ERROR("Socket connection failed");
 			sock.Close();
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Socket connected successfully to one.one.one.one:80");
 		sock.Close();
-		return TRUE;
+		return true;
 	}
 
 	// Test 3: HTTP GET request (port 80)
@@ -54,7 +54,7 @@ private:
 		if (!sock.Open())
 		{
 			LOG_ERROR("Socket initialization or connection failed");
-			return FALSE;
+			return false;
 		}
 
 		// Send HTTP GET request
@@ -65,7 +65,7 @@ private:
 		{
 			LOG_ERROR("Failed to send complete HTTP request (sent %d/%d bytes)", bytesSent, request.Length());
 			sock.Close();
-			return FALSE;
+			return false;
 		}
 
 		// Receive response
@@ -77,11 +77,11 @@ private:
 		{
 			LOG_ERROR("Failed to receive HTTP response");
 			sock.Close();
-			return FALSE;
+			return false;
 		}
 
 		sock.Close();
-		return TRUE;
+		return true;
 	}
 
 	// Test 4: Multiple sequential connections
@@ -96,7 +96,7 @@ private:
 			if (!sock.Open())
 			{
 				LOG_ERROR("Connection %d failed", i + 1);
-				return FALSE;
+				return false;
 			}
 
 			// Send minimal HTTP request
@@ -107,7 +107,7 @@ private:
 			{
 				LOG_ERROR("Connection %d: failed to send request", i + 1);
 				sock.Close();
-				return FALSE;
+				return false;
 			}
 
 			// Read some response
@@ -119,14 +119,14 @@ private:
 			{
 				LOG_ERROR("Connection %d: failed to receive response", i + 1);
 				sock.Close();
-				return FALSE;
+				return false;
 			}
 
 			sock.Close();
 		}
 
 		LOG_INFO("All sequential connections successful");
-		return TRUE;
+		return true;
 	}
 
 	// Test 5: IP address conversion
@@ -141,13 +141,13 @@ private:
 		if (!convertedIp.IsValid())
 		{
 			LOG_ERROR("IP conversion failed for valid IP");
-			return FALSE;
+			return false;
 		}
 
 		if (convertedIp.ToIPv4() != TEST_SERVER_IP)
 		{
 			LOG_ERROR("IP conversion mismatch: expected 0x%08X, got 0x%08X", TEST_SERVER_IP, convertedIp.ToIPv4());
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("IP conversion successful: %s -> 0x%08X", (PCCHAR)ipStr, convertedIp.ToIPv4());
@@ -159,7 +159,7 @@ private:
 		if (result1.IsValid())
 		{
 			LOG_ERROR("Failed to reject invalid IP: %s", (PCCHAR)invalidIp1);
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("  [D2] Testing invalid IP: 192.168.1");
@@ -168,7 +168,7 @@ private:
 		if (result2.IsValid())
 		{
 			LOG_ERROR("Failed to reject invalid IP: %s", (PCCHAR)invalidIp2);
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("  [D3] Testing invalid IP: abc.def.ghi.jkl");
@@ -177,7 +177,7 @@ private:
 		if (result3.IsValid())
 		{
 			LOG_ERROR("Failed to reject invalid IP: %s", (PCCHAR)invalidIp3);
-			return FALSE;
+			return false;
 		}
 
 		// Test IPv6 address parsing
@@ -189,13 +189,13 @@ private:
 		if (!ipv6Address.IsValid() || !ipv6Address.IsIPv6())
 		{
 			LOG_ERROR("IPv6 conversion failed for valid IPv6");
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("  [D7] About to format with %%s arg");
 		LOG_INFO("IPv6 conversion successful: %s", (PCCHAR)ipv6Str);
 		LOG_INFO("Invalid IP rejection tests passed");
-		return TRUE;
+		return true;
 	}
 
 	// Test 6: IPv6 Socket connection
@@ -210,7 +210,7 @@ private:
 		if (!ipv6Address.IsValid() || !ipv6Address.IsIPv6())
 		{
 			LOG_ERROR("Failed to parse IPv6 address: %s", (PCCHAR)ipv6Str);
-			return FALSE;
+			return false;
 		}
 
 		Socket sock(ipv6Address, 80);
@@ -219,7 +219,7 @@ private:
 		{
 			LOG_WARNING("IPv6 socket connection failed (IPv6 may not be available in this environment)");
 			sock.Close();
-			return TRUE; // Return TRUE to avoid failing the test suite when IPv6 is unavailable
+			return true; // Return true to avoid failing the test suite when IPv6 is unavailable
 		}
 
 		LOG_INFO("IPv6 socket connected successfully to %s:80", (PCCHAR)ipv6Str);
@@ -232,7 +232,7 @@ private:
 		{
 			LOG_ERROR("Failed to send complete HTTP request over IPv6 (sent %d/%d bytes)", bytesSent, request.Length());
 			sock.Close();
-			return FALSE;
+			return false;
 		}
 
 		// Receive response
@@ -244,11 +244,11 @@ private:
 		{
 			LOG_ERROR("Failed to receive HTTP response over IPv6");
 			sock.Close();
-			return FALSE;
+			return false;
 		}
 
 		sock.Close();
-		return TRUE;
+		return true;
 	}
 
 	// Test 7: HTTP GET request to httpbin.org (tests real-world connectivity and DNS resolution)
@@ -258,13 +258,13 @@ private:
 		if (!dnsResult)
 		{
 			LOG_ERROR("Failed to resolve httpbin.org (error: %u)", dnsResult.Error());
-			return FALSE;
+			return false;
 		}
 		Socket sock(dnsResult.Value(), 80);
 		if (!sock.Open())
 		{
 			LOG_ERROR("Failed to open socket to httpbin.org");
-			return FALSE;
+			return false;
 		}
 		auto request = "GET /get HTTP/1.1\r\nHost: httpbin.org\r\nConnection: close\r\n\r\n"_embed;
 		UINT32 bytesSent = sock.Write((PCVOID)(PCCHAR)request, request.Length());
@@ -272,7 +272,7 @@ private:
 		{
 			LOG_ERROR("Failed to send complete HTTP request to httpbin.org (sent %d/%d bytes)", bytesSent, request.Length());
 			sock.Close();
-			return FALSE;
+			return false;
 		}
 		CHAR buffer[1024];
 		Memory::Zero(buffer, sizeof(buffer));
@@ -281,18 +281,18 @@ private:
 		{
 			LOG_ERROR("Failed to receive HTTP response from httpbin.org");
 			sock.Close();
-			return FALSE;
+			return false;
 		}
 		LOG_INFO("Received %d bytes from httpbin.org", bytesRead);
 		sock.Close();
-		return TRUE;
+		return true;
 	}
 
 public:
 	// Run all socket tests
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running Socket Tests...");
 		LOG_INFO("  Test Server: one.one.one.one (1.1.1.1 / 2606:4700:4700::1111)");

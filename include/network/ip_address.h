@@ -122,10 +122,10 @@ public:
 
     /**
      * @brief Get loopback address (127.0.0.1 for IPv4, ::1 for IPv6)
-     * @param ipv6 TRUE for IPv6 loopback, FALSE for IPv4 loopback
+     * @param ipv6 true for IPv6 loopback, false for IPv4 loopback
      * @return IPAddress instance representing the loopback address
      */
-    static IPAddress LocalHost(BOOL ipv6 = FALSE);
+    static IPAddress LocalHost(BOOL ipv6 = false);
 
     /**
      * @brief Create an invalid IP address
@@ -139,19 +139,19 @@ public:
 
     /**
      * @brief Check if address is valid
-     * @return TRUE if IPv4 or IPv6, FALSE if Invalid
+     * @return true if IPv4 or IPv6, false if Invalid
      */
     BOOL IsValid() const;
 
     /**
      * @brief Check if address is IPv4
-     * @return TRUE if IPv4 address
+     * @return true if IPv4 address
      */
     BOOL IsIPv4() const;
 
     /**
      * @brief Check if address is IPv6
-     * @return TRUE if IPv6 address
+     * @return true if IPv6 address
      */
     BOOL IsIPv6() const;
 
@@ -181,7 +181,7 @@ public:
      * @brief Convert to string representation
      * @param buffer Output buffer
      * @param bufferSize Size of output buffer
-     * @return TRUE on success, FALSE if buffer too small
+     * @return true on success, false if buffer too small
      */
     BOOL ToString(PCHAR buffer, UINT32 bufferSize) const;
 
@@ -192,14 +192,14 @@ public:
     /**
      * @brief Equality comparison
      * @param other IPAddress to compare
-     * @return TRUE if addresses are equal
+     * @return true if addresses are equal
      */
     BOOL operator==(const IPAddress &other) const;
 
     /**
      * @brief Inequality comparison
      * @param other IPAddress to compare
-     * @return TRUE if addresses are not equal
+     * @return true if addresses are not equal
      */
     BOOL operator!=(const IPAddress &other) const;
 

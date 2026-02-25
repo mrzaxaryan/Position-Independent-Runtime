@@ -75,7 +75,7 @@ Result<void, WebSocketError> WebSocketClient::Open()
 		return Result<void, WebSocketError>::Err(WS_ERROR_HANDSHAKE_FAILED);
 	}
 
-	isConnected = TRUE;
+	isConnected = true;
 	return Result<void, WebSocketError>::Ok();
 }
 
@@ -88,7 +88,7 @@ Result<void, WebSocketError> WebSocketClient::Close()
 		(void)Write(&statusCode, sizeof(statusCode), OPCODE_CLOSE);
 	}
 
-	isConnected = FALSE;
+	isConnected = false;
 	(void)tlsContext.Close();
 	LOG_DEBUG("WebSocket client to %s:%u%s closed", hostName, port, path);
 	return Result<void, WebSocketError>::Ok();
@@ -186,10 +186,10 @@ BOOL WebSocketClient::ReceiveRestrict(PVOID buffer, UINT32 size)
 	{
 		SSIZE bytesRead = tlsContext.Read((PCHAR)buffer + totalBytesRead, size - totalBytesRead);
 		if (bytesRead <= 0)
-			return FALSE;
+			return false;
 		totalBytesRead += (UINT32)bytesRead;
 	}
-	return TRUE;
+	return true;
 }
 
 VOID WebSocketClient::MaskFrame(WebSocketFrame &frame, UINT32 maskKey)
@@ -217,7 +217,7 @@ BOOL WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 {
 	UINT8 header[2] = {0};
 	if (!ReceiveRestrict(&header, 2))
-		return FALSE;
+		return false;
 
 	UINT8 b1 = header[0];
 	UINT8 b2 = header[1];
@@ -231,7 +231,7 @@ BOOL WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 
 	// RFC 6455 Section 5.2: RSV1-3 must be 0 unless extensions are negotiated
 	if (frame.rsv1 || frame.rsv2 || frame.rsv3)
-		return FALSE;
+		return false;
 
 	UINT8 lengthBits = b2 & 0x7F;
 
@@ -239,14 +239,14 @@ BOOL WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 	{
 		UINT16 len16 = 0;
 		if (!ReceiveRestrict(&len16, 2))
-			return FALSE;
+			return false;
 		frame.length = UINT16SwapByteOrder(len16);
 	}
 	else if (lengthBits == 127)
 	{
 		UINT64 len64 = 0;
 		if (!ReceiveRestrict(&len64, 8))
-			return FALSE;
+			return false;
 		frame.length = UINT64SwapByteOrder(len64);
 	}
 	else
@@ -256,34 +256,34 @@ BOOL WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 
 	// Reject frames that would require an absurd allocation (>64 MB)
 	if (frame.length > 0x4000000)
-		return FALSE;
+		return false;
 
 	UINT32 frameMask = 0;
 	if (frame.mask)
 	{
 		if (!ReceiveRestrict(&frameMask, 4))
-			return FALSE;
+			return false;
 	}
 
-	frame.data = NULL;
+	frame.data = nullptr;
 	if (frame.length > 0)
 	{
 		frame.data = new CHAR[(UINT32)frame.length];
 		if (!frame.data)
-			return FALSE;
+			return false;
 
 		if (!ReceiveRestrict(frame.data, (UINT32)frame.length))
 		{
 			delete[] frame.data;
-			frame.data = NULL;
-			return FALSE;
+			frame.data = nullptr;
+			return false;
 		}
 	}
 
 	if (frame.mask && frame.data)
 		MaskFrame(frame, frameMask);
 
-	return TRUE;
+	return true;
 }
 
 Result<WebSocketMessage, WebSocketError> WebSocketClient::Read()
@@ -293,7 +293,7 @@ Result<WebSocketMessage, WebSocketError> WebSocketClient::Read()
 
 	WebSocketFrame frame;
 	WebSocketMessage message;
-	BOOL messageComplete = FALSE;
+	BOOL messageComplete = false;
 
 	while (isConnected)
 	{
@@ -322,7 +322,7 @@ Result<WebSocketMessage, WebSocketError> WebSocketClient::Read()
 					{
 						delete[] frame.data;
 						delete[] message.data;
-						message.data = NULL;
+						message.data = nullptr;
 						break;
 					}
 					Memory::Copy(tempBuffer, message.data, message.length);
@@ -341,7 +341,7 @@ Result<WebSocketMessage, WebSocketError> WebSocketClient::Read()
 
 			if (frame.fin)
 			{
-				messageComplete = TRUE;
+				messageComplete = true;
 				break;
 			}
 		}
@@ -350,7 +350,7 @@ Result<WebSocketMessage, WebSocketError> WebSocketClient::Read()
 			// Send close response per RFC 6455 Section 5.5.1
 			(void)Write(frame.data, (frame.length >= 2) ? 2 : 0, OPCODE_CLOSE);
 			delete[] frame.data;
-			isConnected = FALSE;
+			isConnected = false;
 			return Result<WebSocketMessage, WebSocketError>::Err(WS_ERROR_CONNECTION_CLOSED);
 		}
 		else if (frame.opcode == OPCODE_PING)
@@ -380,9 +380,9 @@ WebSocketClient::WebSocketClient(PCCHAR url)
 	Memory::Zero(hostName, sizeof(hostName));
 	Memory::Zero(path, sizeof(path));
 	port = 0;
-	isConnected = FALSE;
+	isConnected = false;
 
-	BOOL isSecure = FALSE;
+	BOOL isSecure = false;
 	if (!HttpClient::ParseUrl(url, hostName, path, port, isSecure))
 		return;
 

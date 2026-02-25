@@ -14,21 +14,21 @@
  * Uses EFI_BOOT_SERVICES->AllocatePool with EfiLoaderData type.
  *
  * @param size - Number of bytes to allocate
- * @return Pointer to allocated memory, or NULL on failure
+ * @return Pointer to allocated memory, or nullptr on failure
  */
 PVOID Allocator::AllocateMemory(USIZE size)
 {
 	if (size == 0)
-		return NULL;
+		return nullptr;
 
 	EFI_CONTEXT *ctx = GetEfiContext();
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
 
-	PVOID buffer = NULL;
+	PVOID buffer = nullptr;
 	EFI_STATUS status = bs->AllocatePool(EfiLoaderData, size, &buffer);
 
 	if (status != EFI_SUCCESS)
-		return NULL;
+		return nullptr;
 
 	return buffer;
 }
@@ -44,9 +44,9 @@ PVOID Allocator::AllocateMemory(USIZE size)
  */
 VOID Allocator::ReleaseMemory(PVOID ptr, USIZE size)
 {
-	(VOID)size; // UEFI FreePool doesn't need size
+	(VOID) size; // UEFI FreePool doesn't need size
 
-	if (ptr == NULL)
+	if (ptr == nullptr)
 		return;
 
 	EFI_CONTEXT *ctx = GetEfiContext();

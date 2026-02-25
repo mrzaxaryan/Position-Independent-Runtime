@@ -9,7 +9,7 @@ class ShaTests
 public:
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running SHA Tests...");
 
@@ -47,12 +47,11 @@ private:
 			0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14,
 			0x9a, 0xfb, 0xf4, 0xc8, 0x99, 0x6f, 0xb9, 0x24,
 			0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b, 0x93, 0x4c,
-			0xa4, 0x95, 0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55
-		});
+			0xa4, 0x95, 0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55});
 
 		auto message = ""_embed;
-		SHA256::Hash(reinterpret_cast<const UINT8*>(static_cast<PCCHAR>(message)), 0, digest);
-		return CompareBytes(digest, static_cast<const UINT8*>(static_cast<const VOID*>(expected)), SHA256_DIGEST_SIZE);
+		SHA256::Hash(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(message)), 0, digest);
+		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE);
 	}
 
 	// SHA-256 Test: "abc"
@@ -64,12 +63,11 @@ private:
 			0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
 			0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23,
 			0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c,
-			0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad
-		});
+			0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad});
 
 		auto message = "abc"_embed;
-		SHA256::Hash(reinterpret_cast<const UINT8*>(static_cast<PCCHAR>(message)), 3, digest);
-		return CompareBytes(digest, static_cast<const UINT8*>(static_cast<const VOID*>(expected)), SHA256_DIGEST_SIZE);
+		SHA256::Hash(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(message)), 3, digest);
+		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE);
 	}
 
 	// SHA-256 Test: "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
@@ -81,12 +79,11 @@ private:
 			0x24, 0x8d, 0x6a, 0x61, 0xd2, 0x06, 0x38, 0xb8,
 			0xe5, 0xc0, 0x26, 0x93, 0x0c, 0x3e, 0x60, 0x39,
 			0xa3, 0x3c, 0xe4, 0x59, 0x64, 0xff, 0x21, 0x67,
-			0xf6, 0xec, 0xed, 0xd4, 0x19, 0xdb, 0x06, 0xc1
-		});
+			0xf6, 0xec, 0xed, 0xd4, 0x19, 0xdb, 0x06, 0xc1});
 
 		auto message = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"_embed;
-		SHA256::Hash(reinterpret_cast<const UINT8*>(static_cast<PCCHAR>(message)), 56, digest);
-		return CompareBytes(digest, static_cast<const UINT8*>(static_cast<const VOID*>(expected)), SHA256_DIGEST_SIZE);
+		SHA256::Hash(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(message)), 56, digest);
+		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE);
 	}
 
 	// SHA-256 Test: Incremental update (split "abc" into "ab" + "c")
@@ -97,17 +94,16 @@ private:
 			0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
 			0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23,
 			0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c,
-			0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad
-		});
+			0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad});
 
 		SHA256 ctx;
 		auto msg1 = "ab"_embed;
 		auto msg2 = "c"_embed;
-		ctx.Update(reinterpret_cast<const UINT8*>(static_cast<PCCHAR>(msg1)), 2);
-		ctx.Update(reinterpret_cast<const UINT8*>(static_cast<PCCHAR>(msg2)), 1);
+		ctx.Update(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(msg1)), 2);
+		ctx.Update(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(msg2)), 1);
 		ctx.Final(digest);
 
-		return CompareBytes(digest, static_cast<const UINT8*>(static_cast<const VOID*>(expected)), SHA256_DIGEST_SIZE);
+		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE);
 	}
 
 	// SHA-384 Test: Empty string
@@ -121,12 +117,11 @@ private:
 			0x21, 0xfd, 0xb7, 0x11, 0x14, 0xbe, 0x07, 0x43,
 			0x4c, 0x0c, 0xc7, 0xbf, 0x63, 0xf6, 0xe1, 0xda,
 			0x27, 0x4e, 0xde, 0xbf, 0xe7, 0x6f, 0x65, 0xfb,
-			0xd5, 0x1a, 0xd2, 0xf1, 0x48, 0x98, 0xb9, 0x5b
-		});
+			0xd5, 0x1a, 0xd2, 0xf1, 0x48, 0x98, 0xb9, 0x5b});
 
 		auto message = ""_embed;
-		SHA384::Hash(reinterpret_cast<const UINT8*>(static_cast<PCCHAR>(message)), 0, digest);
-		return CompareBytes(digest, static_cast<const UINT8*>(static_cast<const VOID*>(expected)), SHA384_DIGEST_SIZE);
+		SHA384::Hash(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(message)), 0, digest);
+		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE);
 	}
 
 	// SHA-384 Test: "abc"
@@ -140,12 +135,11 @@ private:
 			0x27, 0x2c, 0x32, 0xab, 0x0e, 0xde, 0xd1, 0x63,
 			0x1a, 0x8b, 0x60, 0x5a, 0x43, 0xff, 0x5b, 0xed,
 			0x80, 0x86, 0x07, 0x2b, 0xa1, 0xe7, 0xcc, 0x23,
-			0x58, 0xba, 0xec, 0xa1, 0x34, 0xc8, 0x25, 0xa7
-		});
+			0x58, 0xba, 0xec, 0xa1, 0x34, 0xc8, 0x25, 0xa7});
 
 		auto message = "abc"_embed;
-		SHA384::Hash(reinterpret_cast<const UINT8*>(static_cast<PCCHAR>(message)), 3, digest);
-		return CompareBytes(digest, static_cast<const UINT8*>(static_cast<const VOID*>(expected)), SHA384_DIGEST_SIZE);
+		SHA384::Hash(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(message)), 3, digest);
+		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE);
 	}
 
 	// SHA-384 Test: "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
@@ -159,12 +153,11 @@ private:
 			0x53, 0x11, 0x1b, 0x17, 0x3b, 0x3b, 0x05, 0xd2,
 			0x2f, 0xa0, 0x80, 0x86, 0xe3, 0xb0, 0xf7, 0x12,
 			0xfc, 0xc7, 0xc7, 0x1a, 0x55, 0x7e, 0x2d, 0xb9,
-			0x66, 0xc3, 0xe9, 0xfa, 0x91, 0x74, 0x60, 0x39
-		});
+			0x66, 0xc3, 0xe9, 0xfa, 0x91, 0x74, 0x60, 0x39});
 
 		auto message = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"_embed;
-		SHA384::Hash(reinterpret_cast<const UINT8*>(static_cast<PCCHAR>(message)), 112, digest);
-		return CompareBytes(digest, static_cast<const UINT8*>(static_cast<const VOID*>(expected)), SHA384_DIGEST_SIZE);
+		SHA384::Hash(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(message)), 112, digest);
+		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE);
 	}
 
 	// SHA-384 Test: Incremental update (split "abc" into "ab" + "c")
@@ -177,17 +170,16 @@ private:
 			0x27, 0x2c, 0x32, 0xab, 0x0e, 0xde, 0xd1, 0x63,
 			0x1a, 0x8b, 0x60, 0x5a, 0x43, 0xff, 0x5b, 0xed,
 			0x80, 0x86, 0x07, 0x2b, 0xa1, 0xe7, 0xcc, 0x23,
-			0x58, 0xba, 0xec, 0xa1, 0x34, 0xc8, 0x25, 0xa7
-		});
+			0x58, 0xba, 0xec, 0xa1, 0x34, 0xc8, 0x25, 0xa7});
 
 		SHA384 ctx;
 		auto msg1 = "ab"_embed;
 		auto msg2 = "c"_embed;
-		ctx.Update(reinterpret_cast<const UINT8*>(static_cast<PCCHAR>(msg1)), 2);
-		ctx.Update(reinterpret_cast<const UINT8*>(static_cast<PCCHAR>(msg2)), 1);
+		ctx.Update(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(msg1)), 2);
+		ctx.Update(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(msg2)), 1);
 		ctx.Final(digest);
 
-		return CompareBytes(digest, static_cast<const UINT8*>(static_cast<const VOID*>(expected)), SHA384_DIGEST_SIZE);
+		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE);
 	}
 
 	// HMAC-SHA256 Test (RFC 4231 Test Case 1)
@@ -201,15 +193,14 @@ private:
 			0x5b, 0xdc, 0xc1, 0x46, 0xbf, 0x60, 0x75, 0x4e,
 			0x6a, 0x04, 0x24, 0x26, 0x08, 0x95, 0x75, 0xc7,
 			0x5a, 0x00, 0x3f, 0x08, 0x9d, 0x27, 0x39, 0x83,
-			0x9d, 0xec, 0x58, 0xb9, 0x64, 0xec, 0x38, 0x43
-		});
+			0x9d, 0xec, 0x58, 0xb9, 0x64, 0xec, 0x38, 0x43});
 
 		auto key = "Jefe"_embed;
 		auto message = "what do ya want for nothing?"_embed;
 
-		HMAC_SHA256::Compute(reinterpret_cast<const UCHAR*>(static_cast<PCCHAR>(key)), 4, reinterpret_cast<const UCHAR*>(static_cast<PCCHAR>(message)), 28, mac, SHA256_DIGEST_SIZE);
+		HMAC_SHA256::Compute(reinterpret_cast<const UCHAR *>(static_cast<PCCHAR>(key)), 4, reinterpret_cast<const UCHAR *>(static_cast<PCCHAR>(message)), 28, mac, SHA256_DIGEST_SIZE);
 
-		return CompareBytes(mac, static_cast<const UINT8*>(static_cast<const VOID*>(expected)), SHA256_DIGEST_SIZE);
+		return CompareBytes(mac, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE);
 	}
 
 	// HMAC-SHA384 Test (RFC 4231 Test Case 1)
@@ -225,14 +216,13 @@ private:
 			0x9c, 0x7e, 0xf4, 0x64, 0xf5, 0xa0, 0x1b, 0x47,
 			0xe4, 0x2e, 0xc3, 0x73, 0x63, 0x22, 0x44, 0x5e,
 			0x8e, 0x22, 0x40, 0xca, 0x5e, 0x69, 0xe2, 0xc7,
-			0x8b, 0x32, 0x39, 0xec, 0xfa, 0xb2, 0x16, 0x49
-		});
+			0x8b, 0x32, 0x39, 0xec, 0xfa, 0xb2, 0x16, 0x49});
 
 		auto key = "Jefe"_embed;
 		auto message = "what do ya want for nothing?"_embed;
 
-		HMAC_SHA384::Compute(reinterpret_cast<const UCHAR*>(static_cast<PCCHAR>(key)), 4, reinterpret_cast<const UCHAR*>(static_cast<PCCHAR>(message)), 28, mac, SHA384_DIGEST_SIZE);
+		HMAC_SHA384::Compute(reinterpret_cast<const UCHAR *>(static_cast<PCCHAR>(key)), 4, reinterpret_cast<const UCHAR *>(static_cast<PCCHAR>(message)), 28, mac, SHA384_DIGEST_SIZE);
 
-		return CompareBytes(mac, static_cast<const UINT8*>(static_cast<const VOID*>(expected)), SHA384_DIGEST_SIZE);
+		return CompareBytes(mac, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE);
 	}
 };

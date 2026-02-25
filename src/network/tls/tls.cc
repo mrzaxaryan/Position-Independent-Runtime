@@ -60,7 +60,7 @@ static FORCE_INLINE VOID AppendU16BE(TlsBuffer &buf, UINT16 val)
 /// @param packetType Type of the TLS packet (e.g., handshake, application data)
 /// @param ver Version of TLS to use for the packet
 /// @param buf The buffer containing the packet data to send
-/// @return TRUE if the packet was sent successfully, FALSE otherwise
+/// @return true if the packet was sent successfully, false otherwise
 
 BOOL TLSClient::SendPacket(INT32 packetType, INT32 ver, TlsBuffer &buf)
 {
@@ -91,15 +91,15 @@ BOOL TLSClient::SendPacket(INT32 packetType, INT32 ver, TlsBuffer &buf)
     if ((bytesWritten = context.Write((PCHAR)tempBuffer.GetBuffer(), tempBuffer.GetSize())) <= 0)
     {
         LOG_DEBUG("Failed to write packet to socket, bytesWritten: %d", bytesWritten);
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Packet sent successfully, bytesWritten: %d", bytesWritten);
-    return TRUE;
+    return true;
 }
 
 /// @brief Sent a ClientHello message to initiate the TLS handshake with the server
 /// @param host The hostname of the server to connect to
-/// @return TRUE if the ClientHello message was sent successfully, FALSE otherwise
+/// @return true if the ClientHello message was sent successfully, false otherwise
 
 BOOL TLSClient::SendClientHello(const CHAR *host)
 {
@@ -109,7 +109,7 @@ BOOL TLSClient::SendClientHello(const CHAR *host)
 
     sendBuffer.Clear();
 
-    BOOL hastls13 = FALSE;
+    BOOL hastls13 = false;
 
     sendBuffer.Append((CHAR)MSG_CLIENT_HELLO);
     INT32 handshakeSizeIndex = sendBuffer.AppendSize(3); // tls handshake body size
@@ -126,7 +126,7 @@ BOOL TLSClient::SendClientHello(const CHAR *host)
     for (INT32 i = 0; i < crypto.GetCipherCount(); i++)
     {
         AppendU16BE(sendBuffer, (UINT16)TLS_CHACHA20_POLY1305_SHA256);
-        hastls13 = TRUE;
+        hastls13 = true;
     }
     LOG_DEBUG("Appending ClientHello with %d ciphers", crypto.GetCipherCount());
     *(PUINT16)(sendBuffer.GetBuffer() + cipherCountIndex) = UINT16SwapByteOrder(sendBuffer.GetSize() - cipherCountIndex - 2);
@@ -190,7 +190,7 @@ BOOL TLSClient::SendClientHello(const CHAR *host)
             if (!crypto.ComputePublicKey(i, sendBuffer))
             {
                 LOG_DEBUG("Failed to compute public key for ECC group %d", i);
-                return FALSE;
+                return false;
             }
             LOG_DEBUG("Computed public key for ECC group %d, size: %d bytes", i, sendBuffer.GetSize() - shareSizeSub - 2);
             *(UINT16 *)(sendBuffer.GetBuffer() + shareSizeSub) = UINT16SwapByteOrder(sendBuffer.GetSize() - shareSizeSub - 2);
@@ -208,7 +208,7 @@ BOOL TLSClient::SendClientHello(const CHAR *host)
 }
 
 /// @brief Send a Client Finished message to complete the TLS handshake
-/// @return TRUE if the Client Finished message was sent successfully, FALSE otherwise
+/// @return true if the Client Finished message was sent successfully, false otherwise
 
 BOOL TLSClient::SendClientFinished()
 {
@@ -227,7 +227,7 @@ BOOL TLSClient::SendClientFinished()
 }
 
 /// @brief Send a Client Key Exchange message to the server during the TLS handshake
-/// @return TRUE if the Client Key Exchange message was sent successfully, FALSE otherwise
+/// @return true if the Client Key Exchange message was sent successfully, false otherwise
 
 BOOL TLSClient::SendClientExchange()
 {
@@ -243,7 +243,7 @@ BOOL TLSClient::SendClientExchange()
 }
 
 /// @brief Send a Change Cipher Spec message to the server to indicate that subsequent messages will be encrypted
-/// @return TRUE if the Change Cipher Spec message was sent successfully, FALSE otherwise
+/// @return true if the Change Cipher Spec message was sent successfully, false otherwise
 
 BOOL TLSClient::SendChangeCipherSpec()
 {
@@ -254,14 +254,14 @@ BOOL TLSClient::SendChangeCipherSpec()
 
 /// @brief Process the ServerHello message from the server and advances the TLS handshake state
 /// @param reader Buffer containing the ServerHello message data
-/// @return Indicates whether the ServerHello message was processed successfully (TRUE) or if there was an error (FALSE)
+/// @return Indicates whether the ServerHello message was processed successfully (true) or if there was an error (false)
 
 BOOL TLSClient::OnServerHello(TlsBuffer &reader)
 {
     CHAR server_rand[RAND_SIZE];
 
     LOG_DEBUG("Processing ServerHello for client: %p", this);
-    reader.ReadU24BE(); // handshake body size (already bounded by TLS record)
+    reader.ReadU24BE();                        // handshake body size (already bounded by TLS record)
     UINT16SwapByteOrder(reader.Read<INT16>()); // version
     reader.Read(server_rand, sizeof(server_rand));
     INT32 session_len = reader.Read<INT8>();
@@ -273,14 +273,14 @@ BOOL TLSClient::OnServerHello(TlsBuffer &reader)
     if (!ret)
     {
         LOG_DEBUG("Failed to update server info for client: %p", this);
-        return FALSE;
+        return false;
     }
     // LOG_DEBUG("Updated server info for client: %p, cipher: %d, compress: %d", client, cur_cipher, compress);
 
     if (reader.GetReaded() >= reader.GetSize())
     {
         LOG_DEBUG("ServerHello reader has reached the end of buffer, no extensions found");
-        return TRUE;
+        return true;
     }
     LOG_DEBUG("ServerHello has extensions, processing them");
 
@@ -319,7 +319,7 @@ BOOL TLSClient::OnServerHello(TlsBuffer &reader)
         if (tls_ver != 0x0304 || pubkey.GetSize() <= 0 || eccgroup == ECC_NONE)
         {
             LOG_DEBUG("Invalid TLS version or public key size, tls_ver: %d, pubkey.size: %d, eccgroup: %d", tls_ver, pubkey.GetSize(), eccgroup);
-            return FALSE;
+            return false;
         }
 
         LOG_DEBUG("Valid TLS version and public key size, tls_ver: %d, pubkey.size: %d, eccgroup: %d", tls_ver, pubkey.GetSize(), eccgroup);
@@ -327,46 +327,46 @@ BOOL TLSClient::OnServerHello(TlsBuffer &reader)
         if (!crypto.ComputeKey(eccgroup, pubkey.GetBuffer(), pubkey.GetSize(), 0))
         {
             LOG_DEBUG("Failed to compute TLS 1.3 key for client: %p, ECC group: %d, public key size: %d", this, eccgroup, pubkey.GetSize());
-            return FALSE;
+            return false;
         }
         LOG_DEBUG("Computed TLS 1.3 key for client: %p, ECC group: %d, public key size: %d", this, eccgroup, pubkey.GetSize());
-        crypto.SetEncoding(TRUE);
+        crypto.SetEncoding(true);
     }
     LOG_DEBUG("ServerHello processed successfully for client: %p, ECC group: %d, public key size: %d", this, eccgroup, pubkey.GetSize());
-    return TRUE;
+    return true;
 }
 
 /// @brief Process the ServerHelloDone message from the server and advances the TLS handshake state
-/// @return TRUE if the ServerHelloDone message was processed successfully, FALSE otherwise
+/// @return true if the ServerHelloDone message was processed successfully, false otherwise
 
 BOOL TLSClient::OnServerHelloDone()
 {
     if (!SendClientExchange())
     {
         LOG_DEBUG("Failed to send Client Key Exchange for client: %p", this);
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Client Key Exchange sent successfully for client: %p", this);
     if (!SendChangeCipherSpec())
     {
         LOG_DEBUG("Failed to send Change Cipher Spec for client: %p", this);
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Change Cipher Spec sent successfully for client: %p", this);
-    crypto.SetEncoding(TRUE);
+    crypto.SetEncoding(true);
     if (!SendClientFinished())
     {
         LOG_DEBUG("Failed to send Client Finished for client: %p", this);
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Client Finished sent successfully for client: %p", this);
 
-    return TRUE;
+    return true;
 }
 
 /// @brief Verify the Finished message from the server by comparing the verify data with the expected value computed from the handshake messages
 /// @param reader Buffer containing the Finished message data from the server
-/// @return Indicates whether the Finished message was verified successfully (TRUE) or if the verification failed (FALSE)
+/// @return Indicates whether the Finished message was verified successfully (true) or if the verification failed (false)
 
 BOOL TLSClient::VerifyFinished(TlsBuffer &reader)
 {
@@ -379,14 +379,14 @@ BOOL TLSClient::VerifyFinished(TlsBuffer &reader)
     if (Memory::Compare(verify.GetBuffer(), reader.GetBuffer() + reader.GetReaded(), server_finished_size) != 0)
     {
         LOG_DEBUG("Finished verification failed for client: %p, expected size: %d, actual size: %d", this, verify.GetSize(), server_finished_size);
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Finished verification succeeded for client: %p", this);
-    return TRUE;
+    return true;
 }
 
 /// @brief Finished message from the server has been received, process it and advance the TLS handshake state to complete the handshake
-/// @return Indicates whether the Server Finished message was processed successfully (TRUE) or if there was an error (FALSE)
+/// @return Indicates whether the Server Finished message was processed successfully (true) or if there was an error (false)
 
 BOOL TLSClient::OnServerFinished()
 {
@@ -398,31 +398,31 @@ BOOL TLSClient::OnServerFinished()
     if (!ret)
     {
         LOG_DEBUG("Failed to send Change Cipher Spec for client: %p", this);
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Change Cipher Spec sent successfully for client: %p", this);
     if (!SendClientFinished())
     {
         LOG_DEBUG("Failed to send Client Finished for client: %p", this);
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Client Finished sent successfully for client: %p", this);
     crypto.ResetSequenceNumber();
     if (!crypto.ComputeKey(ECC_NONE, 0, 0, finished_hash))
     {
         LOG_DEBUG("Failed to compute TLS 1.3 key for client: %p", this);
-        return FALSE;
+        return false;
     }
 
     LOG_DEBUG("Server Finished processed successfully for client: %p", this);
-    return TRUE;
+    return true;
 }
 
 /// @brief Process incoming TLS packets from the server, handle different packet types and advance the TLS handshake state accordingly
 /// @param packetType Type of the incoming TLS packet (e.g., handshake, alert)
 /// @param version Version of TLS used in the packet
 /// @param TlsReader Buffer containing the packet data to process
-/// @return Indicates whether the packet was processed successfully (TRUE) or if there was an error (FALSE)
+/// @return Indicates whether the packet was processed successfully (true) or if there was an error (false)
 
 BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBuffer &TlsReader)
 {
@@ -433,7 +433,7 @@ BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBuffer &TlsReader)
         if (!crypto.Decode(TlsReader, version))
         {
             LOG_DEBUG("Failed to Decode packet for client: %p, type: %d, version: %d", this, packetType, version);
-            return FALSE;
+            return false;
         }
         LOG_DEBUG("Packet decoded successfully for client: %p, type: %d, version: %d", this, packetType, version);
         if (crypto.GetEncoding() && TlsReader.GetSize() > 0)
@@ -445,7 +445,7 @@ BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBuffer &TlsReader)
         LOG_DEBUG("Packet type after processing: %d, buffer size: %d bytes", packetType, TlsReader.GetSize());
     }
 
-    ret = TRUE;
+    ret = true;
 
     while (TlsReader.GetReaded() < TlsReader.GetSize())
     {
@@ -477,7 +477,7 @@ BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBuffer &TlsReader)
             {
                 LOG_DEBUG("State sequence mismatch for client: %p, expected type: %d, expected handshake type: %d, actual type: %d, actual handshake type: %d",
                           this, state_seq[stateIndex].contentType, state_seq[stateIndex].handshakeType, packetType, reader_sig.GetBuffer()[0]);
-                return FALSE;
+                return false;
             }
             LOG_DEBUG("State sequence matches for client: %p, state index: %d, packet type: %d, handshake type: %d", this, stateIndex, packetType, reader_sig.GetBuffer()[0]);
             stateIndex++;
@@ -514,7 +514,7 @@ BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBuffer &TlsReader)
                 if (!OnServerHelloDone())
                 {
                     LOG_DEBUG("Failed to process Server Hello Done for client: %p", this);
-                    return FALSE;
+                    return false;
                 }
             }
             else if (handshakeType == MSG_FINISHED)
@@ -523,14 +523,14 @@ BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBuffer &TlsReader)
                 if (!VerifyFinished(reader_sig))
                 {
                     LOG_DEBUG("Failed to verify Finished for client: %p", this);
-                    return FALSE;
+                    return false;
                 }
                 LOG_DEBUG("Server Finished verified successfully for client: %p", this);
                 crypto.UpdateHash(reader_sig.GetBuffer(), reader_sig.GetSize());
                 if (!(OnServerFinished()))
                 {
                     LOG_DEBUG("Failed to process Server Finished for client: %p", this);
-                    return FALSE;
+                    return false;
                 }
                 LOG_DEBUG("Server Finished processed successfully for client: %p", this);
             }
@@ -538,7 +538,7 @@ BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBuffer &TlsReader)
             {
                 LOG_DEBUG("Failed to process handshake packet for client: %p, handshake type: %d", this, handshakeType);
                 Close();
-                return FALSE;
+                return false;
             }
         }
         else if (packetType == CONTENT_CHANGECIPHERSPEC)
@@ -552,7 +552,7 @@ BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBuffer &TlsReader)
                 [[maybe_unused]] INT32 level = reader_sig.Read<INT8>();
                 [[maybe_unused]] INT32 code = reader_sig.Read<INT8>();
                 LOG_ERROR("TLS Alert received for client: %p, level: %d, code: %d", this, level, code);
-                return FALSE;
+                return false;
             }
             LOG_DEBUG("TLS Alert received for client: %p, but buffer size is less than 2 bytes", this);
         }
@@ -564,11 +564,11 @@ BOOL TLSClient::OnPacket(INT32 packetType, INT32 version, TlsBuffer &TlsReader)
         TlsReader.AppendReaded(seg_size);
     }
 
-    return TRUE;
+    return true;
 }
 
 /// @brief Packet processing - read data from the socket, parse TLS packets
-/// @return Indicates whether the received data was processed successfully (TRUE) or if there was an error (FALSE)
+/// @return Indicates whether the received data was processed successfully (true) or if there was an error (false)
 
 BOOL TLSClient::ProcessReceive()
 {
@@ -580,7 +580,7 @@ BOOL TLSClient::ProcessReceive()
     {
         LOG_DEBUG("Failed to read data from socket for client: %p, bytes read: %lld", this, len);
         Close();
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Received %lld bytes from socket for client: %p", len, this);
     recvBuffer.AppendSize(len);
@@ -601,7 +601,7 @@ BOOL TLSClient::ProcessReceive()
         {
             LOG_DEBUG("Failed to process packet for client: %p, current index: %d, packet size: %d", this, cur_index, packet_size);
             Close();
-            return FALSE;
+            return false;
         }
         LOG_DEBUG("Packet processed successfully for client: %p, current index: %d, packet size: %d", this, cur_index, packet_size);
 
@@ -609,7 +609,7 @@ BOOL TLSClient::ProcessReceive()
     }
     Memory::Copy(recvBuffer.GetBuffer(), recvBuffer.GetBuffer() + cur_index, recvBuffer.GetSize() - cur_index);
     recvBuffer.AppendSize(-cur_index);
-    return TRUE;
+    return true;
 }
 
 /// @brief Read data from channel buffer
@@ -643,7 +643,7 @@ INT32 TLSClient::ReadChannel(PCHAR out, INT32 size)
 }
 
 /// @brief Open a TLS connection to the server, perform the TLS handshake by sending the ClientHello message and processing the server's responses
-/// @return Indicates whether the TLS connection was opened and the handshake completed successfully (TRUE) or if there was an error (FALSE)
+/// @return Indicates whether the TLS connection was opened and the handshake completed successfully (true) or if there was an error (false)
 
 BOOL TLSClient::Open()
 {
@@ -652,20 +652,20 @@ BOOL TLSClient::Open()
     if (!context.Open())
     {
         LOG_DEBUG("Failed to connect to host: %s, for client: %p", host, this);
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Connected to host: %s,  for client: %p", host, this);
 
     if (!secure)
     {
         LOG_DEBUG("Non-secure connection opened for client: %p", this);
-        return TRUE;
+        return true;
     }
 
     if (!(SendClientHello(host)))
     {
         LOG_DEBUG("Failed to send Client Hello for client: %p", this);
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Client Hello sent successfully for client: %p", this);
 
@@ -674,15 +674,15 @@ BOOL TLSClient::Open()
         if (!(ProcessReceive()))
         {
             LOG_DEBUG("Failed to process received data for client: %p", this);
-            return FALSE;
+            return false;
         }
     }
 
-    return TRUE;
+    return true;
 }
 
 /// @brief Close connection to the server, clean up buffers and cryptographic context
-/// @return Indicates whether the connection was closed successfully (TRUE) or if there was an error (FALSE)
+/// @return Indicates whether the connection was closed successfully (true) or if there was an error (false)
 
 BOOL TLSClient::Close()
 {

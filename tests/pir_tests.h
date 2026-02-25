@@ -59,7 +59,7 @@
 
 static BOOL RunPIRTests()
 {
-	BOOL allPassed = TRUE;
+	BOOL allPassed = true;
 
 	LOG_INFO("=== CPP-PIC Test Suite ===");
 	LOG_INFO("");

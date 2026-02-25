@@ -10,13 +10,13 @@
 
 UINT32 Console::Write(const WCHAR *text, USIZE length)
 {
-	if (text == NULL || length == 0)
+	if (text == nullptr || length == 0)
 		return 0;
 
 	EFI_CONTEXT *ctx = GetEfiContext();
 	EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *conOut = ctx->SystemTable->ConOut;
 
-	if (conOut == NULL)
+	if (conOut == nullptr)
 		return 0;
 
 	// Output in chunks with null terminator
@@ -41,13 +41,13 @@ UINT32 Console::Write(const WCHAR *text, USIZE length)
 
 UINT32 Console::Write(const CHAR *text, USIZE length)
 {
-	if (text == NULL || length == 0)
+	if (text == nullptr || length == 0)
 		return 0;
 
 	EFI_CONTEXT *ctx = GetEfiContext();
 	EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *conOut = ctx->SystemTable->ConOut;
 
-	if (conOut == NULL)
+	if (conOut == nullptr)
 		return 0;
 
 	// Convert to wide and output in chunks

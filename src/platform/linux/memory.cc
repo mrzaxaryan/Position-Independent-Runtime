@@ -9,7 +9,7 @@
 PVOID Allocator::AllocateMemory(USIZE size)
 {
     if (size == 0)
-        return NULL;
+        return nullptr;
 
     // Align size to page boundary (4096 bytes)
     // mmap allocates in pages, so we round up
@@ -17,7 +17,7 @@ PVOID Allocator::AllocateMemory(USIZE size)
 
     // Use mmap to allocate memory
     // fd = -1 for anonymous mapping (no file backing)
-    PVOID addr = NULL;
+    PVOID addr = nullptr;
     INT32 prot = PROT_READ | PROT_WRITE;
     INT32 flags = MAP_PRIVATE | MAP_ANONYMOUS;
 
@@ -33,14 +33,14 @@ PVOID Allocator::AllocateMemory(USIZE size)
 
     // mmap returns -1 on error (well, actually MAP_FAILED which is (void*)-1)
     if (result == -1 || result < 0)
-        return NULL;
+        return nullptr;
 
     return (PVOID)result;
 }
 
 VOID Allocator::ReleaseMemory(PVOID address, USIZE size)
 {
-    if (address == NULL || size == 0)
+    if (address == nullptr || size == 0)
         return;
 
     // Align size to page boundary (must match allocation alignment)

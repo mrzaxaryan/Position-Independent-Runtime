@@ -98,7 +98,7 @@ public:
     DirectoryIterator(PCWCHAR path);
     ~DirectoryIterator();
 
-    // Move to next entry. Returns FALSE when no more files.
+    // Move to next entry. Returns false when no more files.
     BOOL Next();
     // Get the current directory entry
     const DirectoryEntry &Get() const { return currentEntry; }

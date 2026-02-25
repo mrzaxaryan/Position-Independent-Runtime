@@ -372,8 +372,8 @@ VOID ChaChaPoly1305::Nonce(UINT8 (&nonce)[TLS_CHACHA20_IV_LENGTH])
 
 VOID ChaChaPoly1305::IvSetup(const UINT8 *iv, const UINT8 *counter)
 {
-    this->input[12] = counter == NULL ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
-    this->input[13] = counter == NULL ? 0 : _private_tls_U8TO32_LITTLE(counter + 4);
+    this->input[12] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
+    this->input[13] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 4);
     if (iv)
     {
         this->input[14] = _private_tls_U8TO32_LITTLE(iv + 0);
@@ -383,7 +383,7 @@ VOID ChaChaPoly1305::IvSetup(const UINT8 *iv, const UINT8 *counter)
 
 VOID ChaChaPoly1305::IVSetup96BitNonce(const UINT8 *iv, const UINT8 *counter)
 {
-    this->input[12] = counter == NULL ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
+    this->input[12] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
     if (iv)
     {
         this->input[13] = _private_tls_U8TO32_LITTLE(iv + 0);
@@ -394,7 +394,7 @@ VOID ChaChaPoly1305::IVSetup96BitNonce(const UINT8 *iv, const UINT8 *counter)
 
 VOID ChaChaPoly1305::IvUpdate(const UINT8 *iv, const UINT8 *aad, const UINT8 *counter)
 {
-    this->input[12] = counter == NULL ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
+    this->input[12] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
     this->input[13] = _private_tls_U8TO32_LITTLE(iv + 0);
     this->input[14] = _private_tls_U8TO32_LITTLE(iv + 4) ^ _private_tls_U8TO32_LITTLE(aad);
     this->input[15] = _private_tls_U8TO32_LITTLE(iv + 8) ^ _private_tls_U8TO32_LITTLE(aad + 4);
@@ -406,7 +406,7 @@ VOID ChaChaPoly1305::EncryptBytes(const UINT8 *m, UINT8 *c, UINT32 bytes)
     UINT32 x8, x9, x10, x11, x12, x13, x14, x15;
     UINT32 j0, j1, j2, j3, j4, j5, j6, j7;
     UINT32 j8, j9, j10, j11, j12, j13, j14, j15;
-    UINT8 *ctarget = NULL;
+    UINT8 *ctarget = nullptr;
     UINT8 tmp[64];
     UINT32 i;
 
@@ -602,7 +602,7 @@ INT32 ChaChaPoly1305::Poly1305Aead(PUCHAR pt, UINT32 len, PUCHAR aad, UINT32 aad
         return -1;
 
     UINT32 counter = 1;
-    this->IVSetup96BitNonce(NULL, (PUCHAR)&counter);
+    this->IVSetup96BitNonce(nullptr, (PUCHAR)&counter);
     this->EncryptBytes(pt, out, len);
 
     Poly1305 poly(poly_key);

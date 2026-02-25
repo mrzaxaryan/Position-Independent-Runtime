@@ -40,13 +40,13 @@ PVOID GetModuleHandleFromPEB(UINT64 moduleNameHash)
     {
         PLDR_DATA_TABLE_ENTRY module = CONTAINING_RECORD(entry, LDR_DATA_TABLE_ENTRY, InMemoryOrderModuleList);
 
-        if (module->BaseDllName.Buffer != NULL && Djb2::Hash(module->BaseDllName.Buffer) == moduleNameHash)
+        if (module->BaseDllName.Buffer != nullptr && Djb2::Hash(module->BaseDllName.Buffer) == moduleNameHash)
             return module->DllBase;
 
         entry = entry->Flink;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 PVOID ResolveExportAddressFromPebModule(UINT64 moduleNameHash, UINT64 functionNameHash)
@@ -54,8 +54,8 @@ PVOID ResolveExportAddressFromPebModule(UINT64 moduleNameHash, UINT64 functionNa
     // Resolve the module handle
     PVOID moduleBase = GetModuleHandleFromPEB(moduleNameHash);
     // Validate the module handle
-    if (moduleBase == NULL)
-        return NULL;
+    if (moduleBase == nullptr)
+        return nullptr;
     // Resolve the function address
     PVOID functionAddress = GetExportAddress(moduleBase, functionNameHash);
     return functionAddress;

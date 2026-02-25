@@ -8,7 +8,7 @@ class Base64Tests
 public:
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running Base64 Tests...");
 
@@ -45,7 +45,6 @@ public:
 	}
 
 private:
-
 	// Test: Encode empty string
 	// Expected: ""
 	static BOOL TestEncode_Empty()
@@ -103,7 +102,7 @@ private:
 	{
 		CHAR output[20];
 		auto input = MakeEmbedArray((const UINT8[]){0x00, 0x01, 0x02, 0x03, 0x04, 0x05});
-		Base64::Encode(reinterpret_cast<const char*>(static_cast<const VOID*>(input)), 6, output);
+		Base64::Encode(reinterpret_cast<const char *>(static_cast<const VOID *>(input)), 6, output);
 		return String::Compare<CHAR>(output, static_cast<PCCHAR>("AAECAwQF"_embed));
 	}
 
@@ -121,34 +120,34 @@ private:
 		auto input1 = "f"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input1), 1, output);
 		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zg=="_embed)))
-			return FALSE;
+			return false;
 
 		auto input2 = "fo"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input2), 2, output);
 		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm8="_embed)))
-			return FALSE;
+			return false;
 
 		auto input3 = "foo"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input3), 3, output);
 		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm9v"_embed)))
-			return FALSE;
+			return false;
 
 		auto input4 = "foob"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input4), 4, output);
 		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm9vYg=="_embed)))
-			return FALSE;
+			return false;
 
 		auto input5 = "fooba"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input5), 5, output);
 		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm9vYmE="_embed)))
-			return FALSE;
+			return false;
 
 		auto input6 = "foobar"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input6), 6, output);
 		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm9vYmFy"_embed)))
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	// Test: Decode empty string
@@ -158,7 +157,7 @@ private:
 		CHAR output[10];
 		auto input = ""_embed;
 		Base64::Decode(static_cast<PCCHAR>(input), 0, output);
-		return TRUE;  // Empty decode should succeed
+		return true; // Empty decode should succeed
 	}
 
 	// Test: Decode "Zg==" to "f"
@@ -206,7 +205,7 @@ private:
 
 		auto expected = MakeEmbedArray((const UINT8[]){0x00, 0x01, 0x02, 0x03, 0x04, 0x05});
 
-		return Memory::Compare(output, static_cast<const VOID*>(expected), 6) == 0;
+		return Memory::Compare(output, static_cast<const VOID *>(expected), 6) == 0;
 	}
 
 	// Test: Round-trip encoding and decoding
@@ -221,23 +220,23 @@ private:
 		Base64::Encode(static_cast<PCCHAR>(test1), len1, encoded);
 		Base64::Decode(encoded, Base64::GetEncodeOutSize(len1) - 1, decoded);
 		if (Memory::Compare(decoded, static_cast<PCCHAR>(test1), len1) != 0)
-			return FALSE;
+			return false;
 
 		auto test2 = "1234567890"_embed;
 		UINT32 len2 = 10;
 		Base64::Encode(static_cast<PCCHAR>(test2), len2, encoded);
 		Base64::Decode(encoded, Base64::GetEncodeOutSize(len2) - 1, decoded);
 		if (Memory::Compare(decoded, static_cast<PCCHAR>(test2), len2) != 0)
-			return FALSE;
+			return false;
 
 		auto test3 = "!@#$%^&*()_+-=[]{}|;:,.<>?"_embed;
 		UINT32 len3 = 26;
 		Base64::Encode(static_cast<PCCHAR>(test3), len3, encoded);
 		Base64::Decode(encoded, Base64::GetEncodeOutSize(len3) - 1, decoded);
 		if (Memory::Compare(decoded, static_cast<PCCHAR>(test3), len3) != 0)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	// Test: GetEncodeOutSize returns correct sizes
@@ -245,29 +244,29 @@ private:
 	{
 		// Empty: 0 -> 1 (null terminator)
 		if (Base64::GetEncodeOutSize(0) != 1)
-			return FALSE;
+			return false;
 
 		// 1 byte: 1 -> 5 (4 chars + null)
 		if (Base64::GetEncodeOutSize(1) != 5)
-			return FALSE;
+			return false;
 
 		// 2 bytes: 2 -> 5 (4 chars + null)
 		if (Base64::GetEncodeOutSize(2) != 5)
-			return FALSE;
+			return false;
 
 		// 3 bytes: 3 -> 5 (4 chars + null)
 		if (Base64::GetEncodeOutSize(3) != 5)
-			return FALSE;
+			return false;
 
 		// 4 bytes: 4 -> 9 (8 chars + null)
 		if (Base64::GetEncodeOutSize(4) != 9)
-			return FALSE;
+			return false;
 
 		// 6 bytes: 6 -> 9 (8 chars + null)
 		if (Base64::GetEncodeOutSize(6) != 9)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	// Test: GetDecodeOutSize returns correct sizes
@@ -275,20 +274,20 @@ private:
 	{
 		// 0 chars: 0 -> 0
 		if (Base64::GetDecodeOutSize(0) != 0)
-			return FALSE;
+			return false;
 
 		// 4 chars: 4 -> 3
 		if (Base64::GetDecodeOutSize(4) != 3)
-			return FALSE;
+			return false;
 
 		// 8 chars: 8 -> 6
 		if (Base64::GetDecodeOutSize(8) != 6)
-			return FALSE;
+			return false;
 
 		// 12 chars: 12 -> 9
 		if (Base64::GetDecodeOutSize(12) != 9)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 };

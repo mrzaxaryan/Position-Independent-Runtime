@@ -3,13 +3,12 @@
 #include "runtime.h"
 #include "tests.h"
 
-
 class EccTests
 {
 public:
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running ECC Tests...");
 
@@ -48,14 +47,14 @@ private:
 		Ecc ecc;
 		INT32 result = ecc.Initialize(32);
 		if (result != 0)
-			return FALSE;
+			return false;
 
 		// Verify we can export a public key
 		UINT8 publicKey[32 * 2 + 1];
 		result = ecc.ExportPublicKey(publicKey, sizeof(publicKey));
 
 		if (result == 0)
-			return FALSE;
+			return false;
 
 		return publicKey[0] == 0x04;
 	}
@@ -66,14 +65,14 @@ private:
 		Ecc ecc;
 		INT32 result = ecc.Initialize(48);
 		if (result != 0)
-			return FALSE;
+			return false;
 
 		// Verify we can export a public key
 		UINT8 publicKey[48 * 2 + 1];
 		result = ecc.ExportPublicKey(publicKey, sizeof(publicKey));
 
 		if (result == 0)
-			return FALSE;
+			return false;
 
 		return publicKey[0] == 0x04;
 	}
@@ -89,13 +88,13 @@ private:
 
 		// Export should succeed (returns non-zero on success)
 		if (result == 0)
-			return FALSE;
+			return false;
 
 		// Public key should not be all zeros
 		if (IsAllZeros(publicKey, sizeof(publicKey)))
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	// Test 7: Public key format validation
@@ -109,7 +108,7 @@ private:
 
 		// First byte should be 0x04 (uncompressed point format)
 		if (publicKey[0] != 0x04)
-			return FALSE;
+			return false;
 
 		// X and Y coordinates should not both be all zeros
 		BOOL xAllZeros = IsAllZeros(publicKey + 1, 32);
@@ -143,7 +142,7 @@ private:
 
 		// Both should succeed
 		if (aliceResult != 0 || bobResult != 0)
-			return FALSE;
+			return false;
 
 		// Shared secrets should match
 		return CompareBytes(aliceSecret, bobSecret, 32);

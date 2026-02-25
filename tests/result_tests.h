@@ -8,7 +8,7 @@ class ResultTests
 public:
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running Result Tests...");
 
@@ -41,19 +41,23 @@ private:
 		BOOL *destroyed;
 
 		Tracked(UINT32 v, BOOL *flag) : value(v), destroyed(flag) {}
-		~Tracked() { if (destroyed) *destroyed = TRUE; }
+		~Tracked()
+		{
+			if (destroyed)
+				*destroyed = true;
+		}
 
 		Tracked(Tracked &&other) noexcept
 			: value(other.value), destroyed(other.destroyed)
 		{
-			other.destroyed = NULL;
+			other.destroyed = nullptr;
 		}
 
 		Tracked &operator=(Tracked &&other) noexcept
 		{
 			value = other.value;
 			destroyed = other.destroyed;
-			other.destroyed = NULL;
+			other.destroyed = nullptr;
 			return *this;
 		}
 
@@ -65,20 +69,20 @@ private:
 	{
 		auto result = Result<UINT32, UINT32>::Ok(42);
 		if (!result.IsOk())
-			return FALSE;
+			return false;
 		if (result.Value() != 42)
-			return FALSE;
-		return TRUE;
+			return false;
+		return true;
 	}
 
 	static BOOL TestErrCreation()
 	{
 		auto result = Result<UINT32, UINT32>::Err(99);
 		if (!result.IsErr())
-			return FALSE;
+			return false;
 		if (result.Error() != 99)
-			return FALSE;
-		return TRUE;
+			return false;
+		return true;
 	}
 
 	static BOOL TestIsOkIsErr()
@@ -87,10 +91,10 @@ private:
 		auto err = Result<UINT32, UINT32>::Err(2);
 
 		if (!ok.IsOk() || ok.IsErr())
-			return FALSE;
+			return false;
 		if (!err.IsErr() || err.IsOk())
-			return FALSE;
-		return TRUE;
+			return false;
+		return true;
 	}
 
 	static BOOL TestOperatorBool()
@@ -99,36 +103,36 @@ private:
 		auto err = Result<UINT32, UINT32>::Err(2);
 
 		if (!ok)
-			return FALSE;
+			return false;
 		if (err)
-			return FALSE;
-		return TRUE;
+			return false;
+		return true;
 	}
 
 	static BOOL TestValueAccess()
 	{
 		auto result = Result<UINT32, UINT32>::Ok(123);
 		if (result.Value() != 123)
-			return FALSE;
+			return false;
 
 		result.Value() = 456;
 		if (result.Value() != 456)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestErrorAccess()
 	{
 		auto result = Result<UINT32, UINT32>::Err(789);
 		if (result.Error() != 789)
-			return FALSE;
+			return false;
 
 		result.Error() = 101;
 		if (result.Error() != 101)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestMoveConstruction()
@@ -137,19 +141,19 @@ private:
 		auto moved = static_cast<Result<UINT32, UINT32> &&>(original);
 
 		if (!moved.IsOk())
-			return FALSE;
+			return false;
 		if (moved.Value() != 55)
-			return FALSE;
+			return false;
 
 		auto errOriginal = Result<UINT32, UINT32>::Err(66);
 		auto errMoved = static_cast<Result<UINT32, UINT32> &&>(errOriginal);
 
 		if (!errMoved.IsErr())
-			return FALSE;
+			return false;
 		if (errMoved.Error() != 66)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestMoveAssignment()
@@ -159,37 +163,37 @@ private:
 
 		a = static_cast<Result<UINT32, UINT32> &&>(b);
 		if (!a.IsErr())
-			return FALSE;
+			return false;
 		if (a.Error() != 20)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestVoidOk()
 	{
 		auto result = Result<void, UINT32>::Ok();
 		if (!result.IsOk())
-			return FALSE;
+			return false;
 		if (result.IsErr())
-			return FALSE;
+			return false;
 		if (!result)
-			return FALSE;
-		return TRUE;
+			return false;
+		return true;
 	}
 
 	static BOOL TestVoidErr()
 	{
 		auto result = Result<void, UINT32>::Err(42);
 		if (!result.IsErr())
-			return FALSE;
+			return false;
 		if (result.IsOk())
-			return FALSE;
+			return false;
 		if (result)
-			return FALSE;
+			return false;
 		if (result.Error() != 42)
-			return FALSE;
-		return TRUE;
+			return false;
+		return true;
 	}
 
 	static BOOL TestVoidMoveConstruction()
@@ -197,48 +201,48 @@ private:
 		auto ok = Result<void, UINT32>::Ok();
 		auto movedOk = static_cast<Result<void, UINT32> &&>(ok);
 		if (!movedOk.IsOk())
-			return FALSE;
+			return false;
 
 		auto err = Result<void, UINT32>::Err(77);
 		auto movedErr = static_cast<Result<void, UINT32> &&>(err);
 		if (!movedErr.IsErr())
-			return FALSE;
+			return false;
 		if (movedErr.Error() != 77)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestNonTrivialDestructor()
 	{
-		BOOL valueDestroyed = FALSE;
-		BOOL errorDestroyed = FALSE;
+		BOOL valueDestroyed = false;
+		BOOL errorDestroyed = false;
 
 		{
 			auto ok = Result<Tracked, UINT32>::Ok(Tracked(1, &valueDestroyed));
 			if (valueDestroyed)
-				return FALSE;
+				return false;
 		}
 		if (!valueDestroyed)
-			return FALSE;
+			return false;
 
 		{
 			auto err = Result<UINT32, Tracked>::Err(Tracked(2, &errorDestroyed));
 			if (errorDestroyed)
-				return FALSE;
+				return false;
 		}
 		if (!errorDestroyed)
-			return FALSE;
+			return false;
 
-		BOOL moveFlag = FALSE;
+		BOOL moveFlag = false;
 		{
 			auto original = Result<Tracked, UINT32>::Ok(Tracked(3, &moveFlag));
-			moveFlag = FALSE;
+			moveFlag = false;
 			auto moved = static_cast<Result<Tracked, UINT32> &&>(original);
-			moveFlag = FALSE;
+			moveFlag = false;
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestTypeAliases()
@@ -248,6 +252,6 @@ private:
 		static_assert(__is_same(Result<void, UINT32>::ValueType, void), "void ValueType mismatch");
 		static_assert(__is_same(Result<void, UINT32>::ErrorType, UINT32), "void ErrorType mismatch");
 
-		return TRUE;
+		return true;
 	}
 };

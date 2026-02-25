@@ -19,8 +19,8 @@ public:
     /// @tparam TChar Character type (CHAR or WCHAR)
     /// @param path1 First path to combine
     /// @param path2 Second path to combine
-    /// @return Combined path as a newly allocated string 
-    
+    /// @return Combined path as a newly allocated string
+
     template <TCHAR TChar>
     static TChar *Combine(const TChar *path1, const TChar *path2)
     {
@@ -55,7 +55,7 @@ public:
 
         return combined;
     }
-    
+
     /// @brief Get the file name from a full path
     /// @tparam TChar Character type (CHAR or WCHAR)
     /// @param fullPath The full file path
@@ -151,7 +151,7 @@ public:
     /// @tparam TChar Character type (CHAR or WCHAR)
     /// @param fullPath Full file path to extract the directory name from
     /// @return Directory name as a newly allocated string, or empty string if no directory found
-    
+
     template <TCHAR TChar>
     static TChar *GetDirectoryName(const TChar *fullPath)
     {
@@ -193,14 +193,14 @@ public:
     /// @brief Check if a path is rooted
     /// @tparam TChar Character type (CHAR or WCHAR)
     /// @param path Path to check
-    /// @return TRUE if the path is rooted, FALSE otherwise
+    /// @return true if the path is rooted, false otherwise
 
     template <TCHAR TChar>
     static BOOL IsPathRooted(TChar *path)
     {
         // On Windows, a path is rooted if it starts with a drive letter or a backslash
-        if (path == NULL || path[0] == (TChar)0)
-            return FALSE;
+        if (path == nullptr || path[0] == (TChar)0)
+            return false;
 #ifdef _WIN32
         return (((path[0] >= (TChar)'A' && path[0] <= (TChar)'Z') || (path[0] >= (TChar)'a' && path[0] <= (TChar)'z')) && path[1] == (TChar)':') || (path[0] == (TChar)'\\');
 #else
@@ -211,12 +211,12 @@ public:
     /// @brief Normalize a path by replacing all separators with the platform-specific separator
     /// @tparam TChar Character type (CHAR or WCHAR)
     /// @param path Platform-specific path to normalize
-    /// @return Normalized path 
-    
+    /// @return Normalized path
+
     static PWCHAR NormalizePath(PCWCHAR path)
     {
-        if (path == NULL)
-            return NULL;
+        if (path == nullptr)
+            return nullptr;
 
         INT32 len = String::Length(path);
         PWCHAR normalized = new WCHAR[len + 1];

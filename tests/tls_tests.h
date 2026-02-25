@@ -6,8 +6,8 @@
 class TlsTests
 {
 private:
-	#define TEST_SERVER_IP 0x01010101
-	#define TLS_PORT 443
+#define TEST_SERVER_IP 0x01010101
+#define TLS_PORT 443
 
 	// Test 1: TLS handshake and connection
 	static BOOL TestTlsHandshake()
@@ -19,12 +19,12 @@ private:
 		if (!tlsClient.Open())
 		{
 			LOG_ERROR("TLS handshake failed");
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("TLS handshake completed successfully");
 		tlsClient.Close();
-		return TRUE;
+		return true;
 	}
 
 	// Test 3: TLS echo test - single message
@@ -37,7 +37,7 @@ private:
 		if (!tlsClient.Open())
 		{
 			LOG_ERROR("TLS handshake failed");
-			return FALSE;
+			return false;
 		}
 
 		// Send test message
@@ -51,7 +51,7 @@ private:
 		{
 			LOG_ERROR("Failed to send complete message (sent %d/%d bytes)", bytesSent, message.Length());
 			tlsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		// Receive echo response
@@ -63,12 +63,12 @@ private:
 		{
 			LOG_ERROR("Failed to receive echo response");
 			tlsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("TLS echo test passed");
 		tlsClient.Close();
-		return TRUE;
+		return true;
 	}
 
 	// Test 4: TLS echo test - multiple messages
@@ -81,7 +81,7 @@ private:
 		if (!tlsClient.Open())
 		{
 			LOG_ERROR("TLS handshake failed");
-			return FALSE;
+			return false;
 		}
 
 		// Test messages
@@ -102,7 +102,7 @@ private:
 		{
 			LOG_ERROR("Failed to send message 1");
 			tlsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		CHAR buffer1[128];
@@ -112,7 +112,7 @@ private:
 		{
 			LOG_ERROR("Failed to receive echo response for message 1");
 			tlsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		// Send and receive message 2
@@ -121,7 +121,7 @@ private:
 		{
 			LOG_ERROR("Failed to send message 2");
 			tlsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		CHAR buffer2[128];
@@ -131,7 +131,7 @@ private:
 		{
 			LOG_ERROR("Failed to receive echo response for message 2");
 			tlsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		// Send and receive message 3
@@ -140,7 +140,7 @@ private:
 		{
 			LOG_ERROR("Failed to send message 3");
 			tlsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		CHAR buffer3[128];
@@ -150,19 +150,19 @@ private:
 		{
 			LOG_ERROR("Failed to receive echo response for message 3");
 			tlsClient.Close();
-			return FALSE;
+			return false;
 		}
 
 		LOG_INFO("Multiple message echo test passed");
 		tlsClient.Close();
-		return TRUE;
+		return true;
 	}
 
 public:
 	// Run all TLS tests
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running TLS Tests...");
 		LOG_INFO("  Test Server: one.one.one.one (1.1.1.1:443)");

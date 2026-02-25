@@ -54,8 +54,8 @@
  */
 typedef struct
 {
-    UINT64 low;   /**< @brief Lower 64 bits */
-    UINT64 high;  /**< @brief Upper 64 bits */
+    UINT64 low;  /**< @brief Lower 64 bits */
+    UINT64 high; /**< @brief Upper 64 bits */
 } UINT128_;
 
 /**
@@ -68,8 +68,8 @@ typedef struct
  */
 typedef struct
 {
-    UINT64 x[MAX_NUM_ECC_DIGITS];  /**< @brief X coordinate */
-    UINT64 y[MAX_NUM_ECC_DIGITS];  /**< @brief Y coordinate */
+    UINT64 x[MAX_NUM_ECC_DIGITS]; /**< @brief X coordinate */
+    UINT64 y[MAX_NUM_ECC_DIGITS]; /**< @brief Y coordinate */
 } EccPoint;
 
 /**
@@ -96,14 +96,14 @@ typedef struct
 class Ecc
 {
 private:
-    UINT32 eccBytes;                         /**< @brief Key size in bytes (32 or 48) */
-    UINT32 numEccDigits;                     /**< @brief Number of 64-bit words per coordinate */
-    UINT64 curveP[MAX_NUM_ECC_DIGITS];       /**< @brief Prime field modulus p */
-    UINT64 curveB[MAX_NUM_ECC_DIGITS];       /**< @brief Curve coefficient b (y^2 = x^3 - 3x + b) */
-    EccPoint curveG;                         /**< @brief Base point (generator) G */
-    UINT64 curveN[MAX_NUM_ECC_DIGITS];       /**< @brief Order of base point n */
-    UINT64 privateKey[MAX_NUM_ECC_DIGITS];   /**< @brief Private key d (random scalar) */
-    EccPoint publicKey;                      /**< @brief Public key Q = d * G */
+    UINT32 eccBytes;                       /**< @brief Key size in bytes (32 or 48) */
+    UINT32 numEccDigits;                   /**< @brief Number of 64-bit words per coordinate */
+    UINT64 curveP[MAX_NUM_ECC_DIGITS];     /**< @brief Prime field modulus p */
+    UINT64 curveB[MAX_NUM_ECC_DIGITS];     /**< @brief Curve coefficient b (y^2 = x^3 - 3x + b) */
+    EccPoint curveG;                       /**< @brief Base point (generator) G */
+    UINT64 curveN[MAX_NUM_ECC_DIGITS];     /**< @brief Order of base point n */
+    UINT64 privateKey[MAX_NUM_ECC_DIGITS]; /**< @brief Private key d (random scalar) */
+    EccPoint publicKey;                    /**< @brief Public key Q = d * G */
 
     // =========================================================================
     // Variable Length Integer (VLI) Operations
@@ -248,7 +248,7 @@ public:
 
     /**
      * @brief Checks if the ECC instance is initialized with a valid curve
-     * @return TRUE if initialized, FALSE otherwise
+     * @return true if initialized, false otherwise
      */
     BOOL IsValid() const { return eccBytes != 0; }
 

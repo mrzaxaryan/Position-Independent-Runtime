@@ -2,7 +2,6 @@
 
 #include "primitives.h"
 
-
 #define FILE_OPEN 0x00000001
 #define FILE_NON_DIRECTORY_FILE 0x00000040
 #define SYNCHRONIZE (0x00100000L)
@@ -15,30 +14,28 @@
 #define INVALID_HANDLE_VALUE ((PVOID)(SSIZE)(-1))
 #define GENERIC_WRITE (0x40000000L)
 #define FILE_APPEND_DATA 4
-#define FILE_DELETE_ON_CLOSE   0x00001000
+#define FILE_DELETE_ON_CLOSE 0x00001000
 
 #define FILE_SHARE_READ 0x00000001
 #define FILE_SHARE_WRITE 0x00000002
 #define FILE_SHARE_DELETE 0x00000004
 
-
-
-#define FILE_DEVICE_CD_ROM_FILE_SYSTEM  0x00000003
-#define FILE_DEVICE_VIRTUAL_DISK        0x00000024
+#define FILE_DEVICE_CD_ROM_FILE_SYSTEM 0x00000003
+#define FILE_DEVICE_VIRTUAL_DISK 0x00000024
 #define FILE_DEVICE_NETWORK_FILE_SYSTEM 0x00000014
-#define FILE_DEVICE_DISK_FILE_SYSTEM    0x00000008
+#define FILE_DEVICE_DISK_FILE_SYSTEM 0x00000008
 
-#define FILE_REMOTE_DEVICE   0x00000010
+#define FILE_REMOTE_DEVICE 0x00000010
 #define FILE_REMOVABLE_MEDIA 0x00000002
 
-#define DRIVE_UNKNOWN     0
-#define DRIVE_REMOVABLE   2
-#define DRIVE_FIXED       3
-#define DRIVE_REMOTE      4
-#define DRIVE_CDROM       5
-#define DRIVE_RAMDISK     6
+#define DRIVE_UNKNOWN 0
+#define DRIVE_REMOVABLE 2
+#define DRIVE_FIXED 3
+#define DRIVE_REMOTE 4
+#define DRIVE_CDROM 5
+#define DRIVE_RAMDISK 6
 
-#define FILE_CREATE         0x00000002
+#define FILE_CREATE 0x00000002
 #define FILE_LIST_DIRECTORY 0x00000001
 #define FILE_DIRECTORY_FILE 0x00000001
 #define FILE_ATTRIBUTE_DIRECTORY 0x00000010
@@ -47,11 +44,11 @@
 #define FILE_FLAG_WRITE_THROUGH 0x80000000
 #define FILE_WRITE_THROUGH 0x80000000
 
-#define FILE_OVERWRITE_IF   0x00000005
-#define FILE_OPEN_IF        0x00000003
-#define FILE_OVERWRITE      0x00000004
+#define FILE_OVERWRITE_IF 0x00000005
+#define FILE_OPEN_IF 0x00000003
+#define FILE_OVERWRITE 0x00000004
 
-#define MEM_COMMIT  0x00001000
+#define MEM_COMMIT 0x00001000
 #define MEM_RESERVE 0x00002000
 #define MEM_RELEASE 0x00008000
 
@@ -67,9 +64,8 @@
         (p)->Attributes = a;                      \
         (p)->ObjectName = n;                      \
         (p)->SecurityDescriptor = s;              \
-        (p)->SecurityQualityOfService = NULL;     \
+        (p)->SecurityQualityOfService = nullptr;  \
     } while (0)
-
 
 // Unicode string structure
 typedef struct _UNICODE_STRING
@@ -91,8 +87,8 @@ typedef struct _PROCESS_DEVICEMAP_INFORMATION
         } Set;
         struct
         {
-            UINT32 DriveMap;         // A bitmask that indicates which drive letters are currently in use in the process's device map.
-            UCHAR DriveType[32];    // A value that indicates the type of each drive (e.g., local disk, network drive, etc.). // DRIVE_* WinBase.h
+            UINT32 DriveMap;     // A bitmask that indicates which drive letters are currently in use in the process's device map.
+            UCHAR DriveType[32]; // A value that indicates the type of each drive (e.g., local disk, network drive, etc.). // DRIVE_* WinBase.h
         } Query;
     };
 } PROCESS_DEVICEMAP_INFORMATION, *PPROCESS_DEVICEMAP_INFORMATION;

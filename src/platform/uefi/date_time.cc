@@ -23,7 +23,7 @@ DateTime DateTime::Now()
 	EFI_RUNTIME_SERVICES *rs = ctx->SystemTable->RuntimeServices;
 
 	EFI_TIME efiTime{};
-	EFI_STATUS status = rs->GetTime(&efiTime, NULL);
+	EFI_STATUS status = rs->GetTime(&efiTime, nullptr);
 
 	if (status == EFI_SUCCESS)
 	{

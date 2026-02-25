@@ -7,15 +7,16 @@
 
 USIZE String::IntToStr(INT64 value, CHAR *buffer, USIZE bufSize) noexcept
 {
-	if (!buffer || bufSize < 2) return 0;
+	if (!buffer || bufSize < 2)
+		return 0;
 
 	CHAR temp[24];
 	USIZE pos = 0;
-	BOOL negative = FALSE;
+	BOOL negative = false;
 
 	if (value < 0)
 	{
-		negative = TRUE;
+		negative = true;
 		value = -value;
 	}
 
@@ -48,7 +49,8 @@ USIZE String::IntToStr(INT64 value, CHAR *buffer, USIZE bufSize) noexcept
 
 USIZE String::UIntToStr(UINT64 value, CHAR *buffer, USIZE bufSize) noexcept
 {
-	if (!buffer || bufSize < 2) return 0;
+	if (!buffer || bufSize < 2)
+		return 0;
 
 	CHAR temp[24];
 	USIZE pos = 0;
@@ -77,8 +79,10 @@ USIZE String::UIntToStr(UINT64 value, CHAR *buffer, USIZE bufSize) noexcept
 
 USIZE String::FloatToStr(DOUBLE value, CHAR *buffer, USIZE bufSize, UINT8 precision) noexcept
 {
-	if (!buffer || bufSize < 2) return 0;
-	if (precision > 15) precision = 15;
+	if (!buffer || bufSize < 2)
+		return 0;
+	if (precision > 15)
+		precision = 15;
 
 	USIZE pos = 0;
 	DOUBLE zero = DOUBLE(INT32(0));
@@ -86,7 +90,8 @@ USIZE String::FloatToStr(DOUBLE value, CHAR *buffer, USIZE bufSize, UINT8 precis
 	// Handle negative
 	if (value < zero)
 	{
-		if (pos < bufSize - 1) buffer[pos++] = '-';
+		if (pos < bufSize - 1)
+			buffer[pos++] = '-';
 		value = -value;
 	}
 
@@ -121,8 +126,10 @@ USIZE String::FloatToStr(DOUBLE value, CHAR *buffer, USIZE bufSize, UINT8 precis
 		{
 			fracPart = fracPart * DOUBLE(INT32(10));
 			INT32 digit = (INT32)fracPart;
-			if (digit < 0) digit = 0;
-			if (digit > 9) digit = 9;
+			if (digit < 0)
+				digit = 0;
+			if (digit > 9)
+				digit = 9;
 			buffer[pos++] = '0' + digit;
 			fracPart = fracPart - DOUBLE(digit);
 		}
@@ -141,11 +148,11 @@ BOOL String::ParseInt64(const CHAR *str, USIZE len, INT64 &result) noexcept
 	if (!str || len == 0)
 	{
 		result = 0;
-		return FALSE;
+		return false;
 	}
 
 	USIZE i = 0;
-	BOOL negative = FALSE;
+	BOOL negative = false;
 
 	while (i < len && (str[i] == ' ' || str[i] == '\t'))
 	{
@@ -154,7 +161,7 @@ BOOL String::ParseInt64(const CHAR *str, USIZE len, INT64 &result) noexcept
 
 	if (i < len && str[i] == '-')
 	{
-		negative = TRUE;
+		negative = true;
 		i++;
 	}
 	else if (i < len && str[i] == '+')
@@ -163,22 +170,22 @@ BOOL String::ParseInt64(const CHAR *str, USIZE len, INT64 &result) noexcept
 	}
 
 	INT64 value = 0;
-	BOOL hasDigits = FALSE;
+	BOOL hasDigits = false;
 	while (i < len && str[i] >= '0' && str[i] <= '9')
 	{
 		value = value * 10 + (str[i] - '0');
-		hasDigits = TRUE;
+		hasDigits = true;
 		i++;
 	}
 
 	if (!hasDigits)
 	{
 		result = 0;
-		return FALSE;
+		return false;
 	}
 
 	result = negative ? -value : value;
-	return TRUE;
+	return true;
 }
 
 INT64 String::ParseInt64(PCCHAR str) noexcept
@@ -195,7 +202,7 @@ BOOL String::StrToFloat(const CHAR *str, USIZE len, DOUBLE &result) noexcept
 	if (!str || len == 0)
 	{
 		result = DOUBLE(INT32(0));
-		return FALSE;
+		return false;
 	}
 
 	CHAR buffer[64];
@@ -207,7 +214,7 @@ BOOL String::StrToFloat(const CHAR *str, USIZE len, DOUBLE &result) noexcept
 	buffer[copyLen] = '\0';
 
 	result = DOUBLE::Parse(buffer);
-	return TRUE;
+	return true;
 }
 
 UINT32 String::ParseHex(PCCHAR str) noexcept
@@ -284,62 +291,61 @@ PCHAR String::WriteHex(PCHAR buffer, UINT32 num, BOOL uppercase) noexcept
 // Returns the number of wide characters written (excluding null terminator)
 USIZE String::Utf8ToWide(PCCHAR utf8, PWCHAR wide, USIZE wideBufferSize)
 {
-    if (!utf8 || !wide || wideBufferSize == 0)
-        return 0;
+	if (!utf8 || !wide || wideBufferSize == 0)
+		return 0;
 
-    USIZE wideLen = 0;
+	USIZE wideLen = 0;
 
-    while (*utf8 && wideLen < wideBufferSize - 2)
-    {
-        UINT32 ch;
-        UINT8 byte = (UINT8)*utf8++;
+	while (*utf8 && wideLen < wideBufferSize - 2)
+	{
+		UINT32 ch;
+		UINT8 byte = (UINT8)*utf8++;
 
-        if (byte < 0x80)
-        {
-            ch = byte;
-        }
-        else if ((byte & 0xE0) == 0xC0)
-        {
-            ch = (byte & 0x1F) << 6;
-            if (*utf8)
-                ch |= (*utf8++ & 0x3F);
-        }
-        else if ((byte & 0xF0) == 0xE0)
-        {
-            ch = (byte & 0x0F) << 12;
-            if (*utf8)
-                ch |= (*utf8++ & 0x3F) << 6;
-            if (*utf8)
-                ch |= (*utf8++ & 0x3F);
-        }
-        else if ((byte & 0xF8) == 0xF0)
-        {
-            ch = (byte & 0x07) << 18;
-            if (*utf8)
-                ch |= (*utf8++ & 0x3F) << 12;
-            if (*utf8)
-                ch |= (*utf8++ & 0x3F) << 6;
-            if (*utf8)
-                ch |= (*utf8++ & 0x3F);
+		if (byte < 0x80)
+		{
+			ch = byte;
+		}
+		else if ((byte & 0xE0) == 0xC0)
+		{
+			ch = (byte & 0x1F) << 6;
+			if (*utf8)
+				ch |= (*utf8++ & 0x3F);
+		}
+		else if ((byte & 0xF0) == 0xE0)
+		{
+			ch = (byte & 0x0F) << 12;
+			if (*utf8)
+				ch |= (*utf8++ & 0x3F) << 6;
+			if (*utf8)
+				ch |= (*utf8++ & 0x3F);
+		}
+		else if ((byte & 0xF8) == 0xF0)
+		{
+			ch = (byte & 0x07) << 18;
+			if (*utf8)
+				ch |= (*utf8++ & 0x3F) << 12;
+			if (*utf8)
+				ch |= (*utf8++ & 0x3F) << 6;
+			if (*utf8)
+				ch |= (*utf8++ & 0x3F);
 
-            // Encode as surrogate pair for characters > 0xFFFF
-            if (ch >= 0x10000)
-            {
-                ch -= 0x10000;
-                wide[wideLen++] = (WCHAR)(0xD800 + (ch >> 10));
-                wide[wideLen++] = (WCHAR)(0xDC00 + (ch & 0x3FF));
-                continue;
-            }
-        }
-        else
-        {
-            continue; // Invalid UTF-8 byte, skip
-        }
+			// Encode as surrogate pair for characters > 0xFFFF
+			if (ch >= 0x10000)
+			{
+				ch -= 0x10000;
+				wide[wideLen++] = (WCHAR)(0xD800 + (ch >> 10));
+				wide[wideLen++] = (WCHAR)(0xDC00 + (ch & 0x3FF));
+				continue;
+			}
+		}
+		else
+		{
+			continue; // Invalid UTF-8 byte, skip
+		}
 
-        wide[wideLen++] = (WCHAR)ch;
-    }
+		wide[wideLen++] = (WCHAR)ch;
+	}
 
-    wide[wideLen] = L'\0';
-    return wideLen;
+	wide[wideLen] = L'\0';
+	return wideLen;
 }
-

@@ -95,21 +95,21 @@ BOOL Socket::Bind(SockAddr &SocketAddress, INT32 ShareType)
     if (!IsValid())
     {
         LOG_ERROR("Socket not initialized\n");
-        return FALSE;
+        return false;
     }
 
     NTSTATUS Status;
-    PVOID SockEvent = NULL;
+    PVOID SockEvent = nullptr;
     Status = NTDLL::ZwCreateEvent(&SockEvent,
                                   EVENT_ALL_ACCESS,
-                                  NULL,
+                                  nullptr,
                                   SynchronizationEvent,
-                                  FALSE);
+                                  false);
 
     if (!NT_SUCCESS(Status))
     {
         LOG_ERROR("Failed to create event for socket binding: 0x%08X\n", Status);
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Event successfully created for socket binding\n");
 
@@ -126,8 +126,8 @@ BOOL Socket::Bind(SockAddr &SocketAddress, INT32 ShareType)
 
         Status = NTDLL::ZwDeviceIoControlFile(m_socket,
                                               SockEvent,
-                                              NULL,
-                                              NULL,
+                                              nullptr,
+                                              nullptr,
                                               &IOSB,
                                               IOCTL_AFD_BIND,
                                               &BindConfig,
@@ -144,8 +144,8 @@ BOOL Socket::Bind(SockAddr &SocketAddress, INT32 ShareType)
 
         Status = NTDLL::ZwDeviceIoControlFile(m_socket,
                                               SockEvent,
-                                              NULL,
-                                              NULL,
+                                              nullptr,
+                                              nullptr,
                                               &IOSB,
                                               IOCTL_AFD_BIND,
                                               &BindConfig,
@@ -156,7 +156,7 @@ BOOL Socket::Bind(SockAddr &SocketAddress, INT32 ShareType)
 
     if (Status == STATUS_PENDING)
     {
-        NTDLL::ZwWaitForSingleObject(SockEvent, 0, NULL);
+        NTDLL::ZwWaitForSingleObject(SockEvent, 0, nullptr);
         Status = IOSB.Status;
     }
 
@@ -182,24 +182,24 @@ BOOL Socket::Open()
     } bindBuffer;
 
     SocketAddressHelper::PrepareBindAddress(ip.IsIPv6(), 0, &bindBuffer, sizeof(bindBuffer));
-    if (Bind((SockAddr &)bindBuffer, AFD_SHARE_REUSE) == FALSE)
+    if (Bind((SockAddr &)bindBuffer, AFD_SHARE_REUSE) == false)
     {
         LOG_ERROR("Failed to bind socket\n");
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Socket bound successfully\n");
 
-    PVOID SockEvent = NULL;
+    PVOID SockEvent = nullptr;
     Status = NTDLL::ZwCreateEvent(&SockEvent,
                                   EVENT_ALL_ACCESS,
-                                  NULL,
+                                  nullptr,
                                   SynchronizationEvent,
-                                  FALSE);
+                                  false);
 
     if (!NT_SUCCESS(Status))
     {
         LOG_ERROR("Failed to create event\n");
-        return FALSE;
+        return false;
     }
     LOG_DEBUG("Event successfully created for socket connection\n");
 
@@ -224,13 +224,13 @@ BOOL Socket::Open()
 
         Status = NTDLL::ZwDeviceIoControlFile((PVOID)m_socket,
                                               SockEvent,
-                                              NULL,
-                                              NULL,
+                                              nullptr,
+                                              nullptr,
                                               &IOSB,
                                               IOCTL_AFD_CONNECT,
                                               &ConnectInfo,
                                               sizeof(ConnectInfo),
-                                              NULL,
+                                              nullptr,
                                               0);
     }
     else
@@ -243,19 +243,19 @@ BOOL Socket::Open()
 
         Status = NTDLL::ZwDeviceIoControlFile((PVOID)m_socket,
                                               SockEvent,
-                                              NULL,
-                                              NULL,
+                                              nullptr,
+                                              nullptr,
                                               &IOSB,
                                               IOCTL_AFD_CONNECT,
                                               &ConnectInfo,
                                               sizeof(ConnectInfo),
-                                              NULL,
+                                              nullptr,
                                               0);
     }
 
     if (Status == STATUS_PENDING)
     {
-        NTDLL::ZwWaitForSingleObject(SockEvent, 0, NULL);
+        NTDLL::ZwWaitForSingleObject(SockEvent, 0, nullptr);
         Status = IOSB.Status;
     }
 
@@ -269,7 +269,7 @@ BOOL Socket::Close()
 
     NTSTATUS NTstatus = -1;
     NTstatus = NTDLL::ZwClose((PVOID)m_socket);
-    m_socket = NULL;
+    m_socket = nullptr;
     return NT_SUCCESS(NTstatus);
 }
 
@@ -285,13 +285,13 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferSize)
         return lpNumberOfBytesRead;
     }
 
-    PVOID SockEvent = NULL;
+    PVOID SockEvent = nullptr;
     NTSTATUS Status;
     Status = NTDLL::ZwCreateEvent(&SockEvent,
                                   EVENT_ALL_ACCESS,
-                                  NULL,
+                                  nullptr,
                                   SynchronizationEvent,
-                                  FALSE);
+                                  false);
 
     if (!NT_SUCCESS(Status))
     {
@@ -304,7 +304,7 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferSize)
     SendRecvInfo.BufferCount = 1;
     SendRecvInfo.AfdFlags = 0;
     SendRecvInfo.TdiFlags = 0x20;
-    SendRecvInfo.BufferArray = NULL;
+    SendRecvInfo.BufferArray = nullptr;
 
     AfdWsaBuf SendRecvBuffer;
     SendRecvBuffer.Length = bufferSize;
@@ -314,13 +314,13 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferSize)
     IO_STATUS_BLOCK IOSB;
     Status = NTDLL::ZwDeviceIoControlFile((PVOID)m_socket,
                                           SockEvent,
-                                          NULL,
-                                          NULL,
+                                          nullptr,
+                                          nullptr,
                                           &IOSB,
                                           IOCTL_AFD_RECV,
                                           &SendRecvInfo,
                                           sizeof(SendRecvInfo),
-                                          NULL,
+                                          nullptr,
                                           0);
 
     if (Status == STATUS_PENDING)
@@ -360,13 +360,13 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
         return 0;
     }
 
-    PVOID SockEvent = NULL;
+    PVOID SockEvent = nullptr;
     NTSTATUS Status;
     Status = NTDLL::ZwCreateEvent(&SockEvent,
                                   EVENT_ALL_ACCESS,
-                                  NULL,
+                                  nullptr,
                                   SynchronizationEvent,
-                                  FALSE);
+                                  false);
 
     if (!NT_SUCCESS(Status))
     {
@@ -392,13 +392,13 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 
         Status = NTDLL::ZwDeviceIoControlFile(m_socket,
                                               SockEvent,
-                                              NULL,
-                                              NULL,
+                                              nullptr,
+                                              nullptr,
                                               &IOSB,
                                               IOCTL_AFD_SEND,
                                               &SendRecvInfo,
                                               sizeof(SendRecvInfo),
-                                              NULL,
+                                              nullptr,
                                               0);
 
         if (Status == STATUS_PENDING)
@@ -466,7 +466,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 port) : ip(ipAddress), port(po
                                  GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE,
                                  &Object,
                                  &IOSB,
-                                 NULL,
+                                 nullptr,
                                  0,
                                  FILE_SHARE_READ | FILE_SHARE_WRITE,
                                  FILE_OPEN_IF,

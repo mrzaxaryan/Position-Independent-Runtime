@@ -44,9 +44,9 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
     if (String::Compare(host, (PCCHAR)localhost))
     {
         result = IPAddress::LocalHost(type == AAAA);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
@@ -131,19 +131,19 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
             UINT32 ipv4;
             Memory::Copy(&ipv4, rdata, 4);
             ipAddress = IPAddress::FromIPv4(ipv4);
-            return TRUE;
+            return true;
         }
         else if (type == AAAA && rdlength == 16)
         {
             ipAddress = IPAddress::FromIPv6(rdata);
-            return TRUE;
+            return true;
         }
 
         len += recordSize;
         cnt--;
     }
 
-    return FALSE;
+    return false;
 }
 
 [[nodiscard]] static INT32 ParseQuery(const UINT8 *ptr, INT32 cnt, INT32 bufferLen)
@@ -183,21 +183,21 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
     if (!buffer || len < (INT32)sizeof(DNS_REQUEST_HEADER))
     {
         LOG_WARNING("ParseDnsResponse: invalid parameters");
-        return FALSE;
+        return false;
     }
 
     UINT16 flags = ReadU16BE(buffer, 2);
     if (!(flags & 0x8000))
     {
         LOG_WARNING("ParseDnsResponse: not a response");
-        return FALSE;
+        return false;
     }
 
     UINT8 rcode = flags & 0x000F;
     if (rcode != 0)
     {
         LOG_WARNING("ParseDnsResponse: server returned error (rcode=%d)", rcode);
-        return FALSE;
+        return false;
     }
 
     UINT16 qCount = ReadU16BE(buffer, 4);
@@ -206,13 +206,13 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
     if (ansCount == 0 || ansCount > 20)
     {
         LOG_WARNING("ParseDnsResponse: invalid answer count: %d", ansCount);
-        return FALSE;
+        return false;
     }
 
     if (qCount > 10)
     {
         LOG_WARNING("ParseDnsResponse: suspicious question count: %d", qCount);
-        return FALSE;
+        return false;
     }
 
     INT32 recordOffset = (INT32)sizeof(DNS_REQUEST_HEADER);
@@ -223,7 +223,7 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
         if (size <= 0)
         {
             LOG_WARNING("ParseDnsResponse: invalid query size: %d", size);
-            return FALSE;
+            return false;
         }
         recordOffset += size;
     }
@@ -231,7 +231,7 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
     if (recordOffset >= len)
     {
         LOG_WARNING("ParseDnsResponse: no space for answer section");
-        return FALSE;
+        return false;
     }
 
     return ParseAnswer(buffer + recordOffset, ansCount, len - recordOffset, ipAddress);
@@ -347,7 +347,8 @@ Result<IPAddress, DnsError> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &D
         return Result<IPAddress, DnsError>::Err(DNS_ERROR_QUERY_FAILED);
     }
 
-    auto writeStr = [&tlsClient](PCCHAR s) -> BOOL {
+    auto writeStr = [&tlsClient](PCCHAR s) -> BOOL
+    {
         UINT32 len = String::Length(s);
         return tlsClient.Write(s, len) == len;
     };
@@ -406,14 +407,14 @@ Result<IPAddress, DnsError> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &D
 Result<IPAddress, DnsError> DNS::CloudflareResolve(PCCHAR host, RequestType dnstype)
 {
     auto serverName = "one.one.one.one"_embed;
-    IPAddress ips[] = { IPAddress::FromIPv4(0x01010101), IPAddress::FromIPv4(0x01000001) };
+    IPAddress ips[] = {IPAddress::FromIPv4(0x01010101), IPAddress::FromIPv4(0x01000001)};
     return ResolveWithFallback(host, ips, (PCCHAR)serverName, dnstype);
 }
 
 Result<IPAddress, DnsError> DNS::GoogleResolve(PCCHAR host, RequestType dnstype)
 {
     auto serverName = "dns.google"_embed;
-    IPAddress ips[] = { IPAddress::FromIPv4(0x08080808), IPAddress::FromIPv4(0x04040808) };
+    IPAddress ips[] = {IPAddress::FromIPv4(0x08080808), IPAddress::FromIPv4(0x04040808)};
     return ResolveWithFallback(host, ips, (PCCHAR)serverName, dnstype);
 }
 

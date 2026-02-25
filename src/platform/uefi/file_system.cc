@@ -18,8 +18,8 @@
 static EFI_FILE_PROTOCOL *GetRootDirectory()
 {
 	EFI_CONTEXT *ctx = GetEfiContext();
-	if (ctx == NULL || ctx->SystemTable == NULL)
-		return NULL;
+	if (ctx == nullptr || ctx->SystemTable == nullptr)
+		return nullptr;
 
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
 
@@ -38,21 +38,21 @@ static EFI_FILE_PROTOCOL *GetRootDirectory()
 	FsGuid.Data4[7] = 0x3B;
 
 	USIZE HandleCount = 0;
-	EFI_HANDLE *HandleBuffer = NULL;
+	EFI_HANDLE *HandleBuffer = nullptr;
 
-	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &FsGuid, NULL, &HandleCount, &HandleBuffer)) || HandleCount == 0)
-		return NULL;
+	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &FsGuid, nullptr, &HandleCount, &HandleBuffer)) || HandleCount == 0)
+		return nullptr;
 
-	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *FileSystem = NULL;
-	EFI_FILE_PROTOCOL *Root = NULL;
+	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *FileSystem = nullptr;
+	EFI_FILE_PROTOCOL *Root = nullptr;
 
 	// Try each handle until we find a working filesystem
 	for (USIZE i = 0; i < HandleCount; i++)
 	{
-		if (EFI_ERROR_CHECK(bs->OpenProtocol(HandleBuffer[i], &FsGuid, (PVOID *)&FileSystem, ctx->ImageHandle, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL)))
+		if (EFI_ERROR_CHECK(bs->OpenProtocol(HandleBuffer[i], &FsGuid, (PVOID *)&FileSystem, ctx->ImageHandle, nullptr, EFI_OPEN_PROTOCOL_GET_PROTOCOL)))
 			continue;
 
-		if (FileSystem != NULL && !EFI_ERROR_CHECK(FileSystem->OpenVolume(FileSystem, &Root)))
+		if (FileSystem != nullptr && !EFI_ERROR_CHECK(FileSystem->OpenVolume(FileSystem, &Root)))
 		{
 			bs->FreePool(HandleBuffer);
 			return Root;
@@ -60,7 +60,7 @@ static EFI_FILE_PROTOCOL *GetRootDirectory()
 	}
 
 	bs->FreePool(HandleBuffer);
-	return NULL;
+	return nullptr;
 }
 
 // =============================================================================
@@ -69,21 +69,21 @@ static EFI_FILE_PROTOCOL *GetRootDirectory()
 
 static EFI_FILE_PROTOCOL *OpenFileFromRoot(EFI_FILE_PROTOCOL *Root, PCWCHAR path, UINT64 mode, UINT64 attributes)
 {
-	if (Root == NULL || path == NULL)
-		return NULL;
+	if (Root == nullptr || path == nullptr)
+		return nullptr;
 
 	// Normalize path separators (convert '/' to '\' for UEFI)
 	PWCHAR normalizedPath = Path::NormalizePath(path);
-	if (normalizedPath == NULL)
-		return NULL;
+	if (normalizedPath == nullptr)
+		return nullptr;
 
-	EFI_FILE_PROTOCOL *FileHandle = NULL;
+	EFI_FILE_PROTOCOL *FileHandle = nullptr;
 	EFI_STATUS Status = Root->Open(Root, &FileHandle, (CHAR16 *)normalizedPath, mode, attributes);
 
 	delete[] normalizedPath;
 
 	if (EFI_ERROR_CHECK(Status))
-		return NULL;
+		return nullptr;
 
 	return FileHandle;
 }
@@ -95,7 +95,7 @@ static EFI_FILE_PROTOCOL *OpenFileFromRoot(EFI_FILE_PROTOCOL *Root, PCWCHAR path
 File FileSystem::Open(PCWCHAR path, INT32 flags)
 {
 	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
-	if (Root == NULL)
+	if (Root == nullptr)
 		return File();
 
 	// Convert flags to EFI modes
@@ -120,11 +120,11 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
 	EFI_FILE_PROTOCOL *FileHandle = OpenFileFromRoot(Root, path, mode, attributes);
 	Root->Close(Root);
 
-	if (FileHandle == NULL)
+	if (FileHandle == nullptr)
 		return File();
 
 	// Handle truncate flag
-	if ((flags & FS_TRUNCATE) && FileHandle != NULL)
+	if ((flags & FS_TRUNCATE) && FileHandle != nullptr)
 	{
 		// Set file size to 0 using SetInfo
 		// EFI_FILE_INFO_ID {09576E92-6D3F-11D2-8E39-00A0C969723B}
@@ -143,14 +143,14 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
 
 		// Get current file info size
 		USIZE InfoSize = 0;
-		FileHandle->GetInfo(FileHandle, &FileInfoId, &InfoSize, NULL);
+		FileHandle->GetInfo(FileHandle, &FileInfoId, &InfoSize, nullptr);
 
 		if (InfoSize > 0)
 		{
 			EFI_CONTEXT *ctx = GetEfiContext();
 			EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
 
-			EFI_FILE_INFO *FileInfo = NULL;
+			EFI_FILE_INFO *FileInfo = nullptr;
 			if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, InfoSize, (PVOID *)&FileInfo)))
 			{
 				if (!EFI_ERROR_CHECK(FileHandle->GetInfo(FileHandle, &FileInfoId, &InfoSize, FileInfo)))
@@ -169,14 +169,14 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
 BOOL FileSystem::Delete(PCWCHAR path)
 {
 	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
-	if (Root == NULL)
-		return FALSE;
+	if (Root == nullptr)
+		return false;
 
 	EFI_FILE_PROTOCOL *FileHandle = OpenFileFromRoot(Root, path, EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE, 0);
 	Root->Close(Root);
 
-	if (FileHandle == NULL)
-		return FALSE;
+	if (FileHandle == nullptr)
+		return false;
 
 	// EFI_FILE_PROTOCOL.Delete closes the handle and deletes the file
 	EFI_STATUS Status = FileHandle->Delete(FileHandle);
@@ -186,59 +186,59 @@ BOOL FileSystem::Delete(PCWCHAR path)
 BOOL FileSystem::Exists(PCWCHAR path)
 {
 	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
-	if (Root == NULL)
-		return FALSE;
+	if (Root == nullptr)
+		return false;
 
 	EFI_FILE_PROTOCOL *FileHandle = OpenFileFromRoot(Root, path, EFI_FILE_MODE_READ, 0);
 	Root->Close(Root);
 
-	if (FileHandle == NULL)
-		return FALSE;
+	if (FileHandle == nullptr)
+		return false;
 
 	FileHandle->Close(FileHandle);
-	return TRUE;
+	return true;
 }
 
 BOOL FileSystem::CreateDirectory(PCWCHAR path)
 {
 	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
-	if (Root == NULL)
-		return FALSE;
+	if (Root == nullptr)
+		return false;
 
 	// Normalize path separators (convert '/' to '\' for UEFI)
 	PWCHAR normalizedPath = Path::NormalizePath(path);
-	if (normalizedPath == NULL)
+	if (normalizedPath == nullptr)
 	{
 		Root->Close(Root);
-		return FALSE;
+		return false;
 	}
 
-	EFI_FILE_PROTOCOL *DirHandle = NULL;
+	EFI_FILE_PROTOCOL *DirHandle = nullptr;
 	EFI_STATUS Status = Root->Open(Root, &DirHandle, (CHAR16 *)normalizedPath,
-		EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE,
-		EFI_FILE_DIRECTORY);
+								   EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE,
+								   EFI_FILE_DIRECTORY);
 
 	delete[] normalizedPath;
 	Root->Close(Root);
 
-	if (EFI_ERROR_CHECK(Status) || DirHandle == NULL)
-		return FALSE;
+	if (EFI_ERROR_CHECK(Status) || DirHandle == nullptr)
+		return false;
 
 	DirHandle->Close(DirHandle);
-	return TRUE;
+	return true;
 }
 
 BOOL FileSystem::DeleteDirectory(PCWCHAR path)
 {
 	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
-	if (Root == NULL)
-		return FALSE;
+	if (Root == nullptr)
+		return false;
 
 	EFI_FILE_PROTOCOL *DirHandle = OpenFileFromRoot(Root, path, EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE, 0);
 	Root->Close(Root);
 
-	if (DirHandle == NULL)
-		return FALSE;
+	if (DirHandle == nullptr)
+		return false;
 
 	// EFI_FILE_PROTOCOL.Delete works for both files and directories
 	EFI_STATUS Status = DirHandle->Delete(DirHandle);
@@ -252,7 +252,7 @@ BOOL FileSystem::DeleteDirectory(PCWCHAR path)
 File::File(PVOID handle)
 	: fileHandle(handle), fileSize(0)
 {
-	if (handle != NULL)
+	if (handle != nullptr)
 	{
 		// Get file size using GetInfo
 		EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)handle;
@@ -272,14 +272,14 @@ File::File(PVOID handle)
 		FileInfoId.Data4[7] = 0x3B;
 
 		USIZE InfoSize = 0;
-		fp->GetInfo(fp, &FileInfoId, &InfoSize, NULL);
+		fp->GetInfo(fp, &FileInfoId, &InfoSize, nullptr);
 
 		if (InfoSize > 0)
 		{
 			EFI_CONTEXT *ctx = GetEfiContext();
 			EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
 
-			EFI_FILE_INFO *FileInfo = NULL;
+			EFI_FILE_INFO *FileInfo = nullptr;
 			if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, InfoSize, (PVOID *)&FileInfo)))
 			{
 				if (!EFI_ERROR_CHECK(fp->GetInfo(fp, &FileInfoId, &InfoSize, FileInfo)))
@@ -294,23 +294,23 @@ File::File(PVOID handle)
 
 BOOL File::IsValid() const
 {
-	return fileHandle != NULL;
+	return fileHandle != nullptr;
 }
 
 VOID File::Close()
 {
-	if (fileHandle != NULL)
+	if (fileHandle != nullptr)
 	{
 		EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
 		fp->Close(fp);
-		fileHandle = NULL;
+		fileHandle = nullptr;
 	}
 	fileSize = 0;
 }
 
 UINT32 File::Read(PVOID buffer, UINT32 size)
 {
-	if (fileHandle == NULL || buffer == NULL || size == 0)
+	if (fileHandle == nullptr || buffer == nullptr || size == 0)
 		return 0;
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
@@ -325,7 +325,7 @@ UINT32 File::Read(PVOID buffer, UINT32 size)
 
 UINT32 File::Write(const VOID *buffer, USIZE size)
 {
-	if (fileHandle == NULL || buffer == NULL || size == 0)
+	if (fileHandle == nullptr || buffer == nullptr || size == 0)
 		return 0;
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
@@ -346,7 +346,7 @@ UINT32 File::Write(const VOID *buffer, USIZE size)
 
 USIZE File::GetOffset() const
 {
-	if (fileHandle == NULL)
+	if (fileHandle == nullptr)
 		return 0;
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
@@ -357,7 +357,7 @@ USIZE File::GetOffset() const
 
 VOID File::SetOffset(USIZE absoluteOffset)
 {
-	if (fileHandle == NULL)
+	if (fileHandle == nullptr)
 		return;
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
@@ -366,7 +366,7 @@ VOID File::SetOffset(USIZE absoluteOffset)
 
 VOID File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
 {
-	if (fileHandle == NULL)
+	if (fileHandle == nullptr)
 		return;
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
@@ -378,15 +378,15 @@ VOID File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
 		newPosition = (relativeAmount >= 0) ? (UINT64)relativeAmount : 0;
 		break;
 	case OffsetOrigin::Current:
-		{
-			UINT64 currentPos = 0;
-			fp->GetPosition(fp, &currentPos);
-			if (relativeAmount >= 0)
-				newPosition = currentPos + relativeAmount;
-			else
-				newPosition = (currentPos > (UINT64)(-relativeAmount)) ? currentPos + relativeAmount : 0;
-		}
-		break;
+	{
+		UINT64 currentPos = 0;
+		fp->GetPosition(fp, &currentPos);
+		if (relativeAmount >= 0)
+			newPosition = currentPos + relativeAmount;
+		else
+			newPosition = (currentPos > (UINT64)(-relativeAmount)) ? currentPos + relativeAmount : 0;
+	}
+	break;
 	case OffsetOrigin::End:
 		if (relativeAmount >= 0)
 			newPosition = fileSize + relativeAmount;
@@ -401,7 +401,7 @@ VOID File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
 File::File(File &&other) noexcept
 	: fileHandle(other.fileHandle), fileSize(other.fileSize)
 {
-	other.fileHandle = NULL;
+	other.fileHandle = nullptr;
 	other.fileSize = 0;
 }
 
@@ -412,7 +412,7 @@ File &File::operator=(File &&other) noexcept
 		Close();
 		fileHandle = other.fileHandle;
 		fileSize = other.fileSize;
-		other.fileHandle = NULL;
+		other.fileHandle = nullptr;
 		other.fileSize = 0;
 	}
 	return *this;
@@ -423,17 +423,17 @@ File &File::operator=(File &&other) noexcept
 // =============================================================================
 
 DirectoryIterator::DirectoryIterator(PCWCHAR path)
-	: handle(NULL), currentEntry{}, first(TRUE)
+	: handle(nullptr), currentEntry{}, first(true)
 {
-	(VOID)first; // Suppress unused warning - UEFI uses Read to iterate
+	(VOID) first; // Suppress unused warning - UEFI uses Read to iterate
 
 	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
-	if (Root == NULL)
+	if (Root == nullptr)
 		return;
 
 	// Empty path means root directory - use the volume root handle directly
 	// rather than calling Open() with L"" which some firmware doesn't support
-	if (path == NULL || path[0] == 0)
+	if (path == nullptr || path[0] == 0)
 	{
 		handle = (PVOID)Root;
 		return;
@@ -442,7 +442,7 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path)
 	EFI_FILE_PROTOCOL *DirHandle = OpenFileFromRoot(Root, path, EFI_FILE_MODE_READ, 0);
 	Root->Close(Root);
 
-	if (DirHandle != NULL)
+	if (DirHandle != nullptr)
 	{
 		handle = (PVOID)DirHandle;
 	}
@@ -451,14 +451,14 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path)
 DirectoryIterator::DirectoryIterator(DirectoryIterator &&other) noexcept
 	: handle(other.handle), currentEntry(other.currentEntry), first(other.first)
 {
-	other.handle = NULL;
+	other.handle = nullptr;
 }
 
 DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexcept
 {
 	if (this != &other)
 	{
-		if (handle != NULL)
+		if (handle != nullptr)
 		{
 			EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)handle;
 			fp->Close(fp);
@@ -466,25 +466,25 @@ DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexc
 		handle = other.handle;
 		currentEntry = other.currentEntry;
 		first = other.first;
-		other.handle = NULL;
+		other.handle = nullptr;
 	}
 	return *this;
 }
 
 DirectoryIterator::~DirectoryIterator()
 {
-	if (handle != NULL)
+	if (handle != nullptr)
 	{
 		EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)handle;
 		fp->Close(fp);
-		handle = NULL;
+		handle = nullptr;
 	}
 }
 
 BOOL DirectoryIterator::Next()
 {
-	if (handle == NULL)
-		return FALSE;
+	if (handle == nullptr)
+		return false;
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)handle;
 
@@ -497,7 +497,7 @@ BOOL DirectoryIterator::Next()
 
 	// End of directory or error
 	if (EFI_ERROR_CHECK(Status) || BufferSize == 0)
-		return FALSE;
+		return false;
 
 	EFI_FILE_INFO *FileInfo = (EFI_FILE_INFO *)Buffer;
 
@@ -513,7 +513,7 @@ BOOL DirectoryIterator::Next()
 	// Fill other fields
 	currentEntry.size = FileInfo->FileSize;
 	currentEntry.isDirectory = (FileInfo->Attribute & EFI_FILE_DIRECTORY) != 0;
-	currentEntry.isDrive = FALSE;
+	currentEntry.isDrive = false;
 	currentEntry.isHidden = (FileInfo->Attribute & EFI_FILE_HIDDEN) != 0;
 	currentEntry.isSystem = (FileInfo->Attribute & EFI_FILE_SYSTEM) != 0;
 	currentEntry.isReadOnly = (FileInfo->Attribute & EFI_FILE_READ_ONLY) != 0;
@@ -521,10 +521,10 @@ BOOL DirectoryIterator::Next()
 	currentEntry.creationTime = 0;
 	currentEntry.lastModifiedTime = 0;
 
-	return TRUE;
+	return true;
 }
 
 BOOL DirectoryIterator::IsValid() const
 {
-	return handle != NULL;
+	return handle != nullptr;
 }

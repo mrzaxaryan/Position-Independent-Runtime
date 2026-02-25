@@ -8,7 +8,7 @@ class FileSystemTests
 public:
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running FileSystem Tests...");
 
@@ -43,49 +43,49 @@ private:
 
 		// Create root directory
 		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root"_embed)))
-			return FALSE;
+			return false;
 
 		// Create first level directories
 		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir1"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir2"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir3"_embed)))
-			return FALSE;
+			return false;
 
 		// Create second level directories (nested inside first level)
 		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir2"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir3"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir4"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::CreateDirectory(Path::NormalizePath(L"test_io_root\\level1_dir3\\level2_dir5"_embed)))
-			return FALSE;
+			return false;
 
 		// Verify all directories exist
 		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir2"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir3"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir2"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir3"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir4"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir3\\level2_dir5"_embed)))
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestCreateFilesInDirectories()
@@ -95,73 +95,73 @@ private:
 		File rootFile = FileSystem::Open(Path::NormalizePath(L"test_io_root\\root_file.txt"_embed),
 										 FileSystem::FS_CREATE | FileSystem::FS_WRITE);
 		if (!rootFile.IsValid())
-			return FALSE;
+			return false;
 		rootFile.Close();
 
 		// Files in first level directories
 		File file1 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\file1.txt"_embed),
 									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
 		if (!file1.IsValid())
-			return FALSE;
+			return false;
 		file1.Close();
 
 		File file2 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir2\\file2.txt"_embed),
 									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
 		if (!file2.IsValid())
-			return FALSE;
+			return false;
 		file2.Close();
 
 		File file3 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir3\\file3.txt"_embed),
 									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
 		if (!file3.IsValid())
-			return FALSE;
+			return false;
 		file3.Close();
 
 		// Files in second level directories
 		File file4 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1\\deep_file1.txt"_embed),
 									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
 		if (!file4.IsValid())
-			return FALSE;
+			return false;
 		file4.Close();
 
 		File file5 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir2\\deep_file2.txt"_embed),
 									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
 		if (!file5.IsValid())
-			return FALSE;
+			return false;
 		file5.Close();
 
 		File file6 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir3\\deep_file3.txt"_embed),
 									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
 		if (!file6.IsValid())
-			return FALSE;
+			return false;
 		file6.Close();
 
 		File file7 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir4\\deep_file4.txt"_embed),
 									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
 		if (!file7.IsValid())
-			return FALSE;
+			return false;
 		file7.Close();
 
 		File file8 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir3\\level2_dir5\\deep_file5.txt"_embed),
 									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
 		if (!file8.IsValid())
-			return FALSE;
+			return false;
 		file8.Close();
 
 		// Create multiple files in one directory
 		File extra1 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\extra1.txt"_embed),
 									   FileSystem::FS_CREATE | FileSystem::FS_WRITE);
 		if (!extra1.IsValid())
-			return FALSE;
+			return false;
 		extra1.Close();
 
 		File extra2 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\extra2.txt"_embed),
 									   FileSystem::FS_CREATE | FileSystem::FS_WRITE);
 		if (!extra2.IsValid())
-			return FALSE;
+			return false;
 		extra2.Close();
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestWriteReadContent()
@@ -173,31 +173,31 @@ private:
 			File file = FileSystem::Open(Path::NormalizePath(L"test_io_root\\test_write_read.txt"_embed),
 										 FileSystem::FS_CREATE | FileSystem::FS_WRITE | FileSystem::FS_TRUNCATE);
 			if (!file.IsValid())
-				return FALSE;
+				return false;
 
 			auto testData = "Hello, File System!"_embed;
 			UINT32 bytesWritten = file.Write((const CHAR *)testData, 20);
 			if (bytesWritten != 20)
-				return FALSE;
+				return false;
 
 			file.Close();
 
 			// Read it back
 			file = FileSystem::Open(Path::NormalizePath(L"test_io_root\\test_write_read.txt"_embed), FileSystem::FS_READ);
 			if (!file.IsValid())
-				return FALSE;
+				return false;
 
 			CHAR buffer[32];
 			Memory::Zero(buffer, 32);
 			UINT32 bytesRead = file.Read(buffer, 20);
 			if (bytesRead != 20)
-				return FALSE;
+				return false;
 
 			// Verify content
 			for (INT32 i = 0; i < 20; i++)
 			{
 				if (buffer[i] != ((const CHAR *)testData)[i])
-					return FALSE;
+					return false;
 			}
 
 			file.Close();
@@ -208,7 +208,7 @@ private:
 			File file = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\binary_test.dat"_embed),
 										 FileSystem::FS_CREATE | FileSystem::FS_WRITE | FileSystem::FS_TRUNCATE);
 			if (!file.IsValid())
-				return FALSE;
+				return false;
 
 			UINT8 binaryData[256];
 			for (INT32 i = 0; i < 256; i++)
@@ -218,26 +218,26 @@ private:
 
 			UINT32 bytesWritten = file.Write(binaryData, 256);
 			if (bytesWritten != 256)
-				return FALSE;
+				return false;
 
 			file.Close();
 
 			// Read it back
 			file = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\binary_test.dat"_embed), FileSystem::FS_READ);
 			if (!file.IsValid())
-				return FALSE;
+				return false;
 
 			UINT8 readBuffer[256];
 			Memory::Zero(readBuffer, 256);
 			UINT32 bytesRead = file.Read(readBuffer, 256);
 			if (bytesRead != 256)
-				return FALSE;
+				return false;
 
 			// Verify content
 			for (INT32 i = 0; i < 256; i++)
 			{
 				if (readBuffer[i] != (UINT8)i)
-					return FALSE;
+					return false;
 			}
 
 			file.Close();
@@ -248,7 +248,7 @@ private:
 			File file = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir2\\offset_test.dat"_embed),
 										 FileSystem::FS_CREATE | FileSystem::FS_WRITE | FileSystem::FS_TRUNCATE);
 			if (!file.IsValid())
-				return FALSE;
+				return false;
 
 			auto data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"_embed;
 			file.Write((const CHAR *)data, 26);
@@ -256,41 +256,41 @@ private:
 			// Test SetOffset
 			file.SetOffset(10);
 			if (file.GetOffset() != 10)
-				return FALSE;
+				return false;
 
 			// Test MoveOffset from current position
 			file.MoveOffset(5, OffsetOrigin::Current);
 			if (file.GetOffset() != 15)
-				return FALSE;
+				return false;
 
 			// Test MoveOffset from start
 			file.MoveOffset(0, OffsetOrigin::Start);
 			if (file.GetOffset() != 0)
-				return FALSE;
+				return false;
 
 			file.Close();
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestFileExistence()
 	{
 		// Test existing files
 		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\root_file.txt"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\file1.txt"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1\\deep_file1.txt"_embed)))
-			return FALSE;
+			return false;
 
 		// Test non-existing files
 		if (FileSystem::Exists(Path::NormalizePath(L"test_io_root\\nonexistent.txt"_embed)))
-			return FALSE;
+			return false;
 		if (FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\missing.txt"_embed)))
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestDirectoryIteration()
@@ -299,12 +299,12 @@ private:
 		if (!rootIter.IsValid())
 		{
 			LOG_ERROR("Failed to create DirectoryIterator for root");
-			return FALSE;
+			return false;
 		}
 		// Test iterating through a directory with multiple files
 		DirectoryIterator iter(Path::NormalizePath(L"test_io_root\\level1_dir1"_embed));
 		if (!iter.IsValid())
-			return FALSE;
+			return false;
 
 		INT32 fileCount = 0;
 		INT32 dirCount = 0;
@@ -335,11 +335,11 @@ private:
 		// (file1.txt, extra1.txt, extra2.txt, binary_test.dat = 4 files)
 		// (level2_dir1, level2_dir2 = 2 directories)
 		if (fileCount != 4)
-			return FALSE;
+			return false;
 		if (dirCount != 2)
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestCleanup()
@@ -348,68 +348,68 @@ private:
 
 		// Second level files
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1\\deep_file1.txt"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir2\\deep_file2.txt"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir3\\deep_file3.txt"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir4\\deep_file4.txt"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\level1_dir3\\level2_dir5\\deep_file5.txt"_embed)))
-			return FALSE;
+			return false;
 
 		// First level files
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\level1_dir1\\file1.txt"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\level1_dir1\\extra1.txt"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\level1_dir1\\extra2.txt"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\level1_dir1\\binary_test.dat"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\level1_dir2\\file2.txt"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\level1_dir2\\offset_test.dat"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\level1_dir3\\file3.txt"_embed)))
-			return FALSE;
+			return false;
 
 		// Root level files
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\root_file.txt"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::Delete(Path::NormalizePath(L"test_io_root\\test_write_read.txt"_embed)))
-			return FALSE;
+			return false;
 
 		// Delete directories (from deepest to shallowest)
 
 		// Second level directories
 		if (!FileSystem::DeleteDirectory(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::DeleteDirectory(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir2"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::DeleteDirectory(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir3"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::DeleteDirectory(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir4"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::DeleteDirectory(Path::NormalizePath(L"test_io_root\\level1_dir3\\level2_dir5"_embed)))
-			return FALSE;
+			return false;
 
 		// First level directories
 		if (!FileSystem::DeleteDirectory(Path::NormalizePath(L"test_io_root\\level1_dir1"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::DeleteDirectory(Path::NormalizePath(L"test_io_root\\level1_dir2"_embed)))
-			return FALSE;
+			return false;
 		if (!FileSystem::DeleteDirectory(Path::NormalizePath(L"test_io_root\\level1_dir3"_embed)))
-			return FALSE;
+			return false;
 
 		// Root directory
 		if (!FileSystem::DeleteDirectory(Path::NormalizePath(L"test_io_root"_embed)))
-			return FALSE;
+			return false;
 
 		// Verify cleanup was successful
 		if (FileSystem::Exists(Path::NormalizePath(L"test_io_root"_embed)))
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 };

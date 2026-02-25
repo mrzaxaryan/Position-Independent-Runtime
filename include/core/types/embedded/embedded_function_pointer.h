@@ -48,7 +48,7 @@
  * @code
  * // Define a callback function
  * BOOL MyCallback(PVOID ctx, CHAR ch) {
- *     return TRUE;
+ *     return true;
  * }
  *
  * // Get position-independent function pointer
@@ -58,7 +58,7 @@
  * auto callback = EMBED_FUNC(MyCallback);
  * @endcode
  */
-template<typename FuncPtr, FuncPtr Func>
+template <typename FuncPtr, FuncPtr Func>
 class EMBEDDED_FUNCTION_POINTER
 {
 public:
@@ -104,22 +104,22 @@ public:
 
 #if defined(PLATFORM_WINDOWS_I386)
         // i386: Use call/pop to get EIP, then compute PC-relative offset
-        __asm__ volatile (
-            "call 1f\n"                         // Push return address onto stack
+        __asm__ volatile(
+            "call 1f\n" // Push return address onto stack
             "1:\n"
-            "popl %%eax\n"                      // Get current EIP in eax
-            "leal %c1-1b(%%eax), %%eax\n"       // Compute: target - label_1b + eip
-            "movl %%eax, %0\n"                  // Store result
-            : "=m"(result)                      // Output: result variable
-            : "i"(Func)                         // Input: target (compile-time constant)
-            : "eax"                             // Clobber: eax register
+            "popl %%eax\n"                // Get current EIP in eax
+            "leal %c1-1b(%%eax), %%eax\n" // Compute: target - label_1b + eip
+            "movl %%eax, %0\n"            // Store result
+            : "=m"(result)                // Output: result variable
+            : "i"(Func)                   // Input: target (compile-time constant)
+            : "eax"                       // Clobber: eax register
         );
 #elif defined(PLATFORM_WINDOWS_ARMV7A)
         // armv7a: Use LDR pseudo-instruction for PC-relative addressing
-        __asm__ volatile (
-            "ldr %0, =%1\n"                     // Load address via PC-relative literal pool
-            : "=r"(result)                      // Output: result variable
-            : "X"(Func)                         // Input: target address
+        __asm__ volatile(
+            "ldr %0, =%1\n" // Load address via PC-relative literal pool
+            : "=r"(result)  // Output: result variable
+            : "X"(Func)     // Input: target address
         );
 #else
         // Fallback for other architectures: direct assignment

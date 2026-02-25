@@ -15,7 +15,7 @@ static SSIZE linux_socket(INT32 domain, INT32 type, INT32 protocol)
 #endif
 }
 
-static SSIZE linux_bind(SSIZE sockfd, const SockAddr* addr, UINT32 addrlen)
+static SSIZE linux_bind(SSIZE sockfd, const SockAddr *addr, UINT32 addrlen)
 {
 #if defined(ARCHITECTURE_I386)
     USIZE args[3] = {(USIZE)sockfd, (USIZE)addr, addrlen};
@@ -25,7 +25,7 @@ static SSIZE linux_bind(SSIZE sockfd, const SockAddr* addr, UINT32 addrlen)
 #endif
 }
 
-static SSIZE linux_connect(SSIZE sockfd, const SockAddr* addr, UINT32 addrlen)
+static SSIZE linux_connect(SSIZE sockfd, const SockAddr *addr, UINT32 addrlen)
 {
 #if defined(ARCHITECTURE_I386)
     USIZE args[3] = {(USIZE)sockfd, (USIZE)addr, addrlen};
@@ -35,7 +35,7 @@ static SSIZE linux_connect(SSIZE sockfd, const SockAddr* addr, UINT32 addrlen)
 #endif
 }
 
-static SSIZE linux_send(SSIZE sockfd, const VOID* buf, USIZE len, INT32 flags)
+static SSIZE linux_send(SSIZE sockfd, const VOID *buf, USIZE len, INT32 flags)
 {
 #if defined(ARCHITECTURE_I386)
     USIZE args[4] = {(USIZE)sockfd, (USIZE)buf, len, (USIZE)flags};
@@ -45,7 +45,7 @@ static SSIZE linux_send(SSIZE sockfd, const VOID* buf, USIZE len, INT32 flags)
 #endif
 }
 
-static SSIZE linux_recv(SSIZE sockfd, VOID* buf, USIZE len, INT32 flags)
+static SSIZE linux_recv(SSIZE sockfd, VOID *buf, USIZE len, INT32 flags)
 {
 #if defined(ARCHITECTURE_I386)
     USIZE args[4] = {(USIZE)sockfd, (USIZE)buf, len, (USIZE)flags};
@@ -56,8 +56,8 @@ static SSIZE linux_recv(SSIZE sockfd, VOID* buf, USIZE len, INT32 flags)
 }
 
 // Socket constructor
-Socket::Socket(const IPAddress& ipAddress, UINT16 port)
-    : ip(ipAddress), port(port), m_socket(NULL)
+Socket::Socket(const IPAddress &ipAddress, UINT16 port)
+    : ip(ipAddress), port(port), m_socket(nullptr)
 {
     INT32 addressFamily = SocketAddressHelper::GetAddressFamily(ip);
     INT32 socketType = SOCK_STREAM;
@@ -76,10 +76,10 @@ Socket::Socket(const IPAddress& ipAddress, UINT16 port)
 // Bind socket to address
 BOOL Socket::Bind(SockAddr &socketAddress, INT32 shareType)
 {
-    (VOID)shareType;  // Not used on Linux
+    (VOID) shareType; // Not used on Linux
 
     if (!IsValid())
-        return FALSE;
+        return false;
 
     SSIZE sockfd = (SSIZE)m_socket;
     UINT32 addrLen = (socketAddress.sin_family == AF_INET6) ? sizeof(SockAddr6) : sizeof(SockAddr);
@@ -91,21 +91,22 @@ BOOL Socket::Bind(SockAddr &socketAddress, INT32 shareType)
 BOOL Socket::Open()
 {
     if (!IsValid())
-        return FALSE;
+        return false;
 
     SSIZE sockfd = (SSIZE)m_socket;
 
     // Use helper to prepare socket address
-    union {
+    union
+    {
         SockAddr addr4;
         SockAddr6 addr6;
     } addrBuffer;
 
     UINT32 addrLen = SocketAddressHelper::PrepareAddress(ip, port, &addrBuffer, sizeof(addrBuffer));
     if (addrLen == 0)
-        return FALSE;
+        return false;
 
-    SSIZE result = linux_connect(sockfd, (SockAddr*)&addrBuffer, addrLen);
+    SSIZE result = linux_connect(sockfd, (SockAddr *)&addrBuffer, addrLen);
     return result == 0;
 }
 
@@ -113,12 +114,12 @@ BOOL Socket::Open()
 BOOL Socket::Close()
 {
     if (!IsValid())
-        return FALSE;
+        return false;
 
     SSIZE sockfd = (SSIZE)m_socket;
     System::Call(SYS_CLOSE, sockfd);
     m_socket = (PVOID)INVALID_FD;
-    return TRUE;
+    return true;
 }
 
 // Read from socket
@@ -143,7 +144,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 
     while (totalSent < bufferLength)
     {
-        SSIZE sent = linux_send(sockfd, (const CHAR*)buffer + totalSent,
+        SSIZE sent = linux_send(sockfd, (const CHAR *)buffer + totalSent,
                                 bufferLength - totalSent, 0);
         if (sent <= 0)
             break;

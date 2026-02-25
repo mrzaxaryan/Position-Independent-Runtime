@@ -9,7 +9,7 @@ class RandomTests
 public:
 	static BOOL RunAll()
 	{
-		BOOL allPassed = TRUE;
+		BOOL allPassed = true;
 
 		LOG_INFO("Running Random Tests...");
 
@@ -48,7 +48,7 @@ private:
 
 		// Just verify we got values (not checking for specific values due to randomness)
 		// We'll check range in another test
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestValueRange()
@@ -60,10 +60,10 @@ private:
 		{
 			INT32 val = rng.Get();
 			if (val < 0 || val >= Random::MAX)
-				return FALSE;
+				return false;
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestSequenceVariability()
@@ -78,12 +78,12 @@ private:
 		}
 
 		// Check that at least some values differ
-		BOOL foundDifferent = FALSE;
+		BOOL foundDifferent = false;
 		for (INT32 i = 1; i < 20; i++)
 		{
 			if (values[i] != values[0])
 			{
-				foundDifferent = TRUE;
+				foundDifferent = true;
 				break;
 			}
 		}
@@ -101,7 +101,7 @@ private:
 			CHAR c = rng.GetChar<CHAR>();
 			// Verify character is lowercase a-z
 			if (c < 'a' || c > 'z')
-				return FALSE;
+				return false;
 		}
 
 		// Test wide char generation
@@ -110,10 +110,10 @@ private:
 			WCHAR c = rng.GetChar<WCHAR>();
 			// Verify character is lowercase a-z
 			if (c < L'a' || c > L'z')
-				return FALSE;
+				return false;
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestStringGenerationNarrow()
@@ -126,20 +126,20 @@ private:
 
 		// Verify length
 		if (len != 10)
-			return FALSE;
+			return false;
 
 		// Verify null termination
 		if (buffer[10] != '\0')
-			return FALSE;
+			return false;
 
 		// Verify all characters are lowercase letters
 		for (UINT32 i = 0; i < len; i++)
 		{
 			if (buffer[i] < 'a' || buffer[i] > 'z')
-				return FALSE;
+				return false;
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestStringGenerationWide()
@@ -152,20 +152,20 @@ private:
 
 		// Verify length
 		if (len != 15)
-			return FALSE;
+			return false;
 
 		// Verify null termination
 		if (buffer[15] != L'\0')
-			return FALSE;
+			return false;
 
 		// Verify all characters are lowercase letters
 		for (UINT32 i = 0; i < len; i++)
 		{
 			if (buffer[i] < L'a' || buffer[i] > L'z')
-				return FALSE;
+				return false;
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	static BOOL TestByteArrayGeneration()
@@ -181,15 +181,15 @@ private:
 
 		// Verify success
 		if (result != 1)
-			return FALSE;
+			return false;
 
 		// Verify at least some bytes are non-zero (very unlikely all would be zero)
-		BOOL foundNonZero = FALSE;
+		BOOL foundNonZero = false;
 		for (USIZE i = 0; i < 64; i++)
 		{
 			if (buffer[i] != 0)
 			{
-				foundNonZero = TRUE;
+				foundNonZero = true;
 				break;
 			}
 		}
@@ -207,12 +207,12 @@ private:
 
 		// Verify length is 0
 		if (len != 0)
-			return FALSE;
+			return false;
 
 		// Verify null termination at position 0
 		if (buffer[0] != '\0')
-			return FALSE;
+			return false;
 
-		return TRUE;
+		return true;
 	}
 };
