@@ -46,25 +46,29 @@ static inline BOOL IsLocalhost(PCCHAR host, IPAddress &result, RequestType type)
     return FALSE;
 }
 
-static inline UINT16 ReadU16BE(PCVOID buffer, USIZE index)
+static inline UINT16 ReadU16BE(const UINT8 *p, INT32 index)
 {
-    const UINT8 *p = (const UINT8 *)buffer;
     return (UINT16)((p[index] << 8) | p[index + 1]);
 }
 
-
-static INT32 SkipName(PUINT8 ptr)
+// Skip over a DNS name in wire format. maxLen is bytes remaining from ptr.
+// Returns bytes consumed, or -1 on error.
+static INT32 SkipName(const UINT8 *ptr, INT32 maxLen)
 {
-    PUINT8 p = ptr;
-    while (p)
+    INT32 offset = 0;
+    while (offset < maxLen)
     {
-        UINT8 label = *p;
+        UINT8 label = ptr[offset];
 
         if (label == 0)
-            return (INT32)(p - ptr + 1);
+            return offset + 1;
 
         if (label >= 0xC0)
-            return (INT32)(p - ptr + 2);
+        {
+            if (offset + 2 > maxLen)
+                return -1;
+            return offset + 2;
+        }
 
         if (label > 63)
         {
@@ -72,46 +76,69 @@ static INT32 SkipName(PUINT8 ptr)
             return -1;
         }
 
-        p += label + 1;
+        offset += label + 1;
     }
     return -1;
 }
 
 // Parse DNS answer section, extract A/AAAA address. Sets parsedLen to bytes consumed.
-static BOOL ParseAnswer(PUINT8 ptr, INT32 cnt, IPAddress &ipAddress, INT32 &parsedLen)
+// bufferLen is the total bytes available from ptr.
+static BOOL ParseAnswer(const UINT8 *ptr, INT32 cnt, INT32 bufferLen, IPAddress &ipAddress, INT32 &parsedLen)
 {
+    // type(2) + class(2) + ttl(4) + rdlength(2)
+    constexpr INT32 FIXED_FIELDS_SIZE = 10;
+
     INT32 len = 0;
     while (cnt > 0)
     {
-        PUINT8 p = ptr + len;
+        INT32 remaining = bufferLen - len;
+        if (remaining <= 0)
+            break;
 
-        INT32 nameLen = SkipName(p);
+        const UINT8 *p = ptr + len;
+
+        INT32 nameLen = SkipName(p, remaining);
         if (nameLen <= 0)
         {
             LOG_WARNING("ParseAnswer: failed to skip answer name");
             break;
         }
 
-        // Fixed fields: type(2) + class(2) + ttl(4) + rdlength(2) = 10 bytes
-        PUINT8 fixedFields = p + nameLen;
+        if (remaining - nameLen < FIXED_FIELDS_SIZE)
+        {
+            LOG_WARNING("ParseAnswer: truncated fixed fields");
+            break;
+        }
+
+        const UINT8 *fixedFields = p + nameLen;
         UINT16 type = ReadU16BE(fixedFields, 0);
         UINT16 rdlength = ReadU16BE(fixedFields, 8);
-        PUINT8 rdata = fixedFields + 10;
+
+        INT32 recordSize = nameLen + FIXED_FIELDS_SIZE + rdlength;
+        if (remaining < recordSize)
+        {
+            LOG_WARNING("ParseAnswer: truncated rdata");
+            break;
+        }
+
+        const UINT8 *rdata = fixedFields + FIXED_FIELDS_SIZE;
 
         if (type == A && rdlength == 4)
         {
-            ipAddress = IPAddress::FromIPv4(*(PUINT32)rdata);
-            parsedLen = len + nameLen + 10 + rdlength;
+            UINT32 ipv4;
+            Memory::Copy(&ipv4, rdata, 4);
+            ipAddress = IPAddress::FromIPv4(ipv4);
+            parsedLen = len + recordSize;
             return TRUE;
         }
         else if (type == AAAA && rdlength == 16)
         {
             ipAddress = IPAddress::FromIPv6(rdata);
-            parsedLen = len + nameLen + 10 + rdlength;
+            parsedLen = len + recordSize;
             return TRUE;
         }
 
-        len += nameLen + 10 + rdlength;
+        len += recordSize;
         cnt--;
     }
 
@@ -119,26 +146,41 @@ static BOOL ParseAnswer(PUINT8 ptr, INT32 cnt, IPAddress &ipAddress, INT32 &pars
     return FALSE;
 }
 
-static INT32 ParseQuery(PUINT8 ptr, INT32 cnt)
+static INT32 ParseQuery(const UINT8 *ptr, INT32 cnt, INT32 bufferLen)
 {
-    PUINT8 p = ptr;
+    INT32 offset = 0;
     while (cnt > 0)
     {
-        INT32 nameLen = SkipName(p);
+        INT32 remaining = bufferLen - offset;
+        if (remaining <= 0)
+        {
+            LOG_WARNING("ParseQuery: buffer exhausted");
+            return -1;
+        }
+
+        INT32 nameLen = SkipName(ptr + offset, remaining);
         if (nameLen <= 0)
         {
             LOG_WARNING("ParseQuery: invalid name length");
             return -1;
         }
-        p += nameLen + sizeof(DNS_REQUEST_QUESTION);
+
+        INT32 entrySize = nameLen + (INT32)sizeof(DNS_REQUEST_QUESTION);
+        if (remaining < entrySize)
+        {
+            LOG_WARNING("ParseQuery: truncated question entry");
+            return -1;
+        }
+
+        offset += entrySize;
         cnt--;
     }
-    return (INT32)(p - ptr);
+    return offset;
 }
 
-static BOOL ParseDnsResponse(PUINT8 buffer, UINT16 len, IPAddress &ipAddress)
+static BOOL ParseDnsResponse(const UINT8 *buffer, INT32 len, IPAddress &ipAddress)
 {
-    if (!buffer || len < sizeof(DNS_REQUEST_HEADER))
+    if (!buffer || len < (INT32)sizeof(DNS_REQUEST_HEADER))
     {
         LOG_WARNING("ParseDnsResponse: invalid parameters");
         return FALSE;
@@ -160,11 +202,11 @@ static BOOL ParseDnsResponse(PUINT8 buffer, UINT16 len, IPAddress &ipAddress)
         return FALSE;
     }
 
-    INT32 recordOffset = sizeof(DNS_REQUEST_HEADER);
+    INT32 recordOffset = (INT32)sizeof(DNS_REQUEST_HEADER);
 
     if (qCount > 0)
     {
-        INT32 size = ParseQuery(buffer + recordOffset, qCount);
+        INT32 size = ParseQuery(buffer + recordOffset, qCount, len - recordOffset);
         if (size <= 0)
         {
             LOG_WARNING("ParseDnsResponse: invalid query size: %d", size);
@@ -173,40 +215,61 @@ static BOOL ParseDnsResponse(PUINT8 buffer, UINT16 len, IPAddress &ipAddress)
         recordOffset += size;
     }
 
+    if (recordOffset >= len)
+    {
+        LOG_WARNING("ParseDnsResponse: no space for answer section");
+        return FALSE;
+    }
+
     INT32 parsedLen = 0;
-    return ParseAnswer(buffer + recordOffset, ansCount, ipAddress, parsedLen);
+    return ParseAnswer(buffer + recordOffset, ansCount, len - recordOffset, ipAddress, parsedLen);
 }
 
-// Convert hostname to DNS wire format (length-prefixed labels)
-static VOID FormatDnsName(PUINT8 dns, PCCHAR host)
+// Convert hostname to DNS wire format (length-prefixed labels).
+// Returns bytes written (including null terminator), or -1 on overflow.
+static INT32 FormatDnsName(UINT8 *dns, INT32 dnsSize, PCCHAR host)
 {
-    if (!dns || !host)
-        return;
+    if (!dns || !host || dnsSize <= 0)
+        return -1;
 
+    UINT32 hostLen = (UINT32)String::Length(host);
+    // Worst case: hostLen bytes + 1 extra label-length byte + null terminator
+    if ((INT32)(hostLen + 2) > dnsSize)
+        return -1;
+
+    INT32 written = 0;
     UINT32 i, t = 0;
-    USIZE hostLen = String::Length(host);
-    for (i = 0; i < (UINT32)hostLen; i++)
+    for (i = 0; i < hostLen; i++)
     {
         if (host[i] == '.')
         {
-            *dns++ = i - t;
+            if (written + 1 + (INT32)(i - t) >= dnsSize)
+                return -1;
+            dns[written++] = (UINT8)(i - t);
             for (; t < i; t++)
-                *dns++ = host[t];
+                dns[written++] = host[t];
             t++;
         }
     }
     if (hostLen > 0 && host[hostLen - 1] != '.')
     {
-        *dns++ = i - t;
+        if (written + 1 + (INT32)(i - t) >= dnsSize)
+            return -1;
+        dns[written++] = (UINT8)(i - t);
         for (; t < i; t++)
-            *dns++ = host[t];
+            dns[written++] = host[t];
     }
-    *dns = '\0';
+    dns[written++] = '\0';
+    return written;
 }
 
-// Generate a DNS-over-HTTPS query packet (no TCP length prefix)
-static UINT32 GenerateQuery(PCCHAR host, RequestType dnstype, PCHAR buffer)
+// Generate a DNS-over-HTTPS query packet (no TCP length prefix).
+// Returns query size in bytes, or 0 on error (buffer too small).
+static UINT32 GenerateQuery(PCCHAR host, RequestType dnstype, PCHAR buffer, UINT32 bufferSize)
 {
+    if (bufferSize < sizeof(DNS_REQUEST_HEADER) + sizeof(DNS_REQUEST_QUESTION) + 2)
+        return 0;
+
     PDNS_REQUEST_HEADER pHeader = (PDNS_REQUEST_HEADER)buffer;
 
     pHeader->id = (UINT16)0x24a1;
@@ -225,19 +288,20 @@ static UINT32 GenerateQuery(PCCHAR host, RequestType dnstype, PCHAR buffer)
     pHeader->authCount = 0;
     pHeader->addCount = 0;
 
-    PCHAR qname = (PCHAR)pHeader + sizeof(DNS_REQUEST_HEADER);
-    FormatDnsName((PUINT8)qname, host);
+    UINT8 *qname = (UINT8 *)buffer + sizeof(DNS_REQUEST_HEADER);
+    INT32 nameSpaceLeft = (INT32)(bufferSize - sizeof(DNS_REQUEST_HEADER) - sizeof(DNS_REQUEST_QUESTION));
+    INT32 nameLen = FormatDnsName(qname, nameSpaceLeft, host);
+    if (nameLen <= 0)
+    {
+        LOG_WARNING("GenerateQuery: hostname too long for buffer");
+        return 0;
+    }
 
-    PCHAR pCurrent = qname;
-    while (*pCurrent != 0)
-        pCurrent += (*pCurrent + 1);
-    pCurrent++;
-
-    PDNS_REQUEST_QUESTION pQuestion = (PDNS_REQUEST_QUESTION)pCurrent;
+    PDNS_REQUEST_QUESTION pQuestion = (PDNS_REQUEST_QUESTION)(qname + nameLen);
     pQuestion->qclass = UINT16SwapByteOrder(1);
     pQuestion->qtype = UINT16SwapByteOrder(dnstype);
 
-    return (UINT32)((PCHAR)pQuestion + sizeof(DNS_REQUEST_QUESTION) - buffer);
+    return (UINT32)(sizeof(DNS_REQUEST_HEADER) + nameLen + sizeof(DNS_REQUEST_QUESTION));
 }
 
 IPAddress DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR DNSServerName, RequestType dnstype)
@@ -254,7 +318,12 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR
     }
 
     UINT8 queryBuffer[256];
-    UINT32 querySize = GenerateQuery(host, dnstype, (PCHAR)queryBuffer);
+    UINT32 querySize = GenerateQuery(host, dnstype, (PCHAR)queryBuffer, sizeof(queryBuffer));
+    if (querySize == 0)
+    {
+        LOG_WARNING("Failed to generate DNS query");
+        return IPAddress::Invalid();
+    }
 
     auto writeStr = [&tlsClient](PCCHAR s) { tlsClient.Write(s, String::Length(s)); };
 
@@ -297,7 +366,7 @@ IPAddress DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSServerIp, PCCHAR
     }
 
     IPAddress ipAddress;
-    if (!ParseDnsResponse((PUINT8)binaryResponse, (UINT16)contentLength, ipAddress))
+    if (!ParseDnsResponse((const UINT8 *)binaryResponse, (INT32)contentLength, ipAddress))
     {
         LOG_WARNING("Failed to parse DNS response");
         return IPAddress::Invalid();

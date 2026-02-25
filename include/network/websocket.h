@@ -36,7 +36,7 @@ private:
 
     BOOL ReceiveRestrict(PVOID buffer, UINT32 size);
     BOOL ReceiveFrame(WebSocketFrame &frame);
-    static VOID MaskFrame(UINT32 maskKey, PVOID data, UINT32 len);
+    static VOID MaskFrame(WebSocketFrame &frame, UINT32 maskKey);
 
 public:
     VOID *operator new(USIZE) = delete;
