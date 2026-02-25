@@ -144,7 +144,7 @@ UINT32 val = embedded[0]; // Unpacked at runtime
 - **Include guard:** `#pragma once` in all headers
 - **No namespaces:** Use static class methods instead of free functions in namespaces
 - **No STL:** Everything is implemented from scratch
-- **No exceptions:** Return error codes (`NTSTATUS`, `BOOL`, etc.)
+- **No exceptions:** Use `Result<T, E>` for fallible operations
 - **Prefer `static` methods** on classes over free functions
 - **Use `FORCE_INLINE`** for force inline functions
 - **Use `NOINLINE`** when you need to prevent inlining (e.g., for function pointer embedding)
@@ -340,6 +340,41 @@ public:
     VOID operator delete(VOID *) = delete;
 };
 ```
+
+### Result Pattern
+
+Use `Result<T, E>` for functions that can fail and need to return a value or an error. It acts as a tagged union — either `Ok(value)` or `Err(error)` — with RAII: the active member's destructor runs automatically when the `Result` goes out of scope.
+
+```cpp
+// Return a value or error
+[[nodiscard]] Result<IPAddress, UINT32> Resolve(PCCHAR host)
+{
+    // ...
+    if (failed)
+        return Result<IPAddress, UINT32>::Err(errorCode);
+    return Result<IPAddress, UINT32>::Ok(address);
+}
+
+// Caller
+auto result = Resolve(hostName);
+if (result.IsErr())
+    return;                     // error path — no value to clean up
+IPAddress &ip = result.Value(); // borrow the value; Result still owns it
+
+// Use Result<void, E> when there is no value to return
+[[nodiscard]] Result<void, UINT32> Open()
+{
+    if (failed)
+        return Result<void, UINT32>::Err(errorCode);
+    return Result<void, UINT32>::Ok();
+}
+```
+
+**Key rules:**
+- `Value()` returns a reference — the `Result` owns the object and destroys it at scope exit
+- For non-trivially destructible types (e.g., `Socket`), the destructor is called automatically
+- For trivially destructible types (e.g., `UINT32`), the destructor is a no-op (zero codegen)
+- `operator BOOL()` is implicit, so `if (result)` and `if (!result)` work naturally
 
 ### Secure Cleanup for Sensitive Data
 
