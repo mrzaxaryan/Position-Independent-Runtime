@@ -212,15 +212,15 @@ public:
 
     /**
      * @brief Extracts current key from state
-     * @param k Output buffer for 32-byte key
+     * @param k Output array for 32-byte key
      */
-    VOID Key(UINT8 *k);
+    VOID Key(UINT8 (&k)[32]);
 
     /**
      * @brief Extracts current nonce from state
-     * @param nonce Output buffer for nonce
+     * @param nonce Output array for 12-byte nonce
      */
-    VOID Nonce(UINT8 *nonce);
+    VOID Nonce(UINT8 (&nonce)[TLS_CHACHA20_IV_LENGTH]);
 
     /**
      * @brief Sets up IV/nonce (64-bit nonce variant)

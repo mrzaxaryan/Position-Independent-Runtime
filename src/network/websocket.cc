@@ -46,7 +46,7 @@ BOOL WebSocketClient::Open()
     for (INT32 i = 0; i < 16; i++)
         key[i] = alphanum[(USIZE)(random.Get() % 62)];
 
-    PCHAR secureKey = new CHAR[Base64::GetEncodeOutSize(16)];
+    CHAR secureKey[25]; // Base64 of 16 bytes = 24 chars + null
     Base64::Encode(key, 16, secureKey);
 
     auto writeStr = [this](PCCHAR s) { tlsContext.Write(s, String::Length(s)); };
@@ -57,21 +57,10 @@ BOOL WebSocketClient::Open()
     writeStr(hostName);
     writeStr("\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: "_embed);
     writeStr(secureKey);
-    writeStr("\r\nSec-WebSocket-Version: 13\r\n"_embed);
-    delete[] secureKey;
-
-    if (isSecure)
-    {
-        writeStr("Origin: https://"_embed);
-        writeStr(hostName);
-        writeStr("\r\n\r\n"_embed);
-    }
-    else
-    {
-        writeStr("Origin: http://"_embed);
-        writeStr(hostName);
-        writeStr("\r\n\r\n"_embed);
-    }
+    writeStr("\r\nSec-WebSocket-Version: 13\r\nOrigin: "_embed);
+    writeStr(isSecure ? "https://"_embed : "http://"_embed);
+    writeStr(hostName);
+    writeStr("\r\n\r\n"_embed);
 
     // Read handshake response (extra byte for null terminator)
     constexpr UINT32 maxHandshakeSize = 4096;
@@ -103,7 +92,7 @@ BOOL WebSocketClient::Open()
     }
     handshakeResponse[totalBytesRead] = '\0';
 
-    // Verify "HTTP/1.1 101" response (" 101" at offset 8 as little-endian UINT32 = 540094513)
+    // Verify "HTTP/1.1 101" response ("101 " at offset 9 as little-endian UINT32 = 0x20313031)
     if (totalBytesRead < 12 || *(PUINT32)(handshakeResponse + 9) != 540094513)
     {
         delete[] handshakeResponse;
@@ -146,16 +135,18 @@ UINT32 WebSocketClient::Write(PCVOID buffer, UINT32 bufferLength, INT8 opcode)
         headerLength = 14;
 
     UINT32 frameLength = headerLength + bufferLength;
-    PUINT8 frame = new UINT8[frameLength];
+
+    // Stack buffer for small frames (<=125 payload = 131 bytes max), heap for larger
+    UINT8 stackFrame[131];
+    PUINT8 frame = (frameLength <= sizeof(stackFrame)) ? stackFrame : new UINT8[frameLength];
 
     // FIN bit + opcode
     frame[0] = (UINT8)(opcode | 0x80);
 
-    // Generate masking key
+    // Generate masking key from a single random value
     Random random;
-    UINT8 maskKey[4];
-    for (USIZE i = 0; i < 4; i++)
-        maskKey[i] = random.Get() & 0xFF;
+    UINT32 maskKeyVal = (UINT32)random.Get();
+    PUINT8 maskKey = (PUINT8)&maskKeyVal;
 
     // Encode payload length + mask bit
     if (bufferLength <= 125)
@@ -178,17 +169,15 @@ UINT32 WebSocketClient::Write(PCVOID buffer, UINT32 bufferLength, INT8 opcode)
         Memory::Copy(frame + 10, maskKey, 4);
     }
 
-    // Copy and mask payload
-    if (buffer != NULL)
-        Memory::Copy(frame + headerLength, buffer, bufferLength);
-    else
-        Memory::Zero(frame + headerLength, bufferLength);
-
+    // Copy and mask payload in a single pass
+    PUINT8 dst = frame + headerLength;
+    PUINT8 src = (PUINT8)buffer;
     for (UINT32 i = 0; i < bufferLength; i++)
-        frame[headerLength + i] ^= maskKey[i % 4];
+        dst[i] = (src ? src[i] : 0) ^ maskKey[i & 3];
 
     UINT32 result = tlsContext.Write(frame, frameLength);
-    delete[] frame;
+    if (frame != stackFrame)
+        delete[] frame;
 
     return (result > 0) ? bufferLength : 0;
 }
@@ -207,7 +196,7 @@ BOOL WebSocketClient::ReceiveRestrict(PVOID buffer, UINT32 size)
     return TRUE;
 }
 
-static void web_socket_mask_frame(UINT32 maskKey, PVOID data, UINT32 len)
+VOID WebSocketClient::MaskFrame(UINT32 maskKey, PVOID data, UINT32 len)
 {
     PUINT8 mask = (PUINT8)&maskKey;
     PUINT8 d = (PUINT8)data;
@@ -276,7 +265,7 @@ BOOL WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
     }
 
     if (frame.mask && frame.data)
-        web_socket_mask_frame(frameMask, frame.data, (UINT32)frame.length);
+        MaskFrame(frameMask, frame.data, (UINT32)frame.length);
 
     return TRUE;
 }
@@ -284,8 +273,6 @@ BOOL WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 PVOID WebSocketClient::Read(USIZE &dwBufferLength, INT8 &opcode)
 {
     WebSocketFrame frame;
-    Memory::Zero(&frame, sizeof(frame));
-
     PVOID pvBuffer = NULL;
     dwBufferLength = 0;
     INT8 messageOpcode = 0;
@@ -304,32 +291,28 @@ PVOID WebSocketClient::Read(USIZE &dwBufferLength, INT8 &opcode)
                 break;
             }
 
-            if (frame.length == 0)
-            {
-                delete[] frame.data;
-                break;
-            }
-
             // Capture opcode from the initial (non-continuation) frame
             if (frame.opcode != OPCODE_CONTINUE)
                 messageOpcode = frame.opcode;
 
-            if (pvBuffer)
+            if (frame.length > 0)
             {
-                PCHAR tempBuffer = new CHAR[dwBufferLength + (UINT32)frame.length];
-                Memory::Copy(tempBuffer, (PCHAR)pvBuffer, dwBufferLength);
-                Memory::Copy(tempBuffer + dwBufferLength, frame.data, (UINT32)frame.length);
-                dwBufferLength += (UINT32)frame.length;
-                delete[] (PCHAR)pvBuffer;
-                pvBuffer = tempBuffer;
+                if (pvBuffer)
+                {
+                    PCHAR tempBuffer = new CHAR[dwBufferLength + (UINT32)frame.length];
+                    Memory::Copy(tempBuffer, (PCHAR)pvBuffer, dwBufferLength);
+                    Memory::Copy(tempBuffer + dwBufferLength, frame.data, (UINT32)frame.length);
+                    dwBufferLength += (UINT32)frame.length;
+                    delete[] (PCHAR)pvBuffer;
+                    pvBuffer = tempBuffer;
+                    delete[] frame.data;
+                }
+                else
+                {
+                    pvBuffer = frame.data;
+                    dwBufferLength = (UINT32)frame.length;
+                }
             }
-            else
-            {
-                pvBuffer = new CHAR[(UINT32)frame.length];
-                Memory::Copy(pvBuffer, frame.data, (UINT32)frame.length);
-                dwBufferLength = (UINT32)frame.length;
-            }
-            delete[] frame.data;
 
             if (frame.fin)
             {
@@ -371,6 +354,8 @@ PVOID WebSocketClient::Read(USIZE &dwBufferLength, INT8 &opcode)
 
 WebSocketClient::WebSocketClient(PCCHAR url)
 {
+    Memory::Zero(hostName, sizeof(hostName));
+    Memory::Zero(path, sizeof(path));
     isConnected = FALSE;
 
     BOOL isSecure = FALSE;
