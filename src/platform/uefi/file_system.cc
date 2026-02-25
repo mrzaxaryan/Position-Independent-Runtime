@@ -431,6 +431,14 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path)
 	if (Root == NULL)
 		return;
 
+	// Empty path means root directory - use the volume root handle directly
+	// rather than calling Open() with L"" which some firmware doesn't support
+	if (path == NULL || path[0] == 0)
+	{
+		handle = (PVOID)Root;
+		return;
+	}
+
 	EFI_FILE_PROTOCOL *DirHandle = OpenFileFromRoot(Root, path, EFI_FILE_MODE_READ, 0);
 	Root->Close(Root);
 

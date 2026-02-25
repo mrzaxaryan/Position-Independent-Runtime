@@ -99,28 +99,12 @@ Result<UINT32, WebSocketError> WebSocketClient::Write(PCVOID buffer, UINT32 buff
 	if (!isConnected && opcode != OPCODE_CLOSE)
 		return Result<UINT32, WebSocketError>::Err(WS_ERROR_NOT_CONNECTED);
 
-	// Frame layout: [opcode+FIN][length+MASK][ext length?][mask key][payload]
-	// Header sizes: <=125 -> 6, 126..65535 -> 8, >65535 -> 14
+	// Build frame header on stack (max 14 bytes: 2 base + 8 ext length + 4 mask key)
+	UINT8 header[14];
 	UINT32 headerLength;
-	if (bufferLength <= 125)
-		headerLength = 6;
-	else if (bufferLength <= 0xFFFF)
-		headerLength = 8;
-	else
-		headerLength = 14;
-
-	UINT32 frameLength = headerLength + bufferLength;
-	if (frameLength < bufferLength)
-		return Result<UINT32, WebSocketError>::Err(WS_ERROR_FRAME_TOO_LARGE);
-
-	// Stack buffer for small/medium frames, heap for larger
-	UINT8 stackFrame[1024];
-	PUINT8 frame = (frameLength <= sizeof(stackFrame)) ? stackFrame : new UINT8[frameLength];
-	if (!frame)
-		return Result<UINT32, WebSocketError>::Err(WS_ERROR_ALLOCATION_FAILED);
 
 	// FIN bit + opcode
-	frame[0] = (UINT8)(opcode | 0x80);
+	header[0] = (UINT8)(opcode | 0x80);
 
 	// Generate masking key from a single random value
 	Random random;
@@ -130,36 +114,66 @@ Result<UINT32, WebSocketError> WebSocketClient::Write(PCVOID buffer, UINT32 buff
 	// Encode payload length + mask bit
 	if (bufferLength <= 125)
 	{
-		frame[1] = (UINT8)(bufferLength | 0x80);
-		Memory::Copy(frame + 2, maskKey, 4);
+		header[1] = (UINT8)(bufferLength | 0x80);
+		Memory::Copy(header + 2, maskKey, 4);
+		headerLength = 6;
 	}
 	else if (bufferLength <= 0xFFFF)
 	{
-		frame[1] = (126 | 0x80);
+		header[1] = (126 | 0x80);
 		UINT16 len16 = UINT16SwapByteOrder((UINT16)bufferLength);
-		Memory::Copy(frame + 2, &len16, 2);
-		Memory::Copy(frame + 4, maskKey, 4);
+		Memory::Copy(header + 2, &len16, 2);
+		Memory::Copy(header + 4, maskKey, 4);
+		headerLength = 8;
 	}
 	else
 	{
-		frame[1] = (127 | 0x80);
+		header[1] = (127 | 0x80);
 		UINT64 len64 = UINT64SwapByteOrder((UINT64)bufferLength);
-		Memory::Copy(frame + 2, &len64, 8);
-		Memory::Copy(frame + 10, maskKey, 4);
+		Memory::Copy(header + 2, &len64, 8);
+		Memory::Copy(header + 10, maskKey, 4);
+		headerLength = 14;
 	}
 
-	// Copy and mask payload in a single pass
-	PUINT8 dst = frame + headerLength;
-	PUINT8 src = (PUINT8)buffer;
-	for (UINT32 i = 0; i < bufferLength; i++)
-		dst[i] = src[i] ^ maskKey[i & 3];
+	// Chunk buffer for masking: small enough for the stack, multiple of 4 for mask alignment
+	UINT8 chunk[256];
 
-	UINT32 written = tlsContext.Write(frame, frameLength);
-	if (frame != stackFrame)
-		delete[] frame;
+	// Small frames: combine header + masked payload into a single write
+	if (bufferLength <= sizeof(chunk) - headerLength)
+	{
+		Memory::Copy(chunk, header, headerLength);
+		PUINT8 dst = chunk + headerLength;
+		PUINT8 src = (PUINT8)buffer;
+		for (UINT32 i = 0; i < bufferLength; i++)
+			dst[i] = src[i] ^ maskKey[i & 3];
 
-	if (written != frameLength)
+		UINT32 frameLength = headerLength + bufferLength;
+		if (tlsContext.Write(chunk, frameLength) != frameLength)
+			return Result<UINT32, WebSocketError>::Err(WS_ERROR_WRITE_FAILED);
+
+		return Result<UINT32, WebSocketError>::Ok(bufferLength);
+	}
+
+	// Large frames: write header, then mask and write payload in chunks
+	if (tlsContext.Write(header, headerLength) != headerLength)
 		return Result<UINT32, WebSocketError>::Err(WS_ERROR_WRITE_FAILED);
+
+	PUINT8 src = (PUINT8)buffer;
+	UINT32 offset = 0;
+	UINT32 remaining = bufferLength;
+
+	while (remaining > 0)
+	{
+		UINT32 chunkSize = (remaining < (UINT32)sizeof(chunk)) ? remaining : (UINT32)sizeof(chunk);
+		for (UINT32 i = 0; i < chunkSize; i++)
+			chunk[i] = src[offset + i] ^ maskKey[(offset + i) & 3];
+
+		if (tlsContext.Write(chunk, chunkSize) != chunkSize)
+			return Result<UINT32, WebSocketError>::Err(WS_ERROR_WRITE_FAILED);
+
+		offset += chunkSize;
+		remaining -= chunkSize;
+	}
 
 	return Result<UINT32, WebSocketError>::Ok(bufferLength);
 }
