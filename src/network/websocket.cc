@@ -63,45 +63,40 @@ BOOL WebSocketClient::Open()
     writeStr(hostName);
     writeStr("\r\n\r\n"_embed);
 
-    // Read handshake response (extra byte for null terminator)
-    constexpr UINT32 maxHandshakeSize = 4096;
-    PCHAR handshakeResponse = new CHAR[maxHandshakeSize + 1];
-    UINT32 totalBytesRead = 0;
+    // Parse handshake response using a 4-byte rolling window (no buffer needed).
+    // We only need: (1) "101 " at bytes 9-12, (2) \r\n\r\n to end headers.
+    UINT32 tail = 0;
+    UINT32 bytesConsumed = 0;
+    BOOL statusValid = FALSE;
 
     for (;;)
     {
-        if (totalBytesRead >= maxHandshakeSize)
-        {
-            delete[] handshakeResponse;
-            Close();
-            return FALSE;
-        }
-
-        SSIZE bytesRead = tlsContext.Read(handshakeResponse + totalBytesRead, 1);
+        CHAR c;
+        SSIZE bytesRead = tlsContext.Read(&c, 1);
         if (bytesRead <= 0)
         {
-            delete[] handshakeResponse;
             Close();
             return FALSE;
         }
 
-        totalBytesRead += (UINT32)bytesRead;
+        tail = (tail << 8) | (UINT8)c;
+        bytesConsumed++;
 
-        // Check for \r\n\r\n end-of-headers (0x0D0A0D0A as little-endian UINT32 = 168626701)
-        if (totalBytesRead >= 4 && *(PUINT32)(handshakeResponse + totalBytesRead - 4) == 168626701)
+        // After 13 bytes, tail holds bytes 9-12: check for "101 " (0x31303120)
+        if (bytesConsumed == 13)
+            statusValid = (tail == 0x31303120);
+
+        // Check for \r\n\r\n end-of-headers (0x0D0A0D0A)
+        if (tail == 0x0D0A0D0A)
             break;
     }
-    handshakeResponse[totalBytesRead] = '\0';
 
-    // Verify "HTTP/1.1 101" response ("101 " at offset 9 as little-endian UINT32 = 0x20313031)
-    if (totalBytesRead < 12 || *(PUINT32)(handshakeResponse + 9) != 540094513)
+    if (!statusValid)
     {
-        delete[] handshakeResponse;
         Close();
         return FALSE;
     }
 
-    delete[] handshakeResponse;
     isConnected = TRUE;
     return TRUE;
 }
