@@ -62,6 +62,58 @@ private:
 public:
     // Constructor
     TlsCipher();
+    ~TlsCipher() { Destroy(); }
+
+    TlsCipher(const TlsCipher &) = delete;
+    TlsCipher &operator=(const TlsCipher &) = delete;
+
+    // Stack-only
+    VOID *operator new(USIZE) = delete;
+    VOID operator delete(VOID *) = delete;
+
+    TlsCipher(TlsCipher &&other)
+        : cipherCount(other.cipherCount)
+        , clientSeqNum(other.clientSeqNum)
+        , serverSeqNum(other.serverSeqNum)
+        , publicKey(static_cast<TlsBuffer &&>(other.publicKey))
+        , decodeBuffer(static_cast<TlsBuffer &&>(other.decodeBuffer))
+        , handshakeHash(static_cast<TlsHash &&>(other.handshakeHash))
+        , cipherIndex(other.cipherIndex)
+        , chacha20Context(static_cast<ChaCha20Encoder &&>(other.chacha20Context))
+        , isEncoding(other.isEncoding)
+    {
+        for (INT32 i = 0; i < ECC_COUNT; i++)
+        {
+            privateEccKeys[i] = other.privateEccKeys[i];
+            other.privateEccKeys[i] = nullptr;
+        }
+        Memory::Copy(&data13, &other.data13, Math::Max(sizeof(data13), sizeof(data12)));
+    }
+
+    TlsCipher &operator=(TlsCipher &&other)
+    {
+        if (this != &other)
+        {
+            Destroy();
+            cipherCount = other.cipherCount;
+            clientSeqNum = other.clientSeqNum;
+            serverSeqNum = other.serverSeqNum;
+            publicKey = static_cast<TlsBuffer &&>(other.publicKey);
+            decodeBuffer = static_cast<TlsBuffer &&>(other.decodeBuffer);
+            handshakeHash = static_cast<TlsHash &&>(other.handshakeHash);
+            cipherIndex = other.cipherIndex;
+            chacha20Context = static_cast<ChaCha20Encoder &&>(other.chacha20Context);
+            isEncoding = other.isEncoding;
+            for (INT32 i = 0; i < ECC_COUNT; i++)
+            {
+                privateEccKeys[i] = other.privateEccKeys[i];
+                other.privateEccKeys[i] = nullptr;
+            }
+            Memory::Copy(&data13, &other.data13, Math::Max(sizeof(data13), sizeof(data12)));
+        }
+        return *this;
+    }
+
     // Reset function
     VOID Reset();
     // Destroy function to clean up resources
@@ -73,19 +125,21 @@ public:
     VOID GetHash(const CHAR *out);
     VOID UpdateHash(const CHAR *in, UINT32 len);
     // Key computation functions
-    BOOL ComputePublicKey(INT32 eccIndex, TlsBuffer *out);
-    BOOL ComputePreKey(ECC_GROUP ecc, const CHAR *serverKey, INT32 serverKeyLen, TlsBuffer *premasterKey);
+    BOOL ComputePublicKey(INT32 eccIndex, TlsBuffer &out);
+    BOOL ComputePreKey(ECC_GROUP ecc, const CHAR *serverKey, INT32 serverKeyLen, TlsBuffer &premasterKey);
     BOOL ComputeKey(ECC_GROUP ecc, const CHAR *serverKey, INT32 serverKeyLen, PCHAR finishedHash);
-    VOID ComputeVerify(TlsBuffer *out, INT32 verifySize, INT32 localOrRemote);
+    VOID ComputeVerify(TlsBuffer &out, INT32 verifySize, INT32 localOrRemote);
     // Functions for encoding and decoding TLS records
-    VOID Encode(TlsBuffer *sendbuf, const CHAR *packet, INT32 packetSize, BOOL keepOriginal);
-    BOOL Decode(TlsBuffer *inout, INT32 version);
+    VOID Encode(TlsBuffer &sendbuf, const CHAR *packet, INT32 packetSize, BOOL keepOriginal);
+    BOOL Decode(TlsBuffer &inout, INT32 version);
     VOID SetEncoding(BOOL encoding);
     // Function to reset sequence numbers
     VOID ResetSequenceNumber();
+    // Check if the cipher is in a valid state
+    BOOL IsValid() const { return cipherCount > 0; }
     // Accessor functions
     BOOL GetEncoding() { return isEncoding; };
     INT32 GetCipherCount() { return cipherCount; };
-    TlsBuffer *GetPubKey() { return &publicKey; };
+    TlsBuffer &GetPubKey() { return publicKey; };
     VOID SetCipherCount(INT32 count) { cipherCount = count; };
 };

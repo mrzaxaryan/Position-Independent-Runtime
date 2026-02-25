@@ -84,20 +84,20 @@ struct SHA256Traits
      * @brief Fills initial hash values (H0) for SHA-256
      * @param out Output array for 8 initial hash values
      */
-    static FORCE_INLINE VOID FillH0(Word* out);
+    static VOID FillH0(Word* out);
 
     /**
      * @brief Fills round constants (K) for SHA-256
      * @param out Output array for 64 round constants
      */
-    static FORCE_INLINE VOID FillK(Word* out);
+    static VOID FillK(Word* out);
 
     /**
      * @brief Packs 4 bytes into a 32-bit word (big-endian)
      * @param str Input byte array
-     * @param x Output word pointer
+     * @param x Output word reference
      */
-    static FORCE_INLINE VOID Pack(const UINT8* str, Word* x);
+    static FORCE_INLINE VOID Pack(const UINT8* str, Word &x);
 
     /**
      * @brief Unpacks a 32-bit word into 4 bytes (big-endian)
@@ -144,20 +144,20 @@ struct SHA384Traits
      * @brief Fills initial hash values (H0) for SHA-384
      * @param out Output array for 8 initial hash values
      */
-    static FORCE_INLINE VOID FillH0(Word* out);
+    static VOID FillH0(Word* out);
 
     /**
      * @brief Fills round constants (K) for SHA-384
      * @param out Output array for 80 round constants
      */
-    static FORCE_INLINE VOID FillK(Word* out);
+    static VOID FillK(Word* out);
 
     /**
      * @brief Packs 8 bytes into a 64-bit word (big-endian)
      * @param str Input byte array
-     * @param x Output word pointer
+     * @param x Output word reference
      */
-    static FORCE_INLINE VOID Pack(const UINT8* str, Word* x);
+    static FORCE_INLINE VOID Pack(const UINT8* str, Word &x);
 
     /**
      * @brief Unpacks a 64-bit word into 8 bytes (big-endian)
@@ -256,7 +256,7 @@ public:
      *
      * @details Internal function that applies the SHA compression function.
      */
-    static VOID Transform(SHABase *ctx, const UINT8 *message, UINT64 block_nb);
+    static VOID Transform(SHABase &ctx, const UINT8 *message, UINT64 block_nb);
 };
 
 /** @brief SHA-256 hash algorithm (256-bit output) */

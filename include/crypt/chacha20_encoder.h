@@ -79,6 +79,45 @@ public:
      */
     ~ChaCha20Encoder();
 
+    ChaCha20Encoder(const ChaCha20Encoder &) = delete;
+    ChaCha20Encoder &operator=(const ChaCha20Encoder &) = delete;
+
+    // Stack-only
+    VOID *operator new(USIZE) = delete;
+    VOID operator delete(VOID *) = delete;
+
+    ChaCha20Encoder(ChaCha20Encoder &&other)
+        : remoteCipher(static_cast<ChaChaPoly1305 &&>(other.remoteCipher))
+        , localCipher(static_cast<ChaChaPoly1305 &&>(other.localCipher))
+        , ivLength(other.ivLength)
+        , initialized(other.initialized)
+    {
+        Memory::Copy(remoteNonce, other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
+        Memory::Copy(localNonce, other.localNonce, TLS_CHACHA20_IV_LENGTH);
+        other.ivLength = 0;
+        other.initialized = FALSE;
+        Memory::Zero(other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
+        Memory::Zero(other.localNonce, TLS_CHACHA20_IV_LENGTH);
+    }
+
+    ChaCha20Encoder &operator=(ChaCha20Encoder &&other)
+    {
+        if (this != &other)
+        {
+            remoteCipher = static_cast<ChaChaPoly1305 &&>(other.remoteCipher);
+            localCipher = static_cast<ChaChaPoly1305 &&>(other.localCipher);
+            ivLength = other.ivLength;
+            initialized = other.initialized;
+            Memory::Copy(remoteNonce, other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
+            Memory::Copy(localNonce, other.localNonce, TLS_CHACHA20_IV_LENGTH);
+            other.ivLength = 0;
+            other.initialized = FALSE;
+            Memory::Zero(other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
+            Memory::Zero(other.localNonce, TLS_CHACHA20_IV_LENGTH);
+        }
+        return *this;
+    }
+
     /**
      * @brief Initializes encoder with TLS-derived keys and IVs
      * @param localKey Key for encrypting outgoing data (client_write_key)
@@ -106,7 +145,7 @@ public:
      * and ciphertext, and appends the 16-byte tag to output.
      * Automatically increments the local sequence number.
      */
-    VOID Encode(TlsBuffer *out, const CHAR *packet, INT32 packetSize, const UCHAR *aad, INT32 aadSize);
+    VOID Encode(TlsBuffer &out, const CHAR *packet, INT32 packetSize, const UCHAR *aad, INT32 aadSize);
 
     /**
      * @brief Decrypts and verifies a TLS record
@@ -122,7 +161,7 @@ public:
      * @warning Returns FALSE if authentication fails - output buffer contents
      * are undefined and MUST NOT be used.
      */
-    BOOL Decode(TlsBuffer *in, TlsBuffer *out, const UCHAR *aad, INT32 aadSize);
+    BOOL Decode(TlsBuffer &in, TlsBuffer &out, const UCHAR *aad, INT32 aadSize);
 
     /**
      * @brief Computes output size for encoding or decoding
@@ -142,10 +181,10 @@ public:
     INT32 GetIvLength() { return ivLength; }
 
     /**
-     * @brief Checks if encoder is initialized
+     * @brief Checks if encoder is initialized and valid
      * @return TRUE if initialized, FALSE otherwise
      */
-    BOOL IsInitialized() { return initialized; }
+    BOOL IsValid() const { return initialized; }
 };
 
 /** @} */ // end of chacha20_encoder group

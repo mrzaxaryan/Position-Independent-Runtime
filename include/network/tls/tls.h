@@ -18,6 +18,7 @@ private:
     IPAddress ip;
     Socket context;
     TlsCipher crypto;
+    BOOL secure;             // Whether to use TLS handshake or plain TCP
     INT32 stateIndex;        // Current state index
     TlsBuffer sendBuffer;    // Send buffer
     TlsBuffer recvBuffer;    // Receive buffer
@@ -25,22 +26,70 @@ private:
     INT32 channelBytesRead;  // Number of bytes read from channel buffer
     INT32 ReadChannel(PCHAR out, INT32 size);
     BOOL ProcessReceive();
-    BOOL OnPacket(INT32 packetType, INT32 version, TlsBuffer *TlsReader);
+    BOOL OnPacket(INT32 packetType, INT32 version, TlsBuffer &TlsReader);
     BOOL OnServerFinished();
-    BOOL VerifyFinished(TlsBuffer *TlsReader);
+    BOOL VerifyFinished(TlsBuffer &TlsReader);
     BOOL OnServerHelloDone();
-    BOOL OnServerHello(TlsBuffer *TlsReader);
+    BOOL OnServerHello(TlsBuffer &TlsReader);
     BOOL SendChangeCipherSpec();
     BOOL SendClientExchange();
     BOOL SendClientFinished();
     BOOL SendClientHello(const CHAR *host);
-    BOOL SendPacket(INT32 packetType, INT32 ver, TlsBuffer *TlsBuffer);
+    BOOL SendPacket(INT32 packetType, INT32 ver, TlsBuffer &TlsBuffer);
 
 public:
     VOID *operator new(USIZE) = delete;
     VOID operator delete(VOID *) = delete;
-    TLSClient() : host(nullptr), ip(), stateIndex(0), channelBytesRead(0) {}
-    TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port);
+    TLSClient() : host(nullptr), ip(), secure(TRUE), stateIndex(0), channelBytesRead(0) {}
+    TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port, BOOL secure = TRUE);
+    ~TLSClient() { if (IsValid()) Close(); }
+
+    TLSClient(const TLSClient &) = delete;
+    TLSClient &operator=(const TLSClient &) = delete;
+
+    TLSClient(TLSClient &&other)
+        : host(other.host)
+        , ip(other.ip)
+        , context(static_cast<Socket &&>(other.context))
+        , crypto(static_cast<TlsCipher &&>(other.crypto))
+        , secure(other.secure)
+        , stateIndex(other.stateIndex)
+        , sendBuffer(static_cast<TlsBuffer &&>(other.sendBuffer))
+        , recvBuffer(static_cast<TlsBuffer &&>(other.recvBuffer))
+        , channelBuffer(static_cast<TlsBuffer &&>(other.channelBuffer))
+        , channelBytesRead(other.channelBytesRead)
+    {
+        other.host = nullptr;
+        other.secure = TRUE;
+        other.stateIndex = 0;
+        other.channelBytesRead = 0;
+    }
+
+    TLSClient &operator=(TLSClient &&other)
+    {
+        if (this != &other)
+        {
+            Close();
+            host = other.host;
+            ip = other.ip;
+            context = static_cast<Socket &&>(other.context);
+            crypto = static_cast<TlsCipher &&>(other.crypto);
+            secure = other.secure;
+            stateIndex = other.stateIndex;
+            sendBuffer = static_cast<TlsBuffer &&>(other.sendBuffer);
+            recvBuffer = static_cast<TlsBuffer &&>(other.recvBuffer);
+            channelBuffer = static_cast<TlsBuffer &&>(other.channelBuffer);
+            channelBytesRead = other.channelBytesRead;
+            other.host = nullptr;
+            other.secure = TRUE;
+            other.stateIndex = 0;
+            other.channelBytesRead = 0;
+        }
+        return *this;
+    }
+
+    BOOL IsValid() const { return context.IsValid(); }
+    BOOL IsSecure() const { return secure; }
     BOOL Open();
     BOOL Close();
     SSIZE Read(PVOID buffer, UINT32 bufferLength);

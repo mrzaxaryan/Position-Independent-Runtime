@@ -88,9 +88,9 @@ typedef struct AfdSocketParams
     WCHAR ProviderInfo[8];
 } AfdSocketParams;
 
-BOOL Socket::Bind(SockAddr *SocketAddress, INT32 ShareType)
+BOOL Socket::Bind(SockAddr &SocketAddress, INT32 ShareType)
 {
-    LOG_DEBUG("Bind(pNTSocket: 0x%p, SocketAddress: 0x%p, ShareType: %d)\n", m_socket, SocketAddress, ShareType);
+    LOG_DEBUG("Bind(pNTSocket: 0x%p, SocketAddress: 0x%p, ShareType: %d)\n", m_socket, &SocketAddress, ShareType);
 
     if (m_socket == 0)
     {
@@ -100,7 +100,7 @@ BOOL Socket::Bind(SockAddr *SocketAddress, INT32 ShareType)
 
     NTSTATUS Status;
     PVOID SockEvent = NULL;
-    Status = NTDLL::NtCreateEvent(&SockEvent,
+    Status = NTDLL::ZwCreateEvent(&SockEvent,
                                   EVENT_ALL_ACCESS,
                                   NULL,
                                   SynchronizationEvent,
@@ -117,14 +117,14 @@ BOOL Socket::Bind(SockAddr *SocketAddress, INT32 ShareType)
     UINT8 OutputBlock[40];
     Memory::Zero(&OutputBlock, sizeof(OutputBlock));
 
-    if (SocketAddress->sin_family == AF_INET6)
+    if (SocketAddress.sin_family == AF_INET6)
     {
         AfdBindData6 BindConfig;
         Memory::Zero(&BindConfig, sizeof(BindConfig));
         BindConfig.ShareType = ShareType;
-        BindConfig.Address = *(SockAddr6 *)SocketAddress;
+        BindConfig.Address = (SockAddr6 &)SocketAddress;
 
-        Status = NTDLL::NtDeviceIoControlFile(m_socket,
+        Status = NTDLL::ZwDeviceIoControlFile(m_socket,
                                               SockEvent,
                                               NULL,
                                               NULL,
@@ -140,9 +140,9 @@ BOOL Socket::Bind(SockAddr *SocketAddress, INT32 ShareType)
         AfdBindData BindConfig;
         Memory::Zero(&BindConfig, sizeof(BindConfig));
         BindConfig.ShareType = ShareType;
-        BindConfig.Address = *SocketAddress;
+        BindConfig.Address = SocketAddress;
 
-        Status = NTDLL::NtDeviceIoControlFile(m_socket,
+        Status = NTDLL::ZwDeviceIoControlFile(m_socket,
                                               SockEvent,
                                               NULL,
                                               NULL,
@@ -156,7 +156,7 @@ BOOL Socket::Bind(SockAddr *SocketAddress, INT32 ShareType)
 
     if (Status == STATUS_PENDING)
     {
-        NTDLL::NtWaitForSingleObject(SockEvent, 0, NULL);
+        NTDLL::ZwWaitForSingleObject(SockEvent, 0, NULL);
         Status = IOSB.Status;
     }
 
@@ -178,7 +178,7 @@ BOOL Socket::Open()
     } bindBuffer;
 
     SocketAddressHelper::PrepareBindAddress(ip.IsIPv6(), 0, &bindBuffer, sizeof(bindBuffer));
-    if (Bind((SockAddr *)&bindBuffer, AFD_SHARE_REUSE) == FALSE)
+    if (Bind((SockAddr &)bindBuffer, AFD_SHARE_REUSE) == FALSE)
     {
         LOG_ERROR("Failed to bind socket\n");
         return FALSE;
@@ -186,7 +186,7 @@ BOOL Socket::Open()
     LOG_DEBUG("Socket bound successfully\n");
 
     PVOID SockEvent = NULL;
-    Status = NTDLL::NtCreateEvent(&SockEvent,
+    Status = NTDLL::ZwCreateEvent(&SockEvent,
                                   EVENT_ALL_ACCESS,
                                   NULL,
                                   SynchronizationEvent,
@@ -218,7 +218,7 @@ BOOL Socket::Open()
         ConnectInfo.Unknown = 0;
         ConnectInfo.Address = addrBuffer.addr6;
 
-        Status = NTDLL::NtDeviceIoControlFile((PVOID)m_socket,
+        Status = NTDLL::ZwDeviceIoControlFile((PVOID)m_socket,
                                               SockEvent,
                                               NULL,
                                               NULL,
@@ -237,7 +237,7 @@ BOOL Socket::Open()
         ConnectInfo.Unknown = 0;
         ConnectInfo.Address = addrBuffer.addr4;
 
-        Status = NTDLL::NtDeviceIoControlFile((PVOID)m_socket,
+        Status = NTDLL::ZwDeviceIoControlFile((PVOID)m_socket,
                                               SockEvent,
                                               NULL,
                                               NULL,
@@ -251,7 +251,7 @@ BOOL Socket::Open()
 
     if (Status == STATUS_PENDING)
     {
-        NTDLL::NtWaitForSingleObject(SockEvent, 0, NULL);
+        NTDLL::ZwWaitForSingleObject(SockEvent, 0, NULL);
         Status = IOSB.Status;
     }
 
@@ -283,7 +283,7 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferSize)
 
     PVOID SockEvent = NULL;
     NTSTATUS Status;
-    Status = NTDLL::NtCreateEvent(&SockEvent,
+    Status = NTDLL::ZwCreateEvent(&SockEvent,
                                   EVENT_ALL_ACCESS,
                                   NULL,
                                   SynchronizationEvent,
@@ -308,7 +308,7 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferSize)
     SendRecvInfo.BufferArray = &SendRecvBuffer;
 
     IO_STATUS_BLOCK IOSB;
-    Status = NTDLL::NtDeviceIoControlFile((PVOID)m_socket,
+    Status = NTDLL::ZwDeviceIoControlFile((PVOID)m_socket,
                                           SockEvent,
                                           NULL,
                                           NULL,
@@ -324,7 +324,7 @@ SSIZE Socket::Read(PVOID buffer, UINT32 bufferSize)
         LARGE_INTEGER Timeout;
         Timeout.QuadPart = 5 * 60 * 1000 * -10000LL;
 
-        NTSTATUS waitStatus = NTDLL::NtWaitForSingleObject(SockEvent, 0, &Timeout);
+        NTSTATUS waitStatus = NTDLL::ZwWaitForSingleObject(SockEvent, 0, &Timeout);
 
         if (waitStatus == 0x00000102)
         {
@@ -358,7 +358,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
 
     PVOID SockEvent = NULL;
     NTSTATUS Status;
-    Status = NTDLL::NtCreateEvent(&SockEvent,
+    Status = NTDLL::ZwCreateEvent(&SockEvent,
                                   EVENT_ALL_ACCESS,
                                   NULL,
                                   SynchronizationEvent,
@@ -386,7 +386,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
         SendRecvBuffer.Length = bufferLength - lpNumberOfBytesAlreadySend;
         SendRecvInfo.BufferArray = &SendRecvBuffer;
 
-        Status = NTDLL::NtDeviceIoControlFile(m_socket,
+        Status = NTDLL::ZwDeviceIoControlFile(m_socket,
                                               SockEvent,
                                               NULL,
                                               NULL,
@@ -401,7 +401,7 @@ UINT32 Socket::Write(PCVOID buffer, UINT32 bufferLength)
         {
             LARGE_INTEGER Timeout;
             Timeout.QuadPart = 1 * 60 * 1000 * -10000LL;
-            NTDLL::NtWaitForSingleObject(SockEvent, 0, &Timeout);
+            NTDLL::ZwWaitForSingleObject(SockEvent, 0, &Timeout);
         }
 
         Status = IOSB.Status;

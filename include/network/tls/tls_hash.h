@@ -9,6 +9,21 @@ class TlsHash
 private:
     TlsBuffer cache;
 public:
+    TlsHash() = default;
+    ~TlsHash() = default;
+
+    // Non-copyable
+    TlsHash(const TlsHash &) = delete;
+    TlsHash &operator=(const TlsHash &) = delete;
+
+    // Movable
+    TlsHash(TlsHash &&) = default;
+    TlsHash &operator=(TlsHash &&) = default;
+
+    // Stack-only
+    VOID *operator new(USIZE) = delete;
+    VOID operator delete(VOID *) = delete;
+
     // Reset the hash cache
     VOID Reset();
     // Append data to the hash cache

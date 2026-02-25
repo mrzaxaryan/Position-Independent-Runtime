@@ -440,6 +440,29 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path)
 	}
 }
 
+DirectoryIterator::DirectoryIterator(DirectoryIterator &&other) noexcept
+	: handle(other.handle), currentEntry(other.currentEntry), first(other.first)
+{
+	other.handle = NULL;
+}
+
+DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexcept
+{
+	if (this != &other)
+	{
+		if (handle != NULL)
+		{
+			EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)handle;
+			fp->Close(fp);
+		}
+		handle = other.handle;
+		currentEntry = other.currentEntry;
+		first = other.first;
+		other.handle = NULL;
+	}
+	return *this;
+}
+
 DirectoryIterator::~DirectoryIterator()
 {
 	if (handle != NULL)

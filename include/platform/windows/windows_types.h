@@ -51,6 +51,12 @@
 #define FILE_OPEN_IF        0x00000003
 #define FILE_OVERWRITE      0x00000004
 
+#define MEM_COMMIT  0x00001000
+#define MEM_RESERVE 0x00002000
+#define MEM_RELEASE 0x00008000
+
+#define PAGE_READWRITE 0x04
+
 #define ProcessDeviceMap 23
 
 #define InitializeObjectAttributes(p, n, a, r, s) \

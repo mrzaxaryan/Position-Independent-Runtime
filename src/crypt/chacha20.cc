@@ -677,3 +677,34 @@ ChaChaPoly1305::ChaChaPoly1305()
     Memory::Zero(&this->ks, sizeof(this->ks));
     this->unused = 0;
 }
+
+ChaChaPoly1305::~ChaChaPoly1305()
+{
+    Memory::Zero(&this->input, sizeof(this->input));
+    Memory::Zero(&this->ks, sizeof(this->ks));
+    this->unused = 0;
+}
+
+ChaChaPoly1305::ChaChaPoly1305(ChaChaPoly1305 &&other)
+{
+    Memory::Copy(&this->input, &other.input, sizeof(this->input));
+    Memory::Copy(&this->ks, &other.ks, sizeof(this->ks));
+    this->unused = other.unused;
+    Memory::Zero(&other.input, sizeof(other.input));
+    Memory::Zero(&other.ks, sizeof(other.ks));
+    other.unused = 0;
+}
+
+ChaChaPoly1305 &ChaChaPoly1305::operator=(ChaChaPoly1305 &&other)
+{
+    if (this != &other)
+    {
+        Memory::Copy(&this->input, &other.input, sizeof(this->input));
+        Memory::Copy(&this->ks, &other.ks, sizeof(this->ks));
+        this->unused = other.unused;
+        Memory::Zero(&other.input, sizeof(other.input));
+        Memory::Zero(&other.ks, sizeof(other.ks));
+        other.unused = 0;
+    }
+    return *this;
+}

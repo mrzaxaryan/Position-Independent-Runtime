@@ -161,22 +161,10 @@ public:
 
     // Convert day-of-year (0-based) to month and day
     // Returns month (1-12) and day (1-31) via output parameters
-    static FORCE_INLINE VOID DaysToMonthDay(UINT64 dayOfYear, UINT64 year, UINT32& outMonth, UINT32& outDay) noexcept
-    {
-        BOOL isLeap = IsLeapYear(year);
-        UINT32 month = 1;
-        UINT64 remainingDays = dayOfYear;
+    static VOID DaysToMonthDay(UINT64 dayOfYear, UINT64 year, UINT32& outMonth, UINT32& outDay) noexcept;
 
-        while (month <= 12)
-        {
-            UINT32 daysInMonth = GetDaysInMonth(month, isLeap);
-            if (remainingDays < daysInMonth)
-                break;
-            remainingDays -= daysInMonth;
-            month++;
-        }
-
-        outMonth = month;
-        outDay = (UINT32)remainingDays + 1;  // Days are 1-indexed
-    }
+    // Convert days-since-epoch + time-of-day into a populated DateTime.
+    // Shared by Windows and Linux Now() implementations.
+    static VOID FromDaysAndTime(DateTime& dt, UINT64 days, UINT64 baseYear,
+                               UINT64 timeOfDaySeconds, UINT64 subSecondNanoseconds) noexcept;
 };

@@ -1,4 +1,5 @@
 #include "file_system.h"
+#include "memory.h"
 #include "syscall.h"
 #include "system.h"
 #include "string.h"
@@ -230,6 +231,30 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path)
         handle = (PVOID)fd;
         first = TRUE;
     }
+}
+
+DirectoryIterator::DirectoryIterator(DirectoryIterator &&other) noexcept
+    : handle(other.handle), currentEntry(other.currentEntry), first(other.first), nread(other.nread), bpos(other.bpos)
+{
+    Memory::Copy(buffer, other.buffer, sizeof(buffer));
+    other.handle = (PVOID)INVALID_FD;
+}
+
+DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexcept
+{
+    if (this != &other)
+    {
+        if (IsValid())
+            System::Call(SYS_CLOSE, (USIZE)handle);
+        handle = other.handle;
+        currentEntry = other.currentEntry;
+        first = other.first;
+        nread = other.nread;
+        bpos = other.bpos;
+        Memory::Copy(buffer, other.buffer, sizeof(buffer));
+        other.handle = (PVOID)INVALID_FD;
+    }
+    return *this;
 }
 
 DirectoryIterator::~DirectoryIterator()

@@ -100,6 +100,10 @@ public:
      */
     ~Poly1305();
 
+    // Non-copyable: one-time key must not be duplicated
+    Poly1305(const Poly1305 &) = delete;
+    Poly1305 &operator=(const Poly1305 &) = delete;
+
     /**
      * @brief Updates MAC computation with additional data
      * @param data Pointer to input data
@@ -182,6 +186,19 @@ public:
      * @brief Default constructor - initializes state
      */
     ChaChaPoly1305();
+
+    /**
+     * @brief Destructor - securely clears key material
+     */
+    ~ChaChaPoly1305();
+
+    // Non-copyable: prevents accidental key material duplication
+    ChaChaPoly1305(const ChaChaPoly1305 &) = delete;
+    ChaChaPoly1305 &operator=(const ChaChaPoly1305 &) = delete;
+
+    // Movable: transfers ownership and zeroes source
+    ChaChaPoly1305(ChaChaPoly1305 &&other);
+    ChaChaPoly1305 &operator=(ChaChaPoly1305 &&other);
 
     /**
      * @brief Sets up the encryption key

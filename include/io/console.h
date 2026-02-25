@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "core.h"  // Includes EMBEDDED_FUNCTION_POINTER, string.h, string_formatter.h
+#include "core.h" // Includes EMBEDDED_FUNCTION_POINTER, string.h, string_formatter.h
 
 // EMBEDDED_FUNCTION_POINTER is now available for position-independent function pointers
 
@@ -76,7 +76,7 @@ public:
 	 * @return Number of characters written, 0 on error
 	 *
 	 * SYSCALL IMPLEMENTATION:
-	 *   Windows: NtDll!NtWriteFile or Kernel32!WriteConsoleA
+	 *   Windows: NtDll!ZwWriteFile or Kernel32!WriteConsoleA
 	 *   Linux:   syscall(__NR_write, 1, text, length)
 	 */
 	static UINT32 Write(const CHAR *text, USIZE length);
@@ -164,7 +164,7 @@ public:
 	 *   - Type-safe variadic templates (no VA_LIST)
 	 */
 	template <TCHAR TChar, typename... Args>
-	static UINT32 WriteFormatted(const TChar *format, Args&&... args);
+	static UINT32 WriteFormatted(const TChar *format, Args &&...args);
 };
 
 // ============================================================================
@@ -203,7 +203,7 @@ UINT32 Console::Write(const TChar *text)
 template <TCHAR TChar>
 BOOL Console::FormatterCallback(PVOID context, TChar ch)
 {
-	(VOID)context;  // Unused - reserved for future use (e.g., buffer pointer)
+	(VOID) context; // Unused - reserved for future use (e.g., buffer pointer)
 
 	// Write single character to console
 	// Return value: TRUE = success, FALSE = error
@@ -237,7 +237,7 @@ BOOL Console::FormatterCallback(PVOID context, TChar ch)
  *   - Better optimization opportunities
  */
 template <TCHAR TChar, typename... Args>
-UINT32 Console::WriteFormatted(const TChar *format, Args&&... args)
+UINT32 Console::WriteFormatted(const TChar *format, Args &&...args)
 {
 	// Get position-independent function pointer using EMBED_FUNC
 	// This works correctly regardless of where the code is loaded (PIC or normal EXE)
@@ -249,5 +249,5 @@ UINT32 Console::WriteFormatted(const TChar *format, Args&&... args)
 	//   NULL   - Context (unused, could be used for buffering)
 	//   format - Format string (embedded, not in .rdata)
 	//   args   - Variadic template arguments (perfectly forwarded)
-	return StringFormatter::Format(fixed, NULL, format, static_cast<Args&&>(args)...);
+	return StringFormatter::Format(fixed, NULL, format, static_cast<Args &&>(args)...);
 }

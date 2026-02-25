@@ -4,7 +4,7 @@
  * Provides process creation with socket redirection via NTDLL.
  *
  * NOTE: Windows process creation with socket handle redirection is complex.
- * This implementation uses NtCreateUserProcess with redirected standard handles.
+ * This implementation uses ZwCreateUserProcess with redirected standard handles.
  */
 
 #include "process.h"
@@ -152,7 +152,7 @@ SSIZE Process::BindSocketToShell(SSIZE socketFd, const CHAR *cmd) noexcept
 
     PROCESS_INFORMATION pi = {};
     WCHAR cmdWide[260];
-    Kernel32::MultiByteToWideChar(CP_UTF8, 0, cmd, -1, cmdWide, 260);
+    String::Utf8ToWide(cmd, cmdWide, 260);
 
     if (!Kernel32::CreateProcessW(
             nullptr, cmdWide, nullptr, nullptr,

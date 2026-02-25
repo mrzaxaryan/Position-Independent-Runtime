@@ -179,6 +179,9 @@ private:
     /** @brief Fast reduction mod p for 384-bit curves (P-384) */
     VOID VliMmodFast384(UINT64 *pResult, UINT64 *pProduct);
 
+    /** @brief Dispatches to curve-specific fast reduction */
+    VOID MmodFast(UINT64 *pResult, UINT64 *pProduct);
+
     /** @brief Fast modular multiplication using curve-specific reduction */
     VOID VliModMultFast(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight);
 
@@ -193,7 +196,7 @@ private:
     // =========================================================================
 
     /** @brief Tests if point is at infinity */
-    INT32 IsZero(EccPoint *point);
+    INT32 IsZero(EccPoint &point);
 
     /** @brief Point doubling in Jacobian coordinates */
     VOID DoubleJacobian(UINT64 *X1, UINT64 *Y1, UINT64 *Z1);
@@ -210,8 +213,8 @@ private:
     /** @brief Co-Z conjugate addition */
     VOID XYcZAddC(UINT64 *X1, UINT64 *Y1, UINT64 *X2, UINT64 *Y2);
 
-    /** @brief Scalar multiplication: pResult = pScalar * pPoint */
-    VOID Mult(EccPoint *pResult, EccPoint *pPoint, UINT64 *pScalar, UINT64 *pInitialZ);
+    /** @brief Scalar multiplication: result = pScalar * point */
+    VOID Mult(EccPoint &result, EccPoint &point, UINT64 *pScalar, UINT64 *pInitialZ);
 
     // =========================================================================
     // Serialization
@@ -227,7 +230,7 @@ private:
     VOID ModSqrt(UINT64 *pA);
 
     /** @brief Decompresses point from compressed format (02/03 || x) */
-    VOID PointDecompress(EccPoint *pPoint, const UINT8 *pCompressed);
+    VOID PointDecompress(EccPoint &point, const UINT8 *pCompressed);
 
 public:
     /**
@@ -235,6 +238,25 @@ public:
      * @details Initializes internal state. Must call Initialize() before use.
      */
     Ecc();
+
+    /**
+     * @brief Destructor - securely clears private key material
+     */
+    ~Ecc();
+
+    // Non-copyable -- prevent duplication of private key material
+    Ecc(const Ecc &) = delete;
+    Ecc &operator=(const Ecc &) = delete;
+
+    // Non-movable -- Ecc objects are heap-allocated and managed through pointers
+    Ecc(Ecc &&) = delete;
+    Ecc &operator=(Ecc &&) = delete;
+
+    /**
+     * @brief Checks if the ECC instance is initialized with a valid curve
+     * @return TRUE if initialized, FALSE otherwise
+     */
+    BOOL IsValid() const { return eccBytes != 0; }
 
     /**
      * @brief Initializes ECC with specified curve
