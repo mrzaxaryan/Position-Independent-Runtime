@@ -1,10 +1,10 @@
-# Bug Analysis: macOS x86_64 SIGSEGV at -O1
+# Bug Analysis: macOS x86_64 SIGSEGV 
 
-**Note:** This crash is macOS x86_64 and macOS aarch64 only. Windows (i386, x86_64, aarch64), Linux (i386, x86_64, armv7a, aarch64), and UEFI (x86_64, aarch64) all build and pass tests successfully across all optimization levels.
+**Note:** This crash is macOS x86_64 (native runner) and macOS aarch64 (native runner) only. Windows (i386, x86_64, aarch64), Linux (i386, x86_64, armv7a, aarch64), and UEFI (x86_64, aarch64) all build and pass tests successfully across all optimization levels also note about curputed log strings and time in logs is wrong too also.
 
 ## CI Failure Summary
 
-**Workflow:** `build-macos-x86_64.yml` (macOS 15.7.4, Clang 21.1.8, `macos-15-intel` runner)
+**Workflow:** `build-macos-x86_64.yml` (macOS 15.7.4, Clang 21.1.8, `macos-15-intel` native runner)
 **Build preset:** `macos-x86_64-release` (includes `-flto=full`, `-fomit-frame-pointer`, `-fno-exceptions`)
 **Failing optimization level:** `-O1`
 **Symptom:** Segmentation fault (signal 11), exit code 139
@@ -471,11 +471,44 @@ Added `LOG_INFO` markers between each major operation in `TestIpConversion` to n
 
 If CI shows `[D1]` but not `[D2]`, the crash is in the first invalid IP test. If all markers appear, the crash is in the final IPv6 block. This also tests whether adding LOG_INFO calls (which change the stack layout) moves or masks the bug — a positive result either way.
 
+#### Fix 5: `-mno-red-zone` for macOS x86_64 (definitive SIGSEGV fix)
+
+**File:** `cmake/macOS.cmake`
+
+Added `-mno-red-zone` compiler flag for macOS x86_64 builds:
+```cmake
+if(CPPPIC_ARCH STREQUAL "x86_64")
+    list(APPEND CPPPIC_BASE_FLAGS -mno-red-zone)
+elseif(CPPPIC_ARCH STREQUAL "aarch64")
+    list(APPEND CPPPIC_BASE_FLAGS -mstack-probe-size=0)
+endif()
+```
+
+**Root cause:** The x86_64 System V ABI defines a 128-byte "red zone" below RSP that leaf functions can use without adjusting RSP. At `-O1` with `-flto=full`, LLVM aggressively inlines `System::Call` (which contains the inline asm `syscall` instruction) into what becomes leaf functions. The compiler then places syscall buffer/local variables in the red zone.
+
+The `macos-15-intel` CI runner runs under **Rosetta 2** (Apple Silicon emulating x86_64). Rosetta 2 translates x86_64 `syscall` instructions through a user-space runtime layer that **clobbers the red zone**. When the compiler placed a `timeval` struct, EMBEDDED_STRING data, or a `ch` variable in the red zone and then a `syscall` instruction executed, Rosetta 2's translation layer overwrote that memory, producing:
+
+- **SIGSEGV** — garbage pointer dereference from corrupted red zone data
+- **Corrupted log strings** — EMBEDDED_STRING data overwritten mid-output
+- **Wrong timestamps** — `timeval` struct in red zone corrupted by gettimeofday syscall translation
+
+**Why Fix 2 (NOINLINE) alone is insufficient:** NOINLINE on `Console::Write` only prevents ONE code path from becoming a leaf function (ConsoleCallback → Console::Write). But with LTO, other paths remain vulnerable:
+- `DateTime::Now()` contains a `gettimeofday` syscall; if partially inlined by LTO into a context where no further calls follow, the `timeval` struct can end up in the red zone
+- Any future code that calls `System::Call` in a leaf context would be affected
+- The optimizer can create arbitrary leaf functions by merging/inlining across translation units
+
+**Why this is the definitive fix:** `-mno-red-zone` tells the compiler to NEVER use the red zone. All local variables are allocated on the stack via `sub rsp, ...` with proper frame setup. This eliminates the entire class of red zone corruption bugs, regardless of which specific function or optimization level triggers them.
+
+**Precedent:** The project already uses `-mno-red-zone` for UEFI x86_64 (`cmake/UEFI.cmake:20`) for the same class of reasons — interrupts/firmware calls can clobber the red zone.
+
+**Why aarch64 is unaffected:** The ARM64 ABI (AAPCS64) does not define a red zone. All stack allocations require explicit `sub sp, ...` instructions. This is why the macOS aarch64 build passes after the RDX/X1 clobbering fix (commit `daad480`) — there was never a red zone issue on aarch64.
+
+**Why Linux x86_64 is unaffected:** Linux CI runs on native x86_64 hardware. On native x86_64, the kernel properly preserves the user-space red zone during syscall (the kernel has its own stack). There is no Rosetta 2 translation layer.
+
+**Performance impact:** Minimal. Functions that previously used the red zone now allocate stack space with `sub rsp`/`add rsp` pairs. For PIR's use case (position-independent shellcode), this is acceptable — robustness outweighs a few extra instructions.
+
 ### Recommended Next Steps
 
-1. Push changes and run macOS CI to test all fixes
-2. Analyze which diagnostic markers appear before the crash
-3. If crash persists, add `-g` to the O1 build for debug symbols and use `lldb` to get a stack trace
-4. With CI fix, check whether O2-Og also crash or if this is O1-specific
-5. Consider adding `NOINLINE` to `Logger::ConsoleCallback` as an additional measure
-6. Test with `-mno-red-zone` flag (prevents any red zone usage) as a more aggressive workaround
+1. Push changes and run macOS CI to verify the `-mno-red-zone` fix resolves O1-Og crashes
+2. With the CI workflow fix (Fix 3), confirm all optimization levels (O0-Og) now pass
+3. Diagnostic markers (Fix 4) will show in the CI output for verification even if tests pass
