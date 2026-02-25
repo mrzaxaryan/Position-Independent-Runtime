@@ -183,13 +183,16 @@ private:
 		// Test IPv6 address parsing
 		LOG_INFO("  [D4] Testing IPv6: 2001:db8::1");
 		auto ipv6Str = "2001:db8::1"_embed;
+		LOG_INFO("  [D5] Calling FromString");
 		IPAddress ipv6Address = IPAddress::FromString((PCCHAR)ipv6Str);
+		LOG_INFO("  [D6] FromString done: valid=%d ipv6=%d", (INT32)ipv6Address.IsValid(), (INT32)ipv6Address.IsIPv6());
 		if (!ipv6Address.IsValid() || !ipv6Address.IsIPv6())
 		{
 			LOG_ERROR("IPv6 conversion failed for valid IPv6");
 			return FALSE;
 		}
 
+		LOG_INFO("  [D7] About to format with %%s arg");
 		LOG_INFO("IPv6 conversion successful: %s", (PCCHAR)ipv6Str);
 		LOG_INFO("Invalid IP rejection tests passed");
 		return TRUE;
