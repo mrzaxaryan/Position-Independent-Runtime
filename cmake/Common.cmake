@@ -117,6 +117,7 @@ set(CPPPIC_BASE_FLAGS
     -fno-rtti
     -fno-builtin
     -fno-stack-check
+    -fno-strict-aliasing
     -fno-jump-tables
     -ffunction-sections
     -fdata-sections
