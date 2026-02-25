@@ -92,10 +92,10 @@ BOOL TlsCipher::UpdateServerInfo()
 /// @param out Pointer to the buffer where the handshake hash will be stored
 /// @return void 
 
-VOID TlsCipher::GetHash(const CHAR *out)
+VOID TlsCipher::GetHash(CHAR *out)
 {
     //	CLock lock(lockdata);
-    this->handshakeHash.GetHash((PCHAR)out, CIPHER_HASH_SIZE);
+    this->handshakeHash.GetHash(out, CIPHER_HASH_SIZE);
 }
 
 /// @brief Update the handshake hash with new input data
@@ -293,7 +293,7 @@ VOID TlsCipher::ComputeVerify(TlsBuffer &out, INT32 verifySize, INT32 localOrRem
     CHAR hash[MAX_HASH_LEN];
     INT32 hashLen = CIPHER_HASH_SIZE;
     LOG_DEBUG("tls_cipher_compute_verify: Getting handshake hash, hash_len=%d", hashLen);
-    this->GetHash((PCHAR)hash);
+    this->GetHash(hash);
 
     UINT8 finished_key[MAX_HASH_LEN];
     if (localOrRemote)

@@ -122,7 +122,7 @@ public:
     // Function to update server information
     BOOL UpdateServerInfo();
     // Function to get and update the current handshake hash
-    VOID GetHash(const CHAR *out);
+    VOID GetHash(CHAR *out);
     VOID UpdateHash(const CHAR *in, UINT32 len);
     // Key computation functions
     BOOL ComputePublicKey(INT32 eccIndex, TlsBuffer &out);

@@ -107,16 +107,16 @@ static constexpr UINT64 sha512_k[80] =
      0x4cc5d4becb3e42b6ULL, 0x597f299cfc657e2aULL,
      0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL};
 
-VOID SHA256Traits::FillH0(Word* out)
+VOID SHA256Traits::FillH0(Word (&out)[8])
 {
     auto embedded = MakeEmbedArray(sha256_h0);
-    Memory::Copy(out, (PCVOID)embedded, sizeof(sha256_h0));
+    Memory::Copy(out, (PCVOID)embedded, sizeof(out));
 }
 
-VOID SHA256Traits::FillK(Word* out)
+VOID SHA256Traits::FillK(Word (&out)[ROUND_COUNT])
 {
     auto embedded = MakeEmbedArray(sha256_k);
-    Memory::Copy(out, (PCVOID)embedded, sizeof(sha256_k));
+    Memory::Copy(out, (PCVOID)embedded, sizeof(out));
 }
 
 FORCE_INLINE VOID SHA256Traits::Pack(const UINT8* str, Word &x)
@@ -132,16 +132,16 @@ FORCE_INLINE VOID SHA256Traits::Unpack(Word x, UINT8* str)
     str[0] = (UINT8)(x >> 24);
 }
 
-VOID SHA384Traits::FillH0(Word* out)
+VOID SHA384Traits::FillH0(Word (&out)[8])
 {
     auto embedded = MakeEmbedArray(sha384_h0);
-    Memory::Copy(out, (PCVOID)embedded, sizeof(sha384_h0));
+    Memory::Copy(out, (PCVOID)embedded, sizeof(out));
 }
 
-VOID SHA384Traits::FillK(Word* out)
+VOID SHA384Traits::FillK(Word (&out)[ROUND_COUNT])
 {
     auto embedded = MakeEmbedArray(sha512_k);
-    Memory::Copy(out, (PCVOID)embedded, sizeof(sha512_k));
+    Memory::Copy(out, (PCVOID)embedded, sizeof(out));
 }
 
 FORCE_INLINE VOID SHA384Traits::Pack(const UINT8* str, Word &x)
