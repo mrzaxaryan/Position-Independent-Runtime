@@ -5,11 +5,15 @@
 
 // Unified error — all network/platform layers push codes onto a call-stack array.
 // Each layer appends its code after any codes pushed by lower layers.
-// Unique enum values across all layers identify which layer set each code.
 struct Error
 {
-	enum Code : UINT32
+	// PIR runtime failure points — one unique value per failure site.
+	// OS error codes (NTSTATUS, errno, EFI_STATUS) are stored directly in
+	// ErrorCode.Code when Platform != Runtime; they are not listed here.
+	enum ErrorCodes : UINT32
 	{
+		None = 0, // no error / empty slot
+
 		// -------------------------
 		// Socket errors (1–15)
 		// -------------------------
@@ -53,61 +57,103 @@ struct Error
 		Ws_ConnectionClosed = 30, // server sent CLOSE frame
 		Ws_InvalidFrame = 31,	  // received frame with invalid RSV bits or opcode
 		Ws_FrameTooLarge = 32,	  // received frame exceeds size limit
-
-		// -------------------------
-		// Windows NTDLL operations (33–47)
-		// Pushed by the NTDLL layer automatically when a syscall fails.
-		// The Error arrives pre-packaged from NTDLL::Zw*; callers only push their own layer code on top.
-		// -------------------------
-		Ntdll_ZwCreateFile = 33,            // ZwCreateFile (socket object or file creation)
-		Ntdll_ZwCreateEvent = 34,           // ZwCreateEvent (async I/O event)
-		Ntdll_ZwDeviceIoControlFile = 35,   // ZwDeviceIoControlFile (AFD bind/connect/send/recv)
-		Ntdll_ZwWaitForSingleObject = 36,   // ZwWaitForSingleObject (async wait → timeout)
-		Ntdll_ZwClose = 37,                 // ZwClose (socket or event handle close)
-
-		// -------------------------
-		// POSIX syscalls – Linux / macOS (48–63)
-		// Pushed by the socket layer immediately before the Socket_* code
-		// to identify which syscall was invoked at the point of failure.
-		// -------------------------
-		Syscall_Socket = 48,   // socket() – socket file descriptor creation
-		Syscall_Bind = 49,     // bind()
-		Syscall_Connect = 50,  // connect()
-		Syscall_Send = 51,     // send() / sendto()
-		Syscall_Recv = 52,     // recv() / recvfrom()
-		Syscall_Close = 53,    // close()
-
-		// -------------------------
-		// UEFI EFI Boot Services / TCP protocol (64–79)
-		// Pushed by the socket layer immediately before the Socket_* code
-		// to identify which EFI service or TCP operation failed.
-		// -------------------------
-		Efi_CreateEvent = 64,  // EFI_BOOT_SERVICES::CreateEvent
-		Efi_Transmit = 65,     // EFI_TCP4/6_PROTOCOL::Transmit
-		Efi_Receive = 66,      // EFI_TCP4/6_PROTOCOL::Receive
-		Efi_Configure = 67,    // EFI_TCP4/6_PROTOCOL::Configure
-		Efi_Connect = 68,      // EFI_TCP4/6_PROTOCOL::Connect
 	};
 
-	UINT32 PlatformCode;	// raw OS error code (NTSTATUS, errno, EFI_STATUS); 0 = none
-	UINT32 RuntimeCode[16]; // Error::Code call stack, innermost first; 0 = empty slot
+	// Which OS layer an ErrorCode entry came from.
+	// When Platform != Runtime, Code holds the raw OS error value.
+	enum class PlatformKind : UINT8
+	{
+		Runtime = 0, // PIR runtime layer — Code is an ErrorCodes enumerator
+		Windows = 1, // NTSTATUS  — Code holds the raw NTSTATUS value
+		Posix   = 2, // errno     — Code holds errno as a positive UINT32
+		Uefi    = 3, // EFI_STATUS — Code holds the raw EFI_STATUS value
+	};
+
+	// A single entry pushed onto the Error call-stack.
+	// When Platform == Runtime: Code is one of the ErrorCodes enumerators above.
+	// When Platform != Runtime: Code holds the raw OS error value cast to UINT32.
+	struct ErrorCode
+	{
+		ErrorCodes   Code;
+		PlatformKind Platform;
+
+		ErrorCode(UINT32 code = 0, PlatformKind platform = PlatformKind::Runtime)
+			: Code((ErrorCodes)code), Platform(platform)
+		{
+		}
+	};
+
+	static constexpr UINT32 MaxDepth = 8;
+
+	UINT32    m_depth;				 // push count; may exceed MaxDepth on overflow
+	ErrorCode RuntimeCode[MaxDepth]; // call stack, innermost first; None = empty slot
 
 	Error() { Memory::Zero(this, sizeof(Error)); }
 
-	// Set the raw platform error code (NTSTATUS, Linux errno, EFI_STATUS, etc.).
-	// Call this before Push() so the platform code sits beneath the runtime stack.
-	VOID SetPlatformCode(UINT32 code) { PlatformCode = code; }
+	// -- Static factory --
 
-	// Push a runtime error code onto the call stack.
-	VOID Push(UINT32 code)
+	// Build an Error from one or more codes (innermost first).
+	// For OS failures: pass ErrorCode((UINT32)status, PlatformKind::Windows/Posix/Uefi) as the first arg.
+	// For guard failures: pass the ErrorCodes enumerator directly (Platform defaults to Runtime).
+	// Multiple codes: Error::FromCode(osCode, Socket_Xxx) — no Push() needed.
+	template <typename... Codes>
+	[[nodiscard]] static Error FromCode(Codes... codes)
 	{
-		for (UINT32 i = 0; i < 16; i++)
+		Error err;
+		(err.Push(codes), ...);
+		return err;
+	}
+
+	// -- Mutation --
+
+	// Push a code onto the call stack (innermost layer pushes first).
+	// Codes pushed past MaxDepth are counted but not stored; check Overflow() to detect.
+	// Returns *this to enable chaining: err.Push(A).Push(B)
+	Error& Push(ErrorCode code)
+	{
+		if (m_depth < MaxDepth)
+			RuntimeCode[m_depth] = code;
+		m_depth++;
+		return *this;
+	}
+
+	// -- Queries --
+
+	// Returns the OS kind from the innermost (bottom) code's Platform field.
+	// Meaningful only when !IsEmpty(). Returns PlatformKind::Runtime for guard failures.
+	[[nodiscard]] PlatformKind Kind()     const { return Bottom().Platform; }
+	[[nodiscard]] UINT32       Depth()    const { return m_depth; }
+	[[nodiscard]] BOOL         IsEmpty()  const { return m_depth == 0; }
+	[[nodiscard]] BOOL         Overflow() const { return m_depth > MaxDepth; }
+
+	// Returns the innermost (first pushed, lowest-layer) code, or None if empty.
+	[[nodiscard]] ErrorCode Bottom() const { return m_depth > 0 ? RuntimeCode[0] : ErrorCode(); }
+
+	// Returns the outermost (last pushed, highest-layer) code, or None if empty.
+	[[nodiscard]] ErrorCode Top() const
+	{
+		if (m_depth == 0)
+			return ErrorCode();
+		UINT32 stored = m_depth < MaxDepth ? m_depth : MaxDepth;
+		return RuntimeCode[stored - 1];
+	}
+
+	// Returns true if any stored code matches the given ErrorCodes enumerator.
+	// Only meaningful for Runtime-platform entries; OS error values are not enumerated.
+	[[nodiscard]] BOOL HasCode(ErrorCodes code) const
+	{
+		UINT32 stored = m_depth < MaxDepth ? m_depth : MaxDepth;
+		for (UINT32 i = 0; i < stored; i++)
 		{
-			if (RuntimeCode[i] == 0)
-			{
-				RuntimeCode[i] = code;
-				return;
-			}
+			if (RuntimeCode[i].Code == code)
+				return true;
 		}
+		return false;
+	}
+
+	// Returns the code at position index (0 = innermost). Returns None if out of range.
+	[[nodiscard]] ErrorCode operator[](UINT32 index) const
+	{
+		return (index < MaxDepth && index < m_depth) ? RuntimeCode[index] : ErrorCode();
 	}
 };

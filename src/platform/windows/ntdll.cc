@@ -13,10 +13,7 @@ Result<NTSTATUS, Error> NTDLL::ZwCreateEvent(PPVOID EventHandle, UINT32 DesiredA
                           : CALL_FUNCTION("ZwCreateEvent", PPVOID EventHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, EVENT_TYPE EventType, INT8 InitialState);
     if (!NT_SUCCESS(status))
     {
-        Error err;
-        err.SetPlatformCode((UINT32)status);
-        err.Push(Error::Ntdll_ZwCreateEvent);
-        return Result<NTSTATUS, Error>::Err(err);
+        return Result<NTSTATUS, Error>::Err(Error::FromCode(Error::ErrorCode((UINT32)status, Error::PlatformKind::Windows)));
     }
     return Result<NTSTATUS, Error>::Ok(status);
 }
@@ -29,10 +26,7 @@ Result<NTSTATUS, Error> NTDLL::ZwDeviceIoControlFile(PVOID FileHandle, PVOID Eve
                           : CALL_FUNCTION("ZwDeviceIoControlFile", PVOID FileHandle, PVOID Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, UINT32 IoControlCode, PVOID InputBuffer, UINT32 InputBufferLength, PVOID OutputBuffer, UINT32 OutputBufferLength);
     if (!NT_SUCCESS(status))
     {
-        Error err;
-        err.SetPlatformCode((UINT32)status);
-        err.Push(Error::Ntdll_ZwDeviceIoControlFile);
-        return Result<NTSTATUS, Error>::Err(err);
+        return Result<NTSTATUS, Error>::Err(Error::FromCode(Error::ErrorCode((UINT32)status, Error::PlatformKind::Windows)));
     }
     return Result<NTSTATUS, Error>::Ok(status);
 }
@@ -45,10 +39,7 @@ Result<NTSTATUS, Error> NTDLL::ZwWaitForSingleObject(PVOID Object, INT8 Alertabl
                           : CALL_FUNCTION("ZwWaitForSingleObject", PVOID Object, INT8 Alertable, PLARGE_INTEGER Timeout);
     if (!NT_SUCCESS(status))
     {
-        Error err;
-        err.SetPlatformCode((UINT32)status);
-        err.Push(Error::Ntdll_ZwWaitForSingleObject);
-        return Result<NTSTATUS, Error>::Err(err);
+        return Result<NTSTATUS, Error>::Err(Error::FromCode(Error::ErrorCode((UINT32)status, Error::PlatformKind::Windows)));
     }
     return Result<NTSTATUS, Error>::Ok(status);
 }
@@ -61,10 +52,7 @@ Result<NTSTATUS, Error> NTDLL::ZwClose(PVOID Handle)
                           : CALL_FUNCTION("ZwClose", PVOID Handle);
     if (!NT_SUCCESS(status))
     {
-        Error err;
-        err.SetPlatformCode((UINT32)status);
-        err.Push(Error::Ntdll_ZwClose);
-        return Result<NTSTATUS, Error>::Err(err);
+        return Result<NTSTATUS, Error>::Err(Error::FromCode(Error::ErrorCode((UINT32)status, Error::PlatformKind::Windows)));
     }
     return Result<NTSTATUS, Error>::Ok(status);
 }
@@ -77,10 +65,7 @@ Result<NTSTATUS, Error> NTDLL::ZwCreateFile(PPVOID FileHandle, UINT32 DesiredAcc
                           : CALL_FUNCTION("ZwCreateFile", PPVOID FileHandle, UINT32 DesiredAccess, PVOID ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, PLARGE_INTEGER AllocationSize, UINT32 FileAttributes, UINT32 ShareAccess, UINT32 CreateDisposition, UINT32 CreateOptions, PVOID EaBuffer, UINT32 EaLength);
     if (!NT_SUCCESS(status))
     {
-        Error err;
-        err.SetPlatformCode((UINT32)status);
-        err.Push(Error::Ntdll_ZwCreateFile);
-        return Result<NTSTATUS, Error>::Err(err);
+        return Result<NTSTATUS, Error>::Err(Error::FromCode(Error::ErrorCode((UINT32)status, Error::PlatformKind::Windows)));
     }
     return Result<NTSTATUS, Error>::Ok(status);
 }

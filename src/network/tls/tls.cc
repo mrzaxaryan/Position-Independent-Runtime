@@ -665,9 +665,7 @@ Result<void, Error> TLSClient::Open()
     if (!SendClientHello(host))
     {
         LOG_DEBUG("Failed to send Client Hello for client: %p", this);
-        Error err;
-        err.Push(Error::Tls_OpenFailed_Handshake);
-        return Result<void, Error>::Err(err);
+        return Result<void, Error>::Err(Error::FromCode(Error::Tls_OpenFailed_Handshake));
     }
     LOG_DEBUG("Client Hello sent successfully for client: %p", this);
 
@@ -676,9 +674,7 @@ Result<void, Error> TLSClient::Open()
         if (!ProcessReceive())
         {
             LOG_DEBUG("Failed to process received data for client: %p", this);
-            Error err;
-            err.Push(Error::Tls_OpenFailed_Handshake);
-            return Result<void, Error>::Err(err);
+            return Result<void, Error>::Err(Error::FromCode(Error::Tls_OpenFailed_Handshake));
         }
     }
 
@@ -736,9 +732,7 @@ Result<UINT32, Error> TLSClient::Write(PCVOID buffer, UINT32 bufferLength)
     if (stateIndex < 6)
     {
         LOG_DEBUG("send error, state index is %d", stateIndex);
-        Error err;
-        err.Push(Error::Tls_WriteFailed_NotReady);
-        return Result<UINT32, Error>::Err(err);
+        return Result<UINT32, Error>::Err(Error::FromCode(Error::Tls_WriteFailed_NotReady));
     }
 
     sendBuffer.Clear();
@@ -750,9 +744,7 @@ Result<UINT32, Error> TLSClient::Write(PCVOID buffer, UINT32 bufferLength)
         if (!SendPacket(CONTENT_APPLICATION_DATA, 0x303, sendBuffer))
         {
             LOG_DEBUG("Failed to send packet for client: %p, size: %d bytes", this, send_size);
-            Error err;
-            err.Push(Error::Tls_WriteFailed_Send);
-            return Result<UINT32, Error>::Err(err);
+            return Result<UINT32, Error>::Err(Error::FromCode(Error::Tls_WriteFailed_Send));
         }
 
         i += send_size;
@@ -784,9 +776,7 @@ Result<SSIZE, Error> TLSClient::Read(PVOID buffer, UINT32 bufferLength)
     if (stateIndex < 6)
     {
         LOG_DEBUG("recv error, state index is %d", stateIndex);
-        Error err;
-        err.Push(Error::Tls_ReadFailed_NotReady);
-        return Result<SSIZE, Error>::Err(err);
+        return Result<SSIZE, Error>::Err(Error::FromCode(Error::Tls_ReadFailed_NotReady));
     }
     LOG_DEBUG("Reading data for client: %p, requested size: %d", this, bufferLength);
     while (channelBuffer.GetSize() <= channelBytesRead)
@@ -794,9 +784,7 @@ Result<SSIZE, Error> TLSClient::Read(PVOID buffer, UINT32 bufferLength)
         if (!ProcessReceive())
         {
             LOG_DEBUG("recv error, maybe close socket");
-            Error err;
-            err.Push(Error::Tls_ReadFailed_Receive);
-            return Result<SSIZE, Error>::Err(err);
+            return Result<SSIZE, Error>::Err(Error::FromCode(Error::Tls_ReadFailed_Receive));
         }
     }
 
