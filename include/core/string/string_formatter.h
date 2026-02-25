@@ -686,7 +686,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
                 // Checking the string is not NULL and calculating its length
                 if (str)
                 {
-                    CHAR *temp = str;
+                    TChar *temp = (TChar *)str;
                     while (*temp)
                     {
                         len++;
