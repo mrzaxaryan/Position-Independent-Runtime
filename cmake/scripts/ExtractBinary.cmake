@@ -56,7 +56,8 @@ endif()
 # Generate disassembly
 # =============================================================================
 if(_is_macho)
-    set(_objdump_section "__TEXT,__text")
+    # llvm-objdump -j expects just the section name for Mach-O, not segment,section
+    set(_objdump_section "__text")
 else()
     set(_objdump_section ".text")
 endif()
