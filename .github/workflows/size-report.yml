@@ -204,37 +204,23 @@ jobs:
       matrix:
         include:
           - arch: x86_64
-            runner: macos-13
-            llvm_tarball: "LLVM-21.1.0-macOS-X64.tar.xz"
+            runner: macos-15-intel
           - arch: aarch64
             runner: macos-14
-            llvm_tarball: "LLVM-21.1.0-macOS-ARM64.tar.xz"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v4
-        with:
-          path: /opt/llvm
-          key: llvm-${{ env.LLVM_VERSION }}-macos-${{ matrix.arch }}
-
-      - name: Install LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
+      - name: Install LLVM and build tools
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
         run: |
-          set -e
-          URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/${{ matrix.llvm_tarball }}"
-          wget -q "$URL"
-          sudo mkdir -p /opt/llvm
-          sudo tar xf "${{ matrix.llvm_tarball }}" -C /opt/llvm --strip-components=1
-          rm "${{ matrix.llvm_tarball }}"
-
-      - name: Install build tools
-        run: brew install ninja cmake
-
-      - name: Add LLVM to PATH
-        run: echo "/opt/llvm/bin" >> $GITHUB_PATH
+          for i in 1 2 3; do
+            brew install llvm ninja cmake && break
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
 
       - name: Build with -Oz
         run: |
@@ -319,6 +305,7 @@ jobs:
             build/**/output.bin
 
   update-readme:
+    if: always()
     needs: [build-windows, build-windows-aarch64, build-linux, build-macos, build-uefi]
     runs-on: ubuntu-22.04
     permissions:
