@@ -50,6 +50,9 @@ constexpr USIZE SYS_SENDTO     = SYSCALL_CLASS_UNIX | 133;
 constexpr USIZE SYS_RECVFROM   = SYSCALL_CLASS_UNIX | 29;
 constexpr USIZE SYS_SHUTDOWN   = SYSCALL_CLASS_UNIX | 134;
 constexpr USIZE SYS_SETSOCKOPT = SYSCALL_CLASS_UNIX | 105;
+constexpr USIZE SYS_GETSOCKOPT = SYSCALL_CLASS_UNIX | 118;
+constexpr USIZE SYS_FCNTL      = SYSCALL_CLASS_UNIX | 92;
+constexpr USIZE SYS_POLL       = SYSCALL_CLASS_UNIX | 230;
 
 // Time operations
 constexpr USIZE SYS_GETTIMEOFDAY   = SYSCALL_CLASS_UNIX | 116;
@@ -118,10 +121,23 @@ constexpr INT32 MAP_ANONYMOUS = 0x1000;
 
 // Socket options (BSD values -- differ from Linux!)
 constexpr INT32 SOL_SOCKET   = 0xFFFF;
+constexpr INT32 SO_ERROR     = 0x1007;
 constexpr INT32 SO_RCVTIMEO  = 0x1006;
 constexpr INT32 SO_SNDTIMEO  = 0x1005;
 constexpr INT32 IPPROTO_TCP  = 6;
 constexpr INT32 TCP_NODELAY  = 1;
+
+// fcntl commands
+constexpr INT32 F_GETFL = 3;
+constexpr INT32 F_SETFL = 4;
+
+// errno values
+constexpr INT32 EINPROGRESS = 36;
+
+// poll event flags
+constexpr INT16 POLLOUT = 0x0004;
+constexpr INT16 POLLERR = 0x0008;
+constexpr INT16 POLLHUP = 0x0010;
 
 // Invalid file descriptor
 constexpr SSIZE INVALID_FD = -1;
@@ -150,4 +166,12 @@ struct timeval
 {
 	SSIZE tv_sec;
 	SSIZE tv_usec;
+};
+
+// pollfd structure (for poll)
+struct pollfd
+{
+	INT32 fd;
+	INT16 events;
+	INT16 revents;
 };

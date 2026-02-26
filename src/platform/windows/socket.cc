@@ -248,11 +248,22 @@ Result<void, Error> Socket::Open()
 
 	if (Status == (NTSTATUS)STATUS_PENDING)
 	{
-		auto waitResult = AfdWait(SockEvent, IOSB, Status, nullptr);
+		// 5-second connect timeout (100-ns units, negative = relative)
+		LARGE_INTEGER ConnectTimeout;
+		ConnectTimeout.QuadPart = -5LL * 1000 * 10000;
+
+		auto waitResult = AfdWait(SockEvent, IOSB, Status, &ConnectTimeout);
 		if (!waitResult)
 		{
 			(void)NTDLL::ZwClose(SockEvent);
 			return Result<void, Error>::Err(waitResult, Error::Socket_OpenFailed_Connect);
+		}
+		if (waitResult.Value() == (NTSTATUS)STATUS_TIMEOUT)
+		{
+			(void)NTDLL::ZwClose(SockEvent);
+			return Result<void, Error>::Err(
+				Error::Windows((UINT32)STATUS_TIMEOUT),
+				Error::Socket_OpenFailed_Connect);
 		}
 	}
 

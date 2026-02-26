@@ -438,7 +438,7 @@ Result<void, Error> Socket::Open()
 		Status = sockCtx->Tcp6->Connect(sockCtx->Tcp6, &ConnectToken);
 		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			Status = WaitForCompletion(bs, sockCtx->Tcp6, ConnectEvent, &ConnectToken.CompletionToken.Status, 30000);
+			Status = WaitForCompletion(bs, sockCtx->Tcp6, ConnectEvent, &ConnectToken.CompletionToken.Status, 5000);
 			success = !EFI_ERROR_CHECK(Status) && !EFI_ERROR_CHECK(ConnectToken.CompletionToken.Status);
 		}
 		else
@@ -496,7 +496,7 @@ Result<void, Error> Socket::Open()
 		Status = sockCtx->Tcp4->Connect(sockCtx->Tcp4, &ConnectToken);
 		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			Status = WaitForCompletion(bs, sockCtx->Tcp4, ConnectEvent, &ConnectToken.CompletionToken.Status, 30000);
+			Status = WaitForCompletion(bs, sockCtx->Tcp4, ConnectEvent, &ConnectToken.CompletionToken.Status, 5000);
 			success = !EFI_ERROR_CHECK(Status) && !EFI_ERROR_CHECK(ConnectToken.CompletionToken.Status);
 		}
 		else

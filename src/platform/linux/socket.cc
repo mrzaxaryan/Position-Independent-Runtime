@@ -3,6 +3,7 @@
 #include "system.h"
 #include "memory.h"
 #include "ip_address.h"
+#include "logger.h"
 
 // Socket syscall helpers - i386 uses multiplexed socketcall(), others use direct syscalls
 static SSIZE linux_socket(INT32 domain, INT32 type, INT32 protocol)
@@ -55,6 +56,30 @@ static SSIZE linux_recv(SSIZE sockfd, VOID *buf, USIZE len, INT32 flags)
 #endif
 }
 
+static SSIZE linux_getsockopt(SSIZE sockfd, INT32 level, INT32 optname, PVOID optval, UINT32 *optlen)
+{
+#if defined(ARCHITECTURE_I386)
+	USIZE args[5] = {(USIZE)sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)optlen};
+	return System::Call(SYS_SOCKETCALL, SOCKOP_GETSOCKOPT, (USIZE)args);
+#else
+	return System::Call(SYS_GETSOCKOPT, sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)optlen);
+#endif
+}
+
+static SSIZE linux_fcntl(SSIZE fd, INT32 cmd, SSIZE arg = 0)
+{
+#if defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A)
+	return System::Call(SYS_FCNTL64, fd, (USIZE)cmd, (USIZE)arg);
+#else
+	return System::Call(SYS_FCNTL, fd, (USIZE)cmd, (USIZE)arg);
+#endif
+}
+
+static SSIZE linux_ppoll(struct pollfd *fds, USIZE nfds, const struct timespec *timeout)
+{
+	return System::Call(SYS_PPOLL, (USIZE)fds, nfds, (USIZE)timeout, 0, 0);
+}
+
 Socket::Socket(const IPAddress &ipAddress, UINT16 port)
 	: ip(ipAddress), port(port), m_socket(nullptr)
 {
@@ -104,14 +129,59 @@ Result<void, Error> Socket::Open()
 	if (addrLen == 0)
 		return Result<void, Error>::Err(Error::Socket_OpenFailed_Connect);
 
+	// Set socket to non-blocking for connect with timeout
+	SSIZE flags = linux_fcntl(sockfd, F_GETFL);
+	if (flags < 0)
+		return Result<void, Error>::Err(Error::Posix((UINT32)(-flags)), Error::Socket_OpenFailed_Connect);
+
+	SSIZE setResult = linux_fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+	if (setResult < 0)
+		return Result<void, Error>::Err(Error::Posix((UINT32)(-setResult)), Error::Socket_OpenFailed_Connect);
+
 	SSIZE result = linux_connect(sockfd, (SockAddr *)&addrBuffer, addrLen);
-	if (result != 0)
+	if (result != 0 && (-result) != EINPROGRESS)
 	{
+		// Restore blocking mode before returning error
+		(void)linux_fcntl(sockfd, F_SETFL, flags);
 		return Result<void, Error>::Err(
 			Error::Posix((UINT32)(-result)),
 			Error::Socket_OpenFailed_Connect);
 	}
 
+	if (result != 0)
+	{
+		// Connect in progress — wait with 5-second timeout
+		struct pollfd pfd;
+		pfd.fd = (INT32)sockfd;
+		pfd.events = POLLOUT;
+		pfd.revents = 0;
+
+		struct timespec timeout;
+		timeout.tv_sec = 5;
+		timeout.tv_nsec = 0;
+
+		SSIZE pollResult = linux_ppoll(&pfd, 1, &timeout);
+		if (pollResult <= 0)
+		{
+			(void)linux_fcntl(sockfd, F_SETFL, flags);
+			return Result<void, Error>::Err(Error::Socket_OpenFailed_Connect);
+		}
+
+		// Check for connection error
+		INT32 sockError = 0;
+		UINT32 optLen = sizeof(sockError);
+		(void)linux_getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &sockError, &optLen);
+		if (sockError != 0)
+		{
+			(void)linux_fcntl(sockfd, F_SETFL, flags);
+			return Result<void, Error>::Err(
+				Error::Posix((UINT32)sockError),
+				Error::Socket_OpenFailed_Connect);
+		}
+	}
+
+	// Restore blocking mode
+	(void)linux_fcntl(sockfd, F_SETFL, flags);
 	return Result<void, Error>::Ok();
 }
 

@@ -57,14 +57,55 @@ Result<void, Error> Socket::Open()
 	if (addrLen == 0)
 		return Result<void, Error>::Err(Error::Socket_OpenFailed_Connect);
 
+	// Set socket to non-blocking for connect with timeout
+	SSIZE flags = System::Call(SYS_FCNTL, sockfd, (USIZE)F_GETFL);
+	if (flags < 0)
+		return Result<void, Error>::Err(Error::Posix((UINT32)(-flags)), Error::Socket_OpenFailed_Connect);
+
+	SSIZE setResult = System::Call(SYS_FCNTL, sockfd, (USIZE)F_SETFL, (USIZE)(flags | O_NONBLOCK));
+	if (setResult < 0)
+		return Result<void, Error>::Err(Error::Posix((UINT32)(-setResult)), Error::Socket_OpenFailed_Connect);
+
 	SSIZE result = System::Call(SYS_CONNECT, sockfd, (USIZE)&addrBuffer, addrLen);
-	if (result != 0)
+	if (result != 0 && (-(INT32)result) != EINPROGRESS)
 	{
+		(void)System::Call(SYS_FCNTL, sockfd, (USIZE)F_SETFL, (USIZE)flags);
 		return Result<void, Error>::Err(
 			Error::Posix((UINT32)(-result)),
 			Error::Socket_OpenFailed_Connect);
 	}
 
+	if (result != 0)
+	{
+		// Connect in progress — wait with 5-second timeout
+		struct pollfd pfd;
+		pfd.fd = (INT32)sockfd;
+		pfd.events = POLLOUT;
+		pfd.revents = 0;
+
+		// poll timeout is in milliseconds
+		SSIZE pollResult = System::Call(SYS_POLL, (USIZE)&pfd, 1, 5000);
+		if (pollResult <= 0)
+		{
+			(void)System::Call(SYS_FCNTL, sockfd, (USIZE)F_SETFL, (USIZE)flags);
+			return Result<void, Error>::Err(Error::Socket_OpenFailed_Connect);
+		}
+
+		// Check for connection error
+		INT32 sockError = 0;
+		UINT32 optLen = sizeof(sockError);
+		(void)System::Call(SYS_GETSOCKOPT, sockfd, (USIZE)SOL_SOCKET, (USIZE)SO_ERROR, (USIZE)&sockError, (USIZE)&optLen);
+		if (sockError != 0)
+		{
+			(void)System::Call(SYS_FCNTL, sockfd, (USIZE)F_SETFL, (USIZE)flags);
+			return Result<void, Error>::Err(
+				Error::Posix((UINT32)sockError),
+				Error::Socket_OpenFailed_Connect);
+		}
+	}
+
+	// Restore blocking mode
+	(void)System::Call(SYS_FCNTL, sockfd, (USIZE)F_SETFL, (USIZE)flags);
 	return Result<void, Error>::Ok();
 }
 

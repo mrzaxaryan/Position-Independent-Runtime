@@ -38,6 +38,9 @@ constexpr USIZE SYS_RECVFROM = 45;
 constexpr USIZE SYS_SHUTDOWN = 48;
 constexpr USIZE SYS_BIND = 49;
 constexpr USIZE SYS_SETSOCKOPT = 54;
+constexpr USIZE SYS_GETSOCKOPT = 55;
+constexpr USIZE SYS_PPOLL = 271;
+constexpr USIZE SYS_FCNTL = 72;
 
 // Time operations
 constexpr USIZE SYS_CLOCK_GETTIME = 228;
@@ -90,6 +93,11 @@ constexpr INT32 SOCKOP_SENDTO = 11;
 constexpr INT32 SOCKOP_RECVFROM = 12;
 constexpr INT32 SOCKOP_SHUTDOWN = 13;
 constexpr INT32 SOCKOP_SETSOCKOPT = 14;
+constexpr INT32 SOCKOP_GETSOCKOPT = 15;
+
+// Misc
+constexpr USIZE SYS_PPOLL = 309;
+constexpr USIZE SYS_FCNTL64 = 221;
 
 // Time operations
 constexpr USIZE SYS_CLOCK_GETTIME = 265;
@@ -141,6 +149,9 @@ constexpr USIZE SYS_SENDTO = 206;
 constexpr USIZE SYS_RECVFROM = 207;
 constexpr USIZE SYS_SHUTDOWN = 210;
 constexpr USIZE SYS_SETSOCKOPT = 208;
+constexpr USIZE SYS_GETSOCKOPT = 209;
+constexpr USIZE SYS_PPOLL = 73;
+constexpr USIZE SYS_FCNTL = 25;
 
 // Time operations
 constexpr USIZE SYS_CLOCK_GETTIME = 113;
@@ -190,6 +201,9 @@ constexpr USIZE SYS_SENDTO = 290;
 constexpr USIZE SYS_RECVFROM = 292;
 constexpr USIZE SYS_SHUTDOWN = 293;
 constexpr USIZE SYS_SETSOCKOPT = 294;
+constexpr USIZE SYS_GETSOCKOPT = 295;
+constexpr USIZE SYS_PPOLL = 336;
+constexpr USIZE SYS_FCNTL64 = 221;
 
 // Legacy socketcall support (for compatibility)
 constexpr USIZE SYS_SOCKETCALL = 102;
@@ -281,12 +295,25 @@ constexpr INT32 MAP_ANONYMOUS = 0x20;
 constexpr INT32 CLOCK_REALTIME = 0;
 constexpr INT32 CLOCK_MONOTONIC = 1;
 
-// Socket options (only those not defined elsewhere)
+// Socket options
 constexpr INT32 SOL_SOCKET = 1;
+constexpr INT32 SO_ERROR = 4;
 constexpr INT32 SO_RCVTIMEO = 20;
 constexpr INT32 SO_SNDTIMEO = 21;
 constexpr INT32 IPPROTO_TCP = 6;
 constexpr INT32 TCP_NODELAY = 1;
+
+// fcntl commands
+constexpr INT32 F_GETFL = 3;
+constexpr INT32 F_SETFL = 4;
+
+// errno values
+constexpr INT32 EINPROGRESS = 115;
+
+// poll event flags
+constexpr INT16 POLLOUT = 0x0004;
+constexpr INT16 POLLERR = 0x0008;
+constexpr INT16 POLLHUP = 0x0010;
 
 // Invalid file descriptor
 constexpr SSIZE INVALID_FD = -1;
@@ -317,4 +344,12 @@ struct timeval
 {
     SSIZE tv_sec;
     SSIZE tv_usec;
+};
+
+// pollfd structure (for poll/ppoll)
+struct pollfd
+{
+    INT32 fd;
+    INT16 events;
+    INT16 revents;
 };
