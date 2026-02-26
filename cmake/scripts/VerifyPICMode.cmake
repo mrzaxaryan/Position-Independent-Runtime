@@ -83,8 +83,9 @@ endif()
 # At -O1+ the compiler may emit __TEXT,__const (constant pools),
 # __TEXT,__literal* (float/double constants), or __TEXT,__cstring.
 # These are not extracted into output.bin and break PIC loading.
-# The -rename_section linker flags in macOS.cmake should prevent these,
-# but check as a safety net.
+# The -rename_section linker flags in macOS.cmake merge these into __text,
+# so this check should never fire. It serves as a safety net in case the
+# rename flags are accidentally removed or a new section type appears.
 if(_content MATCHES "__TEXT[ \t]+__const")
     list(APPEND _found "__TEXT,__const")
 endif()
