@@ -108,25 +108,25 @@ private:
     };
 
     // Shared comparison helper to reduce code duplication
+    // Uses if-else chain instead of switch to prevent jump table generation
+    // at -Os/-Oz with LTO (jump tables create constant pool entries that can
+    // break position independence in PIC shellcode)
     NOINLINE DISABLE_OPTIMIZATION BOOL Compare(const DOUBLE &other, CmpOp op) const noexcept
     {
         UINT64 ull_a = bits;
         UINT64 ull_b = other.bits;
         double a = __builtin_bit_cast(double, ull_a);
         double b = __builtin_bit_cast(double, ull_b);
-        switch (op)
-        {
-        case CMP_EQ:
+        if (op == CMP_EQ)
             return a == b;
-        case CMP_LT:
+        if (op == CMP_LT)
             return a < b;
-        case CMP_LE:
+        if (op == CMP_LE)
             return a <= b;
-        case CMP_GT:
+        if (op == CMP_GT)
             return a > b;
-        case CMP_GE:
+        if (op == CMP_GE)
             return a >= b;
-        }
         return false;
     }
 
@@ -140,6 +140,9 @@ private:
     };
 
     // Shared arithmetic helper to reduce code duplication
+    // Uses if-else chain instead of switch to prevent jump table generation
+    // at -Os/-Oz with LTO (jump tables create constant pool entries that can
+    // break position independence in PIC shellcode)
     NOINLINE DISABLE_OPTIMIZATION DOUBLE Arithmetic(const DOUBLE &other, ArithOp op) const noexcept
     {
         UINT64 ull_a = bits;
@@ -147,21 +150,14 @@ private:
         double a = __builtin_bit_cast(double, ull_a);
         double b = __builtin_bit_cast(double, ull_b);
         double result;
-        switch (op)
-        {
-        case OP_ADD:
+        if (op == OP_ADD)
             result = a + b;
-            break;
-        case OP_SUB:
+        else if (op == OP_SUB)
             result = a - b;
-            break;
-        case OP_MUL:
+        else if (op == OP_MUL)
             result = a * b;
-            break;
-        case OP_DIV:
+        else
             result = a / b;
-            break;
-        }
         UINT64 result_ull = __builtin_bit_cast(UINT64, result);
         return DOUBLE(result_ull);
     }

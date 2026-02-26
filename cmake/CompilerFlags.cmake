@@ -52,7 +52,10 @@ endif()
 # =============================================================================
 # Base Linker Flags
 # =============================================================================
-set(PIR_BASE_LINK_FLAGS -nostdlib)
+# -fno-jump-tables is repeated here (also in compile flags) to ensure the LTO
+# code generator respects it. With -flto=full the actual machine code generation
+# happens at link time; passing the flag here guarantees it reaches the backend.
+set(PIR_BASE_LINK_FLAGS -nostdlib -fno-jump-tables)
 
 # =============================================================================
 # Helper: Append Linker Flags

@@ -70,10 +70,14 @@ elseif(PIR_ARCH STREQUAL "aarch64")
 endif()
 
 # Linker configuration (ld64.lld / Mach-O)
+# Note: -platform_version is derived from the target triple (arm64-apple-macos11
+# or x86_64-apple-macos11). Do NOT pass it explicitly — the triple already
+# provides the min deployment target, and passing both causes a linker warning
+# ("passed two min versions") and potential load command conflicts.
 pir_add_link_flags(
     -e,_entry_point
     -static
-    -platform_version,macos,11.0.0,11.0.0
+    -no_compact_unwind
     -order_file,${CMAKE_SOURCE_DIR}/cmake/data/function.order.macos
     -map,${PIR_MAP_FILE}
 )
