@@ -1,16 +1,17 @@
 /**
  * @file result.h
- * @brief Lightweight Result Type for Error Handling
+ * @brief Zero-Cost Result Type for Error Handling
  *
  * @details Tagged union `Result<T, E>` — either a success value (T) or error (E).
  * When T is void, a trivial sentinel replaces the value member so a single
  * template handles both cases without a separate specialization.
  *
- * When E declares `static constexpr UINT32 MaxChainDepth`, Result stores an
- * internal error chain (array of E + depth counter) and exposes an Errors()
- * method returning an ErrorChainView for inspection and %e formatting, plus
- * a propagation factory `Err(failedResult, codes...)`. Non-chainable E types
- * use plain single-error storage with no overhead.
+ * E is stored directly — no chain, no overhead beyond sizeof(E).
+ * Compile-time safety via `[[nodiscard]]` and `operator BOOL` ensures callers
+ * check results without any runtime cost.
+ *
+ * Backward-compatible multi-arg and propagation Err() overloads are provided
+ * for source compatibility; they store only the outermost error code.
  *
  * @note Uses Clang builtin __is_trivially_destructible for zero-overhead destruction.
  *
@@ -45,72 +46,22 @@ struct VOID_TO_TAG<void>
 	using Type = VOID_TAG;
 };
 
-/// Error chain storage — array of E + depth counter (used when CHAINABLE)
-template <typename U, UINT32 N>
-struct ErrorChain
-{
-	U codes[N];
-	UINT32 depth;
-};
-
-/// Type selector (no STL needed)
-template <bool C, typename A, typename B>
-struct SelectType
-{
-	using Type = A;
-};
-
-template <typename A, typename B>
-struct SelectType<false, A, B>
-{
-	using Type = B;
-};
-
 template <typename T, typename E>
 class [[nodiscard]] Result
 {
 	static constexpr bool IS_VOID = __is_same_as(T, void);
 	using STORED_TYPE = typename VOID_TO_TAG<T>::Type;
 
-	// Detect if E supports error chaining (e.g., Error declares MaxChainDepth)
-	template <typename U>
-	static consteval UINT32 GetChainDepth()
-	{
-		if constexpr (requires { U::MaxChainDepth; })
-			return U::MaxChainDepth;
-		else
-			return 0;
-	}
-
-	static constexpr UINT32 CHAIN_DEPTH = GetChainDepth<E>();
-	static constexpr bool CHAINABLE = CHAIN_DEPTH > 0;
-
-	using ERROR_TYPE = typename SelectType<CHAINABLE, ErrorChain<E, CHAINABLE ? CHAIN_DEPTH : 1>, E>::Type;
-
-	// Cross-Result access for propagation Err overload
-	template <typename, typename>
-	friend class Result;
-
 	union
 	{
 		STORED_TYPE m_value;
-		ERROR_TYPE m_error;
+		E m_error;
 	};
 	BOOL m_isOk;
 
-	// -- Internal helpers for chain storage --
-
-	FORCE_INLINE void PushCode(E code) noexcept
-		requires(CHAINABLE)
+	void DestroyActive() noexcept
 	{
-		if (m_error.depth < CHAIN_DEPTH)
-			m_error.codes[m_error.depth] = code;
-		m_error.depth++;
-	}
-
-	FORCE_INLINE void DestroyActive() noexcept
-	{
-		if constexpr (!__is_trivially_destructible(STORED_TYPE) || !__is_trivially_destructible(ERROR_TYPE))
+		if constexpr (!__is_trivially_destructible(STORED_TYPE) || !__is_trivially_destructible(E))
 		{
 			if (m_isOk)
 			{
@@ -119,8 +70,8 @@ class [[nodiscard]] Result
 			}
 			else
 			{
-				if constexpr (!__is_trivially_destructible(ERROR_TYPE))
-					m_error.~ERROR_TYPE();
+				if constexpr (!__is_trivially_destructible(E))
+					m_error.~E();
 			}
 		}
 	}
@@ -154,9 +105,8 @@ public:
 	// Err factories
 	// =====================================================================
 
-	/// Single error — non-chainable E: stores E directly
+	/// Single error — stores E directly (zero-cost)
 	[[nodiscard]] static FORCE_INLINE Result Err(E error) noexcept
-		requires(!CHAINABLE)
 	{
 		Result r;
 		r.m_isOk = false;
@@ -164,70 +114,38 @@ public:
 		return r;
 	}
 
-	/// Single error — chainable E: stores one code at depth=1
-	[[nodiscard]] static FORCE_INLINE Result Err(E error) noexcept
-		requires(CHAINABLE)
+	/// Backward-compatible 2-arg Err — stores only the last (outermost) code.
+	/// Keeps source compatibility with Err(osError, runtimeCode) pattern.
+	template <typename First>
+		requires(requires(First f) { E(f); })
+	[[nodiscard]] static FORCE_INLINE Result Err(First, E last) noexcept
 	{
-		Result r;
-		r.m_isOk = false;
-		r.m_error.depth = 1;
-		r.m_error.codes[0] = error;
-		return r;
+		return Err(static_cast<E &&>(last));
 	}
 
-	/// Variadic — chainable only, 2+ args, each convertible to E.
-	/// Pushes codes in order: first arg = innermost (index 0).
-	template <typename First, typename... Rest>
-		requires(CHAINABLE && sizeof...(Rest) >= 1 && requires(First f) { E(f); })
-	[[nodiscard]] static FORCE_INLINE Result Err(First first, Rest... rest) noexcept
+	/// Backward-compatible propagation Err — stores only the appended code.
+	/// Keeps source compatibility with Err(failedResult, runtimeCode) pattern.
+	template <typename OtherT>
+	[[nodiscard]] static FORCE_INLINE Result Err(const Result<OtherT, E> &, E code) noexcept
 	{
-		Result r;
-		r.m_isOk = false;
-		r.m_error.depth = 0;
-		r.PushCode(E(first));
-		(r.PushCode(E(rest)), ...);
-		return r;
-	}
-
-	/// Propagation — copies the error chain from a failed Result and appends
-	/// additional codes. Replaces the old `err = r.Error(); err.Push(X); Err(err)` pattern.
-	template <typename OtherT, typename... Codes>
-		requires(CHAINABLE)
-	[[nodiscard]] static FORCE_INLINE Result Err(const Result<OtherT, E> &source, Codes... codes) noexcept
-	{
-		Result r;
-		r.m_isOk = false;
-		r.m_error.depth = 0;
-
-		// Copy source chain (only if source is in error state)
-		if (!source.m_isOk)
-		{
-			UINT32 srcStored = source.m_error.depth < CHAIN_DEPTH ? source.m_error.depth : CHAIN_DEPTH;
-			for (UINT32 i = 0; i < srcStored; i++)
-				r.m_error.codes[i] = source.m_error.codes[i];
-			r.m_error.depth = source.m_error.depth;
-		}
-
-		// Append additional codes
-		(r.PushCode(E(codes)), ...);
-		return r;
+		return Err(static_cast<E &&>(code));
 	}
 
 	// =====================================================================
 	// Destructor + move semantics
 	// =====================================================================
 
-	FORCE_INLINE ~Result() noexcept { DestroyActive(); }
+	~Result() noexcept { DestroyActive(); }
 
-	FORCE_INLINE Result(Result &&other) noexcept : m_isOk(other.m_isOk)
+	Result(Result &&other) noexcept : m_isOk(other.m_isOk)
 	{
 		if (m_isOk)
 			new (&m_value) STORED_TYPE(static_cast<STORED_TYPE &&>(other.m_value));
 		else
-			new (&m_error) ERROR_TYPE(static_cast<ERROR_TYPE &&>(other.m_error));
+			new (&m_error) E(static_cast<E &&>(other.m_error));
 	}
 
-	FORCE_INLINE Result &operator=(Result &&other) noexcept
+	Result &operator=(Result &&other) noexcept
 	{
 		if (this != &other)
 		{
@@ -236,7 +154,7 @@ public:
 			if (m_isOk)
 				new (&m_value) STORED_TYPE(static_cast<STORED_TYPE &&>(other.m_value));
 			else
-				new (&m_error) ERROR_TYPE(static_cast<ERROR_TYPE &&>(other.m_error));
+				new (&m_error) E(static_cast<E &&>(other.m_error));
 		}
 		return *this;
 	}
@@ -263,17 +181,8 @@ public:
 		return m_value;
 	}
 
-	/// Returns a snapshot of the error chain for formatting with %e.
-	[[nodiscard]] FORCE_INLINE auto Errors() const noexcept
-		requires(CHAINABLE)
-	{
-		ErrorChainView view;
-		view.count = m_error.depth < CHAIN_DEPTH ? m_error.depth : CHAIN_DEPTH;
-		view.overflow = m_error.depth > CHAIN_DEPTH;
-		for (UINT32 i = 0; i < view.count; i++)
-			view.codes[i] = m_error.codes[i];
-		return view;
-	}
+	/// Returns the stored error for inspection and %e formatting.
+	[[nodiscard]] FORCE_INLINE const E &Error() const noexcept { return m_error; }
 
 private:
 	Result() noexcept {}

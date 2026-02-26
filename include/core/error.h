@@ -3,7 +3,7 @@
 #include "primitives.h"
 
 // Unified error code — identifies a single failure point.
-// Result<T, Error> stores up to MaxChainDepth of these in a chain (innermost first).
+// Result<T, Error> stores a single Error directly (zero-cost, no chain overhead).
 struct Error
 {
 	// PIR runtime failure points — one unique value per failure site.
@@ -154,9 +154,6 @@ struct Error
 		Uefi    = 3, // EFI_STATUS — Code holds the raw EFI_STATUS value
 	};
 
-	// Result uses this to enable chain storage (up to MaxChainDepth codes).
-	static constexpr UINT32 MaxChainDepth = 8;
-
 	// Fields — Error IS a single error code.
 	ErrorCodes   Code;
 	PlatformKind Platform;
@@ -170,13 +167,4 @@ struct Error
 	[[nodiscard]] static Error Windows(UINT32 ntstatus) { return Error(ntstatus, PlatformKind::Windows); }
 	[[nodiscard]] static Error Posix(UINT32 errnoVal)   { return Error(errnoVal, PlatformKind::Posix); }
 	[[nodiscard]] static Error Uefi(UINT32 efiStatus)   { return Error(efiStatus, PlatformKind::Uefi); }
-};
-
-/// Lightweight read-only snapshot of an error chain for %e formatting.
-/// Produced by Result::Errors(). Stores copies of each Error in the chain.
-struct ErrorChainView
-{
-	Error codes[Error::MaxChainDepth];
-	UINT32 count;    // number of valid entries in codes[]
-	BOOL overflow;   // true if original chain had more than MaxChainDepth entries
 };

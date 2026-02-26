@@ -448,154 +448,90 @@ Range   Layer      ErrorCodes examples
 - `Posix`   (2) — Code holds `errno` as a positive `UINT32` (negated from the syscall return)
 - `Uefi`    (3) — Code holds a raw `EFI_STATUS` value; high bit set = error
 
-### Error Chain in Result
+### Zero-Cost Error Storage in Result
 
-`Result<T, Error>` stores up to **8 error codes** internally (detected via `Error::MaxChainDepth`). The chain builds a breadcrumb trail from OS failure up through the call stack:
+`Result<T, Error>` stores a **single Error** directly — no chain, no overhead beyond `sizeof(Error)` (8 bytes). The compile-time type system (`[[nodiscard]]`, `operator BOOL`) enforces that callers check results, while the runtime cost is zero.
 
-```
-codes[0]={Code=0xC0000034, Platform=Windows} → Socket_WriteFailed_Send → Tls_WriteFailed_Send → Ws_WriteFailed
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-          NTSTATUS carried directly in Error.Code; Platform == Windows
-```
-
-Non-chainable error types (e.g., `Result<T, UINT32>`) store a single error value directly — no chain overhead.
+Non-Error types (e.g., `Result<T, UINT32>`) also store a single value directly.
 
 ### Construction Patterns
 
-`Result::Err` has three overloads for chainable error types:
+`Result::Err` has three overloads:
 
 ```cpp
-// Single runtime code (guard failure, no OS call):
+// Single error (most common):
 return Result<UINT32, Error>::Err(Error::Socket_WriteFailed_HandleInvalid);
 
-// OS code + runtime code (syscall failure):
+// 2-arg compatibility (stores only the last code):
 return Result<UINT32, Error>::Err(
     Error::Posix((UINT32)(-sent)),
     Error::Socket_WriteFailed_Send);
 
-// Propagation from a failed Result (copies chain + appends code):
+// Propagation compatibility (stores only the appended code):
 return Result<UINT32, Error>::Err(writeResult, Error::Tls_WriteFailed_Send);
 ```
 
-**Windows NTDLL failure** — ntdll.cc packages the `NTSTATUS`; callers propagate with `Err(failedResult, code)`:
+The 2-arg and propagation overloads exist for source compatibility. They store only the **outermost** (last) error code. OS error details should be logged at the point of failure.
+
+**Windows NTDLL failure** — ntdll.cc packages the `NTSTATUS`:
 ```cpp
-// ntdll.cc — raw NTSTATUS stored directly in Error.Code:
 return Result<NTSTATUS, Error>::Err(
     Error::Windows((UINT32)status));
+```
 
-// caller — propagates the chain and appends its own code:
+**Callers propagate** — pass the failed Result and a new code:
+```cpp
 auto evtResult = NTDLL::ZwCreateEvent(&handle, ...);
 if (!evtResult)
     return Result<SSIZE, Error>::Err(evtResult, Error::Socket_ReadFailed_EventCreate);
 ```
 
-**Windows pending -> IOSB failure** — `STATUS_PENDING` is `NT_SUCCESS` so NTDLL returns `Ok`; callers inspect IOSB and construct manually:
-```cpp
-NTSTATUS status = ioResult.Value();
-if (status == STATUS_PENDING) { /* AfdWait fills status from IOSB.Status */ }
-if (!NT_SUCCESS(status))
-{
-    return Result<UINT32, Error>::Err(
-        Error::Windows((UINT32)status),
-        Error::Socket_WriteFailed_Send);
-}
-```
-
-**Windows timeout** — `STATUS_TIMEOUT` is `NT_SUCCESS`; construct with the raw NTSTATUS value:
-```cpp
-return Result<SSIZE, Error>::Err(
-    Error::Windows((UINT32)STATUS_TIMEOUT),
-    Error::Socket_ReadFailed_Timeout);
-```
-
-**Linux / macOS syscall failure** — negate the return value to get errno; use explicit `Posix` platform:
-```cpp
-return Result<UINT32, Error>::Err(
-    Error::Posix((UINT32)(-sent)),
-    Error::Socket_WriteFailed_Send);
-// codes[0].Platform == Posix; codes[0].Code holds the errno value
-```
-
-**Linux / macOS conditional send** — branch on whether errno is available:
-```cpp
-if (sent < 0)
-    return Result<UINT32, Error>::Err(
-        Error::Posix((UINT32)(-sent)),
-        Error::Socket_WriteFailed_Send);
-// sent == 0: no errno available; use plain runtime code
-return Result<UINT32, Error>::Err(Error::Socket_WriteFailed_Send);
-```
-
-**UEFI EFI_STATUS failure** — capture the return value; use explicit `Uefi` platform:
-```cpp
-EFI_STATUS efiStatus = bs->CreateEvent(...);
-if (EFI_ERROR_CHECK(efiStatus))
-{
-    return Result<void, Error>::Err(
-        Error::Uefi((UINT32)efiStatus),
-        Error::Socket_OpenFailed_EventCreate);
-}
-```
-
-**Pre-syscall guard failure** — no syscall was made; pass a plain runtime code:
+**Pre-syscall guard failure** — pass a plain runtime code:
 ```cpp
 return Result<UINT32, Error>::Err(Error::Socket_WriteFailed_HandleInvalid);
-// codes[0].Platform == Runtime because Error.Platform defaults to Runtime
 ```
 
-**Higher-layer propagation** — pass the failed Result directly to Err along with the new code:
+**Higher-layer propagation**:
 ```cpp
 auto r = context.Write(buffer, size);
 if (!r)
     return Result<UINT32, Error>::Err(r, Error::Tls_WriteFailed_Send);
 ```
 
-### Querying the Error Chain
+### Querying the Error
 
-The `Errors()` method returns an `ErrorChainView` snapshot with three fields:
+The `Error()` method returns a reference to the stored Error:
 
 ```cpp
-auto view = result.Errors();
-
-view.codes[0];    // innermost Error (root cause — OS status or first runtime code)
-view.codes[1];    // next layer up
-view.count;       // number of valid entries in codes[] (capped at MaxChainDepth)
-view.overflow;    // true if more than MaxChainDepth (8) codes were pushed
-
-// Iterate the chain:
-for (UINT32 i = 0; i < view.count; i++)
-{
-    Error e = view.codes[i];
-    // e.Code     — ErrorCodes enumerator or raw OS code
-    // e.Platform — PlatformKind (Runtime, Windows, Posix, Uefi)
-}
+const Error &err = result.Error();
+// err.Code     — ErrorCodes enumerator or raw OS code
+// err.Platform — PlatformKind (Runtime, Windows, Posix, Uefi)
 ```
 
-### Formatting the Error Chain
+### Formatting the Error
 
-Use the `%e` format specifier with `result.Errors()` to print the full chain in a single `LOG_ERROR` call:
+Use the `%e` format specifier with `result.Error()` to print the error in a single `LOG_ERROR` call:
 
 ```cpp
-LOG_ERROR("Operation failed (error: %e)", result.Errors());
+LOG_ERROR("Operation failed (error: %e)", result.Error());
 // Output examples:
-//   "33"                          — single runtime code
-//   "0xC0000034[W] > 6 > 16"     — Windows NTSTATUS + runtime codes
-//   "111[P] > 6"                  — Posix errno + runtime code
+//   "33"              — runtime code (decimal)
+//   "0xC0000034[W]"   — Windows NTSTATUS (hex)
+//   "111[P]"          — Posix errno (decimal)
 ```
 
 Format rules:
-- Codes printed left-to-right, index 0 (innermost/root cause) first
-- Runtime codes: decimal. Windows/UEFI codes: hex with `0x` prefix. Posix codes: decimal.
-- Platform tag: `[W]` Windows, `[P]` Posix, `[U]` UEFI; no tag for Runtime
-- Separator: ` > `. Overflow appends ` > ...`
+- Runtime codes: decimal, no tag
+- Windows/UEFI codes: hex with `0x` prefix, tagged `[W]` or `[U]`
+- Posix codes: decimal, tagged `[P]`
 
 ### Rules Summary
 
 - Always `[[nodiscard]]` on functions returning `Result<T, Error>`, `BOOL`, `NTSTATUS`, or `SSIZE`.
-- Pass error codes directly to `Result::Err(...)` — the variadic overload stores them in the Result's internal chain.
-- When the error originates from an OS call, use the factory methods — `Error::Windows(ntstatus)`, `Error::Posix(errno)`, `Error::Uefi(efiStatus)` — as the first argument to `Err(...)` to capture the raw status.
+- Pass error codes directly to `Result::Err(...)`.
+- When the error originates from an OS call, use the factory methods — `Error::Windows(ntstatus)`, `Error::Posix(errno)`, `Error::Uefi(efiStatus)`.
 - Runtime-layer codes (`Socket_*`, `Tls_*`, `Ws_*`, `Dns_*`) use the default `PlatformKind::Runtime` — pass them bare: `Result::Err(Error::Socket_WriteFailed_Send)`.
-- For guard failures (handle invalid, nullptr check) where no syscall was attempted, pass only a runtime code — no OS status to record.
+- For guard failures (handle invalid, nullptr check) where no syscall was attempted, pass only a runtime code.
 - Each layer adds only its own `ErrorCodes` values; never add another layer's codes.
 - Use `Err(osCode, runtimeCode)` for fresh errors, `Err(failedResult, runtimeCode)` for propagation.
 - Discard a `[[nodiscard]]` Result with `(void)` only when the error is intentionally ignored (e.g., in destructors / move-assignment).

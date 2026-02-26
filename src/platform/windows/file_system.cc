@@ -333,7 +333,7 @@ Result<void, Error> FileSystem::CreateDirectory(PCWCHAR path)
         (void)NTDLL::ZwClose(hDir);
         return Result<void, Error>::Ok();
     }
-    LOG_ERROR("CreateDirectory failed: errors=%e path=%ls", createResult.Errors(), path);
+    LOG_ERROR("CreateDirectory failed: errors=%e path=%ls", createResult.Error(), path);
     return Result<void, Error>::Err(createResult, Error::Fs_CreateDirFailed);
 }
 

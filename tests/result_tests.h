@@ -35,11 +35,10 @@ public:
 		RunTest(allPassed, EMBED_FUNC(TestNonTrivialDestructor), L"Non-trivial destructor"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestMoveTransfersOwnership), L"Move transfers ownership"_embed);
 
-		// Error chain (chainable E = Error)
-		RunTest(allPassed, EMBED_FUNC(TestSingleErrorChain), L"Single error chain"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestVariadicErrorChain), L"Variadic error chain"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestPropagationErrorChain), L"Propagation error chain"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestErrorsSnapshot), L"Errors() snapshot correctness"_embed);
+		// Single-error storage (E = Error)
+		RunTest(allPassed, EMBED_FUNC(TestSingleError), L"Single error storage"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestTwoArgErrCompat), L"Two-arg Err compatibility"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestPropagationErrCompat), L"Propagation Err compatibility"_embed);
 
 		// Non-chainable E
 		RunTest(allPassed, EMBED_FUNC(TestNonChainableErr), L"Non-chainable E type"_embed);
@@ -127,12 +126,10 @@ private:
 		if (r.IsOk())
 			return false;
 
-		auto view = r.Errors();
-		if (view.count != 1)
+		const Error &err = r.Error();
+		if (err.Code != Error::Socket_CreateFailed_Open)
 			return false;
-		if (view.codes[0].Code != Error::Socket_CreateFailed_Open)
-			return false;
-		if (view.codes[0].Platform != Error::PlatformKind::Runtime)
+		if (err.Platform != Error::PlatformKind::Runtime)
 			return false;
 		return true;
 	}
@@ -210,17 +207,12 @@ private:
 		if (!ok2.IsOk() || ok2.Value() != 42)
 			return false;
 
-		// Move Err (chainable)
-		auto err1 = Result<UINT32, Error>::Err(
-			Error::Windows(0xC0000034),
-			Error::Socket_OpenFailed_Connect);
+		// Move Err
+		auto err1 = Result<UINT32, Error>::Err(Error::Socket_OpenFailed_Connect);
 		auto err2 = static_cast<Result<UINT32, Error> &&>(err1);
 		if (!err2.IsErr())
 			return false;
-		auto view = err2.Errors();
-		if (view.count != 2)
-			return false;
-		if ((UINT32)view.codes[0].Code != 0xC0000034)
+		if (err2.Error().Code != Error::Socket_OpenFailed_Connect)
 			return false;
 		return true;
 	}
@@ -296,125 +288,56 @@ private:
 	}
 
 	// =====================================================================
-	// Error chain (chainable E = Error)
+	// Single-error storage (E = Error)
 	// =====================================================================
 
-	static BOOL TestSingleErrorChain()
+	static BOOL TestSingleError()
 	{
 		auto r = Result<UINT32, Error>::Err(Error::Dns_ConnectFailed);
 		if (!r.IsErr())
 			return false;
 
-		auto view = r.Errors();
-		if (view.count != 1)
+		const Error &err = r.Error();
+		if (err.Code != Error::Dns_ConnectFailed)
 			return false;
-		if (view.overflow)
-			return false;
-		if (view.codes[0].Code != Error::Dns_ConnectFailed)
-			return false;
-		if (view.codes[0].Platform != Error::PlatformKind::Runtime)
+		if (err.Platform != Error::PlatformKind::Runtime)
 			return false;
 		return true;
 	}
 
-	static BOOL TestVariadicErrorChain()
+	static BOOL TestTwoArgErrCompat()
 	{
+		// 2-arg Err stores only the last (outermost) code
 		auto r = Result<UINT32, Error>::Err(
 			Error::Windows(0xC0000034),
 			Error::Socket_OpenFailed_Connect);
 		if (!r.IsErr())
 			return false;
 
-		auto view = r.Errors();
-		if (view.count != 2)
+		const Error &err = r.Error();
+		if (err.Code != Error::Socket_OpenFailed_Connect)
 			return false;
-		if (view.overflow)
-			return false;
-
-		// Index 0 = innermost (Windows NTSTATUS)
-		if ((UINT32)view.codes[0].Code != 0xC0000034)
-			return false;
-		if (view.codes[0].Platform != Error::PlatformKind::Windows)
-			return false;
-
-		// Index 1 = runtime code
-		if (view.codes[1].Code != Error::Socket_OpenFailed_Connect)
-			return false;
-		if (view.codes[1].Platform != Error::PlatformKind::Runtime)
+		if (err.Platform != Error::PlatformKind::Runtime)
 			return false;
 		return true;
 	}
 
-	static BOOL TestPropagationErrorChain()
+	static BOOL TestPropagationErrCompat()
 	{
-		// Build a 2-code chain
+		// Build an inner error
 		auto inner = Result<UINT32, Error>::Err(
 			Error::Posix(111),
 			Error::Socket_WriteFailed_Send);
 
-		// Propagate and append a TLS code
+		// Propagate — stores only the appended code
 		auto outer = Result<void, Error>::Err(inner, Error::Tls_WriteFailed_Send);
 		if (!outer.IsErr())
 			return false;
 
-		auto view = outer.Errors();
-		if (view.count != 3)
+		const Error &err = outer.Error();
+		if (err.Code != Error::Tls_WriteFailed_Send)
 			return false;
-		if (view.overflow)
-			return false;
-
-		// Chain order: [Posix(111), Socket_WriteFailed_Send, Tls_WriteFailed_Send]
-		if ((UINT32)view.codes[0].Code != 111)
-			return false;
-		if (view.codes[0].Platform != Error::PlatformKind::Posix)
-			return false;
-		if (view.codes[1].Code != Error::Socket_WriteFailed_Send)
-			return false;
-		if (view.codes[2].Code != Error::Tls_WriteFailed_Send)
-			return false;
-		return true;
-	}
-
-	static BOOL TestErrorsSnapshot()
-	{
-		auto r = Result<UINT32, Error>::Err(
-			Error::Windows(0xC0000001),
-			Error::Socket_CreateFailed_Open);
-
-		// Two calls should return identical independent copies
-		auto view1 = r.Errors();
-		auto view2 = r.Errors();
-		if (view1.count != view2.count)
-			return false;
-		if ((UINT32)view1.codes[0].Code != (UINT32)view2.codes[0].Code)
-			return false;
-
-		// Overflow test: build chain with depth > MaxChainDepth (8)
-		auto r1 = Result<UINT32, Error>::Err(Error::Socket_CreateFailed_Open);
-		auto r2 = Result<UINT32, Error>::Err(r1, Error::Socket_BindFailed_Bind);
-		auto r3 = Result<UINT32, Error>::Err(r2, Error::Socket_OpenFailed_Connect);
-		auto r4 = Result<UINT32, Error>::Err(r3, Error::Socket_CloseFailed_Close);
-		auto r5 = Result<UINT32, Error>::Err(r4, Error::Socket_ReadFailed_HandleInvalid);
-		auto r6 = Result<UINT32, Error>::Err(r5, Error::Socket_ReadFailed_Recv);
-		auto r7 = Result<UINT32, Error>::Err(r6, Error::Socket_WriteFailed_Send);
-		auto r8 = Result<UINT32, Error>::Err(r7, Error::Tls_OpenFailed_Socket);
-		// r8 has depth 8 — exactly at limit
-		auto view8 = r8.Errors();
-		if (view8.count != 8)
-			return false;
-		if (view8.overflow)
-			return false;
-
-		// r9 has depth 9 — exceeds limit
-		auto r9 = Result<UINT32, Error>::Err(r8, Error::Tls_OpenFailed_Handshake);
-		auto view9 = r9.Errors();
-		if (view9.count != 8)
-			return false;
-		if (!view9.overflow)
-			return false;
-
-		// First entry should still be the original root cause
-		if (view9.codes[0].Code != Error::Socket_CreateFailed_Open)
+		if (err.Platform != Error::PlatformKind::Runtime)
 			return false;
 		return true;
 	}

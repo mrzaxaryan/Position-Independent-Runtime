@@ -20,7 +20,7 @@ public:
 		RunTest(allPassed, EMBED_FUNC(TestWidthPadding), L"Width and padding"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestFloatFormat), L"Float format"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestPercentLiteral), L"Percent literal"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestErrorChainFormat), L"Error chain format"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestErrorFormat), L"Error format"_embed);
 		// RunTest(allPassed, TestSizeFormat, L"Size format"_embed);
 
 		if (allPassed)
@@ -343,7 +343,7 @@ private:
 		return true;
 	}
 
-	static BOOL TestErrorChainFormat()
+	static BOOL TestErrorFormat()
 	{
 		CHAR buffer[128];
 		BufferContext ctx;
@@ -355,57 +355,49 @@ private:
 
 		// Test 1: Single runtime error -> "1"
 		auto singleResult = Result<UINT32, Error>::Err(Error::Socket_CreateFailed_Open);
-		auto singleErrors = singleResult.Errors();
 		Memory::Zero(buffer, 128);
 		ctx.index = 0;
-		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_e, singleErrors);
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_e, singleResult.Error());
 		auto expected_single = "1"_embed;
 		if (Memory::Compare(buffer, (const CHAR *)expected_single, 1) != 0)
 			return false;
 		if (buffer[1] != '\0')
 			return false;
 
-		// Test 2: Windows + Runtime chain -> "0xC0000034[W] > 6"
-		auto chainResult = Result<UINT32, Error>::Err(
-			Error::Windows(0xC0000034),
-			Error::Socket_OpenFailed_Connect);
-		auto chainErrors = chainResult.Errors();
+		// Test 2: Windows error -> "0xC0000034[W]"
+		auto winResult = Result<UINT32, Error>::Err(Error::Windows(0xC0000034));
 		Memory::Zero(buffer, 128);
 		ctx.index = 0;
-		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_e, chainErrors);
-		auto expected_chain = "0xC0000034[W] > 6"_embed;
-		if (Memory::Compare(buffer, (const CHAR *)expected_chain, 17) != 0)
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_e, winResult.Error());
+		auto expected_win = "0xC0000034[W]"_embed;
+		if (Memory::Compare(buffer, (const CHAR *)expected_win, 13) != 0)
 			return false;
-		if (buffer[17] != '\0')
+		if (buffer[13] != '\0')
 			return false;
 
-		// Test 3: Posix + Runtime -> "111[P] > 11"
-		auto posixResult = Result<void, Error>::Err(
-			Error::Posix(111),
-			Error::Socket_ReadFailed_Recv);
-		auto posixErrors = posixResult.Errors();
+		// Test 3: Posix error -> "111[P]"
+		auto posixResult = Result<void, Error>::Err(Error::Posix(111));
 		Memory::Zero(buffer, 128);
 		ctx.index = 0;
-		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_e, posixErrors);
-		auto expected_posix = "111[P] > 11"_embed;
-		if (Memory::Compare(buffer, (const CHAR *)expected_posix, 11) != 0)
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_e, posixResult.Error());
+		auto expected_posix = "111[P]"_embed;
+		if (Memory::Compare(buffer, (const CHAR *)expected_posix, 6) != 0)
 			return false;
-		if (buffer[11] != '\0')
+		if (buffer[6] != '\0')
 			return false;
 
-		// Test 4: Three-code chain via propagation
+		// Test 4: 2-arg Err compatibility stores outermost -> "16"
 		auto twoCode = Result<UINT32, Error>::Err(
 			Error::Windows(0xC0000034),
 			Error::Socket_OpenFailed_Connect);
 		auto propagated = Result<void, Error>::Err(twoCode, Error::Tls_OpenFailed_Socket);
-		auto propErrors = propagated.Errors();
 		Memory::Zero(buffer, 128);
 		ctx.index = 0;
-		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_e, propErrors);
-		auto expected_prop = "0xC0000034[W] > 6 > 16"_embed;
-		if (Memory::Compare(buffer, (const CHAR *)expected_prop, 22) != 0)
+		StringFormatter::Format<CHAR>(fixed, &ctx, fmt_e, propagated.Error());
+		auto expected_prop = "16"_embed;
+		if (Memory::Compare(buffer, (const CHAR *)expected_prop, 2) != 0)
 			return false;
-		if (buffer[22] != '\0')
+		if (buffer[2] != '\0')
 			return false;
 
 		return true;

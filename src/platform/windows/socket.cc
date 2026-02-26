@@ -454,7 +454,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 port) : ip(ipAddress), port(po
 	if (!createResult)
 	{
 		// Caller will detect failure via IsValid() → Open() returns OpenFailed_HandleInvalid
-		LOG_DEBUG("Create: ZwCreateFile failed: errors=%e\n", createResult.Errors());
+		LOG_DEBUG("Create: ZwCreateFile failed: errors=%e\n", createResult.Error());
 		m_socket = nullptr;
 	}
 	else

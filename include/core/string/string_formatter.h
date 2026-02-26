@@ -100,7 +100,7 @@ private:
             CSTR,
             WSTR,
             PTR,
-            ERROR_CHAIN
+            ERROR_VALUE
         };
 
         Type type; ///< Type of stored value
@@ -114,7 +114,7 @@ private:
             const CHAR *cstr;  ///< Narrow string pointer
             const WCHAR *wstr;              ///< Wide string pointer
             PVOID ptr;                      ///< Generic pointer
-            const ErrorChainView *errChain; ///< Error chain view pointer
+            Error errValue; ///< Single error value
         };
 
         /// @name Constructors
@@ -129,7 +129,7 @@ private:
         Argument(WCHAR *v) : type(Type::WSTR), wstr(v) {}
         Argument(PVOID v) : type(Type::PTR), ptr(v) {}
         Argument(const void *v) : type(Type::PTR), ptr(const_cast<PVOID>(v)) {}
-        Argument(const ErrorChainView &v) : type(Type::ERROR_CHAIN), errChain(&v) {}
+        Argument(const Error &v) : type(Type::ERROR_VALUE), errValue(v) {}
         Argument(INT64 v) : type(Type::INT64), i64(v) {}
         Argument(UINT64 v) : type(Type::UINT64), u64(v) {}
 #if defined(__LP64__) || defined(_LP64)
@@ -161,7 +161,7 @@ private:
     template <TCHAR TChar>
     static INT32 FormatWideString(BOOL (*writer)(PVOID, TChar), PVOID context, const WCHAR *wstr, INT32 fieldWidth = 0, INT32 leftAlign = 0);
     template <TCHAR TChar>
-    static INT32 FormatErrorChain(BOOL (*writer)(PVOID, TChar), PVOID context, const ErrorChainView *chain);
+    static INT32 FormatError(BOOL (*writer)(PVOID, TChar), PVOID context, const Error &error);
     /// @}
 
 public:
@@ -509,70 +509,41 @@ INT32 StringFormatter::FormatWideString(BOOL (*writer)(PVOID, TChar), PVOID cont
 }
 
 template <TCHAR TChar>
-INT32 StringFormatter::FormatErrorChain(BOOL (*writer)(PVOID, TChar), PVOID context, const ErrorChainView *chain)
+INT32 StringFormatter::FormatError(BOOL (*writer)(PVOID, TChar), PVOID context, const Error &error)
 {
     INT32 j = 0;
 
-    if (chain == nullptr || chain->count == 0)
+    UINT32 code = (UINT32)error.Code;
+    Error::PlatformKind platform = error.Platform;
+
+    // Windows/UEFI: hex with 0x prefix (uppercase digits). Runtime/Posix: decimal.
+    if (platform == Error::PlatformKind::Windows || platform == Error::PlatformKind::Uefi)
     {
-        if (!writer(context, (TChar)'0'))
-            return j;
-        return 1;
+        if (!writer(context, (TChar)'0')) return j; j++;
+        if (!writer(context, (TChar)'x')) return j; j++;
+        j += FormatUInt32AsHex<TChar>(writer, context, code, 0, 1, 0, false);
     }
+    else
+        j += FormatUInt64<TChar>(writer, context, (UINT64)code, 0, 0, 0);
 
-    for (UINT32 i = 0; i < chain->count; i++)
+    // Platform tag for non-Runtime
+    if (platform == Error::PlatformKind::Windows)
     {
-        // Separator between entries
-        if (i > 0)
-        {
-            if (!writer(context, (TChar)' ')) return j; j++;
-            if (!writer(context, (TChar)'>')) return j; j++;
-            if (!writer(context, (TChar)' ')) return j; j++;
-        }
-
-        UINT32 code = (UINT32)chain->codes[i].Code;
-        Error::PlatformKind platform = chain->codes[i].Platform;
-
-        // Windows/UEFI: hex with 0x prefix (uppercase digits). Runtime/Posix: decimal.
-        if (platform == Error::PlatformKind::Windows || platform == Error::PlatformKind::Uefi)
-        {
-            if (!writer(context, (TChar)'0')) return j; j++;
-            if (!writer(context, (TChar)'x')) return j; j++;
-            j += FormatUInt32AsHex<TChar>(writer, context, code, 0, 1, 0, false);
-        }
-        else
-            j += FormatUInt64<TChar>(writer, context, (UINT64)code, 0, 0, 0);
-
-        // Platform tag for non-Runtime
-        if (platform == Error::PlatformKind::Windows)
-        {
-            if (!writer(context, (TChar)'[')) return j; j++;
-            if (!writer(context, (TChar)'W')) return j; j++;
-            if (!writer(context, (TChar)']')) return j; j++;
-        }
-        else if (platform == Error::PlatformKind::Posix)
-        {
-            if (!writer(context, (TChar)'[')) return j; j++;
-            if (!writer(context, (TChar)'P')) return j; j++;
-            if (!writer(context, (TChar)']')) return j; j++;
-        }
-        else if (platform == Error::PlatformKind::Uefi)
-        {
-            if (!writer(context, (TChar)'[')) return j; j++;
-            if (!writer(context, (TChar)'U')) return j; j++;
-            if (!writer(context, (TChar)']')) return j; j++;
-        }
+        if (!writer(context, (TChar)'[')) return j; j++;
+        if (!writer(context, (TChar)'W')) return j; j++;
+        if (!writer(context, (TChar)']')) return j; j++;
     }
-
-    // Overflow indicator
-    if (chain->overflow)
+    else if (platform == Error::PlatformKind::Posix)
     {
-        if (!writer(context, (TChar)' ')) return j; j++;
-        if (!writer(context, (TChar)'>')) return j; j++;
-        if (!writer(context, (TChar)' ')) return j; j++;
-        if (!writer(context, (TChar)'.')) return j; j++;
-        if (!writer(context, (TChar)'.')) return j; j++;
-        if (!writer(context, (TChar)'.')) return j; j++;
+        if (!writer(context, (TChar)'[')) return j; j++;
+        if (!writer(context, (TChar)'P')) return j; j++;
+        if (!writer(context, (TChar)']')) return j; j++;
+    }
+    else if (platform == Error::PlatformKind::Uefi)
+    {
+        if (!writer(context, (TChar)'[')) return j; j++;
+        if (!writer(context, (TChar)'U')) return j; j++;
+        if (!writer(context, (TChar)']')) return j; j++;
     }
 
     return j;
@@ -1142,11 +1113,11 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
                 }
             }
             else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'e')
-            {        // Handle %e (error chain)
+            {        // Handle %e (error value)
                 i++; // Skip 'e'
                 if (currentArg >= argCount)
                     continue;
-                j += FormatErrorChain<TChar>(writer, context, args[currentArg++].errChain);
+                j += FormatError<TChar>(writer, context, args[currentArg++].errValue);
                 continue;
             }
             else if (format[i] == (TChar)'%')
