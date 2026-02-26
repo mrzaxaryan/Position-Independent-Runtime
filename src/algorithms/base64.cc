@@ -17,7 +17,7 @@
     ((c) == '/') * 63)
 
 // Encode input data to Base64 format
-BOOL Base64::Encode(PCCHAR input, UINT32 inputSize, PCHAR output)
+void Base64::Encode(PCCHAR input, UINT32 inputSize, PCHAR output)
 {
     UINT32 i, o;
 
@@ -64,11 +64,10 @@ BOOL Base64::Encode(PCCHAR input, UINT32 inputSize, PCHAR output)
     }
 
     output[o] = 0;
-    return true;
 }
 
 // Decoder for Base64 formatted data to original format
-BOOL Base64::Decode(PCCHAR input, UINT32 inputSize, PCHAR output)
+Result<void, Error> Base64::Decode(PCCHAR input, UINT32 inputSize, PCHAR output)
 {
     UINT32 i, o;
 
@@ -101,7 +100,7 @@ BOOL Base64::Decode(PCCHAR input, UINT32 inputSize, PCHAR output)
         i += 4u;
     }
 
-    return true;
+    return Result<void, Error>::Ok();
 }
 
 // Calculate the output size needed for Base64 encoding

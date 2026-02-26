@@ -68,10 +68,10 @@ void File::Close()
 }
 
 // Read data from the file into the buffer
-UINT32 File::Read(PVOID buffer, UINT32 size)
+Result<UINT32, Error> File::Read(PVOID buffer, UINT32 size)
 {
     if (!IsValid())
-        return 0;
+        return Result<UINT32, Error>::Err(Error::Fs_ReadFailed);
 
     // Properly initialize IO_STATUS_BLOCK with all fields
     IO_STATUS_BLOCK ioStatusBlock;
@@ -80,16 +80,16 @@ UINT32 File::Read(PVOID buffer, UINT32 size)
 
     if (NT_SUCCESS(status))
     {
-        return (UINT32)ioStatusBlock.Information;
+        return Result<UINT32, Error>::Ok((UINT32)ioStatusBlock.Information);
     }
-    return 0;
+    return Result<UINT32, Error>::Err(Error::Windows((UINT32)status), Error::Fs_ReadFailed);
 }
 
 // Write data from the buffer to the file
-UINT32 File::Write(PCVOID buffer, USIZE size)
+Result<UINT32, Error> File::Write(PCVOID buffer, USIZE size)
 {
     if (!IsValid())
-        return 0;
+        return Result<UINT32, Error>::Err(Error::Fs_WriteFailed);
 
     IO_STATUS_BLOCK ioStatusBlock;
 
@@ -97,9 +97,9 @@ UINT32 File::Write(PCVOID buffer, USIZE size)
 
     if (NT_SUCCESS(status))
     {
-        return (UINT32)ioStatusBlock.Information;
+        return Result<UINT32, Error>::Ok((UINT32)ioStatusBlock.Information);
     }
-    return 0;
+    return Result<UINT32, Error>::Err(Error::Windows((UINT32)status), Error::Fs_WriteFailed);
 }
 
 // Get the current file offset
@@ -249,7 +249,7 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
 }
 
 // Delete a file at the specified path
-BOOL FileSystem::Delete(PCWCHAR path)
+Result<void, Error> FileSystem::Delete(PCWCHAR path)
 {
     UNICODE_STRING ntName;
     OBJECT_ATTRIBUTES attr;
@@ -257,19 +257,23 @@ BOOL FileSystem::Delete(PCWCHAR path)
     IO_STATUS_BLOCK io;
 
     if (!NTDLL::RtlDosPathNameToNtPathName_U(path, &ntName, nullptr, nullptr))
-        return false;
+        return Result<void, Error>::Err(Error::Fs_PathResolveFailed, Error::Fs_DeleteFailed);
 
     InitializeObjectAttributes(&attr, &ntName, OBJ_CASE_INSENSITIVE, nullptr, nullptr);
 
     auto createResult = NTDLL::ZwCreateFile(&hFile, SYNCHRONIZE | DELETE, &attr, &io, nullptr, 0,
                                             FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                                             FILE_OPEN, FILE_DELETE_ON_CLOSE | FILE_NON_DIRECTORY_FILE, nullptr, 0);
-    BOOL ok = (BOOL)createResult;
-    if (ok)
-        ok = (BOOL)NTDLL::ZwClose(hFile);
 
+    if (!createResult)
+    {
+        NTDLL::RtlFreeUnicodeString(&ntName);
+        return Result<void, Error>::Err(createResult, Error::Fs_DeleteFailed);
+    }
+
+    (void)NTDLL::ZwClose(hFile);
     NTDLL::RtlFreeUnicodeString(&ntName);
-    return ok;
+    return Result<void, Error>::Ok();
 }
 
 // Check if a file exists at the specified path
@@ -296,7 +300,7 @@ BOOL FileSystem::Exists(PCWCHAR path)
 }
 
 // --- FileSystem Directory Management ---
-BOOL FileSystem::CreateDirectory(PCWCHAR path)
+Result<void, Error> FileSystem::CreateDirectory(PCWCHAR path)
 {
     // Returns non-zero on success
     PVOID hDir;
@@ -305,7 +309,7 @@ BOOL FileSystem::CreateDirectory(PCWCHAR path)
     IO_STATUS_BLOCK ioStatusBlock;
 
     if (!NTDLL::RtlDosPathNameToNtPathName_U(path, &uniName, nullptr, nullptr))
-        return false;
+        return Result<void, Error>::Err(Error::Fs_PathResolveFailed, Error::Fs_CreateDirFailed);
 
     InitializeObjectAttributes(&objAttr, &uniName, 0, nullptr, nullptr);
 
@@ -327,14 +331,14 @@ BOOL FileSystem::CreateDirectory(PCWCHAR path)
     if (createResult)
     {
         (void)NTDLL::ZwClose(hDir);
-        return true;
+        return Result<void, Error>::Ok();
     }
     LOG_ERROR("CreateDirectory failed: errors=%e path=%ls", createResult.Errors(), path);
-    return false;
+    return Result<void, Error>::Err(createResult, Error::Fs_CreateDirFailed);
 }
 
 // Delete a directory at the specified path
-BOOL FileSystem::DeleteDirectory(PCWCHAR path)
+Result<void, Error> FileSystem::DeleteDirectory(PCWCHAR path)
 {
     PVOID hDir;
     FILE_DISPOSITION_INFORMATION disp;
@@ -345,13 +349,16 @@ BOOL FileSystem::DeleteDirectory(PCWCHAR path)
     disp.DeleteFile = true;
 
     if (!NTDLL::RtlDosPathNameToNtPathName_U(path, &uniName, nullptr, nullptr))
-        return false;
+        return Result<void, Error>::Err(Error::Fs_PathResolveFailed, Error::Fs_DeleteDirFailed);
 
     InitializeObjectAttributes(&objAttr, &uniName, 0, nullptr, nullptr);
 
     NTSTATUS status = NTDLL::ZwOpenFile(&hDir, DELETE | SYNCHRONIZE, &objAttr, &ioStatusBlock, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT);
     if (!NT_SUCCESS(status))
-        return false;
+    {
+        NTDLL::RtlFreeUnicodeString(&uniName);
+        return Result<void, Error>::Err(Error::Windows((UINT32)status), Error::Fs_DeleteDirFailed);
+    }
 
     status = NTDLL::ZwSetInformationFile(
         hDir,
@@ -363,7 +370,10 @@ BOOL FileSystem::DeleteDirectory(PCWCHAR path)
     (void)NTDLL::ZwClose(hDir);
     NTDLL::RtlFreeUnicodeString(&uniName);
 
-    return NT_SUCCESS(status);
+    if (!NT_SUCCESS(status))
+        return Result<void, Error>::Err(Error::Windows((UINT32)status), Error::Fs_DeleteDirFailed);
+
+    return Result<void, Error>::Ok();
 }
 // --- DirectoryIterator Implementation ---
 

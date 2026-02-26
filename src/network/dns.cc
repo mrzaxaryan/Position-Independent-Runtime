@@ -374,13 +374,13 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSS
         return Result<IPAddress, Error>::Err(Error::Dns_SendFailed);
     }
 
-    INT64 contentLength = -1;
-
-    if (!HttpClient::ReadResponseHeaders(tlsClient, 200, contentLength))
+    auto headerResult = HttpClient::ReadResponseHeaders(tlsClient, 200);
+    if (!headerResult)
     {
         LOG_WARNING("DNS server returned non-200 response");
-        return Result<IPAddress, Error>::Err(Error::Dns_ResponseFailed);
+        return Result<IPAddress, Error>::Err(headerResult, Error::Dns_ResponseFailed);
     }
+    INT64 contentLength = headerResult.Value();
 
     if (contentLength <= 0 || contentLength > 512)
     {

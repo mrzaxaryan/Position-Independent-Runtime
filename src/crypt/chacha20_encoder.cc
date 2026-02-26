@@ -22,7 +22,7 @@ ChaCha20Encoder::ChaCha20Encoder()
 }
 
 // Initialize the ChaCha20 encoder with keys and IVs
-BOOL ChaCha20Encoder::Initialize(PUCHAR localKey, PUCHAR remoteKey, const UCHAR (&localIv)[TLS_CHACHA20_IV_LENGTH], const UCHAR (&remoteIv)[TLS_CHACHA20_IV_LENGTH], INT32 keyLength)
+Result<void, Error> ChaCha20Encoder::Initialize(PUCHAR localKey, PUCHAR remoteKey, const UCHAR (&localIv)[TLS_CHACHA20_IV_LENGTH], const UCHAR (&remoteIv)[TLS_CHACHA20_IV_LENGTH], INT32 keyLength)
 {
     UINT32 counter = 1;
     this->ivLength = TLS_CHACHA20_IV_LENGTH;
@@ -35,7 +35,7 @@ BOOL ChaCha20Encoder::Initialize(PUCHAR localKey, PUCHAR remoteKey, const UCHAR 
     this->remoteCipher.IVSetup96BitNonce(remoteIv, (PUCHAR)&counter);
     Memory::Copy(this->remoteNonce, remoteIv, sizeof(remoteIv));
 
-    return true;
+    return Result<void, Error>::Ok();
 }
 
 // Encode data using ChaCha20 and Poly1305
@@ -56,7 +56,7 @@ VOID ChaCha20Encoder::Encode(TlsBuffer &out, const CHAR *packet, INT32 packetSiz
 }
 
 // Decode data using ChaCha20 and Poly1305
-BOOL ChaCha20Encoder::Decode(TlsBuffer &in, TlsBuffer &out, const UCHAR *aad, INT32 aadSize)
+Result<void, Error> ChaCha20Encoder::Decode(TlsBuffer &in, TlsBuffer &out, const UCHAR *aad, INT32 aadSize)
 {
     out.CheckSize(in.GetSize());
 
@@ -81,11 +81,11 @@ BOOL ChaCha20Encoder::Decode(TlsBuffer &in, TlsBuffer &out, const UCHAR *aad, IN
     if (size <= 0)
     {
         LOG_ERROR("Chacha20 Decode failed, size: %d", size);
-        return false;
+        return Result<void, Error>::Err(Error::ChaCha20_DecodeFailed);
     }
     LOG_DEBUG("Chacha20 Decode succeeded, output size: %d bytes", size);
     out.SetSize(size);
-    return true;
+    return Result<void, Error>::Ok();
 }
 
 // Compute size for encoding or decoding

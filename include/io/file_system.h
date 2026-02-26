@@ -1,6 +1,8 @@
 #pragma once
 
 #include "primitives.h"
+#include "error.h"
+#include "result.h"
 
 // Offset origin for file seeking
 enum class OffsetOrigin : INT32
@@ -61,8 +63,8 @@ public:
     VOID Close();
 
     // Read and write methods
-    UINT32 Read(PVOID buffer, UINT32 size);
-    UINT32 Write(const VOID *buffer, USIZE size);
+    [[nodiscard]] Result<UINT32, Error> Read(PVOID buffer, UINT32 size);
+    [[nodiscard]] Result<UINT32, Error> Write(const VOID *buffer, USIZE size);
 
     // Get the size of the file
     USIZE GetSize() const { return fileSize; }
@@ -131,10 +133,10 @@ public:
 
     // File operations
     static File Open(PCWCHAR path, INT32 flags = 0);
-    static BOOL Delete(PCWCHAR path);
+    [[nodiscard]] static Result<void, Error> Delete(PCWCHAR path);
     static BOOL Exists(PCWCHAR path);
 
     // New Directory Methods
-    static BOOL CreateDirectory(PCWCHAR path);
-    static BOOL DeleteDirectory(PCWCHAR path);
+    [[nodiscard]] static Result<void, Error> CreateDirectory(PCWCHAR path);
+    [[nodiscard]] static Result<void, Error> DeleteDirectory(PCWCHAR path);
 };
