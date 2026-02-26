@@ -7,10 +7,10 @@
  * template handles both cases without a separate specialization.
  *
  * When E declares `static constexpr UINT32 MaxChainDepth`, Result stores an
- * internal error chain (array of E + depth counter) and exposes chain query
- * methods (Bottom, Top, ErrorAt, HasCode, etc.) plus a propagation factory
- * `Err(failedResult, codes...)`. Non-chainable E types use plain single-error
- * storage with no overhead.
+ * internal error chain (array of E + depth counter) and exposes an Errors()
+ * method returning an ErrorChainView for inspection and %e formatting, plus
+ * a propagation factory `Err(failedResult, codes...)`. Non-chainable E types
+ * use plain single-error storage with no overhead.
  *
  * @note Uses Clang builtin __is_trivially_destructible for zero-overhead destruction.
  *

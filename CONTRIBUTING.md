@@ -453,9 +453,9 @@ Range   Layer      ErrorCodes examples
 `Result<T, Error>` stores up to **8 error codes** internally (detected via `Error::MaxChainDepth`). The chain builds a breadcrumb trail from OS failure up through the call stack:
 
 ```
-Bottom()={Code=0xC0000034, Platform=Windows} → Socket_WriteFailed_Send → Tls_WriteFailed_Send → Ws_WriteFailed
+codes[0]={Code=0xC0000034, Platform=Windows} → Socket_WriteFailed_Send → Tls_WriteFailed_Send → Ws_WriteFailed
           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-          NTSTATUS carried directly in Error.Code; Kind() == Windows
+          NTSTATUS carried directly in Error.Code; Platform == Windows
 ```
 
 Non-chainable error types (e.g., `Result<T, UINT32>`) store a single error value directly — no chain overhead.
@@ -513,7 +513,7 @@ return Result<SSIZE, Error>::Err(
 return Result<UINT32, Error>::Err(
     Error::Posix((UINT32)(-sent)),
     Error::Socket_WriteFailed_Send);
-// Kind() == Posix; Bottom().Code holds the errno value
+// codes[0].Platform == Posix; codes[0].Code holds the errno value
 ```
 
 **Linux / macOS conditional send** — branch on whether errno is available:
@@ -540,7 +540,7 @@ if (EFI_ERROR_CHECK(efiStatus))
 **Pre-syscall guard failure** — no syscall was made; pass a plain runtime code:
 ```cpp
 return Result<UINT32, Error>::Err(Error::Socket_WriteFailed_HandleInvalid);
-// Kind() == Runtime because Error.Platform defaults to Runtime
+// codes[0].Platform == Runtime because Error.Platform defaults to Runtime
 ```
 
 **Higher-layer propagation** — pass the failed Result directly to Err along with the new code:
@@ -552,21 +552,23 @@ if (!r)
 
 ### Querying the Error Chain
 
-Query methods are available on `Result<T, Error>` when the Result is in error state:
+The `Errors()` method returns an `ErrorChainView` snapshot with three fields:
 
 ```cpp
-result.Error();                              // reference to the bottom (innermost) Error
-result.Error().Code;                         // raw OS code when Kind() != Runtime, else ErrorCodes value
-result.Error().Platform;                     // PlatformKind of the innermost entry
-result.Bottom();                             // innermost Error (first pushed, lowest layer)
-result.Top();                                // outermost Error (last pushed, highest layer)
-result.Kind();                               // PlatformKind from the innermost Error
-result.ErrorAt(0);                           // Error at index 0 (innermost); returns None if out of range
-result.ErrorAt(1);                           // Error at index 1; returns None if out of range
-result.ErrorDepth();                         // total codes pushed (may exceed MaxChainDepth)
-result.ErrorOverflow();                      // true if more than MaxChainDepth (8) codes were pushed
-result.HasCode(Error::Tls_WriteFailed_Send); // true if code is anywhere in the chain
-result.Errors();                             // ErrorChainView snapshot for %e formatting
+auto view = result.Errors();
+
+view.codes[0];    // innermost Error (root cause — OS status or first runtime code)
+view.codes[1];    // next layer up
+view.count;       // number of valid entries in codes[] (capped at MaxChainDepth)
+view.overflow;    // true if more than MaxChainDepth (8) codes were pushed
+
+// Iterate the chain:
+for (UINT32 i = 0; i < view.count; i++)
+{
+    Error e = view.codes[i];
+    // e.Code     — ErrorCodes enumerator or raw OS code
+    // e.Platform — PlatformKind (Runtime, Windows, Posix, Uefi)
+}
 ```
 
 ### Formatting the Error Chain
