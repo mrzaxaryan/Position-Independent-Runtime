@@ -51,7 +51,12 @@ private:
 
 		auto message = ""_embed;
 		SHA256::Hash(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(message)), 0, digest);
-		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE);
+		if (!CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE))
+		{
+			LOG_ERROR("SHA-256 empty string digest mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// SHA-256 Test: "abc"
@@ -67,7 +72,12 @@ private:
 
 		auto message = "abc"_embed;
 		SHA256::Hash(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(message)), 3, digest);
-		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE);
+		if (!CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE))
+		{
+			LOG_ERROR("SHA-256 'abc' digest mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// SHA-256 Test: "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
@@ -83,7 +93,12 @@ private:
 
 		auto message = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"_embed;
 		SHA256::Hash(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(message)), 56, digest);
-		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE);
+		if (!CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE))
+		{
+			LOG_ERROR("SHA-256 long message digest mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// SHA-256 Test: Incremental update (split "abc" into "ab" + "c")
@@ -103,7 +118,12 @@ private:
 		ctx.Update(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(msg2)), 1);
 		ctx.Final(digest);
 
-		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE);
+		if (!CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE))
+		{
+			LOG_ERROR("SHA-256 incremental digest mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// SHA-384 Test: Empty string
@@ -121,7 +141,12 @@ private:
 
 		auto message = ""_embed;
 		SHA384::Hash(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(message)), 0, digest);
-		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE);
+		if (!CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE))
+		{
+			LOG_ERROR("SHA-384 empty string digest mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// SHA-384 Test: "abc"
@@ -139,7 +164,12 @@ private:
 
 		auto message = "abc"_embed;
 		SHA384::Hash(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(message)), 3, digest);
-		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE);
+		if (!CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE))
+		{
+			LOG_ERROR("SHA-384 'abc' digest mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// SHA-384 Test: "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
@@ -157,7 +187,12 @@ private:
 
 		auto message = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"_embed;
 		SHA384::Hash(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(message)), 112, digest);
-		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE);
+		if (!CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE))
+		{
+			LOG_ERROR("SHA-384 long message digest mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// SHA-384 Test: Incremental update (split "abc" into "ab" + "c")
@@ -179,7 +214,12 @@ private:
 		ctx.Update(reinterpret_cast<const UINT8 *>(static_cast<PCCHAR>(msg2)), 1);
 		ctx.Final(digest);
 
-		return CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE);
+		if (!CompareBytes(digest, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE))
+		{
+			LOG_ERROR("SHA-384 incremental digest mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// HMAC-SHA256 Test (RFC 4231 Test Case 1)
@@ -200,7 +240,12 @@ private:
 
 		HMAC_SHA256::Compute(reinterpret_cast<const UCHAR *>(static_cast<PCCHAR>(key)), 4, reinterpret_cast<const UCHAR *>(static_cast<PCCHAR>(message)), 28, mac, SHA256_DIGEST_SIZE);
 
-		return CompareBytes(mac, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE);
+		if (!CompareBytes(mac, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA256_DIGEST_SIZE))
+		{
+			LOG_ERROR("HMAC-SHA256 MAC mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// HMAC-SHA384 Test (RFC 4231 Test Case 1)
@@ -223,6 +268,11 @@ private:
 
 		HMAC_SHA384::Compute(reinterpret_cast<const UCHAR *>(static_cast<PCCHAR>(key)), 4, reinterpret_cast<const UCHAR *>(static_cast<PCCHAR>(message)), 28, mac, SHA384_DIGEST_SIZE);
 
-		return CompareBytes(mac, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE);
+		if (!CompareBytes(mac, static_cast<const UINT8 *>(static_cast<const VOID *>(expected)), SHA384_DIGEST_SIZE))
+		{
+			LOG_ERROR("HMAC-SHA384 MAC mismatch");
+			return false;
+		}
+		return true;
 	}
 };

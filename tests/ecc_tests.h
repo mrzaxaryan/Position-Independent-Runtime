@@ -38,39 +38,68 @@ private:
 		Ecc ecc;
 		// Test successful initialization with secp256r1 (32 bytes)
 		auto result = ecc.Initialize(32);
-		return result.IsOk();
+		if (!result)
+		{
+			LOG_ERROR("ECC Initialize(32) failed (error: %e)", result.Error());
+			return false;
+		}
+		return true;
 	}
 
 	// Test 2: secp256r1 curve (32 bytes)
 	static BOOL TestEccSecp256r1()
 	{
 		Ecc ecc;
-		if (!ecc.Initialize(32))
+		auto initResult = ecc.Initialize(32);
+		if (!initResult)
+		{
+			LOG_ERROR("secp256r1 Initialize failed (error: %e)", initResult.Error());
 			return false;
+		}
 
 		// Verify we can export a public key
 		UINT8 publicKey[32 * 2 + 1];
 		auto result = ecc.ExportPublicKey(publicKey, sizeof(publicKey));
 		if (!result)
+		{
+			LOG_ERROR("secp256r1 ExportPublicKey failed (error: %e)", result.Error());
 			return false;
+		}
 
-		return publicKey[0] == 0x04;
+		if (publicKey[0] != 0x04)
+		{
+			LOG_ERROR("secp256r1 public key format byte: expected 0x04, got 0x%02X", (UINT32)publicKey[0]);
+			return false;
+		}
+		return true;
 	}
 
 	// Test 5: secp384r1 curve (48 bytes)
 	static BOOL TestEccSecp384r1()
 	{
 		Ecc ecc;
-		if (!ecc.Initialize(48))
+		auto initResult = ecc.Initialize(48);
+		if (!initResult)
+		{
+			LOG_ERROR("secp384r1 Initialize failed (error: %e)", initResult.Error());
 			return false;
+		}
 
 		// Verify we can export a public key
 		UINT8 publicKey[48 * 2 + 1];
 		auto result = ecc.ExportPublicKey(publicKey, sizeof(publicKey));
 		if (!result)
+		{
+			LOG_ERROR("secp384r1 ExportPublicKey failed (error: %e)", result.Error());
 			return false;
+		}
 
-		return publicKey[0] == 0x04;
+		if (publicKey[0] != 0x04)
+		{
+			LOG_ERROR("secp384r1 public key format byte: expected 0x04, got 0x%02X", (UINT32)publicKey[0]);
+			return false;
+		}
+		return true;
 	}
 
 	// Test 6: Public key export functionality
@@ -84,11 +113,17 @@ private:
 
 		// Export should succeed
 		if (!result)
+		{
+			LOG_ERROR("Public key export failed (error: %e)", result.Error());
 			return false;
+		}
 
 		// Public key should not be all zeros
 		if (IsAllZeros(publicKey, sizeof(publicKey)))
+		{
+			LOG_ERROR("Public key is all zeros");
 			return false;
+		}
 
 		return true;
 	}
@@ -104,13 +139,21 @@ private:
 
 		// First byte should be 0x04 (uncompressed point format)
 		if (publicKey[0] != 0x04)
+		{
+			LOG_ERROR("Public key format byte: expected 0x04, got 0x%02X", (UINT32)publicKey[0]);
 			return false;
+		}
 
 		// X and Y coordinates should not both be all zeros
 		BOOL xAllZeros = IsAllZeros(publicKey + 1, 32);
 		BOOL yAllZeros = IsAllZeros(publicKey + 1 + 32, 32);
 
-		return !(xAllZeros && yAllZeros);
+		if (xAllZeros && yAllZeros)
+		{
+			LOG_ERROR("Both X and Y coordinates are all zeros");
+			return false;
+		}
+		return true;
 	}
 
 	// Test 8: Shared secret computation (ECDH key exchange)
@@ -134,14 +177,26 @@ private:
 		UINT8 bobSecret[32];
 
 		auto aliceResult = alice.ComputeSharedSecret(bobPublicKey, sizeof(bobPublicKey), aliceSecret);
-		auto bobResult = bob.ComputeSharedSecret(alicePublicKey, sizeof(alicePublicKey), bobSecret);
-
-		// Both should succeed
-		if (!aliceResult || !bobResult)
+		if (!aliceResult)
+		{
+			LOG_ERROR("Alice ECDH shared secret computation failed (error: %e)", aliceResult.Error());
 			return false;
+		}
+
+		auto bobResult = bob.ComputeSharedSecret(alicePublicKey, sizeof(alicePublicKey), bobSecret);
+		if (!bobResult)
+		{
+			LOG_ERROR("Bob ECDH shared secret computation failed (error: %e)", bobResult.Error());
+			return false;
+		}
 
 		// Shared secrets should match
-		return CompareBytes(aliceSecret, bobSecret, 32);
+		if (!CompareBytes(aliceSecret, bobSecret, 32))
+		{
+			LOG_ERROR("ECDH shared secrets do not match");
+			return false;
+		}
+		return true;
 	}
 
 	// Test 9: Invalid curve size handling
@@ -153,7 +208,12 @@ private:
 		auto result = ecc.Initialize(64); // Invalid size
 
 		// Should fail
-		return result.IsErr();
+		if (!result.IsErr())
+		{
+			LOG_ERROR("Initialize(64) should have failed but succeeded");
+			return false;
+		}
+		return true;
 	}
 
 	// Test 10: Export buffer size validation
@@ -166,7 +226,12 @@ private:
 		auto result = ecc.ExportPublicKey(tooSmallBuffer, sizeof(tooSmallBuffer));
 
 		// Should fail due to insufficient buffer size
-		return result.IsErr();
+		if (!result.IsErr())
+		{
+			LOG_ERROR("ExportPublicKey with small buffer should have failed but succeeded");
+			return false;
+		}
+		return true;
 	}
 
 	// Test 11: Invalid public key handling
@@ -184,7 +249,12 @@ private:
 		auto result = ecc.ComputeSharedSecret(invalidPublicKey, sizeof(invalidPublicKey), secret);
 
 		// Should fail
-		return result.IsErr();
+		if (!result.IsErr())
+		{
+			LOG_ERROR("ComputeSharedSecret with invalid key should have failed but succeeded");
+			return false;
+		}
+		return true;
 	}
 
 	// Test 12: Sequential key generation produces different keys
@@ -213,6 +283,11 @@ private:
 
 		LOG_INFO("Key 1 valid: %d, Key 2 valid: %d, Keys differ: %d", key1Valid, key2Valid, key1DiffersFrom2);
 
-		return key1DiffersFrom2 && key1Valid && key2Valid;
+		if (!key1DiffersFrom2 || !key1Valid || !key2Valid)
+		{
+			LOG_ERROR("Key generation uniqueness failed: key1Valid=%d, key2Valid=%d, differ=%d", key1Valid, key2Valid, key1DiffersFrom2);
+			return false;
+		}
+		return true;
 	}
 };

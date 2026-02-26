@@ -94,9 +94,15 @@ private:
 	{
 		auto r = Result<UINT32, UINT32>::Ok(42);
 		if (!r.IsOk())
+		{
+			LOG_ERROR("Ok(42).IsOk() returned false");
 			return false;
+		}
 		if (r.Value() != 42)
+		{
+			LOG_ERROR("Ok(42).Value() != 42, got %u", r.Value());
 			return false;
+		}
 		return true;
 	}
 
@@ -104,7 +110,10 @@ private:
 	{
 		auto r = Result<UINT32, UINT32>::Err(99);
 		if (!r.IsErr())
+		{
+			LOG_ERROR("Err(99).IsErr() returned false");
 			return false;
+		}
 		return true;
 	}
 
@@ -112,9 +121,15 @@ private:
 	{
 		auto r = Result<void, UINT32>::Ok();
 		if (!r.IsOk())
+		{
+			LOG_ERROR("Void Ok().IsOk() returned false");
 			return false;
+		}
 		if (r.IsErr())
+		{
+			LOG_ERROR("Void Ok().IsErr() returned true");
 			return false;
+		}
 		return true;
 	}
 
@@ -122,15 +137,27 @@ private:
 	{
 		auto r = Result<void, Error>::Err(Error::Socket_CreateFailed_Open);
 		if (!r.IsErr())
+		{
+			LOG_ERROR("Void Err().IsErr() returned false");
 			return false;
+		}
 		if (r.IsOk())
+		{
+			LOG_ERROR("Void Err().IsOk() returned true");
 			return false;
+		}
 
 		const Error &err = r.Error();
 		if (err.Code != Error::Socket_CreateFailed_Open)
+		{
+			LOG_ERROR("Error code mismatch: expected Socket_CreateFailed_Open");
 			return false;
+		}
 		if (err.Platform != Error::PlatformKind::Runtime)
+		{
+			LOG_ERROR("Platform mismatch: expected Runtime");
 			return false;
+		}
 		return true;
 	}
 
@@ -145,9 +172,15 @@ private:
 
 		// Mutual exclusivity
 		if (!ok.IsOk() || ok.IsErr())
+		{
+			LOG_ERROR("Ok result: IsOk/IsErr not mutually exclusive");
 			return false;
+		}
 		if (!err.IsErr() || err.IsOk())
+		{
+			LOG_ERROR("Err result: IsOk/IsErr not mutually exclusive");
 			return false;
+		}
 		return true;
 	}
 
@@ -157,15 +190,27 @@ private:
 		auto err = Result<UINT32, UINT32>::Err(2);
 
 		if (!(BOOL)ok)
+		{
+			LOG_ERROR("(BOOL)ok returned false");
 			return false;
+		}
 		if ((BOOL)err)
+		{
+			LOG_ERROR("(BOOL)err returned true");
 			return false;
+		}
 
 		// Idiomatic usage
 		if (!ok)
+		{
+			LOG_ERROR("!ok evaluated to true");
 			return false;
+		}
 		if (err)
+		{
+			LOG_ERROR("err evaluated to true");
 			return false;
+		}
 		return true;
 	}
 
@@ -177,12 +222,18 @@ private:
 	{
 		auto r = Result<UINT32, UINT32>::Ok(123);
 		if (r.Value() != 123)
+		{
+			LOG_ERROR("Value() != 123, got %u", r.Value());
 			return false;
+		}
 
 		// Const access
 		const auto &cr = r;
 		if (cr.Value() != 123)
+		{
+			LOG_ERROR("Const Value() != 123");
 			return false;
+		}
 		return true;
 	}
 
@@ -191,7 +242,10 @@ private:
 		auto r = Result<UINT32, UINT32>::Ok(100);
 		r.Value() = 200;
 		if (r.Value() != 200)
+		{
+			LOG_ERROR("After mutation, Value() != 200, got %u", r.Value());
 			return false;
+		}
 		return true;
 	}
 
@@ -205,15 +259,24 @@ private:
 		auto ok1 = Result<UINT32, UINT32>::Ok(42);
 		auto ok2 = static_cast<Result<UINT32, UINT32> &&>(ok1);
 		if (!ok2.IsOk() || ok2.Value() != 42)
+		{
+			LOG_ERROR("Move Ok: value mismatch after move");
 			return false;
+		}
 
 		// Move Err
 		auto err1 = Result<UINT32, Error>::Err(Error::Socket_OpenFailed_Connect);
 		auto err2 = static_cast<Result<UINT32, Error> &&>(err1);
 		if (!err2.IsErr())
+		{
+			LOG_ERROR("Move Err: IsErr() false after move");
 			return false;
+		}
 		if (err2.Error().Code != Error::Socket_OpenFailed_Connect)
+		{
+			LOG_ERROR("Move Err: error code mismatch after move");
 			return false;
+		}
 		return true;
 	}
 
@@ -221,17 +284,26 @@ private:
 	{
 		auto r = Result<UINT32, UINT32>::Ok(10);
 		if (!r.IsOk() || r.Value() != 10)
+		{
+			LOG_ERROR("Initial Ok(10) check failed");
 			return false;
+		}
 
 		// Reassign from Err
 		r = Result<UINT32, UINT32>::Err(20);
 		if (!r.IsErr())
+		{
+			LOG_ERROR("After reassign to Err: IsErr() false");
 			return false;
+		}
 
 		// Reassign back to Ok
 		r = Result<UINT32, UINT32>::Ok(30);
 		if (!r.IsOk() || r.Value() != 30)
+		{
+			LOG_ERROR("After reassign to Ok(30): check failed");
 			return false;
+		}
 		return true;
 	}
 
@@ -240,12 +312,18 @@ private:
 		auto ok1 = Result<void, UINT32>::Ok();
 		auto ok2 = static_cast<Result<void, UINT32> &&>(ok1);
 		if (!ok2.IsOk())
+		{
+			LOG_ERROR("Void move Ok: IsOk() false");
 			return false;
+		}
 
 		auto err1 = Result<void, UINT32>::Err(7);
 		auto err2 = static_cast<Result<void, UINT32> &&>(err1);
 		if (!err2.IsErr())
+		{
+			LOG_ERROR("Void move Err: IsErr() false");
 			return false;
+		}
 		return true;
 	}
 
@@ -259,11 +337,17 @@ private:
 		{
 			auto r = Result<Tracked, UINT32>::Ok(Tracked(1, &destroyed));
 			if (destroyed)
-				return false; // should not be destroyed yet
+			{
+				LOG_ERROR("Tracked destroyed prematurely inside scope");
+				return false;
+			}
 		}
 		// Tracked destructor must fire when Result leaves scope
 		if (!destroyed)
+		{
+			LOG_ERROR("Tracked not destroyed after scope exit");
 			return false;
+		}
 		return true;
 	}
 
@@ -275,13 +359,22 @@ private:
 			{
 				auto r2 = static_cast<Result<Tracked, UINT32> &&>(r1);
 				if (destroyed)
-					return false; // not destroyed yet — r2 owns it
-				if (r2.Value().value != 3)
+				{
+					LOG_ERROR("Tracked destroyed after move (r2 still alive)");
 					return false;
+				}
+				if (r2.Value().value != 3)
+				{
+					LOG_ERROR("Tracked value mismatch after move: expected 3");
+					return false;
+				}
 			}
 			// r2 out of scope — destructor fires
 			if (!destroyed)
+			{
+				LOG_ERROR("Tracked not destroyed after r2 scope exit");
 				return false;
+			}
 		}
 		// r1 source was nullified by move — no double-destroy
 		return true;
@@ -295,13 +388,22 @@ private:
 	{
 		auto r = Result<UINT32, Error>::Err(Error::Dns_ConnectFailed);
 		if (!r.IsErr())
+		{
+			LOG_ERROR("SingleError: IsErr() false");
 			return false;
+		}
 
 		const Error &err = r.Error();
 		if (err.Code != Error::Dns_ConnectFailed)
+		{
+			LOG_ERROR("SingleError: Code mismatch");
 			return false;
+		}
 		if (err.Platform != Error::PlatformKind::Runtime)
+		{
+			LOG_ERROR("SingleError: Platform mismatch");
 			return false;
+		}
 		return true;
 	}
 
@@ -312,13 +414,22 @@ private:
 			Error::Windows(0xC0000034),
 			Error::Socket_OpenFailed_Connect);
 		if (!r.IsErr())
+		{
+			LOG_ERROR("TwoArgErr: IsErr() false");
 			return false;
+		}
 
 		const Error &err = r.Error();
 		if (err.Code != Error::Socket_OpenFailed_Connect)
+		{
+			LOG_ERROR("TwoArgErr: Code mismatch, expected Socket_OpenFailed_Connect");
 			return false;
+		}
 		if (err.Platform != Error::PlatformKind::Runtime)
+		{
+			LOG_ERROR("TwoArgErr: Platform mismatch");
 			return false;
+		}
 		return true;
 	}
 
@@ -332,13 +443,22 @@ private:
 		// Propagate — stores only the appended code
 		auto outer = Result<void, Error>::Err(inner, Error::Tls_WriteFailed_Send);
 		if (!outer.IsErr())
+		{
+			LOG_ERROR("PropagationErr: IsErr() false");
 			return false;
+		}
 
 		const Error &err = outer.Error();
 		if (err.Code != Error::Tls_WriteFailed_Send)
+		{
+			LOG_ERROR("PropagationErr: Code mismatch, expected Tls_WriteFailed_Send");
 			return false;
+		}
 		if (err.Platform != Error::PlatformKind::Runtime)
+		{
+			LOG_ERROR("PropagationErr: Platform mismatch");
 			return false;
+		}
 		return true;
 	}
 
@@ -350,18 +470,30 @@ private:
 	{
 		auto r1 = Result<UINT32, UINT32>::Err(42);
 		if (!r1.IsErr())
+		{
+			LOG_ERROR("NonChainable Err(42): IsErr() false");
 			return false;
+		}
 		if (r1.IsOk())
+		{
+			LOG_ERROR("NonChainable Err(42): IsOk() true");
 			return false;
+		}
 
 		auto r2 = Result<void, UINT32>::Err(7);
 		if (!r2.IsErr())
+		{
+			LOG_ERROR("NonChainable void Err(7): IsErr() false");
 			return false;
+		}
 
 		// Ok path still works
 		auto r3 = Result<UINT32, UINT32>::Ok(100);
 		if (!r3.IsOk() || r3.Value() != 100)
+		{
+			LOG_ERROR("NonChainable Ok(100): check failed");
 			return false;
+		}
 		return true;
 	}
 

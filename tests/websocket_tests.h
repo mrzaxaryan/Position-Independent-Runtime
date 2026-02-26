@@ -215,15 +215,21 @@ private:
 		auto write1 = wsClient.Write((PCVOID)(PCCHAR)msg1, msg1.Length(), OPCODE_TEXT);
 		if (!write1)
 		{
-			LOG_ERROR("Failed to send message 1");
+			LOG_ERROR("Failed to send message 1 (error: %e)", write1.Error());
 			(void)wsClient.Close();
 			return false;
 		}
 
 		auto read1 = wsClient.Read();
-		if (!read1 || read1.Value().length != msg1.Length())
+		if (!read1)
 		{
-			LOG_ERROR("Failed to receive echo for message 1");
+			LOG_ERROR("Failed to receive echo for message 1 (error: %e)", read1.Error());
+			(void)wsClient.Close();
+			return false;
+		}
+		if (read1.Value().length != msg1.Length())
+		{
+			LOG_ERROR("Echo length mismatch for message 1: expected %d, got %d", msg1.Length(), read1.Value().length);
 			(void)wsClient.Close();
 			return false;
 		}
@@ -232,15 +238,21 @@ private:
 		auto write2 = wsClient.Write((PCVOID)(PCCHAR)msg2, msg2.Length(), OPCODE_TEXT);
 		if (!write2)
 		{
-			LOG_ERROR("Failed to send message 2");
+			LOG_ERROR("Failed to send message 2 (error: %e)", write2.Error());
 			(void)wsClient.Close();
 			return false;
 		}
 
 		auto read2 = wsClient.Read();
-		if (!read2 || read2.Value().length != msg2.Length())
+		if (!read2)
 		{
-			LOG_ERROR("Failed to receive echo for message 2");
+			LOG_ERROR("Failed to receive echo for message 2 (error: %e)", read2.Error());
+			(void)wsClient.Close();
+			return false;
+		}
+		if (read2.Value().length != msg2.Length())
+		{
+			LOG_ERROR("Echo length mismatch for message 2: expected %d, got %d", msg2.Length(), read2.Value().length);
 			(void)wsClient.Close();
 			return false;
 		}
@@ -249,15 +261,21 @@ private:
 		auto write3 = wsClient.Write((PCVOID)(PCCHAR)msg3, msg3.Length(), OPCODE_TEXT);
 		if (!write3)
 		{
-			LOG_ERROR("Failed to send message 3");
+			LOG_ERROR("Failed to send message 3 (error: %e)", write3.Error());
 			(void)wsClient.Close();
 			return false;
 		}
 
 		auto read3 = wsClient.Read();
-		if (!read3 || read3.Value().length != msg3.Length())
+		if (!read3)
 		{
-			LOG_ERROR("Failed to receive echo for message 3");
+			LOG_ERROR("Failed to receive echo for message 3 (error: %e)", read3.Error());
+			(void)wsClient.Close();
+			return false;
+		}
+		if (read3.Value().length != msg3.Length())
+		{
+			LOG_ERROR("Echo length mismatch for message 3: expected %d, got %d", msg3.Length(), read3.Value().length);
 			(void)wsClient.Close();
 			return false;
 		}

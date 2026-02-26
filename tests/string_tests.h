@@ -36,11 +36,20 @@ private:
 		auto str3 = "A"_embed;
 
 		if (String::Length((const CHAR *)str1) != 5)
+		{
+			LOG_ERROR("Length('Hello') != 5");
 			return false;
+		}
 		if (String::Length((const CHAR *)str2) != 13)
+		{
+			LOG_ERROR("Length('Hello, World!') != 13");
 			return false;
+		}
 		if (String::Length((const CHAR *)str3) != 1)
+		{
+			LOG_ERROR("Length('A') != 1");
 			return false;
+		}
 
 		return true;
 	}
@@ -52,11 +61,20 @@ private:
 		auto str3 = L"A"_embed;
 
 		if (String::Length((const WCHAR *)str1) != 5)
+		{
+			LOG_ERROR("Wide Length('Hello') != 5");
 			return false;
+		}
 		if (String::Length((const WCHAR *)str2) != 13)
+		{
+			LOG_ERROR("Wide Length('Hello, World!') != 13");
 			return false;
+		}
 		if (String::Length((const WCHAR *)str3) != 1)
+		{
+			LOG_ERROR("Wide Length('A') != 1");
 			return false;
+		}
 
 		return true;
 	}
@@ -67,9 +85,15 @@ private:
 		auto emptyWide = L""_embed;
 
 		if (String::Length((const CHAR *)emptyNarrow) != 0)
+		{
+			LOG_ERROR("Narrow empty string length != 0");
 			return false;
+		}
 		if (String::Length((const WCHAR *)emptyWide) != 0)
+		{
+			LOG_ERROR("Wide empty string length != 0");
 			return false;
+		}
 
 		return true;
 	}
@@ -78,17 +102,32 @@ private:
 	{
 		// Test uppercase letters A-Z
 		if (String::ToLowerCase<CHAR>('A') != 'a')
+		{
+			LOG_ERROR("ToLowerCase('A') != 'a'");
 			return false;
+		}
 		if (String::ToLowerCase<CHAR>('M') != 'm')
+		{
+			LOG_ERROR("ToLowerCase('M') != 'm'");
 			return false;
+		}
 		if (String::ToLowerCase<CHAR>('Z') != 'z')
+		{
+			LOG_ERROR("ToLowerCase('Z') != 'z'");
 			return false;
+		}
 
 		// Test wide char version
 		if (String::ToLowerCase<WCHAR>(L'A') != L'a')
+		{
+			LOG_ERROR("Wide ToLowerCase('A') != 'a'");
 			return false;
+		}
 		if (String::ToLowerCase<WCHAR>(L'Z') != L'z')
+		{
+			LOG_ERROR("Wide ToLowerCase('Z') != 'z'");
 			return false;
+		}
 
 		return true;
 	}
@@ -97,23 +136,44 @@ private:
 	{
 		// Already lowercase should stay lowercase
 		if (String::ToLowerCase<CHAR>('a') != 'a')
+		{
+			LOG_ERROR("ToLowerCase('a') != 'a'");
 			return false;
+		}
 		if (String::ToLowerCase<CHAR>('z') != 'z')
+		{
+			LOG_ERROR("ToLowerCase('z') != 'z'");
 			return false;
+		}
 
 		// Numbers should be unchanged
 		if (String::ToLowerCase<CHAR>('0') != '0')
+		{
+			LOG_ERROR("ToLowerCase('0') != '0'");
 			return false;
+		}
 		if (String::ToLowerCase<CHAR>('9') != '9')
+		{
+			LOG_ERROR("ToLowerCase('9') != '9'");
 			return false;
+		}
 
 		// Special characters should be unchanged
 		if (String::ToLowerCase<CHAR>('!') != '!')
+		{
+			LOG_ERROR("ToLowerCase('!') != '!'");
 			return false;
+		}
 		if (String::ToLowerCase<CHAR>('@') != '@')
+		{
+			LOG_ERROR("ToLowerCase('@') != '@'");
 			return false;
+		}
 		if (String::ToLowerCase<CHAR>(' ') != ' ')
+		{
+			LOG_ERROR("ToLowerCase(' ') != ' '");
 			return false;
+		}
 
 		return true;
 	}
@@ -129,12 +189,18 @@ private:
 
 		// Should be 5 characters
 		if (len != 5)
+		{
+			LOG_ERROR("UTF16->UTF8 length: expected 5, got %u", (UINT32)len);
 			return false;
+		}
 
 		// Verify content
 		auto expected_hello = "Hello"_embed;
 		if (Memory::Compare(utf8, (const CHAR *)expected_hello, 6) != 0)
+		{
+			LOG_ERROR("UTF16->UTF8 content mismatch");
 			return false;
+		}
 
 		return true;
 	}
@@ -150,12 +216,18 @@ private:
 
 		// Should be 0 characters
 		if (len != 0)
+		{
+			LOG_ERROR("UTF16->UTF8 empty length: expected 0, got %u", (UINT32)len);
 			return false;
+		}
 
 		// Should be null terminated
 		auto expected_empty = ""_embed;
 		if (Memory::Compare(utf8, (const CHAR *)expected_empty, 1) != 0)
+		{
+			LOG_ERROR("UTF16->UTF8 empty content mismatch");
 			return false;
+		}
 
 		return true;
 	}

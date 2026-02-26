@@ -41,7 +41,10 @@ private:
 		for (INT32 i = 0; i < 14; i++)
 		{
 			if (dest[i] != ((const CHAR *)src)[i])
+			{
+				LOG_ERROR("Copy mismatch at index %d: got 0x%02X, expected 0x%02X", i, (UINT32)(UINT8)dest[i], (UINT32)(UINT8)((const CHAR *)src)[i]);
 				return false;
+			}
 		}
 		return true;
 	}
@@ -63,7 +66,10 @@ private:
 		for (INT32 i = 0; i < 16; i++)
 		{
 			if (dest[i] != (UINT8)i)
+			{
+				LOG_ERROR("Non-overlapping copy mismatch at index %d: got %u, expected %u", i, (UINT32)dest[i], (UINT32)i);
 				return false;
+			}
 		}
 		return true;
 	}
@@ -85,7 +91,10 @@ private:
 		for (INT32 i = 0; i < 16; i++)
 		{
 			if (buffer[i] != 0)
+			{
+				LOG_ERROR("Zero failed at index %d: got 0x%02X", i, (UINT32)buffer[i]);
 				return false;
+			}
 		}
 		return true;
 	}
@@ -101,7 +110,10 @@ private:
 		for (INT32 i = 0; i < 16; i++)
 		{
 			if (buffer[i] != 0xAB)
+			{
+				LOG_ERROR("Set(0xAB) failed at index %d: got 0x%02X", i, (UINT32)buffer[i]);
 				return false;
+			}
 		}
 
 		// Test setting to different value
@@ -109,13 +121,19 @@ private:
 		for (INT32 i = 0; i < 8; i++)
 		{
 			if (buffer[i] != 0x42)
+			{
+				LOG_ERROR("Set(0x42) failed at index %d: got 0x%02X", i, (UINT32)buffer[i]);
 				return false;
+			}
 		}
 		// Verify remaining bytes unchanged
 		for (INT32 i = 8; i < 16; i++)
 		{
 			if (buffer[i] != 0xAB)
+			{
+				LOG_ERROR("Remaining byte changed at index %d: got 0x%02X, expected 0xAB", i, (UINT32)buffer[i]);
 				return false;
+			}
 		}
 
 		return true;
@@ -127,7 +145,12 @@ private:
 		auto str2 = "Hello"_embed;
 
 		INT32 result = Memory::Compare((const CHAR *)str1, (const CHAR *)str2, 5);
-		return result == 0;
+		if (result != 0)
+		{
+			LOG_ERROR("Compare equal failed: expected 0, got %d", result);
+			return false;
+		}
+		return true;
 	}
 
 	static BOOL TestCompareLessThan()
@@ -136,7 +159,12 @@ private:
 		auto str2 = "Banana"_embed;
 
 		INT32 result = Memory::Compare((const CHAR *)str1, (const CHAR *)str2, 5);
-		return result < 0; // 'A' < 'B'
+		if (result >= 0)
+		{
+			LOG_ERROR("Compare less-than failed: expected < 0, got %d", result);
+			return false;
+		}
+		return true;
 	}
 
 	static BOOL TestCompareGreaterThan()
@@ -145,7 +173,12 @@ private:
 		auto str2 = "Apple"_embed;
 
 		INT32 result = Memory::Compare((const CHAR *)str1, (const CHAR *)str2, 5);
-		return result > 0; // 'Z' > 'A'
+		if (result <= 0)
+		{
+			LOG_ERROR("Compare greater-than failed: expected > 0, got %d", result);
+			return false;
+		}
+		return true;
 	}
 
 	static BOOL TestZeroSize()
@@ -168,13 +201,19 @@ private:
 		for (INT32 i = 0; i < 8; i++)
 		{
 			if (dest[i] != 0)
+			{
+				LOG_ERROR("Zero-size copy modified dest at index %d: got 0x%02X", i, (UINT32)dest[i]);
 				return false;
+			}
 		}
 
 		// Compare zero bytes should return 0 (equal)
 		INT32 cmp = Memory::Compare(src, dest, 0);
 		if (cmp != 0)
+		{
+			LOG_ERROR("Zero-size compare failed: expected 0, got %d", cmp);
 			return false;
+		}
 
 		return true;
 	}

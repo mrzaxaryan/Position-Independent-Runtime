@@ -60,7 +60,10 @@ private:
 		{
 			INT32 val = rng.Get();
 			if (val < 0 || val >= Random::MAX)
+			{
+				LOG_ERROR("Random value out of range: %d (max: %d)", val, Random::MAX);
 				return false;
+			}
 		}
 
 		return true;
@@ -88,7 +91,12 @@ private:
 			}
 		}
 
-		return foundDifferent;
+		if (!foundDifferent)
+		{
+			LOG_ERROR("All 20 random values are identical: %d", values[0]);
+			return false;
+		}
+		return true;
 	}
 
 	static BOOL TestCharGeneration()
@@ -101,7 +109,10 @@ private:
 			CHAR c = rng.GetChar<CHAR>();
 			// Verify character is lowercase a-z
 			if (c < 'a' || c > 'z')
+			{
+				LOG_ERROR("Narrow char out of range: 0x%02X", (UINT32)(UINT8)c);
 				return false;
+			}
 		}
 
 		// Test wide char generation
@@ -110,7 +121,10 @@ private:
 			WCHAR c = rng.GetChar<WCHAR>();
 			// Verify character is lowercase a-z
 			if (c < L'a' || c > L'z')
+			{
+				LOG_ERROR("Wide char out of range: 0x%04X", (UINT32)c);
 				return false;
+			}
 		}
 
 		return true;
@@ -126,17 +140,26 @@ private:
 
 		// Verify length
 		if (len != 10)
+		{
+			LOG_ERROR("Narrow string length: expected 10, got %u", len);
 			return false;
+		}
 
 		// Verify null termination
 		if (buffer[10] != '\0')
+		{
+			LOG_ERROR("Narrow string not null-terminated at position 10");
 			return false;
+		}
 
 		// Verify all characters are lowercase letters
 		for (UINT32 i = 0; i < len; i++)
 		{
 			if (buffer[i] < 'a' || buffer[i] > 'z')
+			{
+				LOG_ERROR("Narrow string char[%u] out of range: 0x%02X", i, (UINT32)(UINT8)buffer[i]);
 				return false;
+			}
 		}
 
 		return true;
@@ -152,17 +175,26 @@ private:
 
 		// Verify length
 		if (len != 15)
+		{
+			LOG_ERROR("Wide string length: expected 15, got %u", len);
 			return false;
+		}
 
 		// Verify null termination
 		if (buffer[15] != L'\0')
+		{
+			LOG_ERROR("Wide string not null-terminated at position 15");
 			return false;
+		}
 
 		// Verify all characters are lowercase letters
 		for (UINT32 i = 0; i < len; i++)
 		{
 			if (buffer[i] < L'a' || buffer[i] > L'z')
+			{
+				LOG_ERROR("Wide string char[%u] out of range: 0x%04X", i, (UINT32)buffer[i]);
 				return false;
+			}
 		}
 
 		return true;
@@ -181,7 +213,10 @@ private:
 
 		// Verify success
 		if (result != 1)
+		{
+			LOG_ERROR("GetArray returned %d, expected 1", result);
 			return false;
+		}
 
 		// Verify at least some bytes are non-zero (very unlikely all would be zero)
 		BOOL foundNonZero = false;
@@ -194,7 +229,12 @@ private:
 			}
 		}
 
-		return foundNonZero;
+		if (!foundNonZero)
+		{
+			LOG_ERROR("All 64 random bytes are zero");
+			return false;
+		}
+		return true;
 	}
 
 	static BOOL TestEmptyString()
@@ -207,11 +247,17 @@ private:
 
 		// Verify length is 0
 		if (len != 0)
+		{
+			LOG_ERROR("Empty string length: expected 0, got %u", len);
 			return false;
+		}
 
 		// Verify null termination at position 0
 		if (buffer[0] != '\0')
+		{
+			LOG_ERROR("Empty string not null-terminated at position 0");
 			return false;
+		}
 
 		return true;
 	}

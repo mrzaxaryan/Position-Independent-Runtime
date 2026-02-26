@@ -34,7 +34,12 @@ private:
 		auto testStr = "hello"_embed;
 		UINT64 hash1 = Djb2::Hash((const CHAR *)testStr);
 		UINT64 hash2 = Djb2::Hash((const CHAR *)testStr);
-		return hash1 == hash2;
+		if (hash1 != hash2)
+		{
+			LOG_ERROR("Hash consistency failed: same input produced different hashes");
+			return false;
+		}
+		return true;
 	}
 
 	static BOOL TestCaseInsensitivity()
@@ -48,7 +53,17 @@ private:
 		UINT64 hashUpper = Djb2::Hash((const CHAR *)upper);
 		UINT64 hashMixed = Djb2::Hash((const CHAR *)mixed);
 
-		return (hashLower == hashUpper) && (hashLower == hashMixed);
+		if (hashLower != hashUpper)
+		{
+			LOG_ERROR("Case insensitivity failed: lower != upper");
+			return false;
+		}
+		if (hashLower != hashMixed)
+		{
+			LOG_ERROR("Case insensitivity failed: lower != mixed");
+			return false;
+		}
+		return true;
 	}
 
 	static BOOL TestEmptyString()
@@ -58,7 +73,12 @@ private:
 		// Empty string should return the seed value
 		UINT64 hash = Djb2::Hash((const CHAR *)empty);
 		// Hash of empty string should be non-zero (it's the seed)
-		return hash != 0;
+		if (hash == 0)
+		{
+			LOG_ERROR("Empty string hash is zero, expected non-zero seed");
+			return false;
+		}
+		return true;
 	}
 
 	static BOOL TestCompileTimeMatchesRuntime()
@@ -67,7 +87,12 @@ private:
 		constexpr UINT64 compileTimeHash = Djb2::HashCompileTime("test");
 		auto runtimeStr = "test"_embed;
 		UINT64 runtimeHash = Djb2::Hash((const CHAR *)runtimeStr);
-		return compileTimeHash == runtimeHash;
+		if (compileTimeHash != runtimeHash)
+		{
+			LOG_ERROR("Compile-time hash does not match runtime hash");
+			return false;
+		}
+		return true;
 	}
 
 	static BOOL TestDifferentStringsProduceDifferentHashes()
@@ -81,7 +106,22 @@ private:
 		UINT64 hash2 = Djb2::Hash((const CHAR *)str2);
 		UINT64 hash3 = Djb2::Hash((const CHAR *)str3);
 
-		return (hash1 != hash2) && (hash2 != hash3) && (hash1 != hash3);
+		if (hash1 == hash2)
+		{
+			LOG_ERROR("Hash collision: 'hello' == 'world'");
+			return false;
+		}
+		if (hash2 == hash3)
+		{
+			LOG_ERROR("Hash collision: 'world' == 'test'");
+			return false;
+		}
+		if (hash1 == hash3)
+		{
+			LOG_ERROR("Hash collision: 'hello' == 'test'");
+			return false;
+		}
+		return true;
 	}
 
 	static BOOL TestWideCharSupport()
@@ -94,7 +134,10 @@ private:
 
 		// Consistency check
 		if (hash1 != hash2)
+		{
+			LOG_ERROR("Wide char hash consistency failed");
 			return false;
+		}
 
 		auto wideLower = L"hello"_embed;
 		auto wideUpper = L"HELLO"_embed;
@@ -103,6 +146,11 @@ private:
 		UINT64 hashLower = Djb2::Hash((const WCHAR *)wideLower);
 		UINT64 hashUpper = Djb2::Hash((const WCHAR *)wideUpper);
 
-		return hashLower == hashUpper;
+		if (hashLower != hashUpper)
+		{
+			LOG_ERROR("Wide char case insensitivity failed: lower != upper");
+			return false;
+		}
+		return true;
 	}
 };

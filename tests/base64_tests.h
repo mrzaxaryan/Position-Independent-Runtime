@@ -52,7 +52,12 @@ private:
 		CHAR output[10];
 		auto input = ""_embed;
 		Base64::Encode(static_cast<PCCHAR>(input), 0, output);
-		return String::Compare<CHAR>(output, static_cast<PCCHAR>(""_embed));
+		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>(""_embed)))
+		{
+			LOG_ERROR("Encode empty: got '%s'", output);
+			return false;
+		}
+		return true;
 	}
 
 	// Test: Encode single character "f"
@@ -62,7 +67,12 @@ private:
 		CHAR output[10];
 		auto input = "f"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input), 1, output);
-		return String::Compare<CHAR>(output, static_cast<PCCHAR>("Zg=="_embed));
+		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zg=="_embed)))
+		{
+			LOG_ERROR("Encode 'f': got '%s'", output);
+			return false;
+		}
+		return true;
 	}
 
 	// Test: Encode two characters "fo"
@@ -72,7 +82,12 @@ private:
 		CHAR output[10];
 		auto input = "fo"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input), 2, output);
-		return String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm8="_embed));
+		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm8="_embed)))
+		{
+			LOG_ERROR("Encode 'fo': got '%s'", output);
+			return false;
+		}
+		return true;
 	}
 
 	// Test: Encode three characters "foo"
@@ -82,7 +97,12 @@ private:
 		CHAR output[10];
 		auto input = "foo"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input), 3, output);
-		return String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm9v"_embed));
+		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm9v"_embed)))
+		{
+			LOG_ERROR("Encode 'foo': got '%s'", output);
+			return false;
+		}
+		return true;
 	}
 
 	// Test: Encode standard text "Hello, World!"
@@ -92,7 +112,12 @@ private:
 		CHAR output[30];
 		auto input = "Hello, World!"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input), 13, output);
-		return String::Compare<CHAR>(output, static_cast<PCCHAR>("SGVsbG8sIFdvcmxkIQ=="_embed));
+		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("SGVsbG8sIFdvcmxkIQ=="_embed)))
+		{
+			LOG_ERROR("Encode 'Hello, World!': got '%s'", output);
+			return false;
+		}
+		return true;
 	}
 
 	// Test: Encode binary data
@@ -103,16 +128,15 @@ private:
 		CHAR output[20];
 		auto input = MakeEmbedArray((const UINT8[]){0x00, 0x01, 0x02, 0x03, 0x04, 0x05});
 		Base64::Encode(reinterpret_cast<const char *>(static_cast<const VOID *>(input)), 6, output);
-		return String::Compare<CHAR>(output, static_cast<PCCHAR>("AAECAwQF"_embed));
+		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("AAECAwQF"_embed)))
+		{
+			LOG_ERROR("Encode binary: got '%s'", output);
+			return false;
+		}
+		return true;
 	}
 
 	// Test: Encode strings of various lengths to test all padding cases
-	// "f" -> "Zg==" (2 padding)
-	// "fo" -> "Zm8=" (1 padding)
-	// "foo" -> "Zm9v" (0 padding)
-	// "foob" -> "Zm9vYg==" (2 padding)
-	// "fooba" -> "Zm9vYmE=" (1 padding)
-	// "foobar" -> "Zm9vYmFy" (0 padding)
 	static BOOL TestEncode_AllPaddingCases()
 	{
 		CHAR output[20];
@@ -120,32 +144,50 @@ private:
 		auto input1 = "f"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input1), 1, output);
 		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zg=="_embed)))
+		{
+			LOG_ERROR("Padding 'f': got '%s'", output);
 			return false;
+		}
 
 		auto input2 = "fo"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input2), 2, output);
 		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm8="_embed)))
+		{
+			LOG_ERROR("Padding 'fo': got '%s'", output);
 			return false;
+		}
 
 		auto input3 = "foo"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input3), 3, output);
 		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm9v"_embed)))
+		{
+			LOG_ERROR("Padding 'foo': got '%s'", output);
 			return false;
+		}
 
 		auto input4 = "foob"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input4), 4, output);
 		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm9vYg=="_embed)))
+		{
+			LOG_ERROR("Padding 'foob': got '%s'", output);
 			return false;
+		}
 
 		auto input5 = "fooba"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input5), 5, output);
 		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm9vYmE="_embed)))
+		{
+			LOG_ERROR("Padding 'fooba': got '%s'", output);
 			return false;
+		}
 
 		auto input6 = "foobar"_embed;
 		Base64::Encode(static_cast<PCCHAR>(input6), 6, output);
 		if (!String::Compare<CHAR>(output, static_cast<PCCHAR>("Zm9vYmFy"_embed)))
+		{
+			LOG_ERROR("Padding 'foobar': got '%s'", output);
 			return false;
+		}
 
 		return true;
 	}
@@ -157,7 +199,12 @@ private:
 		CHAR output[10];
 		auto input = ""_embed;
 		auto r = Base64::Decode(static_cast<PCCHAR>(input), 0, output);
-		return r.IsOk(); // Empty decode should succeed
+		if (!r)
+		{
+			LOG_ERROR("Decode empty failed (error: %e)", r.Error());
+			return false;
+		}
+		return true;
 	}
 
 	// Test: Decode "Zg==" to "f"
@@ -167,8 +214,16 @@ private:
 		auto input = "Zg=="_embed;
 		auto r = Base64::Decode(static_cast<PCCHAR>(input), 4, output);
 		if (!r)
+		{
+			LOG_ERROR("Decode 'Zg==' failed (error: %e)", r.Error());
 			return false;
-		return Memory::Compare(output, static_cast<PCCHAR>("f"_embed), 1) == 0;
+		}
+		if (Memory::Compare(output, static_cast<PCCHAR>("f"_embed), 1) != 0)
+		{
+			LOG_ERROR("Decode 'Zg==' content mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// Test: Decode "Zm8=" to "fo"
@@ -178,8 +233,16 @@ private:
 		auto input = "Zm8="_embed;
 		auto r = Base64::Decode(static_cast<PCCHAR>(input), 4, output);
 		if (!r)
+		{
+			LOG_ERROR("Decode 'Zm8=' failed (error: %e)", r.Error());
 			return false;
-		return Memory::Compare(output, static_cast<PCCHAR>("fo"_embed), 2) == 0;
+		}
+		if (Memory::Compare(output, static_cast<PCCHAR>("fo"_embed), 2) != 0)
+		{
+			LOG_ERROR("Decode 'Zm8=' content mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// Test: Decode "Zm9v" to "foo"
@@ -189,8 +252,16 @@ private:
 		auto input = "Zm9v"_embed;
 		auto r = Base64::Decode(static_cast<PCCHAR>(input), 4, output);
 		if (!r)
+		{
+			LOG_ERROR("Decode 'Zm9v' failed (error: %e)", r.Error());
 			return false;
-		return Memory::Compare(output, static_cast<PCCHAR>("foo"_embed), 3) == 0;
+		}
+		if (Memory::Compare(output, static_cast<PCCHAR>("foo"_embed), 3) != 0)
+		{
+			LOG_ERROR("Decode 'Zm9v' content mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// Test: Decode "SGVsbG8sIFdvcmxkIQ==" to "Hello, World!"
@@ -200,8 +271,16 @@ private:
 		auto input = "SGVsbG8sIFdvcmxkIQ=="_embed;
 		auto r = Base64::Decode(static_cast<PCCHAR>(input), 20, output);
 		if (!r)
+		{
+			LOG_ERROR("Decode standard text failed (error: %e)", r.Error());
 			return false;
-		return Memory::Compare(output, static_cast<PCCHAR>("Hello, World!"_embed), 13) == 0;
+		}
+		if (Memory::Compare(output, static_cast<PCCHAR>("Hello, World!"_embed), 13) != 0)
+		{
+			LOG_ERROR("Decode standard text content mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// Test: Decode "AAECAwQF" to binary data {0x00, 0x01, 0x02, 0x03, 0x04, 0x05}
@@ -211,11 +290,19 @@ private:
 		auto input = "AAECAwQF"_embed;
 		auto r = Base64::Decode(static_cast<PCCHAR>(input), 8, output);
 		if (!r)
+		{
+			LOG_ERROR("Decode binary data failed (error: %e)", r.Error());
 			return false;
+		}
 
 		auto expected = MakeEmbedArray((const UINT8[]){0x00, 0x01, 0x02, 0x03, 0x04, 0x05});
 
-		return Memory::Compare(output, static_cast<const VOID *>(expected), 6) == 0;
+		if (Memory::Compare(output, static_cast<const VOID *>(expected), 6) != 0)
+		{
+			LOG_ERROR("Decode binary data content mismatch");
+			return false;
+		}
+		return true;
 	}
 
 	// Test: Round-trip encoding and decoding
@@ -229,22 +316,46 @@ private:
 		UINT32 len1 = 44;
 		Base64::Encode(static_cast<PCCHAR>(test1), len1, encoded);
 		auto r1 = Base64::Decode(encoded, Base64::GetEncodeOutSize(len1) - 1, decoded);
-		if (!r1 || Memory::Compare(decoded, static_cast<PCCHAR>(test1), len1) != 0)
+		if (!r1)
+		{
+			LOG_ERROR("Round-trip decode failed for test1 (error: %e)", r1.Error());
 			return false;
+		}
+		if (Memory::Compare(decoded, static_cast<PCCHAR>(test1), len1) != 0)
+		{
+			LOG_ERROR("Round-trip content mismatch for test1");
+			return false;
+		}
 
 		auto test2 = "1234567890"_embed;
 		UINT32 len2 = 10;
 		Base64::Encode(static_cast<PCCHAR>(test2), len2, encoded);
 		auto r2 = Base64::Decode(encoded, Base64::GetEncodeOutSize(len2) - 1, decoded);
-		if (!r2 || Memory::Compare(decoded, static_cast<PCCHAR>(test2), len2) != 0)
+		if (!r2)
+		{
+			LOG_ERROR("Round-trip decode failed for test2 (error: %e)", r2.Error());
 			return false;
+		}
+		if (Memory::Compare(decoded, static_cast<PCCHAR>(test2), len2) != 0)
+		{
+			LOG_ERROR("Round-trip content mismatch for test2");
+			return false;
+		}
 
 		auto test3 = "!@#$%^&*()_+-=[]{}|;:,.<>?"_embed;
 		UINT32 len3 = 26;
 		Base64::Encode(static_cast<PCCHAR>(test3), len3, encoded);
 		auto r3 = Base64::Decode(encoded, Base64::GetEncodeOutSize(len3) - 1, decoded);
-		if (!r3 || Memory::Compare(decoded, static_cast<PCCHAR>(test3), len3) != 0)
+		if (!r3)
+		{
+			LOG_ERROR("Round-trip decode failed for test3 (error: %e)", r3.Error());
 			return false;
+		}
+		if (Memory::Compare(decoded, static_cast<PCCHAR>(test3), len3) != 0)
+		{
+			LOG_ERROR("Round-trip content mismatch for test3");
+			return false;
+		}
 
 		return true;
 	}
@@ -254,27 +365,45 @@ private:
 	{
 		// Empty: 0 -> 1 (null terminator)
 		if (Base64::GetEncodeOutSize(0) != 1)
+		{
+			LOG_ERROR("GetEncodeOutSize(0): expected 1, got %u", Base64::GetEncodeOutSize(0));
 			return false;
+		}
 
 		// 1 byte: 1 -> 5 (4 chars + null)
 		if (Base64::GetEncodeOutSize(1) != 5)
+		{
+			LOG_ERROR("GetEncodeOutSize(1): expected 5, got %u", Base64::GetEncodeOutSize(1));
 			return false;
+		}
 
 		// 2 bytes: 2 -> 5 (4 chars + null)
 		if (Base64::GetEncodeOutSize(2) != 5)
+		{
+			LOG_ERROR("GetEncodeOutSize(2): expected 5, got %u", Base64::GetEncodeOutSize(2));
 			return false;
+		}
 
 		// 3 bytes: 3 -> 5 (4 chars + null)
 		if (Base64::GetEncodeOutSize(3) != 5)
+		{
+			LOG_ERROR("GetEncodeOutSize(3): expected 5, got %u", Base64::GetEncodeOutSize(3));
 			return false;
+		}
 
 		// 4 bytes: 4 -> 9 (8 chars + null)
 		if (Base64::GetEncodeOutSize(4) != 9)
+		{
+			LOG_ERROR("GetEncodeOutSize(4): expected 9, got %u", Base64::GetEncodeOutSize(4));
 			return false;
+		}
 
 		// 6 bytes: 6 -> 9 (8 chars + null)
 		if (Base64::GetEncodeOutSize(6) != 9)
+		{
+			LOG_ERROR("GetEncodeOutSize(6): expected 9, got %u", Base64::GetEncodeOutSize(6));
 			return false;
+		}
 
 		return true;
 	}
@@ -284,19 +413,31 @@ private:
 	{
 		// 0 chars: 0 -> 0
 		if (Base64::GetDecodeOutSize(0) != 0)
+		{
+			LOG_ERROR("GetDecodeOutSize(0): expected 0, got %u", Base64::GetDecodeOutSize(0));
 			return false;
+		}
 
 		// 4 chars: 4 -> 3
 		if (Base64::GetDecodeOutSize(4) != 3)
+		{
+			LOG_ERROR("GetDecodeOutSize(4): expected 3, got %u", Base64::GetDecodeOutSize(4));
 			return false;
+		}
 
 		// 8 chars: 8 -> 6
 		if (Base64::GetDecodeOutSize(8) != 6)
+		{
+			LOG_ERROR("GetDecodeOutSize(8): expected 6, got %u", Base64::GetDecodeOutSize(8));
 			return false;
+		}
 
 		// 12 chars: 12 -> 9
 		if (Base64::GetDecodeOutSize(12) != 9)
+		{
+			LOG_ERROR("GetDecodeOutSize(12): expected 9, got %u", Base64::GetDecodeOutSize(12));
 			return false;
+		}
 
 		return true;
 	}
