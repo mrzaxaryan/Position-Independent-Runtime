@@ -78,11 +78,20 @@ if(_content MATCHES "__DATA_CONST[ \t]+__const")
     list(APPEND _found "__DATA_CONST,__const")
 endif()
 # GOT section: The linker synthesizes __DATA_CONST,__got when the compiler
-# emits @GOTPCREL relocations. This section cannot be merged into __TEXT,__text
-# via -rename_section. The -fdirect-access-external-data compiler flag prevents
+# emits GOT-relative relocations (@GOTPCREL on x86_64, ADRP+LDR via GOT page
+# on aarch64). This section cannot be merged into __TEXT,__text via
+# -rename_section. The -fdirect-access-external-data compiler flag prevents
 # GOT generation; this check is a safety net to catch regressions.
 if(_content MATCHES "__DATA_CONST[ \t]+__got")
     list(APPEND _found "__DATA_CONST,__got")
+endif()
+# Lazy symbol pointers: ld64.lld does not implement -static, so it may generate
+# __TEXT,__stubs + __DATA,__la_symbol_ptr for weak/interposable symbols (e.g.
+# template explicit instantiations). Stubs load pointers from __DATA which is
+# not mapped by the PIC loader. The -fvisibility=hidden compiler flag prevents
+# this by marking all symbols as non-interposable.
+if(_content MATCHES "__DATA[ \t]+__la_symbol_ptr")
+    list(APPEND _found "__DATA,__la_symbol_ptr")
 endif()
 
 # macOS: Check for __TEXT segment constant sections that are NOT __text.
