@@ -31,4 +31,3 @@
 #include "network/tls/tls_hash.h"
 #include "network/tls/tls_hkdf.h"
 
-#include "binaryWriter.h"
