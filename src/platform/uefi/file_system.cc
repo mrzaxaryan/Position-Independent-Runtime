@@ -426,7 +426,7 @@ File &File::operator=(File &&other) noexcept
 // DirectoryIterator Class Implementation
 // =============================================================================
 
-DirectoryIterator::DirectoryIterator(PCWCHAR path)
+DirectoryIterator::DirectoryIterator()
 	: handle(nullptr), currentEntry{}, first(true)
 {}
 

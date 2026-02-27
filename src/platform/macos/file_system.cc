@@ -191,7 +191,7 @@ Result<void, Error> FileSystem::DeleteDirectory(PCWCHAR path)
 
 // --- DirectoryIterator Implementation ---
 
-DirectoryIterator::DirectoryIterator(PCWCHAR path)
+DirectoryIterator::DirectoryIterator()
 	: handle((PVOID)INVALID_FD), first(false), nread(0), bpos(0)
 {}
 

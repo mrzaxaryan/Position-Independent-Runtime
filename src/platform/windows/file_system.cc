@@ -410,7 +410,7 @@ static void FillEntry(DirectoryEntry &entry, const FILE_BOTH_DIR_INFORMATION &da
     entry.type = 3; // Default to Fixed
 }
 
-DirectoryIterator::DirectoryIterator([[maybe_unused]] PCWCHAR path)
+DirectoryIterator::DirectoryIterator()
         : handle((PVOID)-1), first(true)
         {
 

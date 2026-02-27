@@ -112,7 +112,7 @@ private:
 public:
     // Constructor and destructor
     
-    DirectoryIterator(PCWCHAR path);
+    DirectoryIterator();
 
     Result<void, Error> Initialization(PCWCHAR path);
     ~DirectoryIterator();
