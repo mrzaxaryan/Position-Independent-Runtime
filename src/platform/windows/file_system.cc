@@ -412,7 +412,11 @@ static void FillEntry(DirectoryEntry &entry, const FILE_BOTH_DIR_INFORMATION &da
 
 DirectoryIterator::DirectoryIterator([[maybe_unused]] PCWCHAR path)
         : handle((PVOID)-1), first(true)
-        {}
+        {
+        #ifdef PLATFORM_WINDOWS
+                    isBitMaskMode = false;
+        #endif
+        }
 
 // DirectoryIterator Constructor
 Result<void, Error> DirectoryIterator::Initialization(PCWCHAR path) 

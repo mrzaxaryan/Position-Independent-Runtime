@@ -99,7 +99,7 @@ private:
     DirectoryEntry currentEntry; // Current directory entry
     BOOL first;                  // Flag for first call to Next()
 #ifdef PLATFORM_WINDOWS
-    BOOL isBitMaskMode = false; // Flag for bitmask mode on Windows
+    BOOL isBitMaskMode; // Flag for bitmask mode on Windows
 #endif
 
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS)
