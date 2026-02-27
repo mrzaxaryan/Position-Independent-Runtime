@@ -411,7 +411,7 @@ static void FillEntry(DirectoryEntry &entry, const FILE_BOTH_DIR_INFORMATION &da
 }
 
 // DirectoryIterator Constructor
-DirectoryIterator::DirectoryIterator(PCWCHAR path) : handle((PVOID)-1), first(true), isBitMaskMode(false)
+Result<void, Error> DirectoryIterator::Initialization(DirectoryIterator *iter, PCWCHAR path) 
 {
     NTSTATUS status;
     // CASE: List Drives (Path is empty or nullptr)
@@ -427,29 +427,30 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path) : handle((PVOID)-1), first(tr
 
         if (!NT_SUCCESS(status))
         {
-            return;
+            return Result<void, Error>::Err(Error::Windows((UINT32)status), Error::Fs_OpenFailed);
         }
         if (ProcessDeviceMapInfo.Query.DriveMap != 0)
         {
             // Store the mask in the pointer itself
-            handle = (PVOID)(USIZE)ProcessDeviceMapInfo.Query.DriveMap;
-            first = true; // Flag to indicate we are in "Drive Mode"
-            isBitMaskMode = true;
+            iter->handle = (PVOID)(USIZE)ProcessDeviceMapInfo.Query.DriveMap;
+            iter->first = true; // Flag to indicate we are in "Drive Mode"
+            iter->isBitMaskMode = true;
         }
-        return;
+        return Result<void, Error>::Ok();
     }
 
     // Convert path to NT path and open directory handle
     UNICODE_STRING uniPath;
-    if (!NTDLL::RtlDosPathNameToNtPathName_U(path, &uniPath, nullptr, nullptr))
-        return;
+    status = NTDLL::RtlDosPathNameToNtPathName_U(path, &uniPath, nullptr, nullptr);
+    if (!NT_SUCCESS(status))
+        return Result<void, Error>::Err(Error::Windows((UINT32)status), Error::Fs_PathResolveFailed);
 
     OBJECT_ATTRIBUTES objAttr;
     InitializeObjectAttributes(&objAttr, &uniPath, OBJ_CASE_INSENSITIVE, nullptr, nullptr);
 
     IO_STATUS_BLOCK ioStatusBlock;
     status = NTDLL::ZwOpenFile(
-        &handle,
+        &iter->handle,
         FILE_LIST_DIRECTORY | SYNCHRONIZE,
         &objAttr,
         &ioStatusBlock,
@@ -460,8 +461,8 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path) : handle((PVOID)-1), first(tr
 
     if (!NT_SUCCESS(status))
     {
-        handle = (PVOID)-1;
-        return;
+        iter->handle = (PVOID)-1;
+        return Result<void, Error>::Err(Error::Windows((UINT32)status), Error::Fs_OpenFailed);
     }
 
     // Query the first entry
@@ -469,7 +470,7 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path) : handle((PVOID)-1), first(tr
     Memory::Zero(buffer, sizeof(buffer));
 
     status = NTDLL::ZwQueryDirectoryFile(
-        handle,
+        iter->handle,
         nullptr,
         nullptr,
         nullptr,
@@ -484,13 +485,14 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path) : handle((PVOID)-1), first(tr
     if (NT_SUCCESS(status))
     {
         const FILE_BOTH_DIR_INFORMATION &info = *(const FILE_BOTH_DIR_INFORMATION *)buffer;
-        FillEntry(currentEntry, info);
+        FillEntry(iter->currentEntry, info);
     }
     else
     {
-        (void)NTDLL::ZwClose(handle);
-        handle = (PVOID)-1;
+        (void)NTDLL::ZwClose(iter->handle);
+        iter->handle = (PVOID)-1;
     }
+    return Result<void, Error>::Ok();
 }
 
 // Move to next entry. Returns false when no more files.

@@ -111,7 +111,8 @@ private:
 
 public:
     // Constructor and destructor
-    DirectoryIterator(PCWCHAR path);
+    DirectoryIterator() : handle((PVOID)-1), first(true), isBitMaskMode(false) {}
+    static Result<void, Error> Initialization(DirectoryIterator *iter, PCWCHAR path);
     ~DirectoryIterator();
 
     // Move to next entry. Returns false when no more files.
