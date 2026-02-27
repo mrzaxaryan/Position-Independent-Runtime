@@ -104,4 +104,31 @@ if(PIR_BUILD_TYPE STREQUAL "release")
     pir_add_link_flags(-dead_strip)
 endif()
 
+# Force entry_point.cc to compile without LTO on macOS release builds.
+#
+# At -Os/-Oz with -flto=full, the LTO backend emits constant-pool data
+# (from __const/__literal4/__literal8/... sections renamed into __TEXT,__text)
+# and unnamed helper sequences BEFORE _entry_point in the merged section.
+# These unnamed regions do not appear in the linker map's "# Symbols:" table,
+# so VerifyPICMode cannot catch them, yet they land at offset 0 of output.bin.
+# The PIC loader always jumps to offset 0, hitting unnamed data and crashing.
+#
+# ld64.lld places non-LTO input sections BEFORE all LTO-generated sections in
+# the final output.  Compiling entry_point.cc without LTO produces a regular
+# object whose __TEXT,__text (containing only _entry_point) is inserted FIRST,
+# before any LTO-generated constant pools or code, guaranteeing _entry_point
+# lands at offset 0 of the extracted PIC binary at every optimization level.
+#
+# The -fno-lto flag is appended after -flto=full in the per-file compile
+# command, so it overrides the LTO mode for this single translation unit.
+# entry_point() calls start() (in the LTO object) via a PC-relative CALL/BL,
+# which is inherently position-independent.
+if(PIR_BUILD_TYPE STREQUAL "release")
+    set_source_files_properties(
+        "${CMAKE_SOURCE_DIR}/src/entry_point.cc"
+        PROPERTIES
+        COMPILE_FLAGS "-fno-lto"
+    )
+endif()
+
 # macOS uses ld64.lld via target triple (no explicit -fuse-ld=lld)

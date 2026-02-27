@@ -50,6 +50,45 @@ if(NOT entry_point_first)
     )
 endif()
 
+# macOS only: verify the first named symbol's VMA equals the __TEXT,__text
+# section start VMA.  The named-symbol check above confirms _entry_point is
+# the first *named* symbol, but with -flto=full at -Os/-Oz the LTO backend can
+# place unnamed constant-pool data (from __const/__literal* sections renamed
+# into __text) BEFORE _entry_point without creating any map entry for it.
+# If such unnamed data occupies the first bytes of __text, the PIC loader
+# jumps to data instead of code and crashes (SIGSEGV) even though the
+# named-symbol order looks correct.
+#
+# The address comparison catches this: if anything unnamed precedes
+# _entry_point, the first symbol's VMA will be greater than the section start.
+if(_content MATCHES "# Symbols:")
+    # Extract __TEXT,__text section start VMA from the "# Sections:" table.
+    string(REGEX MATCH
+        "(0x[0-9a-fA-F]+)[ \t]+0x[0-9a-fA-F]+[ \t]+__TEXT[ \t]+__text"
+        _m "${_content}")
+    set(_text_start "${CMAKE_MATCH_1}")
+
+    # Extract the VMA of the first entry in the "# Symbols:" table.
+    # The format is: "# Symbols:\n# Address\t...\n0x<addr>\t..."
+    string(REGEX MATCH
+        "# Symbols:[ \t]*\n#[^\n]*\n(0x[0-9a-fA-F]+)"
+        _m "${_content}")
+    set(_first_sym_addr "${CMAKE_MATCH_1}")
+
+    if(_text_start AND _first_sym_addr AND NOT _text_start STREQUAL _first_sym_addr)
+        message(FATAL_ERROR
+            "CRITICAL: _entry_point is not at offset 0 of __TEXT,__text!\n\n"
+            "__text section start: ${_text_start}\n"
+            "First symbol address: ${_first_sym_addr}\n\n"
+            "Unnamed constant-pool data or an LTO-generated helper was placed\n"
+            "before _entry_point in the merged __text section. Ensure that\n"
+            "entry_point.cc is compiled without LTO (-fno-lto) so ld64.lld\n"
+            "places the non-LTO object's __text before all LTO-generated content.\n\n"
+            "Map file: ${MAP_FILE}"
+        )
+    endif()
+endif()
+
 # =============================================================================
 # Verify no forbidden data sections
 # =============================================================================
