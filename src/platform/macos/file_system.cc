@@ -193,6 +193,9 @@ Result<void, Error> FileSystem::DeleteDirectory(PCWCHAR path)
 
 DirectoryIterator::DirectoryIterator(PCWCHAR path)
 	: handle((PVOID)INVALID_FD), first(false), nread(0), bpos(0)
+{}
+
+Result<void, Error> DirectoryIterator::Initialization(PCWCHAR path)
 {
 	CHAR utf8Path[1024];
 
@@ -215,6 +218,7 @@ DirectoryIterator::DirectoryIterator(PCWCHAR path)
 		handle = (PVOID)fd;
 		first = true;
 	}
+	return Result<void, Error>::Ok();
 }
 
 DirectoryIterator::DirectoryIterator(DirectoryIterator &&other) noexcept
