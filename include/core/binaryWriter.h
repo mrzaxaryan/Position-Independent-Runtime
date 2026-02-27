@@ -29,13 +29,13 @@ class BinaryWriter{
             return address;
         }
 
-        PVOID GetBinaryWriterAddress() {
+        PVOID GetAddress() {
             return address;
         }
-        USIZE GetBinaryWriterOffset() {
+        USIZE GetOffset() {
             return offset;
         }
-        USIZE GetBinaryWriterMaxSize() {
+        USIZE GetMaxSize() {
             return maxSize;
         }
 };
