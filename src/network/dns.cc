@@ -1,4 +1,5 @@
 #include "dns.h"
+#include "binary_reader.h"
 #include "http.h"
 #include "logger.h"
 #include "memory.h"
@@ -49,11 +50,6 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
     return false;
 }
 
-FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
-{
-    return (UINT16)((p[index] << 8) | p[index + 1]);
-}
-
 // Skip over a DNS name in wire format. maxLen is bytes remaining from ptr.
 // Returns bytes consumed, or -1 on error.
 [[nodiscard]] static INT32 SkipName(const UINT8 *ptr, INT32 maxLen)
@@ -91,55 +87,52 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
     // type(2) + class(2) + ttl(4) + rdlength(2)
     constexpr INT32 FIXED_FIELDS_SIZE = 10;
 
-    INT32 len = 0;
+    BinaryReader reader((PVOID)ptr, (USIZE)bufferLen);
+
     while (cnt > 0)
     {
-        INT32 remaining = bufferLen - len;
-        if (remaining <= 0)
+        if (reader.Remaining() == 0)
             break;
 
-        const UINT8 *p = ptr + len;
-
-        INT32 nameLen = SkipName(p, remaining);
+        INT32 nameLen = SkipName((const UINT8 *)reader.Current(), (INT32)reader.Remaining());
         if (nameLen <= 0)
         {
             LOG_WARNING("ParseAnswer: failed to skip answer name");
             break;
         }
+        reader.Skip((USIZE)nameLen);
 
-        if (remaining - nameLen < FIXED_FIELDS_SIZE)
+        if ((INT32)reader.Remaining() < FIXED_FIELDS_SIZE)
         {
             LOG_WARNING("ParseAnswer: truncated fixed fields");
             break;
         }
 
-        const UINT8 *fixedFields = p + nameLen;
-        UINT16 type = ReadU16BE(fixedFields, 0);
-        UINT16 rdlength = ReadU16BE(fixedFields, 8);
+        UINT16 type = reader.ReadU16BE();
+        reader.Skip(2); // class
+        reader.Skip(4); // ttl
+        UINT16 rdlength = reader.ReadU16BE();
 
-        INT32 recordSize = nameLen + FIXED_FIELDS_SIZE + rdlength;
-        if (remaining < recordSize)
+        if ((INT32)reader.Remaining() < rdlength)
         {
             LOG_WARNING("ParseAnswer: truncated rdata");
             break;
         }
 
-        const UINT8 *rdata = fixedFields + FIXED_FIELDS_SIZE;
-
         if (type == A && rdlength == 4)
         {
             UINT32 ipv4;
-            Memory::Copy(&ipv4, rdata, 4);
+            Memory::Copy(&ipv4, reader.Current(), 4);
             ipAddress = IPAddress::FromIPv4(ipv4);
             return Result<void, Error>::Ok();
         }
         else if (type == AAAA && rdlength == 16)
         {
-            ipAddress = IPAddress::FromIPv6(rdata);
+            ipAddress = IPAddress::FromIPv6((const UINT8 *)reader.Current());
             return Result<void, Error>::Ok();
         }
 
-        len += recordSize;
+        reader.Skip(rdlength);
         cnt--;
     }
 
@@ -148,17 +141,17 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
 
 [[nodiscard]] static INT32 ParseQuery(const UINT8 *ptr, INT32 cnt, INT32 bufferLen)
 {
-    INT32 offset = 0;
+    BinaryReader reader((PVOID)ptr, (USIZE)bufferLen);
+
     while (cnt > 0)
     {
-        INT32 remaining = bufferLen - offset;
-        if (remaining <= 0)
+        if (reader.Remaining() == 0)
         {
             LOG_WARNING("ParseQuery: buffer exhausted");
             return -1;
         }
 
-        INT32 nameLen = SkipName(ptr + offset, remaining);
+        INT32 nameLen = SkipName((const UINT8 *)reader.Current(), (INT32)reader.Remaining());
         if (nameLen <= 0)
         {
             LOG_WARNING("ParseQuery: invalid name length");
@@ -166,16 +159,16 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
         }
 
         INT32 entrySize = nameLen + (INT32)sizeof(DNS_REQUEST_QUESTION);
-        if (remaining < entrySize)
+        if ((INT32)reader.Remaining() < entrySize)
         {
             LOG_WARNING("ParseQuery: truncated question entry");
             return -1;
         }
 
-        offset += entrySize;
+        reader.Skip((USIZE)entrySize);
         cnt--;
     }
-    return offset;
+    return (INT32)reader.GetOffset();
 }
 
 [[nodiscard]] static Result<void, Error> ParseDnsResponse(const UINT8 *buffer, INT32 len, IPAddress &ipAddress)
@@ -186,7 +179,12 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
         return Result<void, Error>::Err(Error::Dns_ParseFailed);
     }
 
-    UINT16 flags = ReadU16BE(buffer, 2);
+    BinaryReader reader((PVOID)buffer, (USIZE)len);
+
+    // Skip 2-byte ID
+    reader.Skip(2);
+
+    UINT16 flags = reader.ReadU16BE();
     if (!(flags & 0x8000))
     {
         LOG_WARNING("ParseDnsResponse: not a response");
@@ -200,8 +198,8 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
         return Result<void, Error>::Err(Error::Dns_ParseFailed);
     }
 
-    UINT16 qCount = ReadU16BE(buffer, 4);
-    UINT16 ansCount = ReadU16BE(buffer, 6);
+    UINT16 qCount = reader.ReadU16BE();
+    UINT16 ansCount = reader.ReadU16BE();
 
     if (ansCount == 0 || ansCount > 20)
     {
@@ -215,26 +213,27 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
         return Result<void, Error>::Err(Error::Dns_ParseFailed);
     }
 
-    INT32 recordOffset = (INT32)sizeof(DNS_REQUEST_HEADER);
+    // Skip authCount and addCount (4 bytes)
+    reader.Skip(4);
 
     if (qCount > 0)
     {
-        INT32 size = ParseQuery(buffer + recordOffset, qCount, len - recordOffset);
+        INT32 size = ParseQuery((const UINT8 *)reader.Current(), qCount, (INT32)reader.Remaining());
         if (size <= 0)
         {
             LOG_WARNING("ParseDnsResponse: invalid query size: %d", size);
             return Result<void, Error>::Err(Error::Dns_ParseFailed);
         }
-        recordOffset += size;
+        reader.Skip((USIZE)size);
     }
 
-    if (recordOffset >= len)
+    if (reader.Remaining() == 0)
     {
         LOG_WARNING("ParseDnsResponse: no space for answer section");
         return Result<void, Error>::Err(Error::Dns_ParseFailed);
     }
 
-    return ParseAnswer(buffer + recordOffset, ansCount, len - recordOffset, ipAddress);
+    return ParseAnswer((const UINT8 *)reader.Current(), ansCount, (INT32)reader.Remaining(), ipAddress);
 }
 
 // Convert hostname to DNS wire format (length-prefixed labels).

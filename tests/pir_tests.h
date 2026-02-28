@@ -56,6 +56,7 @@
 #include "websocket_tests.h"
 #include "filesystem_tests.h"
 #include "result_tests.h"
+#include "binary_io_tests.h"
 
 static BOOL RunPIRTests()
 {
@@ -74,6 +75,7 @@ static BOOL RunPIRTests()
 	RunTestSuite<StringFormatterTests>(allPassed);
 	RunTestSuite<Djb2Tests>(allPassed);
 	RunTestSuite<Base64Tests>(allPassed);
+	RunTestSuite<BinaryIOTests>(allPassed);
 
 	// PLATFORM - Memory, System, and File I/O
 	RunTestSuite<MemoryTests>(allPassed);

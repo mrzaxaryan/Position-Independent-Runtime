@@ -1,4 +1,5 @@
 #include "tls_hkdf.h"
+#include "binary_writer.h"
 #include "logger.h"
 #include "memory.h"
 #include "sha2.h"
@@ -18,24 +19,25 @@ INT32 TlsHKDF::Label(Span<const CHAR> label, Span<const UCHAR> data, PUCHAR hkdf
     auto prefix = "tls13 "_embed;
     UCHAR labelLen = (UCHAR)label.Size();
     UCHAR dataLen = (UCHAR)data.Size();
+    INT32 prefix_len = prefix.Length();
 
     LOG_DEBUG("Creating HKDF label with label_len: %d, data_len: %d, length: %d", labelLen, dataLen, length);
-    *(PUINT16)hkdflabel = UINT16SwapByteOrder(length);
-    INT32 prefix_len = prefix.Length();
-    LOG_DEBUG("HKDF label prefix length: %d", prefix_len);
-    Memory::Copy(&hkdflabel[3], (PCCHAR)prefix, prefix_len);
 
-    hkdflabel[2] = (UCHAR)prefix_len + labelLen;
-    Memory::Copy(&hkdflabel[3 + prefix_len], (PVOID)label.Data(), labelLen);
-    hkdflabel[3 + prefix_len + labelLen] = dataLen;
+    BinaryWriter writer((PVOID)hkdflabel, 512);
+
+    writer.WriteU16BE(length);
+    writer.WriteU8((UINT8)(prefix_len + labelLen));
+    writer.WriteBytes(Span<const CHAR>((PCCHAR)prefix, prefix_len));
+    writer.WriteBytes(label);
+    writer.WriteU8(dataLen);
     if (dataLen)
     {
         LOG_DEBUG("Copying data to HKDF label, data_len: %d", dataLen);
-        Memory::Copy(&hkdflabel[4 + prefix_len + labelLen], (PVOID)data.Data(), dataLen);
+        writer.WriteBytes(Span<const CHAR>((PCCHAR)data.Data(), dataLen));
     }
 
-    LOG_DEBUG("HKDF label created with total length: %d bytes", 4 + prefix_len + labelLen + dataLen);
-    return 4 + prefix_len + labelLen + dataLen;
+    LOG_DEBUG("HKDF label created with total length: %d bytes", (INT32)writer.GetOffset());
+    return (INT32)writer.GetOffset();
 }
 
 /// @brief Extract the HKDF keying material using the given salt and input keying material (IKM)

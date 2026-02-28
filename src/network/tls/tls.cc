@@ -1,4 +1,5 @@
 #include "tls.h"
+#include "binary_reader.h"
 #include "memory.h"
 #include "random.h"
 #include "socket.h"
@@ -617,30 +618,41 @@ Result<void, Error> TLSClient::ProcessReceive()
     LOG_DEBUG("Received %lld bytes from socket for client: %p", len, this);
     recvBuffer.AppendSize((INT32)len);
 
-    INT32 cur_index = 0;
-    while (cur_index + 5 <= recvBuffer.GetSize())
+    BinaryReader reader((PVOID)recvBuffer.GetBuffer(), (USIZE)recvBuffer.GetSize());
+
+    while (reader.Remaining() >= 5)
     {
-        INT32 packet_size = UINT16SwapByteOrder(*(PUINT16)(recvBuffer.GetBuffer() + cur_index + 3));
-        if (cur_index + 5 + packet_size > recvBuffer.GetSize())
+        USIZE headerStart = reader.GetOffset();
+
+        UINT8 contentType = reader.Read<UINT8>();
+        UINT16 version = reader.Read<UINT16>(); // native byte order — matches OnPacket signature
+        UINT16 packetSize = reader.ReadU16BE();
+
+        if (reader.Remaining() < packetSize)
+        {
+            reader.SetOffset(headerStart);
             break;
+        }
 
-        LOG_DEBUG("Processing packet for client: %p, current index: %d, packet size: %d", this, cur_index, packet_size);
+        LOG_DEBUG("Processing packet for client: %p, current index: %d, packet size: %d", this, (INT32)headerStart, packetSize);
 
-        TlsBuffer unnamed(recvBuffer.GetBuffer() + cur_index + 5, packet_size);
+        TlsBuffer unnamed((PCHAR)reader.Current(), packetSize);
 
-        auto ret = OnPacket(*(UINT8 *)(recvBuffer.GetBuffer() + cur_index), *(UINT16 *)(recvBuffer.GetBuffer() + cur_index + 1), unnamed);
+        auto ret = OnPacket(contentType, version, unnamed);
         if (!ret)
         {
-            LOG_DEBUG("Failed to process packet for client: %p, current index: %d, packet size: %d", this, cur_index, packet_size);
+            LOG_DEBUG("Failed to process packet for client: %p, current index: %d, packet size: %d", this, (INT32)headerStart, packetSize);
             (void)Close();
             return Result<void, Error>::Err(ret, Error::Tls_ProcessReceiveFailed);
         }
-        LOG_DEBUG("Packet processed successfully for client: %p, current index: %d, packet size: %d", this, cur_index, packet_size);
+        LOG_DEBUG("Packet processed successfully for client: %p, current index: %d, packet size: %d", this, (INT32)headerStart, packetSize);
 
-        cur_index += 5 + packet_size;
+        reader.Skip(packetSize);
     }
-    Memory::Copy(recvBuffer.GetBuffer(), recvBuffer.GetBuffer() + cur_index, recvBuffer.GetSize() - cur_index);
-    recvBuffer.AppendSize(-cur_index);
+
+    INT32 consumed = (INT32)reader.GetOffset();
+    Memory::Copy(recvBuffer.GetBuffer(), recvBuffer.GetBuffer() + consumed, recvBuffer.GetSize() - consumed);
+    recvBuffer.AppendSize(-consumed);
     return Result<void, Error>::Ok();
 }
 
