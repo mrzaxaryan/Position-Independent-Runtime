@@ -85,6 +85,18 @@ def run_qemu(elf_path, qemu_cmds):
     return subprocess.run([qemu_cmd, elf_path]).returncode
 
 
+def _flush_icache(addr, size):
+    """Flush instruction cache — required on ARM64 after writing code to memory."""
+    machine = platform.machine().lower()
+    if machine not in ('arm64', 'aarch64'):
+        return
+    libc = ctypes.CDLL(None)
+    if platform.system().lower() == 'darwin':
+        libc.sys_icache_invalidate.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
+        libc.sys_icache_invalidate.restype = None
+        libc.sys_icache_invalidate(ctypes.c_void_p(addr), ctypes.c_size_t(size))
+
+
 def run_mmap(shellcode):
     try:
         # Try RWX in one shot (works on Linux and macOS x86_64)
@@ -100,6 +112,7 @@ def run_mmap(shellcode):
         size = len(shellcode) + (addr - aligned)
         if libc.mprotect(ctypes.c_void_p(aligned), ctypes.c_size_t(size), mmap.PROT_READ | mmap.PROT_EXEC) != 0:
             raise OSError("mprotect failed")
+        _flush_icache(addr, len(shellcode))
         entry = addr
         print(f"[+] Entry: 0x{entry:x}")
         print("[*] Executing...")
@@ -109,6 +122,8 @@ def run_mmap(shellcode):
     mem.write(shellcode)
 
     entry = ctypes.addressof(ctypes.c_char.from_buffer(mem))
+
+    _flush_icache(entry, len(shellcode))
 
     print(f"[+] Entry: 0x{entry:x}")
     print("[*] Executing...")
