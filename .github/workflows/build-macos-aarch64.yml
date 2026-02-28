@@ -39,6 +39,9 @@ jobs:
     needs: setup
     name: -${{ matrix.opt }}
     runs-on: macos-14
+    env:
+      CC: /opt/llvm/bin/clang
+      CXX: /opt/llvm/bin/clang++
     strategy:
       fail-fast: false
       matrix:
@@ -52,6 +55,7 @@ jobs:
         with:
           path: /opt/llvm
           key: llvm-macos-aarch64-v1
+          fail-on-cache-miss: true
 
       - name: Install build tools
         env:
