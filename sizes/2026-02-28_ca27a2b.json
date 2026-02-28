@@ -1,0 +1,17 @@
+{
+  "date": "2026-02-28",
+  "commit": "ca27a2b",
+  "sizes": {
+    "linux_armv7a_bin": 103224,
+    "windows_aarch64_bin": 88624,
+    "linux_i386_bin": 98503,
+    "uefi_x86_64_bin": 90083,
+    "windows_x86_64_bin": 91752,
+    "macos_x86_64_bin": 91880,
+    "uefi_aarch64_bin": 87732,
+    "linux_x86_64_bin": 91202,
+    "macos_aarch64_bin": 75008,
+    "linux_aarch64_bin": 75896,
+    "windows_i386_bin": 95648
+  }
+}
