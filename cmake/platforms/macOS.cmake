@@ -84,6 +84,11 @@ pir_add_link_flags(
 if(PIR_ARCH STREQUAL "x86_64")
     pir_add_link_flags(-static)
 else()
+    # Force LLVM's ld64.lld linker for ARM64. Apple's system linker (ld) in
+    # newer Xcode versions does not honor -U for initial-undefines, causing
+    # "dyld_stub_binder" link errors. ld64.lld (bundled with brew install llvm)
+    # correctly allows the symbol to remain undefined via -U.
+    list(APPEND PIR_BASE_LINK_FLAGS -fuse-ld=lld)
     pir_add_link_flags(-U,_dyld_stub_binder)
 endif()
 
@@ -118,6 +123,6 @@ if(PIR_BUILD_TYPE STREQUAL "release")
     )
 endif()
 
-# macOS uses the system linker (Apple ld) by default. Homebrew LLVM 21+ ships
-# lld in a separate formula (brew install lld). The build works with both
-# Apple's ld and ld64.lld — no explicit -fuse-ld=lld is needed.
+# macOS x86_64 uses the system linker (Apple ld). macOS aarch64 uses
+# ld64.lld (bundled with Homebrew LLVM) because Apple's ld does not honor
+# -U for initial-undefines (dyld_stub_binder).
