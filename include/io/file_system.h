@@ -118,8 +118,8 @@ public:
     [[nodiscard]] Result<void, Error> Initialization(PCWCHAR path);
     ~DirectoryIterator();
 
-    // Move to next entry. Ok(true) = has entry, Ok(false) = done, Err = syscall failed.
-    [[nodiscard]] Result<bool, Error> Next();
+    // Move to next entry. Ok = has entry, Err = done or syscall failed.
+    [[nodiscard]] Result<void, Error> Next();
     // Get the current directory entry
     const DirectoryEntry &Get() const { return currentEntry; }
     // Check if the iterator is valid
@@ -152,7 +152,7 @@ public:
     // File operations
     [[nodiscard]] static Result<File, Error> Open(PCWCHAR path, INT32 flags = 0);
     [[nodiscard]] static Result<void, Error> Delete(PCWCHAR path);
-    [[nodiscard]] static Result<bool, Error> Exists(PCWCHAR path);
+    [[nodiscard]] static Result<void, Error> Exists(PCWCHAR path);
 
     // New Directory Methods
     [[nodiscard]] static Result<void, Error> CreateDirectory(PCWCHAR path);

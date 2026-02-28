@@ -160,7 +160,7 @@ Result<void, Error> FileSystem::Delete(PCWCHAR path)
     return Result<void, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_DeleteFailed);
 }
 
-Result<bool, Error> FileSystem::Exists(PCWCHAR path)
+Result<void, Error> FileSystem::Exists(PCWCHAR path)
 {
     CHAR utf8Path[1024];
     USIZE pathLen = String::Length(path);
@@ -174,7 +174,9 @@ Result<bool, Error> FileSystem::Exists(PCWCHAR path)
 #else
     SSIZE result = System::Call(SYS_STAT, (USIZE)utf8Path, (USIZE)statbuf);
 #endif
-    return Result<bool, Error>::Ok(result == 0);
+    if (result == 0)
+        return Result<void, Error>::Ok();
+    return Result<void, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_OpenFailed);
 }
 
 Result<void, Error> FileSystem::CreateDirectory(PCWCHAR path)
@@ -283,10 +285,10 @@ DirectoryIterator::~DirectoryIterator()
     }
 }
 
-Result<bool, Error> DirectoryIterator::Next()
+Result<void, Error> DirectoryIterator::Next()
 {
     if (!IsValid())
-        return Result<bool, Error>::Ok(false);
+        return Result<void, Error>::Err(Error::Fs_ReadFailed);
 
     if (first || bpos >= nread)
     {
@@ -294,9 +296,9 @@ Result<bool, Error> DirectoryIterator::Next()
         nread = (INT32)System::Call(SYS_GETDENTS64, (USIZE)handle, (USIZE)buffer, sizeof(buffer));
 
         if (nread < 0)
-            return Result<bool, Error>::Err(Error::Posix((UINT32)(-nread)), Error::Fs_ReadFailed);
+            return Result<void, Error>::Err(Error::Posix((UINT32)(-nread)), Error::Fs_ReadFailed);
         if (nread == 0)
-            return Result<bool, Error>::Ok(false);
+            return Result<void, Error>::Err(Error::Fs_ReadFailed);
         bpos = 0;
     }
 
@@ -316,7 +318,7 @@ Result<bool, Error> DirectoryIterator::Next()
 
     bpos += d->d_reclen;
 
-    return Result<bool, Error>::Ok(true);
+    return Result<void, Error>::Ok();
 }
 
 BOOL DirectoryIterator::IsValid() const

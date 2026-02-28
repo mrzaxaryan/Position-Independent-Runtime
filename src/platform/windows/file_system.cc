@@ -275,14 +275,14 @@ Result<void, Error> FileSystem::Delete(PCWCHAR path)
 }
 
 // Check if a file exists at the specified path
-Result<bool, Error> FileSystem::Exists(PCWCHAR path)
+Result<void, Error> FileSystem::Exists(PCWCHAR path)
 {
     OBJECT_ATTRIBUTES objAttr;
     UNICODE_STRING uniName;
     FILE_BASIC_INFORMATION fileBasicInfo;
 
     if (!NTDLL::RtlDosPathNameToNtPathName_U(path, &uniName, nullptr, nullptr))
-        return Result<bool, Error>::Err(Error::Fs_PathResolveFailed);
+        return Result<void, Error>::Err(Error::Fs_PathResolveFailed);
 
     InitializeObjectAttributes(&objAttr, &uniName, 0, nullptr, nullptr);
     NTSTATUS status = NTDLL::ZwQueryAttributesFile(&objAttr, &fileBasicInfo);
@@ -290,11 +290,12 @@ Result<bool, Error> FileSystem::Exists(PCWCHAR path)
     NTDLL::RtlFreeUnicodeString(&uniName);
 
     if (!NT_SUCCESS(status))
-        return Result<bool, Error>::Ok(false);
+        return Result<void, Error>::Err(Error::Windows((UINT32)status), Error::Fs_OpenFailed);
 
-    UINT32 attr = fileBasicInfo.FileAttributes;
-    // If attributes are not 0xFFFFFFFF, the file exists
-    return Result<bool, Error>::Ok(attr != 0xFFFFFFFF);
+    if (fileBasicInfo.FileAttributes == 0xFFFFFFFF)
+        return Result<void, Error>::Err(Error::Fs_OpenFailed);
+
+    return Result<void, Error>::Ok();
 }
 
 // --- FileSystem Directory Management ---
@@ -501,11 +502,11 @@ Result<void, Error> DirectoryIterator::Initialization(PCWCHAR path)
     return Result<void, Error>::Ok();
 }
 
-// Move to next entry. Ok(true) = has entry, Ok(false) = done, Err = syscall failed.
-Result<bool, Error> DirectoryIterator::Next()
+// Move to next entry. Ok = has entry, Err = done or syscall failed.
+Result<void, Error> DirectoryIterator::Next()
 {
     if (!IsValid())
-        return Result<bool, Error>::Ok(false);
+        return Result<void, Error>::Err(Error::Fs_ReadFailed);
 
     IO_STATUS_BLOCK ioStatusBlock;
 
@@ -516,7 +517,7 @@ Result<bool, Error> DirectoryIterator::Next()
         USIZE mask = (USIZE)handle;
 
         if (mask == 0)
-            return Result<bool, Error>::Ok(false);
+            return Result<void, Error>::Err(Error::Fs_ReadFailed);
 
         // Query the process device map to get drive types
         PROCESS_DEVICEMAP_INFORMATION devMapInfo;
@@ -553,18 +554,18 @@ Result<bool, Error> DirectoryIterator::Next()
                 handle = (PVOID)mask;
                 first = false;
 
-                return Result<bool, Error>::Ok(true);
+                return Result<void, Error>::Ok();
             }
         }
 
-        return Result<bool, Error>::Ok(false);
+        return Result<void, Error>::Err(Error::Fs_ReadFailed);
     }
 
     // --- NORMAL MODE ---
     if (first)
     {
         first = false;
-        return Result<bool, Error>::Ok(true);
+        return Result<void, Error>::Ok();
     }
 
     alignas(alignof(FILE_BOTH_DIR_INFORMATION)) UINT8 buffer[sizeof(FILE_BOTH_DIR_INFORMATION) + 260 * sizeof(WCHAR)];
@@ -587,10 +588,10 @@ Result<bool, Error> DirectoryIterator::Next()
     {
         const FILE_BOTH_DIR_INFORMATION &dirInfo = *(const FILE_BOTH_DIR_INFORMATION *)buffer;
         FillEntry(currentEntry, dirInfo);
-        return Result<bool, Error>::Ok(true);
+        return Result<void, Error>::Ok();
     }
 
-    return Result<bool, Error>::Ok(false);
+    return Result<void, Error>::Err(Error::Windows((UINT32)status), Error::Fs_ReadFailed);
 }
 
 // Move constructor

@@ -185,20 +185,20 @@ Result<void, Error> FileSystem::Delete(PCWCHAR path)
 	return Result<void, Error>::Ok();
 }
 
-Result<bool, Error> FileSystem::Exists(PCWCHAR path)
+Result<void, Error> FileSystem::Exists(PCWCHAR path)
 {
 	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
 	if (Root == nullptr)
-		return Result<bool, Error>::Ok(false);
+		return Result<void, Error>::Err(Error::Fs_OpenFailed);
 
 	EFI_FILE_PROTOCOL *FileHandle = OpenFileFromRoot(Root, path, EFI_FILE_MODE_READ, 0);
 	Root->Close(Root);
 
 	if (FileHandle == nullptr)
-		return Result<bool, Error>::Ok(false);
+		return Result<void, Error>::Err(Error::Fs_OpenFailed);
 
 	FileHandle->Close(FileHandle);
-	return Result<bool, Error>::Ok(true);
+	return Result<void, Error>::Ok();
 }
 
 Result<void, Error> FileSystem::CreateDirectory(PCWCHAR path)
@@ -490,10 +490,10 @@ DirectoryIterator::~DirectoryIterator()
 	}
 }
 
-Result<bool, Error> DirectoryIterator::Next()
+Result<void, Error> DirectoryIterator::Next()
 {
 	if (handle == nullptr)
-		return Result<bool, Error>::Ok(false);
+		return Result<void, Error>::Err(Error::Fs_ReadFailed);
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)handle;
 
@@ -505,11 +505,11 @@ Result<bool, Error> DirectoryIterator::Next()
 	EFI_STATUS Status = fp->Read(fp, &BufferSize, Buffer);
 
 	if (EFI_ERROR_CHECK(Status))
-		return Result<bool, Error>::Err(Error::Uefi((UINT32)Status), Error::Fs_ReadFailed);
+		return Result<void, Error>::Err(Error::Uefi((UINT32)Status), Error::Fs_ReadFailed);
 
 	// End of directory
 	if (BufferSize == 0)
-		return Result<bool, Error>::Ok(false);
+		return Result<void, Error>::Err(Error::Fs_ReadFailed);
 
 	EFI_FILE_INFO *FileInfo = (EFI_FILE_INFO *)Buffer;
 
@@ -533,7 +533,7 @@ Result<bool, Error> DirectoryIterator::Next()
 	currentEntry.creationTime = 0;
 	currentEntry.lastModifiedTime = 0;
 
-	return Result<bool, Error>::Ok(true);
+	return Result<void, Error>::Ok();
 }
 
 BOOL DirectoryIterator::IsValid() const
