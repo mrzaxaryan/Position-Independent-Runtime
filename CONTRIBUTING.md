@@ -309,7 +309,7 @@ LOG_ERROR("Operation failed (error: %e)", result.Error());
 
 ### Error Rules
 
-- Always `[[nodiscard]]` on functions returning `Result<T, Error>`
+- Always `[[nodiscard]]` on functions returning `Result<T, Error>` or `Result<void, Error>`; do **not** add it to functions returning plain types (`BOOL`, `INT32`, `UINT32`, `PCHAR`, etc.)
 - **Never use `Result<bool, Error>`** — use `Result<void, Error>` instead. `Result` itself is already bool-testable via `operator BOOL`, so wrapping a `bool` value creates confusing double-boolean checks (`!r || !r.Value()`). With `Result<void, Error>`, truthy means success and falsy means failure — clean and unambiguous.
 - OS errors: use factory methods — `Error::Windows()`, `Error::Posix()`, `Error::Uefi()`
 - Runtime errors: pass bare — `Result::Err(Error::Socket_WriteFailed_Send)`
