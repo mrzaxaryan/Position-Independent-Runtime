@@ -75,9 +75,10 @@ static BOOL RunPIRTests()
 	RunTestSuite<Djb2Tests>(allPassed);
 	RunTestSuite<Base64Tests>(allPassed);
 
-	// PLATFORM - Memory and System
+	// PLATFORM - Memory, System, and File I/O
 	RunTestSuite<MemoryTests>(allPassed);
 	RunTestSuite<RandomTests>(allPassed);
+	RunTestSuite<FileSystemTests>(allPassed);
 
 	// RAL - Cryptography
 	RunTestSuite<ShaTests>(allPassed);
@@ -88,7 +89,6 @@ static BOOL RunPIRTests()
 	RunTestSuite<TlsTests>(allPassed);
 	RunTestSuite<DnsTests>(allPassed);
 	RunTestSuite<WebSocketTests>(allPassed);
-	RunTestSuite<FileSystemTests>(allPassed);
 
 	// Final summary
 	LOG_INFO("=== Test Suite Complete ===");

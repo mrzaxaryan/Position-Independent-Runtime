@@ -60,6 +60,18 @@ Result<HttpClient, Error> HttpClient::Create(PCCHAR url)
     IPAddress ip = dnsResult.Value();
 
     auto tlsResult = TLSClient::Create(host, ip, port, isSecure);
+
+    // IPv6 socket creation can fail on platforms without IPv6 support (e.g. UEFI)
+    if (!tlsResult && ip.IsIPv6())
+    {
+        auto dnsResultV4 = DNS::Resolve(host, A);
+        if (dnsResultV4)
+        {
+            ip = dnsResultV4.Value();
+            tlsResult = TLSClient::Create(host, ip, port, isSecure);
+        }
+    }
+
     if (!tlsResult)
         return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
 

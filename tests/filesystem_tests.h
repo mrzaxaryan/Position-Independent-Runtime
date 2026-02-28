@@ -82,47 +82,56 @@ private:
 		}
 
 		// Verify all directories exist
-		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root"_embed)))
+		auto r = FileSystem::Exists(Path::NormalizePath(L"test_io_root"_embed));
+		if (!r || !r.Value())
 		{
 			LOG_ERROR("test_io_root does not exist after creation");
 			return false;
 		}
-		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1"_embed)))
+		r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1"_embed));
+		if (!r || !r.Value())
 		{
 			LOG_ERROR("level1_dir1 does not exist after creation");
 			return false;
 		}
-		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir2"_embed)))
+		r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir2"_embed));
+		if (!r || !r.Value())
 		{
 			LOG_ERROR("level1_dir2 does not exist after creation");
 			return false;
 		}
-		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir3"_embed)))
+		r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir3"_embed));
+		if (!r || !r.Value())
 		{
 			LOG_ERROR("level1_dir3 does not exist after creation");
 			return false;
 		}
-		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1"_embed)))
+		r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1"_embed));
+		if (!r || !r.Value())
 		{
 			LOG_ERROR("level2_dir1 does not exist after creation");
 			return false;
 		}
-		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir2"_embed)))
+		r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir2"_embed));
+		if (!r || !r.Value())
 		{
 			LOG_ERROR("level2_dir2 does not exist after creation");
 			return false;
 		}
-		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir3"_embed)))
+		r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir3"_embed));
+		if (!r || !r.Value())
 		{
 			LOG_ERROR("level2_dir3 does not exist after creation");
 			return false;
 		}
-		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir4"_embed)))
+		r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir4"_embed));
+		if (!r || !r.Value())
 		{
 			LOG_ERROR("level2_dir4 does not exist after creation");
 			return false;
 		}
-		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir3\\level2_dir5"_embed)))
+		r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir3\\level2_dir5"_embed));
+		if (!r || !r.Value())
 		{
 			LOG_ERROR("level2_dir5 does not exist after creation");
 			return false;
@@ -133,104 +142,104 @@ private:
 
 	static BOOL TestCreateFilesInDirectories()
 	{
-		File rootFile = FileSystem::Open(Path::NormalizePath(L"test_io_root\\root_file.txt"_embed),
-										 FileSystem::FS_CREATE | FileSystem::FS_WRITE);
-		if (!rootFile.IsValid())
+		auto rootFileResult = FileSystem::Open(Path::NormalizePath(L"test_io_root\\root_file.txt"_embed),
+											   FileSystem::FS_CREATE | FileSystem::FS_WRITE);
+		if (!rootFileResult)
 		{
 			LOG_ERROR("Failed to create root_file.txt");
 			return false;
 		}
-		rootFile.Close();
+		rootFileResult.Value().Close();
 
-		File file1 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\file1.txt"_embed),
-									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
-		if (!file1.IsValid())
+		auto file1Result = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\file1.txt"_embed),
+											FileSystem::FS_CREATE | FileSystem::FS_WRITE);
+		if (!file1Result)
 		{
 			LOG_ERROR("Failed to create file1.txt");
 			return false;
 		}
-		file1.Close();
+		file1Result.Value().Close();
 
-		File file2 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir2\\file2.txt"_embed),
-									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
-		if (!file2.IsValid())
+		auto file2Result = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir2\\file2.txt"_embed),
+											FileSystem::FS_CREATE | FileSystem::FS_WRITE);
+		if (!file2Result)
 		{
 			LOG_ERROR("Failed to create file2.txt");
 			return false;
 		}
-		file2.Close();
+		file2Result.Value().Close();
 
-		File file3 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir3\\file3.txt"_embed),
-									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
-		if (!file3.IsValid())
+		auto file3Result = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir3\\file3.txt"_embed),
+											FileSystem::FS_CREATE | FileSystem::FS_WRITE);
+		if (!file3Result)
 		{
 			LOG_ERROR("Failed to create file3.txt");
 			return false;
 		}
-		file3.Close();
+		file3Result.Value().Close();
 
-		File file4 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1\\deep_file1.txt"_embed),
-									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
-		if (!file4.IsValid())
+		auto file4Result = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1\\deep_file1.txt"_embed),
+											FileSystem::FS_CREATE | FileSystem::FS_WRITE);
+		if (!file4Result)
 		{
 			LOG_ERROR("Failed to create deep_file1.txt");
 			return false;
 		}
-		file4.Close();
+		file4Result.Value().Close();
 
-		File file5 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir2\\deep_file2.txt"_embed),
-									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
-		if (!file5.IsValid())
+		auto file5Result = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir2\\deep_file2.txt"_embed),
+											FileSystem::FS_CREATE | FileSystem::FS_WRITE);
+		if (!file5Result)
 		{
 			LOG_ERROR("Failed to create deep_file2.txt");
 			return false;
 		}
-		file5.Close();
+		file5Result.Value().Close();
 
-		File file6 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir3\\deep_file3.txt"_embed),
-									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
-		if (!file6.IsValid())
+		auto file6Result = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir3\\deep_file3.txt"_embed),
+											FileSystem::FS_CREATE | FileSystem::FS_WRITE);
+		if (!file6Result)
 		{
 			LOG_ERROR("Failed to create deep_file3.txt");
 			return false;
 		}
-		file6.Close();
+		file6Result.Value().Close();
 
-		File file7 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir4\\deep_file4.txt"_embed),
-									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
-		if (!file7.IsValid())
+		auto file7Result = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir2\\level2_dir4\\deep_file4.txt"_embed),
+											FileSystem::FS_CREATE | FileSystem::FS_WRITE);
+		if (!file7Result)
 		{
 			LOG_ERROR("Failed to create deep_file4.txt");
 			return false;
 		}
-		file7.Close();
+		file7Result.Value().Close();
 
-		File file8 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir3\\level2_dir5\\deep_file5.txt"_embed),
-									  FileSystem::FS_CREATE | FileSystem::FS_WRITE);
-		if (!file8.IsValid())
+		auto file8Result = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir3\\level2_dir5\\deep_file5.txt"_embed),
+											FileSystem::FS_CREATE | FileSystem::FS_WRITE);
+		if (!file8Result)
 		{
 			LOG_ERROR("Failed to create deep_file5.txt");
 			return false;
 		}
-		file8.Close();
+		file8Result.Value().Close();
 
-		File extra1 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\extra1.txt"_embed),
-									   FileSystem::FS_CREATE | FileSystem::FS_WRITE);
-		if (!extra1.IsValid())
+		auto extra1Result = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\extra1.txt"_embed),
+											 FileSystem::FS_CREATE | FileSystem::FS_WRITE);
+		if (!extra1Result)
 		{
 			LOG_ERROR("Failed to create extra1.txt");
 			return false;
 		}
-		extra1.Close();
+		extra1Result.Value().Close();
 
-		File extra2 = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\extra2.txt"_embed),
-									   FileSystem::FS_CREATE | FileSystem::FS_WRITE);
-		if (!extra2.IsValid())
+		auto extra2Result = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\extra2.txt"_embed),
+											 FileSystem::FS_CREATE | FileSystem::FS_WRITE);
+		if (!extra2Result)
 		{
 			LOG_ERROR("Failed to create extra2.txt");
 			return false;
 		}
-		extra2.Close();
+		extra2Result.Value().Close();
 
 		return true;
 	}
@@ -239,13 +248,14 @@ private:
 	{
 		// Test 1: Simple text
 		{
-			File file = FileSystem::Open(Path::NormalizePath(L"test_io_root\\test_write_read.txt"_embed),
-										 FileSystem::FS_CREATE | FileSystem::FS_WRITE | FileSystem::FS_TRUNCATE);
-			if (!file.IsValid())
+			auto openResult = FileSystem::Open(Path::NormalizePath(L"test_io_root\\test_write_read.txt"_embed),
+											   FileSystem::FS_CREATE | FileSystem::FS_WRITE | FileSystem::FS_TRUNCATE);
+			if (!openResult)
 			{
 				LOG_ERROR("Failed to open test_write_read.txt for writing");
 				return false;
 			}
+			File &file = openResult.Value();
 
 			auto testData = "Hello, File System!"_embed;
 			auto writeResult = file.Write((const CHAR *)testData, 20);
@@ -263,16 +273,17 @@ private:
 			file.Close();
 
 			// Read it back
-			file = FileSystem::Open(Path::NormalizePath(L"test_io_root\\test_write_read.txt"_embed), FileSystem::FS_READ);
-			if (!file.IsValid())
+			auto readOpenResult = FileSystem::Open(Path::NormalizePath(L"test_io_root\\test_write_read.txt"_embed), FileSystem::FS_READ);
+			if (!readOpenResult)
 			{
 				LOG_ERROR("Failed to open test_write_read.txt for reading");
 				return false;
 			}
+			File &readFile = readOpenResult.Value();
 
 			CHAR buffer[32];
 			Memory::Zero(buffer, 32);
-			auto readResult = file.Read(buffer, 20);
+			auto readResult = readFile.Read(buffer, 20);
 			if (!readResult)
 			{
 				LOG_ERROR("Read from test_write_read.txt failed (error: %e)", readResult.Error());
@@ -294,18 +305,19 @@ private:
 				}
 			}
 
-			file.Close();
+			readFile.Close();
 		}
 
 		// Test 2: Binary data
 		{
-			File file = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\binary_test.dat"_embed),
-										 FileSystem::FS_CREATE | FileSystem::FS_WRITE | FileSystem::FS_TRUNCATE);
-			if (!file.IsValid())
+			auto openResult = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\binary_test.dat"_embed),
+											   FileSystem::FS_CREATE | FileSystem::FS_WRITE | FileSystem::FS_TRUNCATE);
+			if (!openResult)
 			{
 				LOG_ERROR("Failed to open binary_test.dat for writing");
 				return false;
 			}
+			File &file = openResult.Value();
 
 			UINT8 binaryData[256];
 			for (INT32 i = 0; i < 256; i++)
@@ -328,16 +340,17 @@ private:
 			file.Close();
 
 			// Read it back
-			file = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\binary_test.dat"_embed), FileSystem::FS_READ);
-			if (!file.IsValid())
+			auto readOpenResult = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir1\\binary_test.dat"_embed), FileSystem::FS_READ);
+			if (!readOpenResult)
 			{
 				LOG_ERROR("Failed to open binary_test.dat for reading");
 				return false;
 			}
+			File &readFile = readOpenResult.Value();
 
 			UINT8 readBuffer[256];
 			Memory::Zero(readBuffer, 256);
-			auto readResult = file.Read(readBuffer, 256);
+			auto readResult = readFile.Read(readBuffer, 256);
 			if (!readResult)
 			{
 				LOG_ERROR("Binary read failed (error: %e)", readResult.Error());
@@ -359,18 +372,19 @@ private:
 				}
 			}
 
-			file.Close();
+			readFile.Close();
 		}
 
 		// Test 3: File offset operations
 		{
-			File file = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir2\\offset_test.dat"_embed),
-										 FileSystem::FS_CREATE | FileSystem::FS_WRITE | FileSystem::FS_TRUNCATE);
-			if (!file.IsValid())
+			auto openResult = FileSystem::Open(Path::NormalizePath(L"test_io_root\\level1_dir2\\offset_test.dat"_embed),
+											   FileSystem::FS_CREATE | FileSystem::FS_WRITE | FileSystem::FS_TRUNCATE);
+			if (!openResult)
 			{
 				LOG_ERROR("Failed to open offset_test.dat for writing");
 				return false;
 			}
+			File &file = openResult.Value();
 
 			auto data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"_embed;
 			auto writeResult = file.Write((const CHAR *)data, 26);
@@ -413,29 +427,34 @@ private:
 	static BOOL TestFileExistence()
 	{
 		// Test existing files
-		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\root_file.txt"_embed)))
+		auto r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\root_file.txt"_embed));
+		if (!r || !r.Value())
 		{
 			LOG_ERROR("root_file.txt should exist");
 			return false;
 		}
-		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\file1.txt"_embed)))
+		r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\file1.txt"_embed));
+		if (!r || !r.Value())
 		{
 			LOG_ERROR("file1.txt should exist");
 			return false;
 		}
-		if (!FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1\\deep_file1.txt"_embed)))
+		r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\level2_dir1\\deep_file1.txt"_embed));
+		if (!r || !r.Value())
 		{
 			LOG_ERROR("deep_file1.txt should exist");
 			return false;
 		}
 
 		// Test non-existing files
-		if (FileSystem::Exists(Path::NormalizePath(L"test_io_root\\nonexistent.txt"_embed)))
+		r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\nonexistent.txt"_embed));
+		if (r && r.Value())
 		{
 			LOG_ERROR("nonexistent.txt should not exist");
 			return false;
 		}
-		if (FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\missing.txt"_embed)))
+		r = FileSystem::Exists(Path::NormalizePath(L"test_io_root\\level1_dir1\\missing.txt"_embed));
+		if (r && r.Value())
 		{
 			LOG_ERROR("missing.txt should not exist");
 			return false;
@@ -465,8 +484,12 @@ private:
 		INT32 fileCount = 0;
 		INT32 dirCount = 0;
 
-		while (iter.Next())
+		while (true)
 		{
+			auto nextResult = iter.Next();
+			if (!nextResult || !nextResult.Value())
+				break;
+
 			const DirectoryEntry &entry = iter.Get();
 
 			// Skip "." and ".." entries
@@ -638,7 +661,8 @@ private:
 		}
 
 		// Verify cleanup was successful
-		if (FileSystem::Exists(Path::NormalizePath(L"test_io_root"_embed)))
+		auto r = FileSystem::Exists(Path::NormalizePath(L"test_io_root"_embed));
+		if (r && r.Value())
 		{
 			LOG_ERROR("test_io_root still exists after cleanup");
 			return false;

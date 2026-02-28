@@ -103,7 +103,7 @@ VOID File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
 
 // --- FileSystem Implementation ---
 
-File FileSystem::Open(PCWCHAR path, INT32 flags)
+Result<File, Error> FileSystem::Open(PCWCHAR path, INT32 flags)
 {
 	CHAR utf8Path[1024];
 	USIZE pathLen = String::Length(path);
@@ -132,9 +132,9 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
 	SSIZE fd = System::Call(SYS_OPEN, (USIZE)utf8Path, openFlags, mode);
 
 	if (fd < 0)
-		return File();
+		return Result<File, Error>::Err(Error::Posix((UINT32)(-fd)), Error::Fs_OpenFailed);
 
-	return File((PVOID)fd);
+	return Result<File, Error>::Ok(File((PVOID)fd));
 }
 
 Result<void, Error> FileSystem::Delete(PCWCHAR path)
@@ -150,7 +150,7 @@ Result<void, Error> FileSystem::Delete(PCWCHAR path)
 	return Result<void, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_DeleteFailed);
 }
 
-BOOL FileSystem::Exists(PCWCHAR path)
+Result<bool, Error> FileSystem::Exists(PCWCHAR path)
 {
 	CHAR utf8Path[1024];
 	USIZE pathLen = String::Length(path);
@@ -158,7 +158,8 @@ BOOL FileSystem::Exists(PCWCHAR path)
 	utf8Path[utf8Len] = '\0';
 
 	UINT8 statbuf[144];
-	return System::Call(SYS_STAT64, (USIZE)utf8Path, (USIZE)statbuf) == 0;
+	SSIZE result = System::Call(SYS_STAT64, (USIZE)utf8Path, (USIZE)statbuf);
+	return Result<bool, Error>::Ok(result == 0);
 }
 
 Result<void, Error> FileSystem::CreateDirectory(PCWCHAR path)
@@ -254,10 +255,10 @@ DirectoryIterator::~DirectoryIterator()
 	}
 }
 
-BOOL DirectoryIterator::Next()
+Result<bool, Error> DirectoryIterator::Next()
 {
 	if (!IsValid())
-		return false;
+		return Result<bool, Error>::Ok(false);
 
 	if (first || bpos >= nread)
 	{
@@ -266,8 +267,10 @@ BOOL DirectoryIterator::Next()
 		USIZE basep = 0;
 		nread = (INT32)System::Call(SYS_GETDIRENTRIES64, (USIZE)handle, (USIZE)buffer, sizeof(buffer), (USIZE)&basep);
 
-		if (nread <= 0)
-			return false;
+		if (nread < 0)
+			return Result<bool, Error>::Err(Error::Posix((UINT32)(-nread)), Error::Fs_ReadFailed);
+		if (nread == 0)
+			return Result<bool, Error>::Ok(false);
 		bpos = 0;
 	}
 
@@ -287,7 +290,7 @@ BOOL DirectoryIterator::Next()
 
 	bpos += d->d_reclen;
 
-	return true;
+	return Result<bool, Error>::Ok(true);
 }
 
 BOOL DirectoryIterator::IsValid() const

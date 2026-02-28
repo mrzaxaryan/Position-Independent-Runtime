@@ -179,7 +179,7 @@ void File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
 }
 
 // --- FileSystem Implementation ---
-File FileSystem::Open(PCWCHAR path, INT32 flags)
+Result<File, Error> FileSystem::Open(PCWCHAR path, INT32 flags)
 {
     UINT32 dwDesiredAccess = 0;
     UINT32 dwShareMode = FILE_SHARE_READ;
@@ -217,7 +217,7 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
     // Convert DOS path to NT path
     UNICODE_STRING ntPathU;
     if (!NTDLL::RtlDosPathNameToNtPathName_U(path, &ntPathU, nullptr, nullptr))
-        return File();
+        return Result<File, Error>::Err(Error::Fs_PathResolveFailed, Error::Fs_OpenFailed);
 
     OBJECT_ATTRIBUTES objAttr;
     InitializeObjectAttributes(&objAttr, &ntPathU, 0, nullptr, nullptr);
@@ -241,9 +241,9 @@ File FileSystem::Open(PCWCHAR path, INT32 flags)
     NTDLL::RtlFreeUnicodeString(&ntPathU);
 
     if (!createResult || hFile == INVALID_HANDLE_VALUE)
-        return File();
+        return Result<File, Error>::Err(createResult, Error::Fs_OpenFailed);
 
-    return File((PVOID)hFile);
+    return Result<File, Error>::Ok(File((PVOID)hFile));
 }
 
 // Delete a file at the specified path
@@ -275,14 +275,14 @@ Result<void, Error> FileSystem::Delete(PCWCHAR path)
 }
 
 // Check if a file exists at the specified path
-BOOL FileSystem::Exists(PCWCHAR path)
+Result<bool, Error> FileSystem::Exists(PCWCHAR path)
 {
     OBJECT_ATTRIBUTES objAttr;
     UNICODE_STRING uniName;
     FILE_BASIC_INFORMATION fileBasicInfo;
 
     if (!NTDLL::RtlDosPathNameToNtPathName_U(path, &uniName, nullptr, nullptr))
-        return false;
+        return Result<bool, Error>::Err(Error::Fs_PathResolveFailed);
 
     InitializeObjectAttributes(&objAttr, &uniName, 0, nullptr, nullptr);
     NTSTATUS status = NTDLL::ZwQueryAttributesFile(&objAttr, &fileBasicInfo);
@@ -290,11 +290,11 @@ BOOL FileSystem::Exists(PCWCHAR path)
     NTDLL::RtlFreeUnicodeString(&uniName);
 
     if (!NT_SUCCESS(status))
-        return false;
+        return Result<bool, Error>::Ok(false);
 
     UINT32 attr = fileBasicInfo.FileAttributes;
     // If attributes are not 0xFFFFFFFF, the file exists
-    return (attr != 0xFFFFFFFF);
+    return Result<bool, Error>::Ok(attr != 0xFFFFFFFF);
 }
 
 // --- FileSystem Directory Management ---
@@ -501,11 +501,11 @@ Result<void, Error> DirectoryIterator::Initialization(PCWCHAR path)
     return Result<void, Error>::Ok();
 }
 
-// Move to next entry. Returns false when no more files.
-BOOL DirectoryIterator::Next()
+// Move to next entry. Ok(true) = has entry, Ok(false) = done, Err = syscall failed.
+Result<bool, Error> DirectoryIterator::Next()
 {
     if (!IsValid())
-        return false;
+        return Result<bool, Error>::Ok(false);
 
     IO_STATUS_BLOCK ioStatusBlock;
 
@@ -516,7 +516,7 @@ BOOL DirectoryIterator::Next()
         USIZE mask = (USIZE)handle;
 
         if (mask == 0)
-            return false;
+            return Result<bool, Error>::Ok(false);
 
         // Query the process device map to get drive types
         PROCESS_DEVICEMAP_INFORMATION devMapInfo;
@@ -553,18 +553,18 @@ BOOL DirectoryIterator::Next()
                 handle = (PVOID)mask;
                 first = false;
 
-                return true;
+                return Result<bool, Error>::Ok(true);
             }
         }
 
-        return false;
+        return Result<bool, Error>::Ok(false);
     }
 
     // --- NORMAL MODE ---
     if (first)
     {
         first = false;
-        return true;
+        return Result<bool, Error>::Ok(true);
     }
 
     alignas(alignof(FILE_BOTH_DIR_INFORMATION)) UINT8 buffer[sizeof(FILE_BOTH_DIR_INFORMATION) + 260 * sizeof(WCHAR)];
@@ -587,10 +587,10 @@ BOOL DirectoryIterator::Next()
     {
         const FILE_BOTH_DIR_INFORMATION &dirInfo = *(const FILE_BOTH_DIR_INFORMATION *)buffer;
         FillEntry(currentEntry, dirInfo);
-        return true;
+        return Result<bool, Error>::Ok(true);
     }
 
-    return false;
+    return Result<bool, Error>::Ok(false);
 }
 
 // Move constructor

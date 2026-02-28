@@ -70,6 +70,7 @@ public:
     // Stack-only
     VOID *operator new(USIZE) = delete;
     VOID operator delete(VOID *) = delete;
+    VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; } // Result needs this
 
     // Check if the file handle is valid
     BOOL IsValid() const;
@@ -114,11 +115,11 @@ public:
     
     DirectoryIterator();
 
-    Result<void, Error> Initialization(PCWCHAR path);
+    [[nodiscard]] Result<void, Error> Initialization(PCWCHAR path);
     ~DirectoryIterator();
 
-    // Move to next entry. Returns false when no more files.
-    BOOL Next();
+    // Move to next entry. Ok(true) = has entry, Ok(false) = done, Err = syscall failed.
+    [[nodiscard]] Result<bool, Error> Next();
     // Get the current directory entry
     const DirectoryEntry &Get() const { return currentEntry; }
     // Check if the iterator is valid
@@ -149,9 +150,9 @@ public:
     static constexpr INT32 FS_BINARY = 0x0020;
 
     // File operations
-    static File Open(PCWCHAR path, INT32 flags = 0);
+    [[nodiscard]] static Result<File, Error> Open(PCWCHAR path, INT32 flags = 0);
     [[nodiscard]] static Result<void, Error> Delete(PCWCHAR path);
-    static BOOL Exists(PCWCHAR path);
+    [[nodiscard]] static Result<bool, Error> Exists(PCWCHAR path);
 
     // New Directory Methods
     [[nodiscard]] static Result<void, Error> CreateDirectory(PCWCHAR path);
