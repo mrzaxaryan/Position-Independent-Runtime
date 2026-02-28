@@ -8,27 +8,28 @@
 #include "efi_context.h"
 
 // QEMU debug exit port (configured with -device isa-debug-exit,iobase=0xf4,iosize=0x04)
-// QEMU will exit with code: (value << 1) | 1
-// So to get exit code 0, we write 0 and QEMU exits with 1
-// To get exit code 1, we write 1 and QEMU exits with 3
+// QEMU maps: host_exit = (value << 1) | 1 (always non-zero)
 #define QEMU_DEBUG_EXIT_PORT 0xf4
 
 /**
  * QemuDebugExit - Signal exit code to QEMU
  *
- * Writes to the QEMU isa-debug-exit port to pass exit code to host.
- * QEMU transforms exit code: host_exit = (guest_value << 1) | 1
+ * On x86: Uses isa-debug-exit port, but only for failure (non-zero codes).
+ * isa-debug-exit maps host_exit = (value << 1) | 1, which is always non-zero.
+ * For success (code 0), we skip the port write and let ResetSystem perform
+ * an ACPI shutdown so QEMU exits with 0 — matching aarch64 semihosting behavior.
+ *
+ * On aarch64: Uses semihosting SYS_EXIT which passes the exit code directly.
  *
  * @param code - Exit code to pass to QEMU
  */
 static VOID QemuDebugExit(UINT32 code)
 {
-#if defined(__x86_64__)
-	// x86_64: Use outb instruction to write to I/O port
-	__asm__ volatile("outb %0, %1" : : "a"((UINT8)code), "Nd"((UINT16)QEMU_DEBUG_EXIT_PORT));
-#elif defined(__i386__)
-	// i386: Use outb instruction (same as x86_64)
-	__asm__ volatile("outb %0, %1" : : "a"((UINT8)code), "Nd"((UINT16)QEMU_DEBUG_EXIT_PORT));
+#if defined(__x86_64__) || defined(__i386__)
+	if (code != 0)
+	{
+		__asm__ volatile("outb %0, %1" : : "a"((UINT8)code), "Nd"((UINT16)QEMU_DEBUG_EXIT_PORT));
+	}
 #elif defined(__aarch64__)
 	// aarch64: Use semihosting to exit
 	// SYS_EXIT (0x18) with ADP_Stopped_ApplicationExit (0x20026)

@@ -94,8 +94,8 @@ jobs:
             -no-reboot 2>&1 | sed -u 's/?\[[0-9;]*m//g'
           ret=${PIPESTATUS[0]}
           rm -f "$DISK_IMG"
-          echo "QEMU exit code: $ret (expected 1 for success)"
-          [ "$ret" -eq "1" ]
+          echo "QEMU exit code: $ret (expected 0 for success)"
+          [ "$ret" -eq "0" ]
 
       - name: Upload artifacts
         if: always()
