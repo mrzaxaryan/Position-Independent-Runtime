@@ -138,6 +138,7 @@ The binary must contain **only** a `.text` section. No `.rdata`, `.rodata`, `.da
 | Exceptions (`throw`/`try`/`catch`) | `Result<T, Error>` |
 | Raw `BOOL`/`NTSTATUS`/`SSIZE` for fallible returns | `Result<T, Error>` or `Result<void, Error>` |
 | RTTI (`dynamic_cast`, `typeid`) | Static dispatch |
+| `(T*, USIZE)` buffer parameter pairs | `Span<T>` / `Span<const T>` |
 
 **Embedded types quick reference:**
 
@@ -189,6 +190,24 @@ UINT32 val = embedded[0];                        // Unpacked at runtime
 | By value | Small register-sized types | `UINT32 ComputeHash(UINT32 input)` |
 | By pointer | Output params, nullable, Windows API compat | `NTSTATUS ZwCreateFile(PPVOID FileHandle, ...)` |
 | By reference | Non-null params (compile-time guarantee) | `Socket(const IPAddress &ipAddress, UINT16 port)` |
+| `Span<T>` | Contiguous buffer params (replaces `T*, USIZE` pairs) | `void Process(Span<const UINT8> data)` |
+
+**`Span<T>`** — **Use `Span<T>` instead of `(T*, USIZE)` pairs** for functions that operate on contiguous buffers. This eliminates size-mismatch bugs at zero runtime cost:
+
+```cpp
+// Bad — caller can pass wrong size:
+void Write(const UINT8 *data, USIZE size);
+
+// Good — size is bundled with pointer:
+void Write(Span<const UINT8> data);
+
+UINT8 buffer[64];
+Write(Span(buffer));              // size deduced from array
+Write(Span(ptr, len));            // explicit pointer + size
+Write(writable.Subspan(4, 16));   // slicing
+```
+
+Use `Span<T>` for writable buffers and `Span<const T>` for read-only views. `Span<T>` implicitly converts to `Span<const T>`.
 
 **`[[nodiscard]]`** — Apply to every fallible function and factory. PIR has no exceptions — a missed return check is a silent bug.
 
