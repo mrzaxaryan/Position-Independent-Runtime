@@ -119,7 +119,7 @@ private:
 		}
 
 		// Public key should not be all zeros
-		if (IsAllZeros(publicKey, sizeof(publicKey)))
+		if (IsAllZeros(Span<const UINT8>(publicKey)))
 		{
 			LOG_ERROR("Public key is all zeros");
 			return false;
@@ -145,8 +145,8 @@ private:
 		}
 
 		// X and Y coordinates should not both be all zeros
-		BOOL xAllZeros = IsAllZeros(publicKey + 1, 32);
-		BOOL yAllZeros = IsAllZeros(publicKey + 1 + 32, 32);
+		BOOL xAllZeros = IsAllZeros(Span<const UINT8>(publicKey + 1, 32));
+		BOOL yAllZeros = IsAllZeros(Span<const UINT8>(publicKey + 1 + 32, 32));
 
 		if (xAllZeros && yAllZeros)
 		{
@@ -191,7 +191,7 @@ private:
 		}
 
 		// Shared secrets should match
-		if (!CompareBytes(aliceSecret, bobSecret, 32))
+		if (!CompareBytes(Span<const UINT8>(aliceSecret), Span<const UINT8>(bobSecret)))
 		{
 			LOG_ERROR("ECDH shared secrets do not match");
 			return false;
@@ -275,11 +275,11 @@ private:
 		(void)ecc2.ExportPublicKey(Span<UINT8>(pubKey2));
 
 		// Keys should be different (each Initialize() call uses RNG)
-		BOOL key1DiffersFrom2 = !CompareBytes(pubKey1, pubKey2, sizeof(pubKey1));
+		BOOL key1DiffersFrom2 = !CompareBytes(Span<const UINT8>(pubKey1), Span<const UINT8>(pubKey2));
 
 		// Verify keys are valid (not all zeros)
-		BOOL key1Valid = pubKey1[0] == 0x04 && !IsAllZeros(pubKey1 + 1, 64);
-		BOOL key2Valid = pubKey2[0] == 0x04 && !IsAllZeros(pubKey2 + 1, 64);
+		BOOL key1Valid = pubKey1[0] == 0x04 && !IsAllZeros(Span<const UINT8>(pubKey1 + 1, 64));
+		BOOL key2Valid = pubKey2[0] == 0x04 && !IsAllZeros(Span<const UINT8>(pubKey2 + 1, 64));
 
 		LOG_INFO("Key 1 valid: %d, Key 2 valid: %d, Keys differ: %d", key1Valid, key2Valid, key1DiffersFrom2);
 

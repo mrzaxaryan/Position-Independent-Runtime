@@ -128,7 +128,9 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
         }
         else if (type == AAAA && rdlength == 16)
         {
-            ipAddress = IPAddress::FromIPv6((const UINT8 *)reader.Current());
+            UINT8 ipv6Bytes[16];
+            Memory::Copy(ipv6Bytes, reader.Current(), 16);
+            ipAddress = IPAddress::FromIPv6(ipv6Bytes);
             return Result<void, Error>::Ok();
         }
 

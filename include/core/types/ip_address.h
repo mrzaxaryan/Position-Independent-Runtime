@@ -80,7 +80,7 @@ private:
      * @brief Private constructor for IPv6 address
      * @param ipv6Address 16-byte IPv6 address array
      */
-    IPAddress(const UINT8 ipv6Address[16]);
+    IPAddress(const UINT8 (&ipv6Address)[16]);
 
 public:
     /// @name Constructors
@@ -113,7 +113,7 @@ public:
      * @param ipv6Address 16-byte IPv6 address
      * @return IPAddress instance
      */
-    static IPAddress FromIPv6(const UINT8 ipv6Address[16]);
+    static IPAddress FromIPv6(const UINT8 (&ipv6Address)[16]);
 
     /**
      * @brief Parse IP address from string

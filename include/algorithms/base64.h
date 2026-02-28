@@ -25,6 +25,7 @@
 #include "primitives.h"
 #include "error.h"
 #include "result.h"
+#include "span.h"
 
 /**
  * @class Base64
@@ -52,26 +53,24 @@ class Base64
 public:
     /**
      * @brief Encodes binary data to Base64 format
-     * @param input Pointer to input binary data
-     * @param inputSize Size of input data in bytes
-     * @param output Pointer to output buffer (must be at least GetEncodeOutSize() bytes)
+     * @param input Input binary data
+     * @param output Output buffer (must be at least GetEncodeOutSize() bytes)
      *
      * @note Output buffer must be large enough to hold the encoded data.
      * Use GetEncodeOutSize() to determine required buffer size.
      */
-    static void Encode(PCCHAR input, UINT32 inputSize, PCHAR output);
+    static void Encode(Span<const CHAR> input, Span<CHAR> output);
 
     /**
      * @brief Decodes Base64 formatted data back to binary
-     * @param input Pointer to Base64 encoded string
-     * @param inputSize Size of input string in bytes (including padding)
-     * @param output Pointer to output buffer (must be at least GetDecodeOutSize() bytes)
+     * @param input Base64 encoded string (including padding)
+     * @param output Output buffer (must be at least GetDecodeOutSize() bytes)
      * @return Result<void, Error> — Ok on success, Err(Base64_DecodeFailed) on failure
      *
      * @note Output buffer must be large enough to hold the decoded data.
      * Use GetDecodeOutSize() to determine required buffer size.
      */
-    [[nodiscard]] static Result<void, Error> Decode(PCCHAR input, UINT32 inputSize, PCHAR output);
+    [[nodiscard]] static Result<void, Error> Decode(Span<const CHAR> input, Span<CHAR> output);
 
     /**
      * @brief Calculates required output buffer size for encoding

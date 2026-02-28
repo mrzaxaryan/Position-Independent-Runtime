@@ -92,7 +92,7 @@ public:
      * @details The first 16 bytes are clamped to produce r.
      * The last 16 bytes are used as the pad s.
      */
-    Poly1305(const UCHAR key[32]);
+    Poly1305(const UCHAR (&key)[32]);
 
     /**
      * @brief Destructor - securely clears sensitive state
@@ -285,7 +285,7 @@ public:
      *
      * @details Encrypts plaintext and computes authentication tag over AAD and ciphertext.
      */
-    INT32 Poly1305Aead(PUCHAR pt, UINT32 len, PUCHAR aad, UINT32 aad_len, PUCHAR poly_key, PUCHAR out);
+    INT32 Poly1305Aead(PUCHAR pt, UINT32 len, PUCHAR aad, UINT32 aad_len, const UCHAR (&poly_key)[POLY1305_KEYLEN], PUCHAR out);
 
     /**
      * @brief Performs AEAD decryption with Poly1305 verification
@@ -300,7 +300,7 @@ public:
      * @details Verifies authentication tag and decrypts if valid.
      * @warning Returns error if tag verification fails - do not use output in this case.
      */
-    INT32 Poly1305Decode(PUCHAR pt, UINT32 len, PUCHAR aad, UINT32 aad_len, PUCHAR poly_key, PUCHAR out);
+    INT32 Poly1305Decode(PUCHAR pt, UINT32 len, PUCHAR aad, UINT32 aad_len, const UCHAR (&poly_key)[POLY1305_KEYLEN], PUCHAR out);
 };
 
 /** @} */ // end of chacha20 group

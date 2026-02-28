@@ -8,6 +8,7 @@
 #pragma once
 
 #include "logger.h"
+#include "span.h"
 
 /**
  * RunTest - Run a test function with pass/fail logging
@@ -79,9 +80,11 @@ inline BOOL RunTestSuite(BOOL &allPassedVar)
 /**
  * CompareBytes - Compare two byte arrays for equality
  */
-inline BOOL CompareBytes(const UINT8 *a, const UINT8 *b, UINT32 length)
+inline BOOL CompareBytes(Span<const UINT8> a, Span<const UINT8> b)
 {
-	for (UINT32 i = 0; i < length; i++)
+	if (a.Size() != b.Size())
+		return false;
+	for (USIZE i = 0; i < a.Size(); i++)
 	{
 		if (a[i] != b[i])
 			return false;
@@ -92,9 +95,9 @@ inline BOOL CompareBytes(const UINT8 *a, const UINT8 *b, UINT32 length)
 /**
  * IsAllZeros - Check if all bytes in a buffer are zero
  */
-inline BOOL IsAllZeros(const UINT8 *data, UINT32 length)
+inline BOOL IsAllZeros(Span<const UINT8> data)
 {
-	for (UINT32 i = 0; i < length; i++)
+	for (USIZE i = 0; i < data.Size(); i++)
 	{
 		if (data[i] != 0)
 			return false;

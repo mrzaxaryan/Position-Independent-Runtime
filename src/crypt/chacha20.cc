@@ -46,7 +46,7 @@
 //========== Poly1305 Class Implementation ========= //
 
 /* interpret four 8 bit unsigned integers as a 32 bit unsigned integer in little endian */
-Poly1305::Poly1305(const UCHAR key[32])
+Poly1305::Poly1305(const UCHAR (&key)[32])
 {
     /* r &= 0xffffffc0ffffffc0ffffffc0fffffff */
     m_r[0] = (U8TO32(&key[0])) & 0x3ffffff;
@@ -599,7 +599,7 @@ VOID ChaChaPoly1305::Block(PUCHAR c, UINT32 len)
     this->input[12] = PLUSONE(this->input[12]);
 }
 
-INT32 ChaChaPoly1305::Poly1305Aead(PUCHAR pt, UINT32 len, PUCHAR aad, UINT32 aad_len, PUCHAR poly_key, PUCHAR out)
+INT32 ChaChaPoly1305::Poly1305Aead(PUCHAR pt, UINT32 len, PUCHAR aad, UINT32 aad_len, const UCHAR (&poly_key)[POLY1305_KEYLEN], PUCHAR out)
 {
     UCHAR zeropad[15];
     Memory::Zero(zeropad, sizeof(zeropad));
@@ -629,7 +629,7 @@ INT32 ChaChaPoly1305::Poly1305Aead(PUCHAR pt, UINT32 len, PUCHAR aad, UINT32 aad
     return len + POLY1305_TAGLEN;
 }
 
-INT32 ChaChaPoly1305::Poly1305Decode(PUCHAR pt, UINT32 len, PUCHAR aad, UINT32 aad_len, PUCHAR poly_key, PUCHAR out)
+INT32 ChaChaPoly1305::Poly1305Decode(PUCHAR pt, UINT32 len, PUCHAR aad, UINT32 aad_len, const UCHAR (&poly_key)[POLY1305_KEYLEN], PUCHAR out)
 {
     if (len < POLY1305_TAGLEN)
         return -1;

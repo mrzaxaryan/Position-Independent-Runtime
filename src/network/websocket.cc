@@ -51,7 +51,7 @@ Result<void, Error> WebSocketClient::Open()
 		key[i] = (UINT32)random.Get();
 
 	CHAR secureKey[25]; // Base64 of 16 bytes = 24 chars + null
-	Base64::Encode((PCHAR)key, 16, secureKey);
+	Base64::Encode(Span<const CHAR>((PCCHAR)key, 16), Span<CHAR>(secureKey));
 
 	auto writeStr = [&](PCCHAR s) -> BOOL
 	{

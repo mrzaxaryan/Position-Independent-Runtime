@@ -17,8 +17,9 @@
     ((c) == '/') * 63)
 
 // Encode input data to Base64 format
-void Base64::Encode(PCCHAR input, UINT32 inputSize, PCHAR output)
+void Base64::Encode(Span<const CHAR> input, Span<CHAR> output)
 {
+    UINT32 inputSize = (UINT32)input.Size();
     UINT32 i, o;
 
     i = 0;
@@ -67,8 +68,9 @@ void Base64::Encode(PCCHAR input, UINT32 inputSize, PCHAR output)
 }
 
 // Decoder for Base64 formatted data to original format
-Result<void, Error> Base64::Decode(PCCHAR input, UINT32 inputSize, PCHAR output)
+Result<void, Error> Base64::Decode(Span<const CHAR> input, Span<CHAR> output)
 {
+    UINT32 inputSize = (UINT32)input.Size();
     UINT32 i, o;
 
     i = 0;

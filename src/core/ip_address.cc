@@ -15,7 +15,7 @@ IPAddress::IPAddress(UINT32 ipv4Address) : version(IPVersion::IPv4)
 }
 
 // Constructor from IPv6 address
-IPAddress::IPAddress(const UINT8 ipv6Address[16]) : version(IPVersion::IPv6)
+IPAddress::IPAddress(const UINT8 (&ipv6Address)[16]) : version(IPVersion::IPv6)
 {
     Memory::Copy(address.ipv6, ipv6Address, 16);
 }
@@ -40,7 +40,7 @@ IPAddress IPAddress::FromIPv4(UINT32 ipv4Address)
 }
 
 // Static factory method for IPv6
-IPAddress IPAddress::FromIPv6(const UINT8 ipv6Address[16])
+IPAddress IPAddress::FromIPv6(const UINT8 (&ipv6Address)[16])
 {
     return IPAddress(ipv6Address);
 }
