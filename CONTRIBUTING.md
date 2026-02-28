@@ -563,3 +563,10 @@ Register: add `#include "my_feature_tests.h"` and `RunTestSuite<MyFeatureTests>(
 2. Verify post-build PIC check passes (no data sections)
 3. Run the test binary — all tests pass
 4. Follow naming conventions and code style above
+5. **Report the binary size diff** — build the same preset before and after your change, then include the `.text` section size (exe and bin) in the PR description. Size regressions require justification; prefer `-Oz` builds for the comparison. Use `llvm-size` or `llvm-objdump -h` to measure:
+
+   ```bash
+   llvm-size build/release/<platform>/<arch>/output.exe
+   ```
+
+   Example PR note: `windows-x86_64-release: exe 42 312 → 42 480 (+168 B), bin 39 888 → 40 056 (+168 B)`
