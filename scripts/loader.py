@@ -86,7 +86,26 @@ def run_qemu(elf_path, qemu_cmds):
 
 
 def run_mmap(shellcode):
-    mem = mmap.mmap(-1, len(shellcode), prot=mmap.PROT_READ | mmap.PROT_WRITE | mmap.PROT_EXEC)
+    try:
+        # Try RWX in one shot (works on Linux and macOS x86_64)
+        mem = mmap.mmap(-1, len(shellcode), prot=mmap.PROT_READ | mmap.PROT_WRITE | mmap.PROT_EXEC)
+    except PermissionError:
+        # macOS ARM64 enforces W^X — map RW, write, then mprotect to RX
+        mem = mmap.mmap(-1, len(shellcode), prot=mmap.PROT_READ | mmap.PROT_WRITE)
+        mem.write(shellcode)
+        addr = ctypes.addressof(ctypes.c_char.from_buffer(mem))
+        libc = ctypes.CDLL(None)
+        page_size = os.sysconf('SC_PAGE_SIZE')
+        aligned = addr & ~(page_size - 1)
+        size = len(shellcode) + (addr - aligned)
+        if libc.mprotect(ctypes.c_void_p(aligned), ctypes.c_size_t(size), mmap.PROT_READ | mmap.PROT_EXEC) != 0:
+            raise OSError("mprotect failed")
+        entry = addr
+        print(f"[+] Entry: 0x{entry:x}")
+        print("[*] Executing...")
+        sys.stdout.flush()
+        return ctypes.CFUNCTYPE(ctypes.c_int)(entry)()
+
     mem.write(shellcode)
 
     entry = ctypes.addressof(ctypes.c_char.from_buffer(mem))
