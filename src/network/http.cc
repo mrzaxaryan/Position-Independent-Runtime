@@ -13,42 +13,58 @@ static USIZE AppendStr(CHAR *buf, USIZE pos, USIZE maxPos, const CHAR *str) noex
     return pos;
 }
 
-/// @brief Parameterized constructor for HttpClient class
+/// @brief Factory method for HttpClient — creates from URL with explicit IP address
 /// @param url The URL of the server to connect to
 /// @param ipAddress The IP address of the server to connect to
+/// @return Ok(HttpClient) on success, or Err with Http_CreateFailed on failure
 
-HttpClient::HttpClient(PCCHAR url, PCCHAR ipAddress)
+Result<HttpClient, Error> HttpClient::Create(PCCHAR url, PCCHAR ipAddress)
 {
+    CHAR host[254];
+    CHAR parsedPath[2048];
+    UINT16 port;
     BOOL isSecure = false;
-    auto parseResult = ParseUrl(url, hostName, path, port, isSecure);
+    auto parseResult = ParseUrl(url, host, parsedPath, port, isSecure);
     if (!parseResult)
-    {
-        return;
-    }
-    this->ipAddress = IPAddress::FromString(ipAddress);
-    tlsContext = TLSClient(hostName, this->ipAddress, port, isSecure);
+        return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
+
+    IPAddress ip = IPAddress::FromString(ipAddress);
+    auto tlsResult = TLSClient::Create(host, ip, port, isSecure);
+    if (!tlsResult)
+        return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
+
+    HttpClient client(host, parsedPath, ip, port, static_cast<TLSClient &&>(tlsResult.Value()));
+    return Result<HttpClient, Error>::Ok(static_cast<HttpClient &&>(client));
 }
 
-/// @brief Parameterized constructor for HttpClient class
+/// @brief Factory method for HttpClient — creates from URL with DNS resolution
 /// @param url URL of the server to connect to (IP address will be resolved from the hostname)
+/// @return Ok(HttpClient) on success, or Err with Http_CreateFailed on failure
 
-HttpClient::HttpClient(PCCHAR url)
+Result<HttpClient, Error> HttpClient::Create(PCCHAR url)
 {
+    CHAR host[254];
+    CHAR parsedPath[2048];
+    UINT16 port;
     BOOL isSecure = false;
-    auto parseResult = ParseUrl(url, hostName, path, port, isSecure);
+    auto parseResult = ParseUrl(url, host, parsedPath, port, isSecure);
     if (!parseResult)
-    {
-        return;
-    }
+        return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
 
-    auto dnsResult = DNS::Resolve(hostName);
+    auto dnsResult = DNS::Resolve(host);
     if (!dnsResult)
     {
-        LOG_ERROR("Failed to resolve hostname %s", hostName);
-        return;
+        LOG_ERROR("Failed to resolve hostname %s", host);
+        return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
     }
-    ipAddress = dnsResult.Value();
-    tlsContext = TLSClient(hostName, ipAddress, port, isSecure);
+    IPAddress ip = dnsResult.Value();
+
+    auto tlsResult = TLSClient::Create(host, ip, port, isSecure);
+    if (!tlsResult)
+        return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
+
+    HttpClient client(host, parsedPath, ip, port, static_cast<TLSClient &&>(tlsResult.Value()));
+    return Result<HttpClient, Error>::Ok(static_cast<HttpClient &&>(client));
 }
 
 /// @brief Open a connection to the server

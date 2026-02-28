@@ -822,16 +822,19 @@ Result<SSIZE, Error> TLSClient::Read(PVOID buffer, UINT32 bufferLength)
     return Result<SSIZE, Error>::Ok(ReadChannel((PCHAR)buffer, bufferLength));
 }
 
-/// @brief Constructor for the TLSClient class
+/// @brief Factory method for TLSClient — creates and validates the underlying socket
 /// @param host The hostname of the server to connect to
 /// @param ipAddress The IP address of the server to connect to
 /// @param port The port number of the server to connect to
+/// @param secure Whether to use TLS handshake or plain TCP
+/// @return Ok(TLSClient) on success, or Err with Tls_CreateFailed on failure
 
-TLSClient::TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port, BOOL secure)
-    : host(host), ip(ipAddress), context(), secure(secure), stateIndex(0), channelBytesRead(0)
+Result<TLSClient, Error> TLSClient::Create(PCCHAR host, const IPAddress &ipAddress, UINT16 port, BOOL secure)
 {
-    LOG_DEBUG("Initializing tls_cipher structure for cipher: %p, secure: %d", &crypto, secure);
     auto socketResult = Socket::Create(ipAddress, port);
-    if (socketResult)
-        context = static_cast<Socket &&>(socketResult.Value());
+    if (!socketResult)
+        return Result<TLSClient, Error>::Err(socketResult, Error::Tls_CreateFailed);
+
+    TLSClient client(host, ipAddress, static_cast<Socket &&>(socketResult.Value()), secure);
+    return Result<TLSClient, Error>::Ok(static_cast<TLSClient &&>(client));
 }

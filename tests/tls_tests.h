@@ -14,7 +14,13 @@ private:
 	{
 		LOG_INFO("Test: TLS Handshake (ip: %x, port %d)", TEST_SERVER_IP, TLS_PORT);
 
-		TLSClient tlsClient("one.one.one.one"_embed, IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
+		auto createResult = TLSClient::Create("one.one.one.one"_embed, IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
+		if (!createResult)
+		{
+			LOG_ERROR("TLS client creation failed (error: %e)", createResult.Error());
+			return false;
+		}
+		TLSClient &tlsClient = createResult.Value();
 
 		auto openResult = tlsClient.Open();
 		if (!openResult)
@@ -33,7 +39,13 @@ private:
 	{
 		LOG_INFO("Test: TLS Echo - Single Message (ip: %x, port %d)", TEST_SERVER_IP, TLS_PORT);
 
-		TLSClient tlsClient("www.one.one.one.one"_embed, IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
+		auto createResult = TLSClient::Create("www.one.one.one.one"_embed, IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
+		if (!createResult)
+		{
+			LOG_ERROR("TLS client creation failed (error: %e)", createResult.Error());
+			return false;
+		}
+		TLSClient &tlsClient = createResult.Value();
 
 		auto openResult = tlsClient.Open();
 		if (!openResult)
@@ -90,7 +102,13 @@ private:
 	{
 		LOG_INFO("Test: TLS Echo - Multiple Messages (port %d)", TLS_PORT);
 
-		TLSClient tlsClient("www.one.one.one.one"_embed, IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
+		auto createResult = TLSClient::Create("www.one.one.one.one"_embed, IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
+		if (!createResult)
+		{
+			LOG_ERROR("TLS client creation failed (error: %e)", createResult.Error());
+			return false;
+		}
+		TLSClient &tlsClient = createResult.Value();
 
 		auto openResult = tlsClient.Open();
 		if (!openResult)

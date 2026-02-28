@@ -28,7 +28,13 @@ Result<void, Error> WebSocketClient::Open()
 		ipAddress = dnsResult.Value();
 
 		(void)tlsContext.Close();
-		tlsContext = TLSClient(hostName, ipAddress, port, isSecure);
+		auto tlsResult = TLSClient::Create(hostName, ipAddress, port, isSecure);
+		if (!tlsResult)
+		{
+			LOG_ERROR("Failed to create TLS client for IPv4 fallback (error: %e)", tlsResult.Error());
+			return Result<void, Error>::Err(Error::Ws_TransportFailed);
+		}
+		tlsContext = static_cast<TLSClient &&>(tlsResult.Value());
 		openResult = tlsContext.Open();
 	}
 
@@ -405,25 +411,32 @@ Result<WebSocketMessage, Error> WebSocketClient::Read()
 	return Result<WebSocketMessage, Error>::Ok(static_cast<WebSocketMessage &&>(message));
 }
 
-WebSocketClient::WebSocketClient(PCCHAR url)
+/// @brief Factory method for WebSocketClient — creates from URL with DNS resolution
+/// @param url The WebSocket URL (ws:// or wss://) to connect to
+/// @return Ok(WebSocketClient) on success, or Err with Ws_CreateFailed on failure
+
+Result<WebSocketClient, Error> WebSocketClient::Create(PCCHAR url)
 {
-	Memory::Zero(hostName, sizeof(hostName));
-	Memory::Zero(path, sizeof(path));
-	port = 0;
-	isConnected = false;
-
+	CHAR host[254];
+	CHAR parsedPath[2048];
+	UINT16 port;
 	BOOL isSecure = false;
-	auto parseResult = HttpClient::ParseUrl(url, hostName, path, port, isSecure);
+	auto parseResult = HttpClient::ParseUrl(url, host, parsedPath, port, isSecure);
 	if (!parseResult)
-		return;
+		return Result<WebSocketClient, Error>::Err(Error::Ws_CreateFailed);
 
-	auto dnsResult = DNS::Resolve(hostName);
+	auto dnsResult = DNS::Resolve(host);
 	if (!dnsResult)
 	{
-		LOG_ERROR("Failed to resolve hostname %s", hostName);
-		return;
+		LOG_ERROR("Failed to resolve hostname %s", host);
+		return Result<WebSocketClient, Error>::Err(Error::Ws_CreateFailed);
 	}
-	ipAddress = dnsResult.Value();
+	IPAddress ip = dnsResult.Value();
 
-	tlsContext = TLSClient(hostName, ipAddress, port, isSecure);
+	auto tlsResult = TLSClient::Create(host, ip, port, isSecure);
+	if (!tlsResult)
+		return Result<WebSocketClient, Error>::Err(Error::Ws_CreateFailed);
+
+	WebSocketClient client(host, parsedPath, ip, port, static_cast<TLSClient &&>(tlsResult.Value()));
+	return Result<WebSocketClient, Error>::Ok(static_cast<WebSocketClient &&>(client));
 }

@@ -13,12 +13,20 @@ private:
     UINT16 port;
     TLSClient tlsContext;
 
+    // Private constructor — only used by Create()
+    HttpClient(const CHAR (&host)[254], const CHAR (&parsedPath)[2048], const IPAddress &ip, UINT16 portNum, TLSClient &&tls)
+        : ipAddress(ip), port(portNum), tlsContext(static_cast<TLSClient &&>(tls))
+    {
+        Memory::Copy(hostName, host, sizeof(hostName));
+        Memory::Copy(path, parsedPath, sizeof(path));
+    }
+
 public:
     VOID *operator new(USIZE) = delete;
     VOID operator delete(VOID *) = delete;
-    // Constructors for HttpClient class, allowing initialization with a URL and optional IP address
-    HttpClient(PCCHAR url, PCCHAR ipAddress);
-    HttpClient(PCCHAR url);
+    // Placement new required by Result<HttpClient, Error>
+    VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+
     ~HttpClient()
     {
         if (IsValid())
@@ -27,8 +35,35 @@ public:
 
     HttpClient(const HttpClient &) = delete;
     HttpClient &operator=(const HttpClient &) = delete;
-    HttpClient(HttpClient &&) = delete;
-    HttpClient &operator=(HttpClient &&) = delete;
+
+    HttpClient(HttpClient &&other)
+        : ipAddress(other.ipAddress), port(other.port),
+          tlsContext(static_cast<TLSClient &&>(other.tlsContext))
+    {
+        Memory::Copy(hostName, other.hostName, sizeof(hostName));
+        Memory::Copy(path, other.path, sizeof(path));
+        other.port = 0;
+    }
+
+    HttpClient &operator=(HttpClient &&other)
+    {
+        if (this != &other)
+        {
+            if (IsValid())
+                (void)Close();
+            Memory::Copy(hostName, other.hostName, sizeof(hostName));
+            Memory::Copy(path, other.path, sizeof(path));
+            ipAddress = other.ipAddress;
+            port = other.port;
+            tlsContext = static_cast<TLSClient &&>(other.tlsContext);
+            other.port = 0;
+        }
+        return *this;
+    }
+
+    // Factory — caller MUST check the result (enforced by [[nodiscard]])
+    [[nodiscard]] static Result<HttpClient, Error> Create(PCCHAR url);
+    [[nodiscard]] static Result<HttpClient, Error> Create(PCCHAR url, PCCHAR ipAddress);
 
     BOOL IsValid() const { return tlsContext.IsValid(); }
     BOOL IsSecure() const { return tlsContext.IsSecure(); }

@@ -37,11 +37,20 @@ private:
     [[nodiscard]] Result<void, Error> SendClientHello(const CHAR *host);
     [[nodiscard]] Result<void, Error> SendPacket(INT32 packetType, INT32 ver, TlsBuffer &TlsBuffer);
 
+    // Private trivial constructor — only used by Create()
+    TLSClient(PCCHAR host, const IPAddress &ipAddress, Socket &&socket, BOOL secure)
+        : host(host), ip(ipAddress), context(static_cast<Socket &&>(socket)), secure(secure), stateIndex(0), channelBytesRead(0) {}
+
 public:
     VOID *operator new(USIZE) = delete;
     VOID operator delete(VOID *) = delete;
+    // Placement new required by Result<TLSClient, Error>
+    VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
     TLSClient() : host(nullptr), ip(), secure(true), stateIndex(0), channelBytesRead(0) {}
-    TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port, BOOL secure = true);
+
+    // Factory — caller MUST check the result (enforced by [[nodiscard]])
+    [[nodiscard]] static Result<TLSClient, Error> Create(PCCHAR host, const IPAddress &ipAddress, UINT16 port, BOOL secure = true);
+
     ~TLSClient()
     {
         if (IsValid())

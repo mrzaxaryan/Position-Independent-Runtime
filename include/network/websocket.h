@@ -81,16 +81,56 @@ private:
 	[[nodiscard]] Result<void, Error> ReceiveFrame(WebSocketFrame &frame);
 	static VOID MaskFrame(WebSocketFrame &frame, UINT32 maskKey);
 
+	// Private constructor — only used by Create()
+	WebSocketClient(const CHAR (&host)[254], const CHAR (&parsedPath)[2048], const IPAddress &ip, UINT16 portNum, TLSClient &&tls)
+		: ipAddress(ip), port(portNum), tlsContext(static_cast<TLSClient &&>(tls)), isConnected(false)
+	{
+		Memory::Copy(hostName, host, sizeof(hostName));
+		Memory::Copy(path, parsedPath, sizeof(path));
+	}
+
 public:
 	VOID *operator new(USIZE) = delete;
 	VOID operator delete(VOID *) = delete;
-	WebSocketClient(PCCHAR url);
+	// Placement new required by Result<WebSocketClient, Error>
+	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+
 	~WebSocketClient() { if (IsValid()) { [[maybe_unused]] auto _ = Close(); } }
 
 	WebSocketClient(const WebSocketClient &) = delete;
 	WebSocketClient &operator=(const WebSocketClient &) = delete;
-	WebSocketClient(WebSocketClient &&) = delete;
-	WebSocketClient &operator=(WebSocketClient &&) = delete;
+
+	WebSocketClient(WebSocketClient &&other)
+		: ipAddress(other.ipAddress), port(other.port),
+		  tlsContext(static_cast<TLSClient &&>(other.tlsContext)),
+		  isConnected(other.isConnected)
+	{
+		Memory::Copy(hostName, other.hostName, sizeof(hostName));
+		Memory::Copy(path, other.path, sizeof(path));
+		other.port = 0;
+		other.isConnected = false;
+	}
+
+	WebSocketClient &operator=(WebSocketClient &&other)
+	{
+		if (this != &other)
+		{
+			if (IsValid())
+				(void)Close();
+			Memory::Copy(hostName, other.hostName, sizeof(hostName));
+			Memory::Copy(path, other.path, sizeof(path));
+			ipAddress = other.ipAddress;
+			port = other.port;
+			tlsContext = static_cast<TLSClient &&>(other.tlsContext);
+			isConnected = other.isConnected;
+			other.port = 0;
+			other.isConnected = false;
+		}
+		return *this;
+	}
+
+	// Factory — caller MUST check the result (enforced by [[nodiscard]])
+	[[nodiscard]] static Result<WebSocketClient, Error> Create(PCCHAR url);
 
 	[[nodiscard]] BOOL IsValid() const { return tlsContext.IsValid(); }
 	[[nodiscard]] BOOL IsSecure() const { return tlsContext.IsSecure(); }

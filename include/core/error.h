@@ -142,6 +142,13 @@ struct Error
 		Kernel32_CreateProcessFailed  = 99,  // CreateProcessW failed
 		Kernel32_SetHandleInfoFailed  = 100, // SetHandleInformation failed
 		Ntdll_RtlPathResolveFailed    = 101, // RtlDosPathNameToNtPathName_U failed
+
+		// -------------------------
+		// Factory creation errors (102–104)
+		// -------------------------
+		Tls_CreateFailed  = 102, // Socket::Create() failed in TLSClient::Create()
+		Http_CreateFailed = 103, // URL parse / DNS / TLS create failed in HttpClient::Create()
+		Ws_CreateFailed   = 104, // URL parse / DNS / TLS create failed in WebSocketClient::Create()
 	};
 
 	// Which OS layer this code came from.

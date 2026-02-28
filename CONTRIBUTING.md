@@ -571,6 +571,226 @@ Format rules:
 
 ---
 
+## Coding Patterns
+
+This section catalogs the recurring design patterns used throughout PIR.
+
+### RAII with Move Semantics
+
+Every resource-owning class: trivial constructor, destructor calls `Close()`, copy deleted, move transfers ownership by nullifying the source. Use `static_cast<T &&>()` instead of `std::move()` (STL is forbidden). See [Memory & Resource Rules](#memory--resource-rules) for the full template and rules.
+
+**Examples:** `Socket`, `File`, `TLSClient`, `WebSocketMessage`, `TlsCipher`, `TlsBuffer`
+
+### Static Factory Method (Create Pattern)
+
+Constructors must be trivial and cannot fail. All fallible initialization goes into a `[[nodiscard]]` static factory returning `Result<T, Error>`. Private constructor sets safe defaults; factory does the real work. If the type deletes `operator new`, provide placement new for `Result`. See [Constructor rules](#memory--resource-rules) for details.
+
+```cpp
+[[nodiscard]] static Result<Socket, Error> Create(const IPAddress &ipAddress, UINT16 port);
+
+// Usage
+auto result = Socket::Create(ip, 443);
+if (!result)
+	return Result<void, Error>::Err(result, Error::Tls_OpenFailed_Socket);
+Socket &socket = result.Value();
+```
+
+**Examples:** `Socket::Create`, `Error::Windows/Posix/Uefi`, `Result::Ok/Err`, `IPAddress::FromIPv4`
+
+### Static Class as Module
+
+PIR uses no namespaces. Classes with only `static` methods serve as modules -- never instantiated, grouping related operations under a clear name.
+
+```cpp
+class Memory
+{
+public:
+	FORCE_INLINE static PVOID Copy(PVOID dest, PCVOID src, USIZE count);
+	FORCE_INLINE static PVOID Zero(PVOID dest, USIZE count);
+};
+```
+
+**Examples:** `Memory`, `String`, `Console`, `Djb2`, `Logger`, `Math`, `Base64`
+
+### Stack-Only Types
+
+Delete `operator new` / `operator delete` to enforce stack allocation at compile time. For types returned via `Result`, keep placement new. Delete both copy and move for large composite objects that should never transfer.
+
+```cpp
+VOID *operator new(USIZE) = delete;
+VOID operator delete(VOID *) = delete;
+VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }  // Result needs this
+```
+
+**Examples:** `Socket`, `File`, `Random`, `HttpClient`, `WebSocketClient`
+
+### Compile-Time Embedding
+
+The `_embed` ecosystem converts literals into immediate values at compile time, eliminating `.rdata` dependencies:
+
+| Type | Literal | Result |
+|------|---------|--------|
+| `EMBEDDED_STRING` | `"text"_embed` / `L"text"_embed` | Characters packed into machine words |
+| `DOUBLE` | `3.14_embed` | IEEE-754 bits as `UINT64` immediate |
+| `EMBEDDED_ARRAY` | `MakeEmbedArray(arr)` | Elements packed into machine words |
+| `EMBEDDED_FUNCTION_POINTER` | `EMBED_FUNC(Fn)` | PC-relative offset, no relocation |
+
+Packing uses `consteval` at compile time, then a **register barrier** (`__asm__ volatile("" : "+r"(word))`) prevents the compiler from coalescing values back into `.rdata`.
+
+### Traits-Based Dispatch
+
+Parameterize algorithm variants via traits structs instead of runtime branching:
+
+```cpp
+struct SHA256Traits { using Word = UINT32; static constexpr USIZE DIGEST_SIZE = 32; };
+struct SHA384Traits { using Word = UINT64; static constexpr USIZE DIGEST_SIZE = 48; };
+
+template <typename Traits>
+class SHABase { /* single implementation */ };
+```
+
+Type-mapping traits for compile-time size-to-type dispatch:
+
+```cpp
+template <USIZE Bytes> struct UINT_OF_SIZE;
+template <> struct UINT_OF_SIZE<1> { using type = UINT8; };
+template <> struct UINT_OF_SIZE<4> { using type = UINT32; };
+```
+
+**Examples:** `SHA256Traits`/`SHA384Traits`, `UINT_OF_SIZE`, `VOID_TO_TAG`
+
+### Variadic Template Type Erasure
+
+Variadic templates at the API surface, type-erased into a fixed `Argument` array before calling a `NOINLINE` non-templated implementation. Prevents code bloat from deep template instantiation:
+
+```cpp
+template <TCHAR TChar, typename... Args>
+static VOID Info(const TChar *format, Args... args)
+{
+	StringFormatter::Argument argArray[] = { StringFormatter::Argument(args)... };
+	TimestampedLogOutput(prefix, format, argArray, sizeof...(Args));  // NOINLINE
+}
+```
+
+**Examples:** `Logger::Info/Error/Warning/Debug`, `Console::WriteFormatted`, `StringFormatter::Format`
+
+### Concepts and Constraints
+
+C++20 concepts and `requires` clauses enforce type safety. Clang builtins replace STL `<type_traits>`:
+
+```cpp
+template <typename TChar>
+concept TCHAR = __is_same_as(TChar, CHAR) || __is_same_as(TChar, WCHAR);
+
+// Conditional member via requires
+[[nodiscard]] static Result Ok(STORED_TYPE value) noexcept requires(!IS_VOID);
+[[nodiscard]] static Result Ok() noexcept requires(IS_VOID);
+```
+
+| Builtin | Purpose |
+|---------|---------|
+| `__is_same_as(T, U)` | Type equality check |
+| `__is_trivially_destructible(T)` | Skip destructor call when trivial |
+| `__builtin_bit_cast(T, v)` | Bit-level reinterpretation (constexpr-safe) |
+| `__builtin_bswap16/32/64(v)` | Byte order swapping |
+
+### Conditional Ownership
+
+Use a boolean `ownsMemory` flag when a class may or may not own its buffer. Destructor only cleans up if owning; move transfers the flag. See [Memory & Resource Rules](#memory--resource-rules).
+
+**Examples:** `TlsBuffer`
+
+### Secure Cleanup
+
+Crypto classes zero all key material on destruction via `Memory::Zero(this, sizeof(*this))`. Apply to any class holding keys, nonces, IVs, or session secrets.
+
+**Examples:** `ChaCha20Encoder`, `TlsCipher`, `TlsBuffer`
+
+### Platform Dispatch
+
+Two strategies: **conditional compilation** (`#if defined(PLATFORM_*)`) for small architecture-specific differences within one function, and **separate implementation files** (`src/platform/{windows,linux,macos}/`) when entire implementations diverge. CMake selects the correct files.
+
+### Guard and Validation Pattern
+
+Validate preconditions at function entry, return `Result::Err` immediately on failure. Check `IsValid()` before using handles, `nullptr` before dereferencing pointers. Only validate at system boundaries -- trust internal code.
+
+```cpp
+if (!IsValid())
+	return Result<void, Error>::Err(Error::Socket_BindFailed_Bind);
+```
+
+**Examples:** `Socket::Bind/Read/Write`, `IPAddress::Parse/ToString`
+
+### Suggested Patterns
+
+The following patterns are not yet in the codebase but would address specific PIR needs.
+
+#### Scope Guard
+
+Lightweight RAII for ad-hoc cleanup without a full class. Useful for multi-step operations where each step may need rollback:
+
+```cpp
+template <typename F>
+class ScopeGuard
+{
+	F cleanup;
+	BOOL active;
+public:
+	ScopeGuard(F fn) : cleanup(static_cast<F &&>(fn)), active(true) {}
+	~ScopeGuard() { if (active) cleanup(); }
+	VOID Dismiss() { active = false; }
+	ScopeGuard(const ScopeGuard &) = delete;
+	ScopeGuard &operator=(const ScopeGuard &) = delete;
+};
+
+auto guard = ScopeGuard([&] { NTDLL::ZwClose(tempHandle); });
+// ... do work ...
+guard.Dismiss();  // success -- don't close
+```
+
+**Where it helps:** TLS handshake rollback, temporary file cleanup, partial socket setup.
+
+#### Opaque Handle Wrapper
+
+Type-safe wrapper preventing mix-ups between `PVOID` handle types:
+
+```cpp
+template <typename Tag>
+class Handle
+{
+	PVOID raw;
+public:
+	Handle() : raw(nullptr) {}
+	explicit Handle(PVOID h) : raw(h) {}
+	PVOID Raw() const { return raw; }
+	BOOL IsValid() const { return raw != nullptr && raw != (PVOID)(SSIZE)(-1); }
+};
+
+struct FileHandleTag {};
+struct SocketHandleTag {};
+using FileHandle   = Handle<FileHandleTag>;
+using SocketHandle = Handle<SocketHandleTag>;
+```
+
+**Where it helps:** Prevents accidental handle misuse in NTDLL wrappers where multiple `PVOID` parameters exist.
+
+#### Static Interface via Concepts
+
+Formalize platform contracts so the compiler catches missing implementations at compile time:
+
+```cpp
+template <typename T>
+concept PlatformAllocator = requires(USIZE size, PVOID ptr) {
+	{ T::AllocateMemory(size) } -> __is_same_as(PVOID);
+	{ T::ReleaseMemory(ptr, size) };
+};
+static_assert(PlatformAllocator<Allocator>);
+```
+
+**Where it helps:** Catches missing platform operations during compilation rather than at link time.
+
+---
+
 ## Adding a Windows API Wrapper
 
 A core project goal is to provide comprehensive wrappers for all `ntdll.dll` exports and their underlying system calls. On x86_64 and i386 the wrappers use indirect syscalls (SSN + gadget); on ARM64 they call the resolved ntdll export directly. Contributions that add missing Zw*/Nt* wrappers are always welcome.
