@@ -22,6 +22,7 @@
 #pragma once
 
 #include "primitives.h"
+#include "span.h"
 #include "error.h"
 #include "result.h"
 
@@ -56,7 +57,7 @@ enum class IPVersion : UINT8
  *
  * // Convert to string
  * CHAR buffer[64];
- * addr.ToString(buffer, sizeof(buffer));
+ * addr.ToString(Span<CHAR>(buffer));
  * @endcode
  */
 class IPAddress
@@ -181,11 +182,10 @@ public:
 
     /**
      * @brief Convert to string representation
-     * @param buffer Output buffer
-     * @param bufferSize Size of output buffer
+     * @param buffer Output buffer span
      * @return Result<void, Error> - Ok on success, Err(IpAddress_ToStringFailed) if buffer too small or invalid
      */
-    [[nodiscard]] Result<void, Error> ToString(PCHAR buffer, UINT32 bufferSize) const;
+    [[nodiscard]] Result<void, Error> ToString(Span<CHAR> buffer) const;
 
     /// @}
     /// @name Operators

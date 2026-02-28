@@ -281,9 +281,9 @@ IPAddress IPAddress::FromString(PCCHAR ipString)
 }
 
 // Convert IP address to string
-Result<void, Error> IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
+Result<void, Error> IPAddress::ToString(Span<CHAR> buffer) const
 {
-	if (buffer == nullptr || bufferSize == 0)
+	if (buffer.Size() == 0)
 	{
 		return Result<void, Error>::Err(Error::IpAddress_ToStringFailed);
 	}
@@ -291,7 +291,7 @@ Result<void, Error> IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
 	if (version == IPVersion::IPv4)
 	{
 		// Convert IPv4 to string
-		if (bufferSize < 16) // Minimum size for "255.255.255.255\0"
+		if (buffer.Size() < 16) // Minimum size for "255.255.255.255\0"
 		{
 			return Result<void, Error>::Err(Error::IpAddress_ToStringFailed);
 		}
@@ -304,21 +304,21 @@ Result<void, Error> IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
 		{
 			if (i > 0)
 			{
-				buffer[offset++] = '.';
+				buffer.Data()[offset++] = '.';
 			}
 			CHAR temp[4];
 			String::WriteDecimal(temp, octets[i]);
 			UINT32 len = String::Length(temp);
-			Memory::Copy(buffer + offset, temp, len);
+			Memory::Copy(buffer.Data() + offset, temp, len);
 			offset += len;
 		}
-		buffer[offset] = '\0';
+		buffer.Data()[offset] = '\0';
 		return Result<void, Error>::Ok();
 	}
 	else if (version == IPVersion::IPv6)
 	{
 		// Convert IPv6 to string (simplified format)
-		if (bufferSize < 40) // Minimum size for full IPv6 address
+		if (buffer.Size() < 40) // Minimum size for full IPv6 address
 		{
 			return Result<void, Error>::Err(Error::IpAddress_ToStringFailed);
 		}
@@ -328,7 +328,7 @@ Result<void, Error> IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
 		{
 			if (i > 0)
 			{
-				buffer[offset++] = ':';
+				buffer.Data()[offset++] = ':';
 			}
 			UINT16 group = ((UINT16)address.ipv6[i * 2] << 8) | address.ipv6[i * 2 + 1];
 
@@ -336,10 +336,10 @@ Result<void, Error> IPAddress::ToString(PCHAR buffer, UINT32 bufferSize) const
 			CHAR hexStr[5];
 			String::WriteHex(hexStr, group);
 			UINT32 hexLen = String::Length(hexStr);
-			Memory::Copy(buffer + offset, hexStr, hexLen);
+			Memory::Copy(buffer.Data() + offset, hexStr, hexLen);
 			offset += hexLen;
 		}
-		buffer[offset] = '\0';
+		buffer.Data()[offset] = '\0';
 		return Result<void, Error>::Ok();
 	}
 

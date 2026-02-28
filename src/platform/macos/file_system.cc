@@ -279,7 +279,7 @@ Result<void, Error> DirectoryIterator::Next()
 
 	bsd_dirent64 *d = (bsd_dirent64 *)(buffer + bpos);
 
-	String::Utf8ToWide(d->d_name, currentEntry.name, 256);
+	String::Utf8ToWide(d->d_name, Span<WCHAR>(currentEntry.name, 256));
 
 	currentEntry.isDirectory = (d->d_type == DT_DIR);
 	currentEntry.isDrive = false;

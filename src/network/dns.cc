@@ -365,7 +365,7 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSS
     };
 
     CHAR sizeBuf[8];
-    String::UIntToStr(querySize, sizeBuf, sizeof(sizeBuf));
+    String::UIntToStr(querySize, Span<CHAR>(sizeBuf));
 
     if (!writeStr("POST /dns-query HTTP/1.1\r\nHost: "_embed) ||
         !writeStr(DNSServerName) ||

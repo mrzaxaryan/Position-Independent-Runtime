@@ -53,7 +53,7 @@
  *
  * // Number conversion
  * CHAR buf[32];
- * String::IntToStr(-42, buf, sizeof(buf));       // "-42"
+ * String::IntToStr(-42, Span<CHAR>(buf));        // "-42"
  * INT64 num = String::ParseInt64("12345");       // 12345
  * @endcode
  */
@@ -274,7 +274,7 @@ public:
      * @return Number of characters copied (excluding null terminator)
      */
     template <typename T>
-    static constexpr USIZE CopyEmbed(const T &src, CHAR *buffer, USIZE bufSize) noexcept;
+    static constexpr USIZE CopyEmbed(const T &src, Span<CHAR> buffer) noexcept;
 
     /// @}
     /// @name String Manipulation
@@ -338,20 +338,18 @@ public:
     /**
      * @brief Convert signed integer to string
      * @param value Integer value to convert
-     * @param buffer Destination buffer
-     * @param bufSize Size of destination buffer
+     * @param buffer Destination buffer span
      * @return Number of characters written (excluding null terminator)
      */
-    static USIZE IntToStr(INT64 value, CHAR *buffer, USIZE bufSize) noexcept;
+    static USIZE IntToStr(INT64 value, Span<CHAR> buffer) noexcept;
 
     /**
      * @brief Convert unsigned integer to string
      * @param value Unsigned integer value to convert
-     * @param buffer Destination buffer
-     * @param bufSize Size of destination buffer
+     * @param buffer Destination buffer span
      * @return Number of characters written (excluding null terminator)
      */
-    static USIZE UIntToStr(UINT64 value, CHAR *buffer, USIZE bufSize) noexcept;
+    static USIZE UIntToStr(UINT64 value, Span<CHAR> buffer) noexcept;
 
     /**
      * @brief Parse hexadecimal string to UINT32
@@ -380,20 +378,18 @@ public:
     /**
      * @brief Convert DOUBLE to string
      * @param value Floating-point value to convert
-     * @param buffer Destination buffer
-     * @param bufSize Size of destination buffer
+     * @param buffer Destination buffer span
      * @param precision Number of decimal places (default 6)
      * @return Number of characters written (excluding null terminator)
      */
-    static USIZE FloatToStr(DOUBLE value, CHAR *buffer, USIZE bufSize, UINT8 precision = 6) noexcept;
+    static USIZE FloatToStr(DOUBLE value, Span<CHAR> buffer, UINT8 precision = 6) noexcept;
 
     /**
      * @brief Parse string to INT64 (with explicit length)
-     * @param str String to parse
-     * @param len Length of string
+     * @param str String span to parse
      * @return Result containing parsed INT64 value, or Error::String_ParseIntFailed
      */
-    [[nodiscard]] static Result<INT64, Error> ParseInt64(const CHAR *str, USIZE len) noexcept;
+    [[nodiscard]] static Result<INT64, Error> ParseInt64(Span<const CHAR> str) noexcept;
 
     /**
      * @brief Parse null-terminated string to INT64
@@ -404,11 +400,10 @@ public:
 
     /**
      * @brief Convert string to DOUBLE
-     * @param str String to parse
-     * @param len Length of string
+     * @param str String span to parse
      * @return Result containing parsed DOUBLE value, or Error::String_ParseFloatFailed
      */
-    [[nodiscard]] static Result<DOUBLE, Error> StrToFloat(const CHAR *str, USIZE len) noexcept;
+    [[nodiscard]] static Result<DOUBLE, Error> StrToFloat(Span<const CHAR> str) noexcept;
 
     /**
      * @brief Parse string to specified type
@@ -425,12 +420,11 @@ public:
 
     /**
      * @brief Convert UTF-8 string to UTF-16 (wide string)
-     * @param utf8 Source UTF-8 string
-     * @param wide Destination wide string buffer
-     * @param wideBufferSize Size of destination buffer in characters
+     * @param utf8 Source UTF-8 string (null-terminated)
+     * @param wide Destination wide string buffer span
      * @return Number of wide characters written
      */
-    static USIZE Utf8ToWide(PCCHAR utf8, PWCHAR wide, USIZE wideBufferSize);
+    static USIZE Utf8ToWide(PCCHAR utf8, Span<WCHAR> wide);
 
     /// @}
 };
@@ -700,19 +694,19 @@ constexpr FORCE_INLINE USIZE String::Copy(TChar (&dest)[MaxLen], Span<const TCha
 }
 
 template <typename T>
-constexpr USIZE String::CopyEmbed(const T &src, CHAR *buffer, USIZE bufSize) noexcept
+constexpr USIZE String::CopyEmbed(const T &src, Span<CHAR> buffer) noexcept
 {
-    if (!buffer || bufSize == 0)
+    if (buffer.Size() == 0)
         return 0;
 
     USIZE len = 0;
     const CHAR *s = src;
-    while (s[len] != '\0' && len < bufSize - 1)
+    while (s[len] != '\0' && len < buffer.Size() - 1)
     {
-        buffer[len] = s[len];
+        buffer.Data()[len] = s[len];
         len++;
     }
-    buffer[len] = '\0';
+    buffer.Data()[len] = '\0';
     return len;
 }
 

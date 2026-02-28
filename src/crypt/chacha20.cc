@@ -341,7 +341,10 @@ VOID ChaChaPoly1305::KeySetup(Span<const UINT8> key)
     this->input[5] = _private_tls_U8TO32_LITTLE(k + 4);
     this->input[6] = _private_tls_U8TO32_LITTLE(k + 8);
     this->input[7] = _private_tls_U8TO32_LITTLE(k + 12);
-    auto constants = kbits == 256 ? "expand 32-byte k"_embed : "expand 16-byte k"_embed;
+    // Declare _embed strings separately to avoid type deduction issues with ternary
+    auto constants32 = "expand 32-byte k"_embed;
+    auto constants16 = "expand 16-byte k"_embed;
+    const CHAR *constants = kbits == 256 ? (const CHAR *)constants32 : (const CHAR *)constants16;
     if (kbits == 256)
     { /* recommended */
         k += 16;
