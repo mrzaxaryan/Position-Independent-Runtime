@@ -86,7 +86,7 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
 
 // Parse DNS answer section, extract A/AAAA address.
 // bufferLen is the total bytes available from ptr.
-[[nodiscard]] static BOOL ParseAnswer(const UINT8 *ptr, INT32 cnt, INT32 bufferLen, IPAddress &ipAddress)
+[[nodiscard]] static Result<void, Error> ParseAnswer(const UINT8 *ptr, INT32 cnt, INT32 bufferLen, IPAddress &ipAddress)
 {
     // type(2) + class(2) + ttl(4) + rdlength(2)
     constexpr INT32 FIXED_FIELDS_SIZE = 10;
@@ -131,19 +131,19 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
             UINT32 ipv4;
             Memory::Copy(&ipv4, rdata, 4);
             ipAddress = IPAddress::FromIPv4(ipv4);
-            return true;
+            return Result<void, Error>::Ok();
         }
         else if (type == AAAA && rdlength == 16)
         {
             ipAddress = IPAddress::FromIPv6(rdata);
-            return true;
+            return Result<void, Error>::Ok();
         }
 
         len += recordSize;
         cnt--;
     }
 
-    return false;
+    return Result<void, Error>::Err(Error::Dns_ParseFailed);
 }
 
 [[nodiscard]] static INT32 ParseQuery(const UINT8 *ptr, INT32 cnt, INT32 bufferLen)
@@ -178,26 +178,26 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
     return offset;
 }
 
-[[nodiscard]] static BOOL ParseDnsResponse(const UINT8 *buffer, INT32 len, IPAddress &ipAddress)
+[[nodiscard]] static Result<void, Error> ParseDnsResponse(const UINT8 *buffer, INT32 len, IPAddress &ipAddress)
 {
     if (!buffer || len < (INT32)sizeof(DNS_REQUEST_HEADER))
     {
         LOG_WARNING("ParseDnsResponse: invalid parameters");
-        return false;
+        return Result<void, Error>::Err(Error::Dns_ParseFailed);
     }
 
     UINT16 flags = ReadU16BE(buffer, 2);
     if (!(flags & 0x8000))
     {
         LOG_WARNING("ParseDnsResponse: not a response");
-        return false;
+        return Result<void, Error>::Err(Error::Dns_ParseFailed);
     }
 
     UINT8 rcode = flags & 0x000F;
     if (rcode != 0)
     {
         LOG_WARNING("ParseDnsResponse: server returned error (rcode=%d)", rcode);
-        return false;
+        return Result<void, Error>::Err(Error::Dns_ParseFailed);
     }
 
     UINT16 qCount = ReadU16BE(buffer, 4);
@@ -206,13 +206,13 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
     if (ansCount == 0 || ansCount > 20)
     {
         LOG_WARNING("ParseDnsResponse: invalid answer count: %d", ansCount);
-        return false;
+        return Result<void, Error>::Err(Error::Dns_ParseFailed);
     }
 
     if (qCount > 10)
     {
         LOG_WARNING("ParseDnsResponse: suspicious question count: %d", qCount);
-        return false;
+        return Result<void, Error>::Err(Error::Dns_ParseFailed);
     }
 
     INT32 recordOffset = (INT32)sizeof(DNS_REQUEST_HEADER);
@@ -223,7 +223,7 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
         if (size <= 0)
         {
             LOG_WARNING("ParseDnsResponse: invalid query size: %d", size);
-            return false;
+            return Result<void, Error>::Err(Error::Dns_ParseFailed);
         }
         recordOffset += size;
     }
@@ -231,7 +231,7 @@ FORCE_INLINE static UINT16 ReadU16BE(const UINT8 *p, INT32 index)
     if (recordOffset >= len)
     {
         LOG_WARNING("ParseDnsResponse: no space for answer section");
-        return false;
+        return Result<void, Error>::Err(Error::Dns_ParseFailed);
     }
 
     return ParseAnswer(buffer + recordOffset, ansCount, len - recordOffset, ipAddress);
@@ -354,11 +354,13 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &DNSS
         return Result<IPAddress, Error>::Err(Error::Dns_QueryFailed);
     }
 
-    auto writeStr = [&tlsClient](PCCHAR s) -> BOOL
+    auto writeStr = [&tlsClient](PCCHAR s) -> Result<void, Error>
     {
         UINT32 len = String::Length(s);
         auto r = tlsClient.Write(s, len);
-        return r && r.Value() == len;
+        if (!r || r.Value() != len)
+            return Result<void, Error>::Err(Error::Dns_SendFailed);
+        return Result<void, Error>::Ok();
     };
 
     CHAR sizeBuf[8];

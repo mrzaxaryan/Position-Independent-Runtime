@@ -15,8 +15,8 @@ public:
 
     // The maximum value for the random number generator
     static constexpr INT32 MAX = 0x7FFFFFFF;
-    // Constructor
-    Random();
+    // Constructor — trivial; Get() auto-seeds on first call
+    Random() : seed(0) {}
 
     // Generate a random string of specified length
     template <typename TChar>

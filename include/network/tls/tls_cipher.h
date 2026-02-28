@@ -60,8 +60,8 @@ private:
     BOOL isEncoding;                 // Encoding status
 
 public:
-    // Constructor
-    TlsCipher();
+    // Constructor — trivial, call Reset() before use
+    TlsCipher() : cipherCount(0), clientSeqNum(0), serverSeqNum(0), privateEccKeys{}, cipherIndex(-1), isEncoding(false) {}
     ~TlsCipher() { Destroy(); }
 
     TlsCipher(const TlsCipher &) = delete;

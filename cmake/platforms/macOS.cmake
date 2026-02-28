@@ -75,21 +75,8 @@ pir_add_link_flags(
 # Without -static on ARM64, the linker adds LC_LOAD_DYLINKER but since
 # -nostdlib prevents any library linkage, the binary has zero dynamic
 # dependencies — dyld starts, sees nothing to load, and jumps to _entry_point.
-#
-# On ARM64, the linker also adds dyld_stub_binder to the initial undefined
-# symbols list for dynamic executables. Since -nostdlib prevents linking
-# libSystem (which normally provides it), we must explicitly allow this symbol
-# to remain undefined via -U. The symbol is provided by dyld at runtime but
-# is never actually called because -fvisibility=hidden eliminates all stubs.
 if(PIR_ARCH STREQUAL "x86_64")
     pir_add_link_flags(-static)
-else()
-    # Force LLVM's ld64.lld linker for ARM64. Apple's system linker (ld) in
-    # newer Xcode versions does not honor -U for initial-undefines, causing
-    # "dyld_stub_binder" link errors. ld64.lld (bundled with brew install llvm)
-    # correctly allows the symbol to remain undefined via -U.
-    list(APPEND PIR_BASE_LINK_FLAGS -fuse-ld=lld)
-    pir_add_link_flags(-U,_dyld_stub_binder)
 endif()
 
 if(PIR_BUILD_TYPE STREQUAL "release")
@@ -123,6 +110,7 @@ if(PIR_BUILD_TYPE STREQUAL "release")
     )
 endif()
 
-# macOS x86_64 uses the system linker (Apple ld). macOS aarch64 uses
-# ld64.lld (bundled with Homebrew LLVM) because Apple's ld does not honor
-# -U for initial-undefines (dyld_stub_binder).
+# On ARM64, the linker adds dyld_stub_binder to the initial undefined symbols
+# list for dynamic executables. A no-op stub is provided in
+# src/platform/macos/platform.cc to satisfy the linker. The stub is never
+# called because -fvisibility=hidden eliminates all lazy-binding stubs.

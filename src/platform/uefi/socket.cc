@@ -41,10 +41,10 @@ static VOID EFIAPI EmptyNotify(EFI_EVENT Event, PVOID Context)
 	(VOID) Context;
 }
 
-static BOOL InitializeNetworkInterface(EFI_CONTEXT &ctx)
+[[nodiscard]] static Result<void, Error> InitializeNetworkInterface(EFI_CONTEXT &ctx)
 {
 	if (ctx.NetworkInitialized)
-		return true;
+		return Result<void, Error>::Ok();
 
 	LOG_DEBUG("Socket: InitializeNetworkInterface starting...");
 
@@ -69,7 +69,7 @@ static BOOL InitializeNetworkInterface(EFI_CONTEXT &ctx)
 	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &SnpGuid, nullptr, &HandleCount, &HandleBuffer)) || HandleCount == 0)
 	{
 		LOG_DEBUG("Socket: LocateHandleBuffer failed or no handles");
-		return false;
+		return Result<void, Error>::Err(Error::Socket_OpenFailed_Connect);
 	}
 
 	LOG_DEBUG("Socket: Found %u SNP handles", (UINT32)HandleCount);
@@ -103,13 +103,15 @@ static BOOL InitializeNetworkInterface(EFI_CONTEXT &ctx)
 
 	bs->FreePool(HandleBuffer);
 	LOG_DEBUG("Socket: InitializeNetworkInterface done, success=%d", (INT32)ctx.NetworkInitialized);
-	return ctx.NetworkInitialized;
+	if (!ctx.NetworkInitialized)
+		return Result<void, Error>::Err(Error::Socket_OpenFailed_Connect);
+	return Result<void, Error>::Ok();
 }
 
-static BOOL InitializeDhcp(EFI_CONTEXT &ctx)
+[[nodiscard]] static Result<void, Error> InitializeDhcp(EFI_CONTEXT &ctx)
 {
 	if (ctx.DhcpConfigured)
-		return true;
+		return Result<void, Error>::Ok();
 
 	LOG_DEBUG("Socket: InitializeDhcp starting...");
 
@@ -134,7 +136,7 @@ static BOOL InitializeDhcp(EFI_CONTEXT &ctx)
 	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &Ip4Config2Guid, nullptr, &HandleCount, &HandleBuffer)) || HandleCount == 0)
 	{
 		LOG_DEBUG("Socket: DHCP LocateHandleBuffer failed or no handles");
-		return false;
+		return Result<void, Error>::Err(Error::Socket_OpenFailed_Connect);
 	}
 
 	LOG_DEBUG("Socket: Found %u Ip4Config2 handles", (UINT32)HandleCount);
@@ -199,7 +201,9 @@ static BOOL InitializeDhcp(EFI_CONTEXT &ctx)
 	}
 
 	LOG_DEBUG("Socket: InitializeDhcp done, success=%d", (INT32)ctx.DhcpConfigured);
-	return ctx.DhcpConfigured;
+	if (!ctx.DhcpConfigured)
+		return Result<void, Error>::Err(Error::Socket_OpenFailed_Connect);
+	return Result<void, Error>::Ok();
 }
 
 // Wait for async operation with Poll to drive network stack
@@ -386,8 +390,8 @@ Result<void, Error> Socket::Open()
 	EFI_CONTEXT *ctx = GetEfiContext();
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
 
-	InitializeNetworkInterface(*ctx);
-	InitializeDhcp(*ctx);
+	(void)InitializeNetworkInterface(*ctx);
+	(void)InitializeDhcp(*ctx);
 
 	LOG_DEBUG("Socket: Creating connect event...");
 	EFI_EVENT ConnectEvent;

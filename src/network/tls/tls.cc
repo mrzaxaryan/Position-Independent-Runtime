@@ -681,6 +681,8 @@ Result<void, Error> TLSClient::Open()
 {
     LOG_DEBUG("Connecting to host: %s for client: %p, secure: %d", host, this, secure);
 
+    crypto.Reset();
+
     auto openResult = context.Open();
     if (!openResult)
     {

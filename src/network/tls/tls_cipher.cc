@@ -6,28 +6,11 @@
 #include "tls_hkdf.h"
 #include "math.h"
 
-// Constructor for TlsCipher class
-TlsCipher::TlsCipher()
-{
-    this->SetCipherCount(1);
-    Memory::Zero(this->privateEccKeys, sizeof(this->privateEccKeys));
-    this->Reset();
-}
-
 /// @brief Reset the TlsCipher object to its initial state
 /// @return void
 
 VOID TlsCipher::Reset()
 {
-    this->publicKey.Clear();
-    this->decodeBuffer.Clear();
-    LOG_DEBUG("Resetting tls_cipher structure for cipher: %p", this);
-    Memory::Zero(&this->data12, Math::Max(sizeof(this->data12), sizeof(this->data13)));
-    this->clientSeqNum = 0;
-    this->serverSeqNum = 0;
-    this->handshakeHash.Reset();
-    this->cipherIndex = -1;
-    this->isEncoding = false;
     for (INT32 i = 0; i < ECC_COUNT; i++)
     {
         if (this->privateEccKeys[i])
@@ -37,6 +20,17 @@ VOID TlsCipher::Reset()
             this->privateEccKeys[i] = nullptr;
         }
     }
+    Memory::Zero(this->privateEccKeys, sizeof(this->privateEccKeys));
+    this->publicKey.Clear();
+    this->decodeBuffer.Clear();
+    LOG_DEBUG("Resetting tls_cipher structure for cipher: %p", this);
+    Memory::Zero(&this->data12, Math::Max(sizeof(this->data12), sizeof(this->data13)));
+    this->SetCipherCount(1);
+    this->clientSeqNum = 0;
+    this->serverSeqNum = 0;
+    this->handshakeHash.Reset();
+    this->cipherIndex = -1;
+    this->isEncoding = false;
 }
 
 /// @brief Destroy the TlsCipher object and clean up resources
