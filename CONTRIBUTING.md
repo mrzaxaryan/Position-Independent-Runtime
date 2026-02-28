@@ -251,6 +251,23 @@ if (!r)
     return Result<UINT32, Error>::Err(r, Error::Tls_WriteFailed_Send);
 ```
 
+### Platform Conversion Factories
+
+`Result` provides `From*` factories that convert a raw OS status into `Ok`/`Err` in one call. Use these in low-level wrappers that only need the OS error code:
+
+```cpp
+// Windows — success when status >= 0 (NT_SUCCESS semantics):
+return Result<NTSTATUS, Error>::FromNTSTATUS(status);
+
+// POSIX — success when result >= 0, failure stores -result as errno:
+return Result<void, Error>::FromPosix(result);
+
+// UEFI — success when (SSIZE)status >= 0:
+return Result<void, Error>::FromEfiStatus(status);
+```
+
+For void Results, the raw value is discarded on success. For non-void Results, the raw value is stored as the Ok value.
+
 ### Formatting
 
 Use `%e` with `result.Error()`:
@@ -469,18 +486,16 @@ Result<void, Error> Kernel32::MyFunction(UINT32 param1, PVOID param2)
 
 ### NTDLL / Zw* Syscalls
 
-Indirect syscalls on x86_64/i386, direct ntdll calls on ARM64:
+Indirect syscalls on x86_64/i386, direct ntdll calls on ARM64. Use `FromNTSTATUS` to convert the raw status:
 
 ```cpp
-[[nodiscard]] Result<void, Error> NTDLL::ZwMyFunction(PVOID Param1, UINT32 Param2)
+[[nodiscard]] Result<NTSTATUS, Error> NTDLL::ZwMyFunction(PVOID Param1, UINT32 Param2)
 {
     SYSCALL_ENTRY entry = ResolveSyscall("ZwMyFunction");
     NTSTATUS status = entry.ssn != SYSCALL_SSN_INVALID
         ? System::Call(entry, (USIZE)Param1, (USIZE)Param2)
         : CALL_FUNCTION("ZwMyFunction", PVOID Param1, UINT32 Param2);
-    if (status != STATUS_SUCCESS)
-        return Result<void, Error>::Err(Error::Windows((UINT32)status));
-    return Result<void, Error>::Ok();
+    return Result<NTSTATUS, Error>::FromNTSTATUS(status);
 }
 ```
 

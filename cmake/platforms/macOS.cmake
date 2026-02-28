@@ -75,8 +75,16 @@ pir_add_link_flags(
 # Without -static on ARM64, the linker adds LC_LOAD_DYLINKER but since
 # -nostdlib prevents any library linkage, the binary has zero dynamic
 # dependencies — dyld starts, sees nothing to load, and jumps to _entry_point.
+#
+# On ARM64, the linker also adds dyld_stub_binder to the initial undefined
+# symbols list for dynamic executables. Since -nostdlib prevents linking
+# libSystem (which normally provides it), we must explicitly allow this symbol
+# to remain undefined via -U. The symbol is provided by dyld at runtime but
+# is never actually called because -fvisibility=hidden eliminates all stubs.
 if(PIR_ARCH STREQUAL "x86_64")
     pir_add_link_flags(-static)
+else()
+    pir_add_link_flags(-U,_dyld_stub_binder)
 endif()
 
 if(PIR_BUILD_TYPE STREQUAL "release")
