@@ -112,17 +112,10 @@ endif()
 
 # On ARM64, the linker adds dyld_stub_binder to the initial undefined symbols
 # list for dynamic executables. Normally libSystem provides it, but -nostdlib
-# prevents linking libSystem. Use ld64.lld (LLVM's Mach-O linker) which
-# correctly handles -U to allow the symbol to remain undefined at link time.
-# The symbol is provided by dyld at runtime but is never actually called
-# because -fvisibility=hidden eliminates all lazy-binding stubs.
-#
-# --ld-path= is used instead of -fuse-ld=lld because the Darwin clang driver
-# may fail to locate ld64.lld via its internal search (-fuse-ld=lld gives
-# "invalid linker name"). --ld-path= bypasses the search by passing the full
-# path found at configure time.
-if(PIR_ARCH STREQUAL "aarch64")
-    find_program(LD64_LLD NAMES ld64.lld REQUIRED)
-    list(APPEND PIR_BASE_LINK_FLAGS "--ld-path=${LD64_LLD}")
-    pir_add_link_flags(-U,_dyld_stub_binder)
-endif()
+# prevents linking libSystem. A no-op stub with visibility("default") is
+# provided in src/platform/macos/platform.cc to satisfy the linker. The
+# explicit visibility override is required because -fvisibility=hidden (set
+# globally) would otherwise make the symbol hidden, preventing the linker from
+# matching it against the default-visibility initial-undefine reference. The
+# stub is never called because -fvisibility=hidden eliminates all lazy-binding
+# stubs for every other symbol.
