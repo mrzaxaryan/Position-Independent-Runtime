@@ -59,7 +59,7 @@ jobs:
       - name: Build with -Oz (no logging, no tests)
         shell: pwsh
         run: |
-          cmake --preset windows-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF -DENABLE_TESTS=OFF
+          cmake --preset windows-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
           cmake --build --preset windows-${{ matrix.arch }}-release
 
       - name: Get sizes
@@ -117,7 +117,7 @@ jobs:
       - name: Build with -Oz (no logging, no tests)
         shell: pwsh
         run: |
-          cmake --preset windows-aarch64-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF -DENABLE_TESTS=OFF
+          cmake --preset windows-aarch64-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
           cmake --build --preset windows-aarch64-release
 
       - name: Get sizes
@@ -178,7 +178,7 @@ jobs:
 
       - name: Build with -Oz (no logging, no tests)
         run: |
-          cmake --preset linux-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF -DENABLE_TESTS=OFF
+          cmake --preset linux-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
           cmake --build --preset linux-${{ matrix.arch }}-release
 
       - name: Get sizes
@@ -226,7 +226,7 @@ jobs:
 
       - name: Build with -Oz (no logging, no tests)
         run: |
-          cmake --preset macos-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF -DENABLE_TESTS=OFF
+          cmake --preset macos-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
           cmake --build --preset macos-${{ matrix.arch }}-release
 
       - name: Get sizes
@@ -285,7 +285,7 @@ jobs:
 
       - name: Build with -Oz (no logging, no tests)
         run: |
-          cmake --preset uefi-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF -DENABLE_TESTS=OFF
+          cmake --preset uefi-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
           cmake --build --preset uefi-${{ matrix.arch }}-release
 
       - name: Get sizes

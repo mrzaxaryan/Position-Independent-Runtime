@@ -42,7 +42,6 @@
 
 #include "core.h"
 
-#if defined(ENABLE_TESTS)
 #include "djb2_tests.h"
 #include "memory_tests.h"
 #include "string_tests.h"
@@ -61,12 +60,10 @@
 #include "result_tests.h"
 #include "binary_io_tests.h"
 #include "span_tests.h"
-#endif // ENABLE_TESTS
 
 static BOOL RunPIRTests()
 {
 	BOOL allPassed = true;
-#if defined(ENABLE_TESTS)
 
 	LOG_INFO("=== CPP-PIC Test Suite ===");
 	LOG_INFO("");
@@ -106,6 +103,5 @@ static BOOL RunPIRTests()
 	else
 		LOG_ERROR("SOME TESTS FAILED!");
 
-#endif // ENABLE_TESTS
 	return allPassed;
 }
