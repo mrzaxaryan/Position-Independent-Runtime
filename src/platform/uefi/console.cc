@@ -8,9 +8,9 @@
 #include "console.h"
 #include "efi_context.h"
 
-UINT32 Console::Write(const WCHAR *text, USIZE length)
+UINT32 Console::Write(Span<const WCHAR> text)
 {
-	if (text == nullptr || length == 0)
+	if (text.Data() == nullptr || text.Size() == 0)
 		return 0;
 
 	EFI_CONTEXT *ctx = GetEfiContext();
@@ -23,25 +23,27 @@ UINT32 Console::Write(const WCHAR *text, USIZE length)
 	constexpr USIZE BUFFER_SIZE = 256;
 	WCHAR buffer[BUFFER_SIZE];
 	UINT32 totalWritten = 0;
+	USIZE remaining = text.Size();
+	USIZE offset = 0;
 
-	while (length > 0)
+	while (remaining > 0)
 	{
-		USIZE chunk = (length < BUFFER_SIZE - 1) ? length : BUFFER_SIZE - 1;
+		USIZE chunk = (remaining < BUFFER_SIZE - 1) ? remaining : BUFFER_SIZE - 1;
 		for (USIZE i = 0; i < chunk; i++)
-			buffer[i] = text[i];
+			buffer[i] = text[offset + i];
 		buffer[chunk] = L'\0';
 		conOut->OutputString(conOut, buffer);
 		totalWritten += chunk;
-		text += chunk;
-		length -= chunk;
+		offset += chunk;
+		remaining -= chunk;
 	}
 
 	return totalWritten;
 }
 
-UINT32 Console::Write(const CHAR *text, USIZE length)
+UINT32 Console::Write(Span<const CHAR> text)
 {
-	if (text == nullptr || length == 0)
+	if (text.Data() == nullptr || text.Size() == 0)
 		return 0;
 
 	EFI_CONTEXT *ctx = GetEfiContext();
@@ -54,17 +56,19 @@ UINT32 Console::Write(const CHAR *text, USIZE length)
 	constexpr USIZE BUFFER_SIZE = 256;
 	WCHAR buffer[BUFFER_SIZE];
 	UINT32 totalWritten = 0;
+	USIZE remaining = text.Size();
+	USIZE offset = 0;
 
-	while (length > 0)
+	while (remaining > 0)
 	{
-		USIZE chunk = (length < BUFFER_SIZE - 1) ? length : BUFFER_SIZE - 1;
+		USIZE chunk = (remaining < BUFFER_SIZE - 1) ? remaining : BUFFER_SIZE - 1;
 		for (USIZE i = 0; i < chunk; i++)
-			buffer[i] = (WCHAR)(UINT8)text[i];
+			buffer[i] = (WCHAR)(UINT8)text[offset + i];
 		buffer[chunk] = L'\0';
 		conOut->OutputString(conOut, buffer);
 		totalWritten += chunk;
-		text += chunk;
-		length -= chunk;
+		offset += chunk;
+		remaining -= chunk;
 	}
 
 	return totalWritten;

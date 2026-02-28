@@ -184,7 +184,7 @@ private:
 		CHAR utf8[16];
 
 		USIZE wideLen = String::Length((const WCHAR *)wide);
-		USIZE len = UTF16::ToUTF8((const WCHAR *)wide, wideLen, utf8, sizeof(utf8) - 1);
+		USIZE len = UTF16::ToUTF8(Span<const WCHAR>((const WCHAR *)wide, wideLen), Span<CHAR>(utf8, sizeof(utf8) - 1));
 		utf8[len] = '\0';
 
 		// Should be 5 characters
@@ -211,7 +211,7 @@ private:
 		CHAR utf8[16];
 
 		USIZE wideLen = String::Length((const WCHAR *)wide);
-		USIZE len = UTF16::ToUTF8((const WCHAR *)wide, wideLen, utf8, sizeof(utf8) - 1);
+		USIZE len = UTF16::ToUTF8(Span<const WCHAR>((const WCHAR *)wide, wideLen), Span<CHAR>(utf8, sizeof(utf8) - 1));
 		utf8[len] = '\0';
 
 		// Should be 0 characters

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "primitives.h"
+#include "span.h"
 #include "memory.h"
 
 class BinaryReader
@@ -28,14 +29,14 @@ public:
 		return value;
 	}
 
-	USIZE ReadBytes(PCHAR buffer, USIZE size)
+	USIZE ReadBytes(Span<CHAR> buffer)
 	{
-		if (offset + size > maxSize)
+		if (offset + buffer.Size() > maxSize)
 			return 0;
 
-		Memory::Copy(buffer, (PCHAR)address + offset, size);
-		offset += size;
-		return size;
+		Memory::Copy(buffer.Data(), (PCHAR)address + offset, buffer.Size());
+		offset += buffer.Size();
+		return buffer.Size();
 	}
 
 	PVOID GetAddress() const { return address; }

@@ -24,6 +24,7 @@
 #pragma once
 
 #include "primitives.h"
+#include "span.h"
 
 /**
  * @class UTF16
@@ -62,15 +63,15 @@ public:
      *
      * @note The inputIndex parameter is advanced past the consumed code unit(s).
      */
-    static USIZE CodepointToUTF8(const WCHAR* input, USIZE inputLength, USIZE& inputIndex, CHAR* output)
+    static USIZE CodepointToUTF8(Span<const WCHAR> input, USIZE& inputIndex, CHAR* output)
     {
-        if (inputIndex >= inputLength)
+        if (inputIndex >= input.Size())
             return 0;
 
         UINT32 codepoint = input[inputIndex++];
 
         // Handle UTF-16 surrogate pairs
-        if (codepoint >= 0xD800 && codepoint <= 0xDBFF && inputIndex < inputLength)
+        if (codepoint >= 0xD800 && codepoint <= 0xDBFF && inputIndex < input.Size())
         {
             UINT32 low = input[inputIndex];
             if (low >= 0xDC00 && low <= 0xDFFF)
@@ -149,14 +150,14 @@ public:
      * @warning Does not null-terminate the output. Caller must add null terminator
      * if needed.
      */
-    static USIZE ToUTF8(const WCHAR* input, USIZE inputLength, CHAR* output, USIZE outputSize)
+    static USIZE ToUTF8(Span<const WCHAR> input, Span<CHAR> output)
     {
         USIZE inputIndex = 0;
         USIZE outputIndex = 0;
 
-        while (inputIndex < inputLength && outputIndex + 4 <= outputSize)
+        while (inputIndex < input.Size() && outputIndex + 4 <= output.Size())
         {
-            USIZE bytesWritten = CodepointToUTF8(input, inputLength, inputIndex, output + outputIndex);
+            USIZE bytesWritten = CodepointToUTF8(input, inputIndex, output.Data() + outputIndex);
             outputIndex += bytesWritten;
         }
 

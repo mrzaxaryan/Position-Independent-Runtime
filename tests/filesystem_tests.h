@@ -267,7 +267,7 @@ private:
 			File &file = openResult.Value();
 
 			auto testData = "Hello, File System!"_embed;
-			auto writeResult = file.Write((const CHAR *)testData, 20);
+			auto writeResult = file.Write(Span<const UINT8>((const UINT8 *)(const CHAR *)testData, 20));
 			if (!writeResult)
 			{
 				LOG_ERROR("Write to test_write_read.txt failed (error: %e)", writeResult.Error());
@@ -292,7 +292,7 @@ private:
 
 			CHAR buffer[32];
 			Memory::Zero(buffer, 32);
-			auto readResult = readFile.Read(buffer, 20);
+			auto readResult = readFile.Read(Span<UINT8>((UINT8 *)buffer, 20));
 			if (!readResult)
 			{
 				LOG_ERROR("Read from test_write_read.txt failed (error: %e)", readResult.Error());
@@ -334,7 +334,7 @@ private:
 				binaryData[i] = (UINT8)i;
 			}
 
-			auto writeResult = file.Write(binaryData, 256);
+			auto writeResult = file.Write(Span<const UINT8>(binaryData));
 			if (!writeResult)
 			{
 				LOG_ERROR("Binary write failed (error: %e)", writeResult.Error());
@@ -359,7 +359,7 @@ private:
 
 			UINT8 readBuffer[256];
 			Memory::Zero(readBuffer, 256);
-			auto readResult = readFile.Read(readBuffer, 256);
+			auto readResult = readFile.Read(Span<UINT8>(readBuffer));
 			if (!readResult)
 			{
 				LOG_ERROR("Binary read failed (error: %e)", readResult.Error());
@@ -396,7 +396,7 @@ private:
 			File &file = openResult.Value();
 
 			auto data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"_embed;
-			auto writeResult = file.Write((const CHAR *)data, 26);
+			auto writeResult = file.Write(Span<const UINT8>((const UINT8 *)(const CHAR *)data, 26));
 			if (!writeResult)
 			{
 				LOG_ERROR("Offset test write failed (error: %e)", writeResult.Error());

@@ -27,6 +27,7 @@
 #pragma once
 
 #include "primitives.h"
+#include "span.h"
 #include "double.h"
 #include "embedded_string.h"
 #include "error.h"
@@ -147,14 +148,12 @@ public:
     /**
      * @brief Compare two strings with explicit lengths
      * @tparam TChar Character type (CHAR or WCHAR)
-     * @param a First string
-     * @param aLen Length of first string
-     * @param b Second string
-     * @param bLen Length of second string
+     * @param a First string span
+     * @param b Second string span
      * @return true if strings are equal, false otherwise
      */
     template <TCHAR TChar>
-    static BOOL Equals(const TChar *a, USIZE aLen, const TChar *b, USIZE bLen) noexcept;
+    static BOOL Equals(Span<const TChar> a, Span<const TChar> b) noexcept;
 
     /**
      * @brief Compare two null-terminated strings for equality
@@ -179,26 +178,22 @@ public:
     /**
      * @brief Check if string starts with prefix (with explicit lengths)
      * @tparam TChar Character type (CHAR or WCHAR)
-     * @param str String to check
-     * @param strLen Length of string
-     * @param prefix Prefix to look for
-     * @param prefixLen Length of prefix
+     * @param str String span to check
+     * @param prefix Prefix span to look for
      * @return true if string starts with prefix, false otherwise
      */
     template <TCHAR TChar>
-    static BOOL StartsWith(const TChar *str, USIZE strLen, const TChar *prefix, USIZE prefixLen) noexcept;
+    static BOOL StartsWith(Span<const TChar> str, Span<const TChar> prefix) noexcept;
 
     /**
      * @brief Check if string ends with suffix
      * @tparam TChar Character type (CHAR or WCHAR)
-     * @param str String to check
-     * @param strLen Length of string
-     * @param suffix Suffix to look for
-     * @param suffixLen Length of suffix
+     * @param str String span to check
+     * @param suffix Suffix span to look for
      * @return true if string ends with suffix, false otherwise
      */
     template <TCHAR TChar>
-    static BOOL EndsWith(const TChar *str, USIZE strLen, const TChar *suffix, USIZE suffixLen) noexcept;
+    static BOOL EndsWith(Span<const TChar> str, Span<const TChar> suffix) noexcept;
 
     /// @}
     /// @name String Search
@@ -217,25 +212,22 @@ public:
     /**
      * @brief Find index of character in string
      * @tparam TChar Character type (CHAR or WCHAR)
-     * @param str String to search
-     * @param strLen Length of string
+     * @param str String span to search
      * @param ch Character to find
      * @return Index of first occurrence, or -1 if not found
      */
     template <TCHAR TChar>
-    static SSIZE IndexOfChar(const TChar *str, USIZE strLen, TChar ch) noexcept;
+    static SSIZE IndexOfChar(Span<const TChar> str, TChar ch) noexcept;
 
     /**
      * @brief Find index of substring in string
      * @tparam TChar Character type (CHAR or WCHAR)
-     * @param str String to search
-     * @param strLen Length of string
-     * @param sub Substring to find
-     * @param subLen Length of substring
+     * @param str String span to search
+     * @param sub Substring span to find
      * @return Index of first occurrence, or -1 if not found
      */
     template <TCHAR TChar>
-    static SSIZE IndexOf(const TChar *str, USIZE strLen, const TChar *sub, USIZE subLen) noexcept;
+    static SSIZE IndexOf(Span<const TChar> str, Span<const TChar> sub) noexcept;
 
     /// @}
     /// @name String Copy Operations
@@ -255,26 +247,23 @@ public:
     /**
      * @brief Safe string copy with explicit buffer size
      * @tparam TChar Character type (CHAR or WCHAR)
-     * @param dest Destination buffer
-     * @param destSize Size of destination buffer
-     * @param src Source string
-     * @param srcLen Length of source string
+     * @param dest Destination buffer span
+     * @param src Source string span
      * @return Number of characters copied (excluding null terminator)
      */
     template <TCHAR TChar>
-    static USIZE Copy(TChar *dest, USIZE destSize, const TChar *src, USIZE srcLen) noexcept;
+    static USIZE Copy(Span<TChar> dest, Span<const TChar> src) noexcept;
 
     /**
      * @brief Safe string copy with compile-time buffer size
      * @tparam MaxLen Buffer size (deduced from array)
      * @tparam TChar Character type (CHAR or WCHAR)
      * @param dest Destination array
-     * @param src Source string
-     * @param srcLen Length of source string
+     * @param src Source string span
      * @return Number of characters copied (excluding null terminator)
      */
     template <USIZE MaxLen, TCHAR TChar>
-    static FORCE_INLINE USIZE Copy(TChar (&dest)[MaxLen], const TChar *src, USIZE srcLen) noexcept;
+    static FORCE_INLINE USIZE Copy(TChar (&dest)[MaxLen], Span<const TChar> src) noexcept;
 
     /**
      * @brief Copy embedded string to buffer
@@ -332,18 +321,15 @@ public:
     /**
      * @brief Concatenate two strings into a buffer
      * @tparam TChar Character type (CHAR or WCHAR)
-     * @param buffer Destination buffer
-     * @param bufSize Size of destination buffer
-     * @param s1 First string
-     * @param len1 Length of first string
-     * @param s2 Second string
-     * @param len2 Length of second string
+     * @param buffer Destination buffer span
+     * @param s1 First string span
+     * @param s2 Second string span
      * @return Total number of characters written (excluding null terminator)
      */
     template <TCHAR TChar>
-    static USIZE Concat(TChar *buffer, USIZE bufSize,
-                        const TChar *s1, USIZE len1,
-                        const TChar *s2, USIZE len2) noexcept;
+    static USIZE Concat(Span<TChar> buffer,
+                        Span<const TChar> s1,
+                        Span<const TChar> s2) noexcept;
 
     /// @}
     /// @name Number Conversion
@@ -544,11 +530,11 @@ BOOL String::Compare(const TChar *s1, const TChar *s2, BOOL ignoreCase) noexcept
 }
 
 template <TCHAR TChar>
-BOOL String::Equals(const TChar *a, USIZE aLen, const TChar *b, USIZE bLen) noexcept
+BOOL String::Equals(Span<const TChar> a, Span<const TChar> b) noexcept
 {
-    if (aLen != bLen)
+    if (a.Size() != b.Size())
         return false;
-    for (USIZE i = 0; i < aLen; i++)
+    for (USIZE i = 0; i < a.Size(); i++)
     {
         if (a[i] != b[i])
             return false;
@@ -591,11 +577,11 @@ BOOL String::StartsWith(const TChar *pChar, const TChar *pSubString) noexcept
 }
 
 template <TCHAR TChar>
-BOOL String::StartsWith(const TChar *str, USIZE strLen, const TChar *prefix, USIZE prefixLen) noexcept
+BOOL String::StartsWith(Span<const TChar> str, Span<const TChar> prefix) noexcept
 {
-    if (prefixLen > strLen)
+    if (prefix.Size() > str.Size())
         return false;
-    for (USIZE i = 0; i < prefixLen; i++)
+    for (USIZE i = 0; i < prefix.Size(); i++)
     {
         if (str[i] != prefix[i])
             return false;
@@ -604,12 +590,12 @@ BOOL String::StartsWith(const TChar *str, USIZE strLen, const TChar *prefix, USI
 }
 
 template <TCHAR TChar>
-BOOL String::EndsWith(const TChar *str, USIZE strLen, const TChar *suffix, USIZE suffixLen) noexcept
+BOOL String::EndsWith(Span<const TChar> str, Span<const TChar> suffix) noexcept
 {
-    if (suffixLen > strLen)
+    if (suffix.Size() > str.Size())
         return false;
-    USIZE offset = strLen - suffixLen;
-    for (USIZE i = 0; i < suffixLen; i++)
+    USIZE offset = str.Size() - suffix.Size();
+    for (USIZE i = 0; i < suffix.Size(); i++)
     {
         if (str[offset + i] != suffix[i])
             return false;
@@ -637,9 +623,9 @@ const TChar *String::AddressOf(TChar c, const TChar *pChar) noexcept
 }
 
 template <TCHAR TChar>
-SSIZE String::IndexOfChar(const TChar *str, USIZE strLen, TChar ch) noexcept
+SSIZE String::IndexOfChar(Span<const TChar> str, TChar ch) noexcept
 {
-    for (USIZE i = 0; i < strLen; i++)
+    for (USIZE i = 0; i < str.Size(); i++)
     {
         if (str[i] == ch)
             return (SSIZE)i;
@@ -648,18 +634,18 @@ SSIZE String::IndexOfChar(const TChar *str, USIZE strLen, TChar ch) noexcept
 }
 
 template <TCHAR TChar>
-SSIZE String::IndexOf(const TChar *str, USIZE strLen, const TChar *sub, USIZE subLen) noexcept
+SSIZE String::IndexOf(Span<const TChar> str, Span<const TChar> sub) noexcept
 {
-    if (subLen == 0)
+    if (sub.Size() == 0)
         return 0;
-    if (subLen > strLen)
+    if (sub.Size() > str.Size())
         return -1;
 
-    USIZE limit = strLen - subLen + 1;
+    USIZE limit = str.Size() - sub.Size() + 1;
     for (USIZE i = 0; i < limit; i++)
     {
         BOOL match = true;
-        for (USIZE j = 0; j < subLen && match; j++)
+        for (USIZE j = 0; j < sub.Size() && match; j++)
         {
             if (str[i + j] != sub[j])
                 match = false;
@@ -688,17 +674,17 @@ TChar *String::Copy(TChar *dest, const TChar *src) noexcept
 }
 
 template <TCHAR TChar>
-USIZE String::Copy(TChar *dest, USIZE destSize, const TChar *src, USIZE srcLen) noexcept
+USIZE String::Copy(Span<TChar> dest, Span<const TChar> src) noexcept
 {
-    if (!dest || destSize == 0)
+    if (!dest.Data() || dest.Size() == 0)
         return 0;
-    if (!src || srcLen == 0)
+    if (!src.Data() || src.Size() == 0)
     {
         dest[0] = (TChar)'\0';
         return 0;
     }
 
-    USIZE copyLen = srcLen < destSize - 1 ? srcLen : destSize - 1;
+    USIZE copyLen = src.Size() < dest.Size() - 1 ? src.Size() : dest.Size() - 1;
     for (USIZE i = 0; i < copyLen; i++)
     {
         dest[i] = src[i];
@@ -708,9 +694,9 @@ USIZE String::Copy(TChar *dest, USIZE destSize, const TChar *src, USIZE srcLen) 
 }
 
 template <USIZE MaxLen, TCHAR TChar>
-FORCE_INLINE USIZE String::Copy(TChar (&dest)[MaxLen], const TChar *src, USIZE srcLen) noexcept
+FORCE_INLINE USIZE String::Copy(TChar (&dest)[MaxLen], Span<const TChar> src) noexcept
 {
-    return Copy(dest, MaxLen, src, srcLen);
+    return Copy(Span<TChar>(dest), src);
 }
 
 template <typename T>
@@ -788,21 +774,21 @@ const TChar *String::Trim(const TChar *str, USIZE &len) noexcept
 }
 
 template <TCHAR TChar>
-USIZE String::Concat(TChar *buffer, USIZE bufSize,
-                     const TChar *s1, USIZE len1,
-                     const TChar *s2, USIZE len2) noexcept
+USIZE String::Concat(Span<TChar> buffer,
+                     Span<const TChar> s1,
+                     Span<const TChar> s2) noexcept
 {
-    if (!buffer || bufSize == 0)
+    if (!buffer.Data() || buffer.Size() == 0)
         return 0;
 
     USIZE pos = 0;
 
-    for (USIZE i = 0; i < len1 && pos < bufSize - 1; i++)
+    for (USIZE i = 0; i < s1.Size() && pos < buffer.Size() - 1; i++)
     {
         buffer[pos++] = s1[i];
     }
 
-    for (USIZE i = 0; i < len2 && pos < bufSize - 1; i++)
+    for (USIZE i = 0; i < s2.Size() && pos < buffer.Size() - 1; i++)
     {
         buffer[pos++] = s2[i];
     }

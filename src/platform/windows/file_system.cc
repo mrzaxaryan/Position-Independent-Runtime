@@ -68,7 +68,7 @@ void File::Close()
 }
 
 // Read data from the file into the buffer
-Result<UINT32, Error> File::Read(PVOID buffer, UINT32 size)
+Result<UINT32, Error> File::Read(Span<UINT8> buffer)
 {
     if (!IsValid())
         return Result<UINT32, Error>::Err(Error::Fs_ReadFailed);
@@ -76,7 +76,7 @@ Result<UINT32, Error> File::Read(PVOID buffer, UINT32 size)
     IO_STATUS_BLOCK ioStatusBlock;
     Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
 
-    auto readResult = NTDLL::ZwReadFile((PVOID)fileHandle, nullptr, nullptr, nullptr, &ioStatusBlock, buffer, (UINT32)size, nullptr, nullptr);
+    auto readResult = NTDLL::ZwReadFile((PVOID)fileHandle, nullptr, nullptr, nullptr, &ioStatusBlock, buffer.Data(), (UINT32)buffer.Size(), nullptr, nullptr);
 
     if (readResult)
     {
@@ -86,7 +86,7 @@ Result<UINT32, Error> File::Read(PVOID buffer, UINT32 size)
 }
 
 // Write data from the buffer to the file
-Result<UINT32, Error> File::Write(PCVOID buffer, USIZE size)
+Result<UINT32, Error> File::Write(Span<const UINT8> buffer)
 {
     if (!IsValid())
         return Result<UINT32, Error>::Err(Error::Fs_WriteFailed);
@@ -94,7 +94,7 @@ Result<UINT32, Error> File::Write(PCVOID buffer, USIZE size)
     IO_STATUS_BLOCK ioStatusBlock;
     Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
 
-    auto writeResult = NTDLL::ZwWriteFile((PVOID)fileHandle, nullptr, nullptr, nullptr, &ioStatusBlock, (PVOID)buffer, (UINT32)size, nullptr, nullptr);
+    auto writeResult = NTDLL::ZwWriteFile((PVOID)fileHandle, nullptr, nullptr, nullptr, &ioStatusBlock, (PVOID)buffer.Data(), (UINT32)buffer.Size(), nullptr, nullptr);
 
     if (writeResult)
     {

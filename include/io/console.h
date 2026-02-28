@@ -79,7 +79,7 @@ public:
 	 *   Windows: NtDll!ZwWriteFile or Kernel32!WriteConsoleA
 	 *   Linux:   syscall(__NR_write, 1, text, length)
 	 */
-	static NOINLINE UINT32 Write(const CHAR *text, USIZE length);
+	static NOINLINE UINT32 Write(Span<const CHAR> text);
 
 	/**
 	 * Write - Output wide (Unicode) string to console
@@ -88,8 +88,7 @@ public:
 	 *   Windows: Calls WriteConsoleW directly (native Unicode support)
 	 *   Linux:   Converts UTF-16 → UTF-8, then write() syscall
 	 *
-	 * @param text   - Pointer to wide character string
-	 * @param length - Number of characters to write
+	 * @param text - Span of wide characters to write
 	 * @return Number of characters written, 0 on error
 	 *
 	 * UNICODE HANDLING:
@@ -97,10 +96,10 @@ public:
 	 *   - Linux:   Converts to UTF-8 (handles surrogate pairs correctly)
 	 *
 	 * IMPORTANT:
-	 *   Length is in characters, not bytes!
+	 *   Size is in characters, not bytes!
 	 *   For WCHAR, each character is sizeof(WCHAR) bytes
 	 */
-	static NOINLINE UINT32 Write(const WCHAR *text, USIZE length);
+	static NOINLINE UINT32 Write(Span<const WCHAR> text);
 
 	/**
 	 * Write - Output null-terminated string to console (template version)
@@ -182,9 +181,9 @@ public:
 template <TCHAR TChar>
 UINT32 Console::Write(const TChar *text)
 {
-	// Calculate string length and forward to length-based overload
+	// Calculate string length and forward to Span-based overload
 	// String::Length() walks the string until it finds the null terminator
-	return Write(text, String::Length(text));
+	return Write(Span<const TChar>(text, String::Length(text)));
 }
 
 /**
@@ -207,7 +206,7 @@ BOOL Console::FormatterCallback(PVOID context, TChar ch)
 
 	// Write single character to console
 	// Return value: true = success, false = error
-	return Write(&ch, 1);
+	return Write(Span<const TChar>(&ch, 1));
 }
 
 /**

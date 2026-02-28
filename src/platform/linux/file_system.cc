@@ -49,23 +49,23 @@ VOID File::Close()
     }
 }
 
-Result<UINT32, Error> File::Read(PVOID buffer, UINT32 size)
+Result<UINT32, Error> File::Read(Span<UINT8> buffer)
 {
     if (!IsValid())
         return Result<UINT32, Error>::Err(Error::Fs_ReadFailed);
 
-    SSIZE result = System::Call(SYS_READ, (USIZE)fileHandle, (USIZE)buffer, size);
+    SSIZE result = System::Call(SYS_READ, (USIZE)fileHandle, (USIZE)buffer.Data(), buffer.Size());
     if (result >= 0)
         return Result<UINT32, Error>::Ok((UINT32)result);
     return Result<UINT32, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_ReadFailed);
 }
 
-Result<UINT32, Error> File::Write(const VOID *buffer, USIZE size)
+Result<UINT32, Error> File::Write(Span<const UINT8> buffer)
 {
     if (!IsValid())
         return Result<UINT32, Error>::Err(Error::Fs_WriteFailed);
 
-    SSIZE result = System::Call(SYS_WRITE, (USIZE)fileHandle, (USIZE)buffer, size);
+    SSIZE result = System::Call(SYS_WRITE, (USIZE)fileHandle, (USIZE)buffer.Data(), buffer.Size());
     if (result >= 0)
         return Result<UINT32, Error>::Ok((UINT32)result);
     return Result<UINT32, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_WriteFailed);
@@ -108,7 +108,7 @@ Result<File, Error> FileSystem::Open(PCWCHAR path, INT32 flags)
 {
     CHAR utf8Path[1024];
     USIZE pathLen = String::Length(path);
-    USIZE utf8Len = UTF16::ToUTF8(path, pathLen, utf8Path, sizeof(utf8Path) - 1);
+    USIZE utf8Len = UTF16::ToUTF8(Span<const WCHAR>(path, pathLen), Span<CHAR>(utf8Path, sizeof(utf8Path) - 1));
     utf8Path[utf8Len] = '\0';
 
     INT32 openFlags = 0;
@@ -147,7 +147,7 @@ Result<void, Error> FileSystem::Delete(PCWCHAR path)
 {
     CHAR utf8Path[1024];
     USIZE pathLen = String::Length(path);
-    USIZE utf8Len = UTF16::ToUTF8(path, pathLen, utf8Path, sizeof(utf8Path) - 1);
+    USIZE utf8Len = UTF16::ToUTF8(Span<const WCHAR>(path, pathLen), Span<CHAR>(utf8Path, sizeof(utf8Path) - 1));
     utf8Path[utf8Len] = '\0';
 
 #if defined(ARCHITECTURE_AARCH64)
@@ -164,7 +164,7 @@ Result<void, Error> FileSystem::Exists(PCWCHAR path)
 {
     CHAR utf8Path[1024];
     USIZE pathLen = String::Length(path);
-    USIZE utf8Len = UTF16::ToUTF8(path, pathLen, utf8Path, sizeof(utf8Path) - 1);
+    USIZE utf8Len = UTF16::ToUTF8(Span<const WCHAR>(path, pathLen), Span<CHAR>(utf8Path, sizeof(utf8Path) - 1));
     utf8Path[utf8Len] = '\0';
 
     UINT8 statbuf[144];
@@ -183,7 +183,7 @@ Result<void, Error> FileSystem::CreateDirectory(PCWCHAR path)
 {
     CHAR utf8Path[1024];
     USIZE pathLen = String::Length(path);
-    USIZE utf8Len = UTF16::ToUTF8(path, pathLen, utf8Path, sizeof(utf8Path) - 1);
+    USIZE utf8Len = UTF16::ToUTF8(Span<const WCHAR>(path, pathLen), Span<CHAR>(utf8Path, sizeof(utf8Path) - 1));
     utf8Path[utf8Len] = '\0';
 
     // Mode 0755 (rwxr-xr-x)
@@ -203,7 +203,7 @@ Result<void, Error> FileSystem::DeleteDirectory(PCWCHAR path)
 {
     CHAR utf8Path[1024];
     USIZE pathLen = String::Length(path);
-    USIZE utf8Len = UTF16::ToUTF8(path, pathLen, utf8Path, sizeof(utf8Path) - 1);
+    USIZE utf8Len = UTF16::ToUTF8(Span<const WCHAR>(path, pathLen), Span<CHAR>(utf8Path, sizeof(utf8Path) - 1));
     utf8Path[utf8Len] = '\0';
 
 #if defined(ARCHITECTURE_AARCH64)
@@ -228,7 +228,7 @@ Result<void, Error> DirectoryIterator::Initialization(PCWCHAR path)
     if (path && path[0] != L'\0')
     {
         USIZE pathLen = String::Length(path);
-        USIZE utf8Len = UTF16::ToUTF8(path, pathLen, utf8Path, sizeof(utf8Path) - 1);
+        USIZE utf8Len = UTF16::ToUTF8(Span<const WCHAR>(path, pathLen), Span<CHAR>(utf8Path, sizeof(utf8Path) - 1));
         utf8Path[utf8Len] = '\0';
     }
     else

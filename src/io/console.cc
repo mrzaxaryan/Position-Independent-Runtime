@@ -4,7 +4,7 @@
 
 #include "encoding/utf16.h"
 
-UINT32 Console::Write(const WCHAR *text, USIZE length)
+UINT32 Console::Write(Span<const WCHAR> text)
 {
 	constexpr USIZE BUFFER_SIZE = 256;
 	CHAR utf8[BUFFER_SIZE];
@@ -13,10 +13,10 @@ UINT32 Console::Write(const WCHAR *text, USIZE length)
 	USIZE inputIndex = 0;
 	USIZE bufIndex = 0;
 
-	while (inputIndex < length)
+	while (inputIndex < text.Size())
 	{
 		CHAR bytes[4];
-		USIZE n = UTF16::CodepointToUTF8(text, length, inputIndex, bytes);
+		USIZE n = UTF16::CodepointToUTF8(text, inputIndex, bytes);
 		if (n == 0)
 		{
 			inputIndex++;
@@ -25,7 +25,7 @@ UINT32 Console::Write(const WCHAR *text, USIZE length)
 
 		if (bufIndex + n > BUFFER_SIZE)
 		{
-			totalWritten += Write(utf8, bufIndex);
+			totalWritten += Write(Span<const CHAR>(utf8, bufIndex));
 			bufIndex = 0;
 		}
 
@@ -34,7 +34,7 @@ UINT32 Console::Write(const WCHAR *text, USIZE length)
 	}
 
 	if (bufIndex > 0)
-		totalWritten += Write(utf8, bufIndex);
+		totalWritten += Write(Span<const CHAR>(utf8, bufIndex));
 
 	return totalWritten;
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "primitives.h"
+#include "span.h"
 #include "memory.h"
 
 class BinaryWriter
@@ -27,13 +28,13 @@ public:
 		return address;
 	}
 
-	PVOID WriteBytes(PCHAR data, USIZE size)
+	PVOID WriteBytes(Span<const CHAR> data)
 	{
-		if (offset + size > maxSize)
+		if (offset + data.Size() > maxSize)
 			return nullptr;
 
-		Memory::Copy((PCHAR)address + offset, data, size);
-		offset += size;
+		Memory::Copy((PCHAR)address + offset, data.Data(), data.Size());
+		offset += data.Size();
 		return address;
 	}
 

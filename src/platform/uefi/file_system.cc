@@ -312,30 +312,30 @@ VOID File::Close()
 	fileSize = 0;
 }
 
-Result<UINT32, Error> File::Read(PVOID buffer, UINT32 size)
+Result<UINT32, Error> File::Read(Span<UINT8> buffer)
 {
-	if (fileHandle == nullptr || buffer == nullptr || size == 0)
+	if (fileHandle == nullptr || buffer.Data() == nullptr || buffer.Size() == 0)
 		return Result<UINT32, Error>::Err(Error::Fs_ReadFailed);
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
-	USIZE readSize = size;
+	USIZE readSize = buffer.Size();
 
-	EFI_STATUS Status = fp->Read(fp, &readSize, buffer);
+	EFI_STATUS Status = fp->Read(fp, &readSize, buffer.Data());
 	if (EFI_ERROR_CHECK(Status))
 		return Result<UINT32, Error>::Err(Error::Uefi((UINT32)Status), Error::Fs_ReadFailed);
 
 	return Result<UINT32, Error>::Ok((UINT32)readSize);
 }
 
-Result<UINT32, Error> File::Write(const VOID *buffer, USIZE size)
+Result<UINT32, Error> File::Write(Span<const UINT8> buffer)
 {
-	if (fileHandle == nullptr || buffer == nullptr || size == 0)
+	if (fileHandle == nullptr || buffer.Data() == nullptr || buffer.Size() == 0)
 		return Result<UINT32, Error>::Err(Error::Fs_WriteFailed);
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
-	USIZE writeSize = size;
+	USIZE writeSize = buffer.Size();
 
-	EFI_STATUS Status = fp->Write(fp, &writeSize, (PVOID)buffer);
+	EFI_STATUS Status = fp->Write(fp, &writeSize, (PVOID)buffer.Data());
 	if (EFI_ERROR_CHECK(Status))
 		return Result<UINT32, Error>::Err(Error::Uefi((UINT32)Status), Error::Fs_WriteFailed);
 

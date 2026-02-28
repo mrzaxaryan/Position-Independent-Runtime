@@ -41,6 +41,7 @@
 #pragma once
 
 #include "primitives.h"
+#include "span.h"
 #include "string.h"
 #include "error.h"
 
@@ -143,7 +144,7 @@ public:
 
     /** @brief Format with pre-erased argument array (public for Logger type-erasure) */
     template <TCHAR TChar>
-    static INT32 FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID context, const TChar *format, const Argument *args, INT32 argCount);
+    static INT32 FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID context, const TChar *format, Span<const Argument> args);
 
 private:
     /// @name Internal Formatting Functions
@@ -610,22 +611,23 @@ INT32 StringFormatter::Format(BOOL (*writer)(PVOID, TChar), PVOID context, const
     if constexpr (sizeof...(Args) == 0)
     {
         // No arguments, just copy the format string
-        return FormatWithArgs<TChar>(writer, context, format, nullptr, 0);
+        return FormatWithArgs<TChar>(writer, context, format, Span<const Argument>());
     }
     else
     {
         // Pack arguments into array
         Argument argArray[] = {Argument(args)...};
-        return FormatWithArgs<TChar>(writer, context, format, argArray, sizeof...(Args));
+        return FormatWithArgs<TChar>(writer, context, format, Span<const Argument>(argArray));
     }
 }
 
 template <TCHAR TChar>
-INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID context, const TChar *format, const Argument *args, INT32 argCount)
+INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID context, const TChar *format, Span<const Argument> args)
 {
     INT32 i = 0, j = 0;   // Index for the format string and output string
     INT32 precision = 6;  // Default precision for floating-point numbers
     INT32 currentArg = 0; // Current argument index
+    INT32 argCount = (INT32)args.Size();
 
     // Validate the output string
     if (format == nullptr)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "primitives.h"
+#include "span.h"
 #include "error.h"
 #include "result.h"
 
@@ -78,8 +79,8 @@ public:
     VOID Close();
 
     // Read and write methods
-    [[nodiscard]] Result<UINT32, Error> Read(PVOID buffer, UINT32 size);
-    [[nodiscard]] Result<UINT32, Error> Write(const VOID *buffer, USIZE size);
+    [[nodiscard]] Result<UINT32, Error> Read(Span<UINT8> buffer);
+    [[nodiscard]] Result<UINT32, Error> Write(Span<const UINT8> buffer);
 
     // Get the size of the file
     USIZE GetSize() const { return fileSize; }
