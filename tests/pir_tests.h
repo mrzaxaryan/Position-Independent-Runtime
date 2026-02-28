@@ -40,6 +40,7 @@
 
 #pragma once
 
+#if defined(ENABLE_TESTS)
 #include "djb2_tests.h"
 #include "memory_tests.h"
 #include "string_tests.h"
@@ -58,6 +59,7 @@
 #include "result_tests.h"
 #include "binary_io_tests.h"
 #include "span_tests.h"
+#endif // ENABLE_TESTS
 
 static BOOL RunPIRTests()
 {
@@ -66,6 +68,7 @@ static BOOL RunPIRTests()
 	LOG_INFO("=== CPP-PIC Test Suite ===");
 	LOG_INFO("");
 
+#if defined(ENABLE_TESTS)
 	// CORE - Result Type and Embedded Types
 	RunTestSuite<SpanTests>(allPassed);
 	RunTestSuite<ResultTests>(allPassed);
@@ -93,6 +96,7 @@ static BOOL RunPIRTests()
 	RunTestSuite<TlsTests>(allPassed);
 	RunTestSuite<DnsTests>(allPassed);
 	RunTestSuite<WebSocketTests>(allPassed);
+#endif // ENABLE_TESTS
 
 	// Final summary
 	LOG_INFO("=== Test Suite Complete ===");
