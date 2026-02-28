@@ -15,17 +15,9 @@ env:
   LLVM_VERSION: "21.1.0"
 
 jobs:
-  build-and-test:
-    name: -${{ matrix.opt }}
+  setup:
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        opt: [O0, O1, O2, O3, Os, Oz, Og]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v4
@@ -43,6 +35,24 @@ jobs:
           sudo mkdir -p /opt/llvm
           sudo tar xf "$TARBALL" -C /opt/llvm --strip-components=1
           rm "$TARBALL"
+
+  build-and-test:
+    needs: setup
+    name: -${{ matrix.opt }}
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        opt: [O0, O1, O2, O3, Os, Oz, Og]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore LLVM cache
+        uses: actions/cache/restore@v4
+        with:
+          path: /opt/llvm
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
 
       - name: Install build tools
         run: |

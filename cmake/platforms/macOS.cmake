@@ -28,13 +28,14 @@ list(APPEND PIR_BASE_FLAGS -fno-stack-protector)
 # data symbols on both architectures.
 list(APPEND PIR_BASE_FLAGS -fdirect-access-external-data)
 
-# Force hidden visibility in all build types. ld64.lld does not implement the
-# -static flag, so without hidden visibility the linker treats weak symbols
-# (e.g. template explicit instantiations like SHABase<SHA256Traits>) as
-# interposable and generates __TEXT,__stubs + __DATA,__la_symbol_ptr sections.
-# The stubs load pointers from __DATA, which is not mapped by the PIC loader,
-# causing a crash on any call through a stub. Hidden visibility tells both the
-# compiler and linker that symbols cannot be interposed, eliminating stubs.
+# Force hidden visibility in all build types. Without hidden visibility the
+# linker treats weak symbols (e.g. template explicit instantiations like
+# SHABase<SHA256Traits>) as interposable and generates __TEXT,__stubs +
+# __DATA,__la_symbol_ptr sections. The stubs load pointers from __DATA, which
+# is not mapped by the PIC loader, causing a crash on any call through a stub.
+# Hidden visibility tells both the compiler and linker that symbols cannot be
+# interposed, eliminating stubs. This is especially critical on aarch64 where
+# -static is not used (ARM64 macOS requires dyld).
 # (Release builds already get this from CompilerFlags.cmake; debug builds need
 # it explicitly here.)
 list(APPEND PIR_BASE_FLAGS -fvisibility=hidden)
@@ -61,11 +62,22 @@ endif()
 # ("passed two min versions") and potential load command conflicts.
 pir_add_link_flags(
     -e,_entry_point
-    -static
     -no_compact_unwind
     -order_file,${CMAKE_SOURCE_DIR}/cmake/data/function.order.macos
     -map,${PIR_MAP_FILE}
 )
+
+# Use -static only on x86_64. macOS ARM64 (Apple Silicon) does not support
+# static executables — the kernel requires all binaries to have
+# LC_LOAD_DYLINKER and go through dyld. A static binary (without dyld) is
+# killed with SIGKILL (Killed: 9) immediately on execution. On x86_64 the
+# kernel has legacy support for running static Mach-O binaries directly.
+# Without -static on ARM64, the linker adds LC_LOAD_DYLINKER but since
+# -nostdlib prevents any library linkage, the binary has zero dynamic
+# dependencies — dyld starts, sees nothing to load, and jumps to _entry_point.
+if(PIR_ARCH STREQUAL "x86_64")
+    pir_add_link_flags(-static)
+endif()
 
 if(PIR_BUILD_TYPE STREQUAL "release")
     pir_add_link_flags(-dead_strip)
@@ -98,4 +110,6 @@ if(PIR_BUILD_TYPE STREQUAL "release")
     )
 endif()
 
-# macOS uses ld64.lld via target triple (no explicit -fuse-ld=lld)
+# macOS uses the system linker (Apple ld) by default. Homebrew LLVM 21+ ships
+# lld in a separate formula (brew install lld). The build works with both
+# Apple's ld and ld64.lld — no explicit -fuse-ld=lld is needed.

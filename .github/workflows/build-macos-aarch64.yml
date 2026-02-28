@@ -12,7 +12,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  setup:
+    runs-on: macos-14
+    steps:
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: /opt/llvm
+          key: llvm-macos-aarch64-v1
+
+      - name: Install and cache LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: |
+          for i in 1 2 3; do
+            brew install llvm && break
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          sudo mkdir -p /opt/llvm
+          sudo cp -RL "$(brew --prefix llvm)/" /opt/llvm/
+
   build-and-test:
+    needs: setup
     name: -${{ matrix.opt }}
     runs-on: macos-14
     strategy:
@@ -23,16 +47,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install LLVM and build tools
+      - name: Restore LLVM cache
+        uses: actions/cache/restore@v4
+        with:
+          path: /opt/llvm
+          key: llvm-macos-aarch64-v1
+
+      - name: Install build tools
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
-        run: |
-          for i in 1 2 3; do
-            brew install llvm ninja cmake && break
-            echo "Attempt $i failed, retrying in 10s..."
-            sleep 10
-          done
-          echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
+        run: brew install ninja cmake
+
+      - name: Add LLVM to PATH
+        run: echo "/opt/llvm/bin" >> $GITHUB_PATH
 
       - name: Build -${{ matrix.opt }}
         run: |

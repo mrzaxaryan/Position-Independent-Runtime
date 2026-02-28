@@ -124,7 +124,7 @@ endif()
 if(_content MATCHES "__DATA_CONST[ \t]+__got")
     list(APPEND _found "__DATA_CONST,__got")
 endif()
-# Lazy symbol pointers: ld64.lld does not implement -static, so it may generate
+# Lazy symbol pointers: without hidden visibility, the linker may generate
 # __TEXT,__stubs + __DATA,__la_symbol_ptr for weak/interposable symbols (e.g.
 # template explicit instantiations). Stubs load pointers from __DATA which is
 # not mapped by the PIC loader. The -fvisibility=hidden compiler flag prevents

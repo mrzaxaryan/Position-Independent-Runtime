@@ -15,29 +15,15 @@ env:
   LLVM_VERSION: "21.1.0"
 
 jobs:
-  build-and-test:
-    name: -${{ matrix.opt }}
+  setup:
     runs-on: windows-11-arm
-    strategy:
-      fail-fast: false
-      matrix:
-        opt: [O0, O1, O2, O3, Os, Oz, Og]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v4
         with:
           path: C:\Program Files\LLVM
           key: llvm-${{ env.LLVM_VERSION }}-windows-11-arm
-
-      - name: Install Ninja
-        shell: pwsh
-        run: |
-          choco install ninja -y
-          ninja --version
 
       - name: Install LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
@@ -51,6 +37,30 @@ jobs:
           Write-Host "Downloading LLVM $ver..."
           Invoke-WebRequest -Uri $url -OutFile $exe
           Start-Process -FilePath ".\$exe" -ArgumentList "/S" -Wait
+
+  build-and-test:
+    needs: setup
+    name: -${{ matrix.opt }}
+    runs-on: windows-11-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        opt: [O0, O1, O2, O3, Os, Oz, Og]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore LLVM cache
+        uses: actions/cache/restore@v4
+        with:
+          path: C:\Program Files\LLVM
+          key: llvm-${{ env.LLVM_VERSION }}-windows-11-arm
+
+      - name: Install Ninja
+        shell: pwsh
+        run: |
+          choco install ninja -y
+          ninja --version
 
       - name: Add LLVM to PATH
         shell: pwsh
