@@ -192,6 +192,8 @@ UINT32 val = embedded[0];                        // Unpacked at runtime
 | By reference | Non-null params (compile-time guarantee) | `Socket(const IPAddress &ipAddress, UINT16 port)` |
 | `Span<T>` | Contiguous buffer params (replaces `T*, USIZE` pairs) | `void Process(Span<const UINT8> data)` |
 
+**Prefer references over pointers** — Use reference parameters (`T&` / `const T&`) by default for non-null arguments. References provide a compile-time non-null guarantee, which means the callee never needs a null check — any null guard inside the function is dead code and a sign the parameter should be a reference. Reserve pointers only for output parameters, nullable arguments, and Windows API compatibility.
+
 **`Span<T>`** — **Use `Span<T>` instead of `(T*, USIZE)` pairs** for functions that operate on contiguous buffers. This eliminates size-mismatch bugs at zero runtime cost:
 
 ```cpp
