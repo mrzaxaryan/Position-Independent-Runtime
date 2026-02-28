@@ -120,4 +120,20 @@ endif()
 # called because -fvisibility=hidden eliminates all lazy-binding stubs.
 if(PIR_ARCH STREQUAL "aarch64")
     pir_add_link_flags(-undefined,dynamic_lookup)
+
+    # Force __text to start on a 4KB page boundary within the __TEXT segment.
+    #
+    # ARM64 uses ADRP+ADD to compute symbol addresses. ADRP works at 4KB page
+    # granularity: it adds a 21-bit signed page delta to the current PC's page.
+    # The linker computes these page deltas relative to the final VMAs in the
+    # Mach-O. Without this flag, __text starts at a non-page-aligned VMA
+    # (e.g. 0x100000b7c — after the Mach-O headers), so the page deltas bake in
+    # a 0xb7c page offset. When the PIC loader extracts __text into output.bin
+    # and loads it via mmap at a page-aligned address (offset 0x0), the page
+    # boundaries within the code shift, and every ADRP instruction computes the
+    # wrong page — producing corrupted function pointers (SIGSEGV / SIGILL).
+    #
+    # By aligning __text to 0x1000 the section VMA is always page-aligned, so
+    # ADRP page deltas are correct at any page-aligned load address.
+    pir_add_link_flags(-sectalign,__TEXT,__text,1000)
 endif()

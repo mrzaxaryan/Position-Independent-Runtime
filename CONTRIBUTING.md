@@ -160,7 +160,7 @@ UINT32 val = embedded[0];                        // Unpacked at runtime
 - **Include guard:** `#pragma once` in every header
 - **No STL, no exceptions, no RTTI**
 - **`FORCE_INLINE`** for force-inlined functions, **`NOINLINE`** when inlining must be prevented
-- **`constexpr`** for compile-time-evaluable values; **`consteval`** when evaluation *must* happen at compile time
+- **`constexpr`/`consteval` everywhere possible:** mark every function and variable `constexpr` if it *can* be evaluated at compile time; use `consteval` when it *must* be compile-time only
 - **Cast to `USIZE`** when passing pointer/handle arguments to `System::Call`
 - **Includes:** `runtime.h` = everything; `platform.h` = CORE + PLATFORM; implementation files include own header first
 
