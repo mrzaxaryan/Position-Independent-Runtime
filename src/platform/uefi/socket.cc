@@ -376,12 +376,6 @@ Result<void, Error> Socket::Open()
 {
 	LOG_DEBUG("Socket: Open() starting...");
 
-	if (!IsValid())
-	{
-		LOG_DEBUG("Socket: Open() failed - invalid socket");
-		return Result<void, Error>::Err(Error::Socket_OpenFailed_HandleInvalid);
-	}
-
 	UefiSocketContext *sockCtx = (UefiSocketContext *)m_socket;
 	if (sockCtx->IsConnected)
 	{
@@ -534,12 +528,6 @@ Result<void, Error> Socket::Open()
 Result<void, Error> Socket::Close()
 {
 	LOG_DEBUG("Socket: Close() starting...");
-
-	if (!IsValid())
-	{
-		LOG_DEBUG("Socket: Close() invalid socket");
-		return Result<void, Error>::Err(Error::Socket_CloseFailed_Close);
-	}
 
 	UefiSocketContext *sockCtx = (UefiSocketContext *)m_socket;
 	EFI_CONTEXT *ctx = GetEfiContext();
@@ -706,15 +694,10 @@ Result<SSIZE, Error> Socket::Read(PVOID buffer, UINT32 bufferLength)
 {
 	LOG_DEBUG("Socket: Read(%u bytes) starting...", bufferLength);
 
-	if (!IsValid() || buffer == nullptr || bufferLength == 0)
-	{
-		return Result<SSIZE, Error>::Err(Error::Socket_ReadFailed_HandleInvalid);
-	}
-
 	UefiSocketContext *sockCtx = (UefiSocketContext *)m_socket;
 	if (!sockCtx->IsConnected)
 	{
-		return Result<SSIZE, Error>::Err(Error::Socket_ReadFailed_HandleInvalid);
+		return Result<SSIZE, Error>::Err(Error::Socket_ReadFailed_Recv);
 	}
 
 	EFI_CONTEXT *ctx = GetEfiContext();
@@ -805,12 +788,6 @@ Result<SSIZE, Error> Socket::Read(PVOID buffer, UINT32 bufferLength)
 Result<UINT32, Error> Socket::Write(PCVOID buffer, UINT32 bufferLength)
 {
 	LOG_DEBUG("Socket: Write(%u bytes) starting...", bufferLength);
-
-	if (!IsValid() || buffer == nullptr || bufferLength == 0)
-	{
-		LOG_DEBUG("Socket: Write() invalid params");
-		return Result<UINT32, Error>::Err(Error::Socket_WriteFailed_Send);
-	}
 
 	UefiSocketContext *sockCtx = (UefiSocketContext *)m_socket;
 	if (!sockCtx->IsConnected)

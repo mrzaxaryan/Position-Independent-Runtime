@@ -52,42 +52,197 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y qemu-user-static
 
-      - name: Build, Upload, and Test all optimization levels
+      - name: Build -O0
         run: |
-          set -e
-          OPTS="O0 O1 O2 O3 Os Oz Og"
-          FAILED=""
-          for opt in $OPTS; do
-            echo "========== Building -$opt =========="
-            rm -rf build
-            cmake --preset linux-aarch64-release -DOPTIMIZATION_LEVEL=$opt
-            if ! cmake --build --preset linux-aarch64-release; then FAILED="$FAILED $opt-build"; continue; fi
+          rm -rf build
+          cmake --preset linux-aarch64-release -DOPTIMIZATION_LEVEL=O0
+          cmake --build --preset linux-aarch64-release
 
-            echo "========== Saving -$opt =========="
-            mkdir -p "artifacts/$opt"
-            cp -r build/* "artifacts/$opt/"
-
-            echo "========== Testing ELF -$opt =========="
-            TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
-            chmod +x "$TEST_ELF"
-            if ! qemu-aarch64-static "$TEST_ELF"; then FAILED="$FAILED $opt-elf"; continue; fi
-
-            echo "========== Testing PIC -$opt =========="
-            if ! python3 scripts/loader.py --arch aarch64 $(find build -type f -name "output.bin" | head -n 1); then FAILED="$FAILED $opt-pic"; continue; fi
-
-            echo "========== $opt passed =========="
-          done
-          if [ -n "$FAILED" ]; then
-            echo "Failed:$FAILED"
-            exit 1
-          fi
-
-      - name: Upload artifacts
+      - name: Upload Artifacts -O0
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-linux-aarch64
+          name: build-linux-aarch64-O0
           retention-days: 1
           path: |
-            artifacts/
-            !artifacts/**/cmake/
+            build/
+            !build/**/cmake/
+
+      - name: Test -O0 elf
+        if: always()
+        run: |
+          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+          chmod +x "$TEST_ELF"
+          qemu-aarch64-static "$TEST_ELF"
+
+      - name: Test -O0 pic
+        if: always()
+        run: python3 scripts/loader.py --arch aarch64 $(find build -type f -name "output.bin" | head -n 1)
+
+      - name: Build -O1
+        if: always()
+        run: |
+          rm -rf build
+          cmake --preset linux-aarch64-release -DOPTIMIZATION_LEVEL=O1
+          cmake --build --preset linux-aarch64-release
+
+      - name: Upload Artifacts -O1
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-linux-aarch64-O1
+          retention-days: 1
+          path: |
+            build/
+            !build/**/cmake/
+
+      - name: Test -O1 elf
+        if: always()
+        run: |
+          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+          chmod +x "$TEST_ELF"
+          qemu-aarch64-static "$TEST_ELF"
+
+      - name: Test -O1 pic
+        if: always()
+        run: python3 scripts/loader.py --arch aarch64 $(find build -type f -name "output.bin" | head -n 1)
+
+      - name: Build -O2
+        if: always()
+        run: |
+          rm -rf build
+          cmake --preset linux-aarch64-release -DOPTIMIZATION_LEVEL=O2
+          cmake --build --preset linux-aarch64-release
+
+      - name: Upload Artifacts -O2
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-linux-aarch64-O2
+          retention-days: 1
+          path: |
+            build/
+            !build/**/cmake/
+
+      - name: Test -O2 elf
+        if: always()
+        run: |
+          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+          chmod +x "$TEST_ELF"
+          qemu-aarch64-static "$TEST_ELF"
+
+      - name: Test -O2 pic
+        if: always()
+        run: python3 scripts/loader.py --arch aarch64 $(find build -type f -name "output.bin" | head -n 1)
+
+      - name: Build -O3
+        if: always()
+        run: |
+          rm -rf build
+          cmake --preset linux-aarch64-release -DOPTIMIZATION_LEVEL=O3
+          cmake --build --preset linux-aarch64-release
+
+      - name: Upload Artifacts -O3
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-linux-aarch64-O3
+          retention-days: 1
+          path: |
+            build/
+            !build/**/cmake/
+
+      - name: Test -O3 elf
+        if: always()
+        run: |
+          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+          chmod +x "$TEST_ELF"
+          qemu-aarch64-static "$TEST_ELF"
+
+      - name: Test -O3 pic
+        if: always()
+        run: python3 scripts/loader.py --arch aarch64 $(find build -type f -name "output.bin" | head -n 1)
+
+      - name: Build -Os
+        if: always()
+        run: |
+          rm -rf build
+          cmake --preset linux-aarch64-release -DOPTIMIZATION_LEVEL=Os
+          cmake --build --preset linux-aarch64-release
+
+      - name: Upload Artifacts -Os
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-linux-aarch64-Os
+          retention-days: 1
+          path: |
+            build/
+            !build/**/cmake/
+
+      - name: Test -Os elf
+        if: always()
+        run: |
+          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+          chmod +x "$TEST_ELF"
+          qemu-aarch64-static "$TEST_ELF"
+
+      - name: Test -Os pic
+        if: always()
+        run: python3 scripts/loader.py --arch aarch64 $(find build -type f -name "output.bin" | head -n 1)
+
+      - name: Build -Oz
+        if: always()
+        run: |
+          rm -rf build
+          cmake --preset linux-aarch64-release -DOPTIMIZATION_LEVEL=Oz
+          cmake --build --preset linux-aarch64-release
+
+      - name: Upload Artifacts -Oz
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-linux-aarch64-Oz
+          retention-days: 1
+          path: |
+            build/
+            !build/**/cmake/
+
+      - name: Test -Oz elf
+        if: always()
+        run: |
+          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+          chmod +x "$TEST_ELF"
+          qemu-aarch64-static "$TEST_ELF"
+
+      - name: Test -Oz pic
+        if: always()
+        run: python3 scripts/loader.py --arch aarch64 $(find build -type f -name "output.bin" | head -n 1)
+
+      - name: Build -Og
+        if: always()
+        run: |
+          rm -rf build
+          cmake --preset linux-aarch64-release -DOPTIMIZATION_LEVEL=Og
+          cmake --build --preset linux-aarch64-release
+
+      - name: Upload Artifacts -Og
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-linux-aarch64-Og
+          retention-days: 1
+          path: |
+            build/
+            !build/**/cmake/
+
+      - name: Test -Og elf
+        if: always()
+        run: |
+          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+          chmod +x "$TEST_ELF"
+          qemu-aarch64-static "$TEST_ELF"
+
+      - name: Test -Og pic
+        if: always()
+        run: python3 scripts/loader.py --arch aarch64 $(find build -type f -name "output.bin" | head -n 1)

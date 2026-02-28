@@ -165,7 +165,7 @@ public:
 		return *this;
 	}
 
-	BOOL IsValid() const { return m_socket != nullptr && m_socket != (PVOID)(SSIZE)(-1); }
+	BOOL IsValid() const { return m_socket != nullptr; }
 	SSIZE GetFd() const { return (SSIZE)m_socket; }
 	[[nodiscard]] Result<void, Error> Open();
 	[[nodiscard]] Result<void, Error> Close();

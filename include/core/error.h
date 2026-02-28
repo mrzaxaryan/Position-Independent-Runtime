@@ -14,20 +14,17 @@ struct Error
 		None = 0, // no error / empty slot
 
 		// -------------------------
-		// Socket errors (1–15, 39)
+		// Socket errors (1–3, 5–7, 9–11, 13–15, 39)
 		// -------------------------
 		Socket_CreateFailed_Open = 1,		   // ZwCreateFile / socket() failed
 		Socket_BindFailed_EventCreate = 2,	   // ZwCreateEvent failed (Windows only)
 		Socket_BindFailed_Bind = 3,			   // AFD_BIND / bind() syscall failed
-		Socket_OpenFailed_HandleInvalid = 4,   // socket was never created successfully
 		Socket_OpenFailed_EventCreate = 5,	   // ZwCreateEvent failed (Windows only)
 		Socket_OpenFailed_Connect = 6,		   // AFD_CONNECT / connect() syscall failed
 		Socket_CloseFailed_Close = 7,		   // ZwClose / close() failed
-		Socket_ReadFailed_HandleInvalid = 8,   // socket handle invalid
 		Socket_ReadFailed_EventCreate = 9,	   // ZwCreateEvent failed (Windows only)
 		Socket_ReadFailed_Timeout = 10,		   // receive timed out
 		Socket_ReadFailed_Recv = 11,		   // AFD_RECV / recv() syscall failed
-		Socket_WriteFailed_HandleInvalid = 12, // socket handle invalid
 		Socket_WriteFailed_EventCreate = 13,   // ZwCreateEvent failed (Windows only)
 		Socket_WriteFailed_Timeout = 14,	   // send timed out
 		Socket_WriteFailed_Send = 15,		   // AFD_SEND / send() syscall failed

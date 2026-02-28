@@ -22,9 +22,6 @@ Result<void, Error> Socket::Bind(SockAddr &socketAddress, INT32 shareType)
 {
 	(VOID)shareType; // not used on macOS
 
-	if (!IsValid())
-		return Result<void, Error>::Err(Error::Socket_BindFailed_Bind);
-
 	SSIZE  sockfd  = (SSIZE)m_socket;
 	UINT32 addrLen = (socketAddress.sin_family == AF_INET6) ? sizeof(SockAddr6) : sizeof(SockAddr);
 	SSIZE  result  = System::Call(SYS_BIND, sockfd, (USIZE)&socketAddress, addrLen);
@@ -40,9 +37,6 @@ Result<void, Error> Socket::Bind(SockAddr &socketAddress, INT32 shareType)
 
 Result<void, Error> Socket::Open()
 {
-	if (!IsValid())
-		return Result<void, Error>::Err(Error::Socket_OpenFailed_HandleInvalid);
-
 	SSIZE sockfd = (SSIZE)m_socket;
 
 	union
@@ -109,20 +103,14 @@ Result<void, Error> Socket::Open()
 
 Result<void, Error> Socket::Close()
 {
-	if (!IsValid())
-		return Result<void, Error>::Err(Error::Socket_CloseFailed_Close);
-
 	SSIZE sockfd = (SSIZE)m_socket;
 	System::Call(SYS_CLOSE, sockfd);
-	m_socket = (PVOID)INVALID_FD;
+	m_socket = nullptr;
 	return Result<void, Error>::Ok();
 }
 
 Result<SSIZE, Error> Socket::Read(PVOID buffer, UINT32 bufferLength)
 {
-	if (!IsValid())
-		return Result<SSIZE, Error>::Err(Error::Socket_ReadFailed_HandleInvalid);
-
 	SSIZE sockfd = (SSIZE)m_socket;
 	SSIZE result = System::Call(SYS_RECVFROM, sockfd, (USIZE)buffer, bufferLength, 0, 0, 0);
 	if (result < 0)
@@ -137,9 +125,6 @@ Result<SSIZE, Error> Socket::Read(PVOID buffer, UINT32 bufferLength)
 
 Result<UINT32, Error> Socket::Write(PCVOID buffer, UINT32 bufferLength)
 {
-	if (!IsValid())
-		return Result<UINT32, Error>::Err(Error::Socket_WriteFailed_HandleInvalid);
-
 	SSIZE  sockfd    = (SSIZE)m_socket;
 	UINT32 totalSent = 0;
 

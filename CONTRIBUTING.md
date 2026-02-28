@@ -358,7 +358,7 @@ public:
         return *this;
     }
 
-    BOOL IsValid() const { return handle != nullptr && handle != (PVOID)(SSIZE)(-1); }
+    BOOL IsValid() const { return handle != nullptr; }
 
     VOID Close()
     {
@@ -375,7 +375,7 @@ RAII rules:
 1. Destructor calls `Close()` -- resources released when the object leaves scope
 2. Delete copy operations -- prevents double-close
 3. Implement move semantics -- nullify source after move
-4. `IsValid()` checks both `nullptr` and `-1` (Windows `INVALID_HANDLE_VALUE`)
+4. `Close()` sets the handle to `nullptr`; `IsValid()` checks for `nullptr`
 5. Delete `new`/`delete` for stack-only types:
 
 ```cpp
@@ -493,7 +493,7 @@ Non-Error types (e.g., `Result<T, UINT32>`) also store a single value directly.
 
 ```cpp
 // Single error (most common):
-return Result<UINT32, Error>::Err(Error::Socket_WriteFailed_HandleInvalid);
+return Result<UINT32, Error>::Err(Error::Socket_WriteFailed_Send);
 
 // 2-arg compatibility (stores only the last code):
 return Result<UINT32, Error>::Err(
@@ -517,11 +517,6 @@ return Result<NTSTATUS, Error>::Err(
 auto evtResult = NTDLL::ZwCreateEvent(&handle, ...);
 if (!evtResult)
     return Result<SSIZE, Error>::Err(evtResult, Error::Socket_ReadFailed_EventCreate);
-```
-
-**Pre-syscall guard failure** — pass a plain runtime code:
-```cpp
-return Result<UINT32, Error>::Err(Error::Socket_WriteFailed_HandleInvalid);
 ```
 
 **Higher-layer propagation**:
@@ -564,7 +559,8 @@ Format rules:
 - Pass error codes directly to `Result::Err(...)`.
 - When the error originates from an OS call, use the factory methods — `Error::Windows(ntstatus)`, `Error::Posix(errno)`, `Error::Uefi(efiStatus)`.
 - Runtime-layer codes (`Socket_*`, `Tls_*`, `Ws_*`, `Dns_*`) use the default `PlatformKind::Runtime` — pass them bare: `Result::Err(Error::Socket_WriteFailed_Send)`.
-- For guard failures (handle invalid, nullptr check) where no syscall was attempted, pass only a runtime code.
+- For factory-created types (`Socket`, `TLSClient`, etc.), do not add `IsValid()` guards — the factory + RAII pattern ensures validity.
+- For non-factory boundary validation (e.g., invalid parsed input), pass only a runtime code.
 - Each layer adds only its own `ErrorCodes` values; never add another layer's codes.
 - Use `Err(osCode, runtimeCode)` for fresh errors, `Err(failedResult, runtimeCode)` for propagation.
 - Discard a `[[nodiscard]]` Result with `(void)` only when the error is intentionally ignored (e.g., in destructors / move-assignment).
@@ -712,14 +708,19 @@ Two strategies: **conditional compilation** (`#if defined(PLATFORM_*)`) for smal
 
 ### Guard and Validation Pattern
 
-Validate preconditions at function entry, return `Result::Err` immediately on failure. Check `IsValid()` before using handles, `nullptr` before dereferencing pointers. Only validate at system boundaries -- trust internal code.
+Validate preconditions at function entry, return `Result::Err` immediately on failure. Only validate at system boundaries -- trust internal code.
+
+**Factory-created types (`Socket`, `TLSClient`, etc.):** Do **not** add `IsValid()` guards in public methods (`Open`, `Read`, `Write`, `Close`). The `[[nodiscard]]` factory (`Create()`) guarantees that callers only receive valid objects. RAII (destructor, move-assignment) guards `Close()` internally. Adding `IsValid()` checks on every I/O call is redundant overhead -- callers who use a moved-from or closed object have a programming error, and the underlying syscall will return an error that propagates via `Result::Err`.
+
+**Non-factory types** that accept raw handles or parse external input should still validate at entry:
 
 ```cpp
-if (!IsValid())
-	return Result<void, Error>::Err(Error::Socket_BindFailed_Bind);
+// IPAddress::Parse validates external string input
+if (addrLen == 0)
+	return Result<void, Error>::Err(Error::Socket_OpenFailed_Connect);
 ```
 
-**Examples:** `Socket::Bind/Read/Write`, `IPAddress::Parse/ToString`
+**Examples:** `IPAddress::Parse/ToString`
 
 ### Suggested Patterns
 

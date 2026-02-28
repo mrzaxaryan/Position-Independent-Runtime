@@ -178,9 +178,6 @@ Result<void, Error> Socket::Open()
 {
 	LOG_DEBUG("Open(handle: 0x%p, port: %d)\n", this, port);
 
-	if (!IsValid())
-		return Result<void, Error>::Err(Error::Socket_OpenFailed_HandleInvalid);
-
 	// AFD requires an explicit bind to a wildcard local address before connect
 	union
 	{
@@ -284,9 +281,6 @@ Result<void, Error> Socket::Close()
 {
 	LOG_DEBUG("Close(handle: 0x%p)\n", this);
 
-	if (!IsValid())
-		return Result<void, Error>::Ok();
-
 	auto closeResult = NTDLL::ZwClose(m_socket);
 	m_socket = nullptr;
 
@@ -299,9 +293,6 @@ Result<void, Error> Socket::Close()
 Result<SSIZE, Error> Socket::Read(PVOID buffer, UINT32 bufferSize)
 {
 	LOG_DEBUG("Read(handle: 0x%p, bufferSize: %d)\n", this, bufferSize);
-
-	if (!IsValid())
-		return Result<SSIZE, Error>::Err(Error::Socket_ReadFailed_HandleInvalid);
 
 	PVOID SockEvent = nullptr;
 	auto evtResult = NTDLL::ZwCreateEvent(&SockEvent, EVENT_ALL_ACCESS, nullptr, SynchronizationEvent, false);
@@ -368,9 +359,6 @@ Result<SSIZE, Error> Socket::Read(PVOID buffer, UINT32 bufferSize)
 Result<UINT32, Error> Socket::Write(PCVOID buffer, UINT32 bufferLength)
 {
 	LOG_DEBUG("Write(handle: 0x%p, length: %d)\n", this, bufferLength);
-
-	if (!IsValid())
-		return Result<UINT32, Error>::Err(Error::Socket_WriteFailed_HandleInvalid);
 
 	PVOID SockEvent = nullptr;
 	auto evtResult = NTDLL::ZwCreateEvent(&SockEvent, EVENT_ALL_ACCESS, nullptr, SynchronizationEvent, false);
