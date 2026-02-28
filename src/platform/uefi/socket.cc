@@ -229,16 +229,15 @@ static EFI_STATUS WaitForCompletion(EFI_BOOT_SERVICES *bs, TCP_PROTOCOL *Tcp, EF
 // Socket Constructor
 // =============================================================================
 
-Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
-	: ip(ipAddress), port(portNum), m_socket(nullptr)
+Result<Socket, Error> Socket::Create(const IPAddress &ipAddress, UINT16 portNum)
 {
-	LOG_DEBUG("Socket: Constructor starting for port %u...", (UINT32)portNum);
+	LOG_DEBUG("Socket: Create starting for port %u...", (UINT32)portNum);
 
 	EFI_CONTEXT *ctx = GetEfiContext();
 	if (ctx == nullptr || ctx->SystemTable == nullptr)
 	{
-		LOG_DEBUG("Socket: Constructor failed - no EFI context");
-		return;
+		LOG_DEBUG("Socket: Create failed - no EFI context");
+		return Result<Socket, Error>::Err(Error::Socket_CreateFailed_Open);
 	}
 
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
@@ -248,11 +247,11 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 	if (EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, sizeof(UefiSocketContext), (PVOID *)&sockCtx)) || sockCtx == nullptr)
 	{
 		LOG_DEBUG("Socket: AllocatePool failed");
-		return;
+		return Result<Socket, Error>::Err(Error::Socket_CreateFailed_Open);
 	}
 
 	Memory::Zero(sockCtx, sizeof(UefiSocketContext));
-	sockCtx->IsIPv6 = ip.IsIPv6();
+	sockCtx->IsIPv6 = ipAddress.IsIPv6();
 
 	// Initialize GUIDs field-by-field to avoid .rdata section
 	EFI_GUID ServiceBindingGuid;
@@ -321,7 +320,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 		if (HandleBuffer != nullptr)
 			bs->FreePool(HandleBuffer);
 		bs->FreePool(sockCtx);
-		return;
+		return Result<Socket, Error>::Err(Error::Socket_CreateFailed_Open);
 	}
 
 	LOG_DEBUG("Socket: Found %u TCP service binding handles", (UINT32)HandleCount);
@@ -333,7 +332,9 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 	{
 		LOG_DEBUG("Socket: OpenProtocol ServiceBinding failed: 0x%lx", (UINT64)Status);
 		bs->FreePool(sockCtx);
-		return;
+		return Result<Socket, Error>::Err(
+			Error::Uefi((UINT32)Status),
+			Error::Socket_CreateFailed_Open);
 	}
 
 	LOG_DEBUG("Socket: CreateChild...");
@@ -343,7 +344,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 		LOG_DEBUG("Socket: CreateChild failed");
 		bs->CloseProtocol(sockCtx->ServiceHandle, &ServiceBindingGuid, ctx->ImageHandle, nullptr);
 		bs->FreePool(sockCtx);
-		return;
+		return Result<Socket, Error>::Err(Error::Socket_CreateFailed_Open);
 	}
 
 	LOG_DEBUG("Socket: OpenProtocol TCP interface...");
@@ -353,7 +354,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 		LOG_DEBUG("Socket: OpenProtocol TCP interface failed");
 		sockCtx->ServiceBinding->DestroyChild(sockCtx->ServiceBinding, sockCtx->TcpHandle);
 		bs->FreePool(sockCtx);
-		return;
+		return Result<Socket, Error>::Err(Error::Socket_CreateFailed_Open);
 	}
 
 	if (sockCtx->IsIPv6)
@@ -361,8 +362,10 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 portNum)
 	else
 		sockCtx->Tcp4 = (EFI_TCP4_PROTOCOL *)TcpInterface;
 
-	m_socket = sockCtx;
-	LOG_DEBUG("Socket: Constructor completed successfully");
+	Socket sock(ipAddress, portNum);
+	sock.m_socket = sockCtx;
+	LOG_DEBUG("Socket: Create completed successfully");
+	return Result<Socket, Error>::Ok(static_cast<Socket &&>(sock));
 }
 
 // =============================================================================

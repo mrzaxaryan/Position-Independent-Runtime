@@ -19,7 +19,13 @@ private:
 	{
 		LOG_INFO("Test: Socket Creation");
 
-		Socket sock(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
+		auto createResult = Socket::Create(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
+		if (!createResult)
+		{
+			LOG_ERROR("Socket creation failed (error: %e)", createResult.Error());
+			return false;
+		}
+		Socket &sock = createResult.Value();
 
 		LOG_INFO("Socket created successfully");
 		(void)sock.Close();
@@ -31,7 +37,13 @@ private:
 	{
 		LOG_INFO("Test: Socket Connection (HTTP:80)");
 
-		Socket sock(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
+		auto createResult = Socket::Create(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
+		if (!createResult)
+		{
+			LOG_ERROR("Socket creation failed (error: %e)", createResult.Error());
+			return false;
+		}
+		Socket &sock = createResult.Value();
 
 		auto openResult = sock.Open();
 		if (!openResult)
@@ -51,7 +63,13 @@ private:
 	{
 		LOG_INFO("Test: HTTP GET Request (port 80)");
 
-		Socket sock(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
+		auto createResult = Socket::Create(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
+		if (!createResult)
+		{
+			LOG_ERROR("Socket creation failed (error: %e)", createResult.Error());
+			return false;
+		}
+		Socket &sock = createResult.Value();
 
 		auto openResult = sock.Open();
 		if (!openResult)
@@ -101,7 +119,13 @@ private:
 
 		for (UINT32 i = 0; i < 3; i++)
 		{
-			Socket sock(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
+			auto createResult = Socket::Create(IPAddress::FromIPv4(TEST_SERVER_IP), 80);
+			if (!createResult)
+			{
+				LOG_ERROR("Connection %d: socket creation failed (error: %e)", i + 1, createResult.Error());
+				return false;
+			}
+			Socket &sock = createResult.Value();
 
 			auto openResult = sock.Open();
 			if (!openResult)
@@ -230,7 +254,13 @@ private:
 			return false;
 		}
 
-		Socket sock(ipv6Address, 80);
+		auto createResult = Socket::Create(ipv6Address, 80);
+		if (!createResult)
+		{
+			LOG_WARNING("IPv6 socket creation failed (error: %e) (IPv6 may not be available)", createResult.Error());
+			return true; // non-fatal: IPv6 may be unavailable
+		}
+		Socket &sock = createResult.Value();
 
 		auto openResult = sock.Open();
 		if (!openResult)
@@ -289,7 +319,13 @@ private:
 			return false;
 		}
 
-		Socket sock(dnsResult.Value(), 80);
+		auto createResult = Socket::Create(dnsResult.Value(), 80);
+		if (!createResult)
+		{
+			LOG_ERROR("Socket creation failed for httpbin.org (error: %e)", createResult.Error());
+			return false;
+		}
+		Socket &sock = createResult.Value();
 		auto openResult = sock.Open();
 		if (!openResult)
 		{

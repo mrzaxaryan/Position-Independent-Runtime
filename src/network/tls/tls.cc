@@ -828,7 +828,10 @@ Result<SSIZE, Error> TLSClient::Read(PVOID buffer, UINT32 bufferLength)
 /// @param port The port number of the server to connect to
 
 TLSClient::TLSClient(PCCHAR host, const IPAddress &ipAddress, UINT16 port, BOOL secure)
-    : host(host), ip(ipAddress), context(ipAddress, port), secure(secure), stateIndex(0), channelBytesRead(0)
+    : host(host), ip(ipAddress), context(), secure(secure), stateIndex(0), channelBytesRead(0)
 {
     LOG_DEBUG("Initializing tls_cipher structure for cipher: %p, secure: %d", &crypto, secure);
+    auto socketResult = Socket::Create(ipAddress, port);
+    if (socketResult)
+        context = static_cast<Socket &&>(socketResult.Value());
 }

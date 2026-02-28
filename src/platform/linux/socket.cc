@@ -80,16 +80,14 @@ static SSIZE linux_ppoll(struct pollfd *fds, USIZE nfds, const struct timespec *
 	return System::Call(SYS_PPOLL, (USIZE)fds, nfds, (USIZE)timeout, 0, 0);
 }
 
-Socket::Socket(const IPAddress &ipAddress, UINT16 port)
-	: ip(ipAddress), port(port), m_socket(nullptr)
+Result<Socket, Error> Socket::Create(const IPAddress &ipAddress, UINT16 port)
 {
-	SSIZE fd = linux_socket(SocketAddressHelper::GetAddressFamily(ip), SOCK_STREAM, IPPROTO_TCP);
+	Socket sock(ipAddress, port);
+	SSIZE fd = linux_socket(SocketAddressHelper::GetAddressFamily(sock.ip), SOCK_STREAM, IPPROTO_TCP);
 	if (fd < 0)
-	{
-		m_socket = (PVOID)INVALID_FD;
-		return;
-	}
-	m_socket = (PVOID)fd;
+		return Result<Socket, Error>::Err(Error::Posix((UINT32)(-fd)), Error::Socket_CreateFailed_Open);
+	sock.m_socket = (PVOID)fd;
+	return Result<Socket, Error>::Ok(static_cast<Socket &&>(sock));
 }
 
 Result<void, Error> Socket::Bind(SockAddr &socketAddress, INT32 shareType)

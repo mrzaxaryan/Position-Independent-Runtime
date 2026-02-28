@@ -8,16 +8,14 @@
 // macOS AF_INET6 = 30 (different from Linux 10 and Windows 23)
 // These are handled via platform-conditional defines in socket.h
 
-Socket::Socket(const IPAddress &ipAddress, UINT16 port)
-	: ip(ipAddress), port(port), m_socket(nullptr)
+Result<Socket, Error> Socket::Create(const IPAddress &ipAddress, UINT16 port)
 {
-	SSIZE fd = System::Call(SYS_SOCKET, SocketAddressHelper::GetAddressFamily(ip), SOCK_STREAM, IPPROTO_TCP);
+	Socket sock(ipAddress, port);
+	SSIZE fd = System::Call(SYS_SOCKET, SocketAddressHelper::GetAddressFamily(sock.ip), SOCK_STREAM, IPPROTO_TCP);
 	if (fd < 0)
-	{
-		m_socket = (PVOID)INVALID_FD;
-		return;
-	}
-	m_socket = (PVOID)fd;
+		return Result<Socket, Error>::Err(Error::Posix((UINT32)(-fd)), Error::Socket_CreateFailed_Open);
+	sock.m_socket = (PVOID)fd;
+	return Result<Socket, Error>::Ok(static_cast<Socket &&>(sock));
 }
 
 Result<void, Error> Socket::Bind(SockAddr &socketAddress, INT32 shareType)

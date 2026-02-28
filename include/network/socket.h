@@ -126,11 +126,18 @@ private:
 	PVOID m_socket;
 	[[nodiscard]] Result<void, Error> Bind(SockAddr &SocketAddress, INT32 ShareType);
 
+	// Private trivial constructor — only used by Create()
+	Socket(const IPAddress &ipAddress, UINT16 portNum) : ip(ipAddress), port(portNum), m_socket(nullptr) {}
+
 public:
 	VOID *operator new(USIZE) = delete;
 	VOID operator delete(VOID *) = delete;
+	// Placement new required by Result<Socket, Error>
+	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
 	Socket() : ip(), port(0), m_socket(nullptr) {}
-	Socket(const IPAddress &ipAddress, UINT16 port);
+
+	// Factory — caller MUST check the result (enforced by [[nodiscard]])
+	[[nodiscard]] static Result<Socket, Error> Create(const IPAddress &ipAddress, UINT16 port);
 	~Socket()
 	{
 		if (IsValid())

@@ -445,9 +445,11 @@ Result<UINT32, Error> Socket::Write(PCVOID buffer, UINT32 bufferLength)
 	return Result<UINT32, Error>::Ok(totalSent);
 }
 
-Socket::Socket(const IPAddress &ipAddress, UINT16 port) : ip(ipAddress), port(port), m_socket(nullptr)
+Result<Socket, Error> Socket::Create(const IPAddress &ipAddress, UINT16 port)
 {
-	LOG_DEBUG("Create(this: 0x%p)\n", this);
+	Socket sock(ipAddress, port);
+
+	LOG_DEBUG("Create(sock: 0x%p)\n", &sock);
 
 	AfdSocketParams EaBuffer;
 	Memory::Zero(&EaBuffer, sizeof(EaBuffer));
@@ -458,7 +460,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 port) : ip(ipAddress), port(po
 	Memory::Copy(EaBuffer.AfdOperation, afdOpSource, 16);
 	EaBuffer.AfdOperation[15] = '\0';
 
-	EaBuffer.AddressFamily = SocketAddressHelper::GetAddressFamily(ip);
+	EaBuffer.AddressFamily = SocketAddressHelper::GetAddressFamily(sock.ip);
 	EaBuffer.SocketType    = SOCK_STREAM;
 	EaBuffer.Protocol      = IPPROTO_TCP;
 
@@ -473,7 +475,7 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 port) : ip(ipAddress), port(po
 	Memory::Zero(&IOSB, sizeof(IOSB));
 	InitializeObjectAttributes(&Object, &AfdName, OBJ_CASE_INSENSITIVE | OBJ_INHERIT, 0, 0);
 
-	auto createResult = NTDLL::ZwCreateFile(&m_socket,
+	auto createResult = NTDLL::ZwCreateFile(&sock.m_socket,
 	                                        GENERIC_READ | GENERIC_WRITE | SYNCHRONIZE,
 	                                        &Object,
 	                                        &IOSB,
@@ -486,12 +488,10 @@ Socket::Socket(const IPAddress &ipAddress, UINT16 port) : ip(ipAddress), port(po
 	                                        sizeof(EaBuffer));
 	if (!createResult)
 	{
-		// Caller will detect failure via IsValid() → Open() returns OpenFailed_HandleInvalid
 		LOG_DEBUG("Create: ZwCreateFile failed: errors=%e\n", createResult.Error());
-		m_socket = nullptr;
+		return Result<Socket, Error>::Err(createResult, Error::Socket_CreateFailed_Open);
 	}
-	else
-	{
-		LOG_DEBUG("Create: handle: 0x%p\n", m_socket);
-	}
+
+	LOG_DEBUG("Create: handle: 0x%p\n", sock.m_socket);
+	return Result<Socket, Error>::Ok(static_cast<Socket &&>(sock));
 }
