@@ -45,9 +45,8 @@
 /// @name Base Types
 /// @{
 #include "types/primitives.h"
+#include "types/span.h"
 /// @}
-
-/// @name Error Type
 /// @{
 #include "core/error.h"
 /// @}
@@ -89,7 +88,13 @@
 
 /// @name Network Types
 /// @{
-#include "network/ip_address.h"
+#include "types/ip_address.h"
+/// @}
+
+/// @name Binary I/O
+/// @{
+#include "binary_reader.h"
+#include "binary_writer.h"
 /// @}
 
 /** @} */ // end of core group
