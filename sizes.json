@@ -15,6 +15,8 @@
   "uefi_aarch64_bin": "84.2 KB",
   "linux_x86_64_exe": "89.0 KB",
   "linux_x86_64_bin": "87.6 KB",
+  "macos_aarch64_exe": "105.4 KB",
+  "macos_aarch64_bin": "71.5 KB",
   "linux_aarch64_exe": "73.5 KB",
   "linux_aarch64_bin": "72.1 KB",
   "windows_i386_exe": "91.5 KB",
