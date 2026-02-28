@@ -180,6 +180,7 @@ UINT32 val = embedded[0];                        // Unpacked at runtime
 | Header files | `snake_case.h` | `embedded_string.h`, `windows_types.h` |
 | Source files | `snake_case.cc` | `kernel32.cc`, `entry_point.cc` |
 | Platform-specific | `name.platform.cc` | `allocator.windows.cc`, `syscall.linux.h` |
+| Platform+arch-specific | `name.platform.arch.cc` | `syscall.windows.x86_64.cc`, `entry_point.linux.aarch64.cc` |
 | Test files | `snake_case_tests.h` | `djb2_tests.h`, `socket_tests.h` |
 
 ### Parameters & Returns
