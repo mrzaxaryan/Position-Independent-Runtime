@@ -58,7 +58,7 @@
 
 /// @name Numeric Types
 /// @{
-#include "types/numeric/double.h"
+#include "types/double.h"
 /// @}
 
 /// @name Embedded Types
