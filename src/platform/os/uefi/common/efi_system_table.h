@@ -22,7 +22,8 @@
 // Configuration Table
 // =============================================================================
 
-typedef struct {
+typedef struct
+{
 	EFI_GUID VendorGuid;
 	PVOID VendorTable;
 } EFI_CONFIGURATION_TABLE;

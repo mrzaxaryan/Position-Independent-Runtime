@@ -59,7 +59,8 @@ typedef EFI_STATUS(EFIAPI *EFI_TEXT_ENABLE_CURSOR)(
 	struct EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *This,
 	BOOL Visible);
 
-typedef struct {
+typedef struct
+{
 	INT32 MaxMode;
 	INT32 Mode;
 	INT32 Attribute;
@@ -103,7 +104,8 @@ typedef struct EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL {
 // Simple Text Input Protocol (minimal, for completeness)
 // =============================================================================
 
-typedef struct {
+typedef struct
+{
 	UINT16 ScanCode;
 	CHAR16 UnicodeChar;
 } EFI_INPUT_KEY;

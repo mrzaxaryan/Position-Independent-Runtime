@@ -47,7 +47,8 @@ typedef WCHAR CHAR16;
 // GUID Structure
 // =============================================================================
 
-typedef struct {
+typedef struct
+{
 	UINT32 Data1;
 	UINT16 Data2;
 	UINT16 Data3;
@@ -58,7 +59,8 @@ typedef struct {
 // Memory Types
 // =============================================================================
 
-typedef enum {
+typedef enum
+{
 	EfiReservedMemoryType,
 	EfiLoaderCode,
 	EfiLoaderData,
@@ -77,7 +79,8 @@ typedef enum {
 	EfiMaxMemoryType
 } EFI_MEMORY_TYPE;
 
-typedef enum {
+typedef enum
+{
 	AllocateAnyPages,
 	AllocateMaxAddress,
 	AllocateAddress,
@@ -130,7 +133,8 @@ typedef enum {
 #define EFI_ERROR_CHECK(status) (((SSIZE)(status)) < 0)
 
 // Table header structure (common to all UEFI tables)
-typedef struct {
+typedef struct
+{
 	UINT64 Signature;
 	UINT32 Revision;
 	UINT32 HeaderSize;

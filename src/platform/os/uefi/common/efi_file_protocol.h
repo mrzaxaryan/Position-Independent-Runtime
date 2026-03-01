@@ -27,7 +27,8 @@ struct EFI_SIMPLE_FILE_SYSTEM_PROTOCOL;
 // File Information Structure
 // =============================================================================
 
-typedef struct {
+typedef struct
+{
 	UINT64 Size;           // Size of the EFI_FILE_INFO structure including FileName
 	UINT64 FileSize;       // Size of the file in bytes
 	UINT64 PhysicalSize;   // Physical space consumed on storage media

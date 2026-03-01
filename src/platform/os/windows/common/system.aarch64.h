@@ -1,4 +1,16 @@
-// aarch64 indirect syscall overloads — included inside class System { }
+/**
+ * @file system.aarch64.h
+ * @brief AArch64 Windows indirect syscall overloads — included inside class System { }.
+ *
+ * @details Provides System::Call overloads (0-14 arguments) that invoke Windows NT
+ * syscalls via BLR to the resolved ntdll stub address. On ARM64, the kernel validates
+ * that the SVC instruction originates from within ntdll (unlike x86_64/i386 where
+ * indirect gadgets bypass ntdll). Arguments are passed in x0-x7 per AAPCS64, with
+ * overflow arguments on the stack. x16 holds the ntdll stub address.
+ *
+ * @see Using Nt and Zw Versions of the Native System Services Routines
+ *      https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/using-nt-and-zw-versions-of-the-native-system-services-routines
+ */
 
 	// Windows ARM64 indirect syscall via BLR to ntdll stub.
 	//

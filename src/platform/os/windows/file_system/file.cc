@@ -273,7 +273,7 @@ Result<void, Error> File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
 		distance = posInfo.CurrentByteOffset.QuadPart + relativeAmount;
 		break;
 	case OffsetOrigin::End:
-		queryResult = NTDLL::ZwQueryInformationFile(fileHandle, &ioStatusBlock, &fileStandardInfo, sizeof(fileStandardInfo), FileStandardInformation);
+		queryResult = NTDLL::ZwQueryInformationFile((PVOID)fileHandle, &ioStatusBlock, &fileStandardInfo, sizeof(fileStandardInfo), FileStandardInformation);
 		if (!queryResult)
 			return Result<void, Error>::Err(queryResult, Error::Fs_SeekFailed);
 		distance = fileStandardInfo.EndOfFile.QuadPart + relativeAmount;

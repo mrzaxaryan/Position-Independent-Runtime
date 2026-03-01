@@ -1,4 +1,16 @@
-// x86_64 indirect syscall overloads — included inside class System { }
+/**
+ * @file system.x86_64.h
+ * @brief x86_64 Windows indirect syscall overloads — included inside class System { }.
+ *
+ * @details Provides System::Call overloads (0-14 arguments) that invoke Windows NT
+ * syscalls via indirect calls through a gadget address within ntdll.dll. The SSN
+ * is placed in RAX, the first argument is moved from RCX to R10 (since syscall
+ * clobbers RCX), and arguments 2-4 go in RDX/R8/R9. Arguments 5+ are placed on
+ * the stack above the 32-byte shadow space per the Microsoft x64 calling convention.
+ *
+ * @see Using Nt and Zw Versions of the Native System Services Routines
+ *      https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/using-nt-and-zw-versions-of-the-native-system-services-routines
+ */
 
 	// Indirect syscall with 0 arguments
 	static inline NTSTATUS Call(SYSCALL_ENTRY entry)

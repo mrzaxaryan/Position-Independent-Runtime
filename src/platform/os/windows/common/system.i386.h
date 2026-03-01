@@ -1,4 +1,16 @@
-// i386 indirect syscall overloads — included inside class System { }
+/**
+ * @file system.i386.h
+ * @brief i386 Windows indirect syscall overloads — included inside class System { }.
+ *
+ * @details Provides System::Call overloads (0-14 arguments) that invoke Windows NT
+ * syscalls via indirect calls through a gadget address within ntdll.dll. All arguments
+ * are pushed onto the stack in reverse order with a dummy DWORD for the expected
+ * return address slot. EAX holds the SSN and the gadget address (KiFastSystemCall or
+ * WoW64 trampoline) is called indirectly via EDX.
+ *
+ * @see Using Nt and Zw Versions of the Native System Services Routines
+ *      https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/using-nt-and-zw-versions-of-the-native-system-services-routines
+ */
 
 	// Windows i386 syscalls are STACK-BASED: all arguments are pushed onto the stack,
 	// EAX holds the syscall number, and the gadget handles the kernel transition.
