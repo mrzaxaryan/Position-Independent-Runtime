@@ -185,7 +185,7 @@ Result<void, Error> Socket::Open()
 		SockAddr6 addr6;
 	} bindBuffer;
 
-	SocketAddressHelper::PrepareBindAddress(ip.IsIPv6(), 0, &bindBuffer, sizeof(bindBuffer));
+	SocketAddressHelper::PrepareBindAddress(ip.IsIPv6(), 0, Span<UINT8>((UINT8 *)&bindBuffer, sizeof(bindBuffer)));
 
 	auto bindResult = Bind((SockAddr &)bindBuffer, AFD_SHARE_REUSE);
 	if (!bindResult)
@@ -205,7 +205,7 @@ Result<void, Error> Socket::Open()
 		SockAddr6 addr6;
 	} addrBuffer;
 
-	SocketAddressHelper::PrepareAddress(ip, port, &addrBuffer, sizeof(addrBuffer));
+	SocketAddressHelper::PrepareAddress(ip, port, Span<UINT8>((UINT8 *)&addrBuffer, sizeof(addrBuffer)));
 
 	NTSTATUS Status;
 	if (ip.IsIPv6())

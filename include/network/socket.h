@@ -45,14 +45,14 @@ class SocketAddressHelper
 public:
 	// Prepare a socket address for connect/bind operations
 	// Returns the size of the prepared address structure
-	static UINT32 PrepareAddress(const IPAddress &ip, UINT16 port, PVOID addrBuffer, UINT32 bufferSize)
+	static UINT32 PrepareAddress(const IPAddress &ip, UINT16 port, Span<UINT8> addrBuffer)
 	{
 		if (ip.IsIPv6())
 		{
-			if (bufferSize < sizeof(SockAddr6))
+			if (addrBuffer.Size() < sizeof(SockAddr6))
 				return 0;
 
-			SockAddr6 *addr6 = (SockAddr6 *)addrBuffer;
+			SockAddr6 *addr6 = (SockAddr6 *)addrBuffer.Data();
 			Memory::Zero(addr6, sizeof(SockAddr6));
 			addr6->sin6_family = AF_INET6;
 			addr6->sin6_port = UINT16SwapByteOrder(port);
@@ -69,10 +69,10 @@ public:
 		}
 		else
 		{
-			if (bufferSize < sizeof(SockAddr))
+			if (addrBuffer.Size() < sizeof(SockAddr))
 				return 0;
 
-			SockAddr *addr = (SockAddr *)addrBuffer;
+			SockAddr *addr = (SockAddr *)addrBuffer.Data();
 			Memory::Zero(addr, sizeof(SockAddr));
 			addr->sin_family = AF_INET;
 			addr->sin_port = UINT16SwapByteOrder(port);
@@ -83,14 +83,14 @@ public:
 	}
 
 	// Prepare a bind address (zeroed IP, just family and port)
-	static UINT32 PrepareBindAddress(BOOL isIPv6, UINT16 port, PVOID addrBuffer, UINT32 bufferSize)
+	static UINT32 PrepareBindAddress(BOOL isIPv6, UINT16 port, Span<UINT8> addrBuffer)
 	{
 		if (isIPv6)
 		{
-			if (bufferSize < sizeof(SockAddr6))
+			if (addrBuffer.Size() < sizeof(SockAddr6))
 				return 0;
 
-			SockAddr6 *addr6 = (SockAddr6 *)addrBuffer;
+			SockAddr6 *addr6 = (SockAddr6 *)addrBuffer.Data();
 			Memory::Zero(addr6, sizeof(SockAddr6));
 			addr6->sin6_family = AF_INET6;
 			addr6->sin6_port = UINT16SwapByteOrder(port);
@@ -99,10 +99,10 @@ public:
 		}
 		else
 		{
-			if (bufferSize < sizeof(SockAddr))
+			if (addrBuffer.Size() < sizeof(SockAddr))
 				return 0;
 
-			SockAddr *addr = (SockAddr *)addrBuffer;
+			SockAddr *addr = (SockAddr *)addrBuffer.Data();
 			Memory::Zero(addr, sizeof(SockAddr));
 			addr->sin_family = AF_INET;
 			addr->sin_port = UINT16SwapByteOrder(port);

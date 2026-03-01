@@ -19,15 +19,15 @@ INT32 TlsHKDF::Label(Span<const CHAR> label, Span<const UCHAR> data, PUCHAR hkdf
     auto prefix = "tls13 "_embed;
     UCHAR labelLen = (UCHAR)label.Size();
     UCHAR dataLen = (UCHAR)data.Size();
-    INT32 prefix_len = prefix.Length();
+    INT32 prefixLen = prefix.Length();
 
     LOG_DEBUG("Creating HKDF label with label_len: %d, data_len: %d, length: %d", labelLen, dataLen, length);
 
     BinaryWriter writer((PVOID)hkdflabel, 512);
 
     writer.WriteU16BE(length);
-    writer.WriteU8((UINT8)(prefix_len + labelLen));
-    writer.WriteBytes(Span<const CHAR>((PCCHAR)prefix, prefix_len));
+    writer.WriteU8((UINT8)(prefixLen + labelLen));
+    writer.WriteBytes(Span<const CHAR>((PCCHAR)prefix, prefixLen));
     writer.WriteBytes(label);
     writer.WriteU8(dataLen);
     if (dataLen)
@@ -130,9 +130,9 @@ VOID TlsHKDF::Expand(Span<UCHAR> output, Span<const UCHAR> secret, Span<const UC
 
 VOID TlsHKDF::ExpandLabel(Span<UCHAR> output, Span<const UCHAR> secret, Span<const CHAR> label, Span<const UCHAR> data)
 {
-    UCHAR hkdf_label[512];
+    UCHAR hkdfLabel[512];
     UINT32 outlen = (UINT32)output.Size();
-    INT32 len = TlsHKDF::Label(label, data, hkdf_label, outlen);
+    INT32 len = TlsHKDF::Label(label, data, hkdfLabel, outlen);
     LOG_DEBUG("Expanding HKDF label with output length: %d, secret length: %d, label length: %d, data length: %d", outlen, (UINT32)secret.Size(), (UINT32)label.Size(), (UINT32)data.Size());
-    TlsHKDF::Expand(output, secret, Span<const UCHAR>(hkdf_label, len));
+    TlsHKDF::Expand(output, secret, Span<const UCHAR>(hkdfLabel, len));
 }

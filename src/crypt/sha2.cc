@@ -312,31 +312,31 @@ template class SHABase<SHA384Traits>;
 template<typename SHAType, typename Traits>
 VOID HMACBase<SHAType, Traits>::Init(Span<const UCHAR> key)
 {
-    UINT32 key_size = (UINT32)key.Size();
+    UINT32 keySize = (UINT32)key.Size();
     UINT32 fill;
     UINT32 num;
 
-    const UCHAR *key_used;
-    UCHAR key_temp[Traits::DIGEST_SIZE];
+    const UCHAR *keyUsed;
+    UCHAR keyTemp[Traits::DIGEST_SIZE];
     INT32 i;
 
-    if (key_size == Traits::BLOCK_SIZE)
+    if (keySize == Traits::BLOCK_SIZE)
     {
-        key_used = key.Data();
+        keyUsed = key.Data();
         num = Traits::BLOCK_SIZE;
     }
     else
     {
-        if (key_size > Traits::BLOCK_SIZE)
+        if (keySize > Traits::BLOCK_SIZE)
         {
             num = Traits::DIGEST_SIZE;
-            SHAType::Hash(Span<const UINT8>(key.Data(), key.Size()), key_temp);
-            key_used = key_temp;
+            SHAType::Hash(Span<const UINT8>(key.Data(), key.Size()), keyTemp);
+            keyUsed = keyTemp;
         }
         else
         {
-            key_used = key.Data();
-            num = key_size;
+            keyUsed = key.Data();
+            num = keySize;
         }
         fill = Traits::BLOCK_SIZE - num;
 
@@ -346,8 +346,8 @@ VOID HMACBase<SHAType, Traits>::Init(Span<const UCHAR> key)
 
     for (i = 0; i < (INT32)num; i++)
     {
-        this->block_ipad[i] = key_used[i] ^ 0x36;
-        this->block_opad[i] = key_used[i] ^ 0x5c;
+        this->block_ipad[i] = keyUsed[i] ^ 0x36;
+        this->block_opad[i] = keyUsed[i] ^ 0x5c;
     }
 
     this->ctx_inside.Update(Span<const UINT8>(this->block_ipad, Traits::BLOCK_SIZE));

@@ -12,6 +12,87 @@
 #include "path.h"
 
 // =============================================================================
+// Helper: Build EFI GUIDs on the stack (no .rdata)
+// =============================================================================
+
+// EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID {964E5B22-6459-11D2-8E39-00A0C969723B}
+static NOINLINE EFI_GUID MakeFsProtocolGuid()
+{
+	EFI_GUID g;
+	g.Data1 = 0x964E5B22;
+	g.Data2 = 0x6459;
+	g.Data3 = 0x11D2;
+	g.Data4[0] = 0x8E; g.Data4[1] = 0x39; g.Data4[2] = 0x00; g.Data4[3] = 0xA0;
+	g.Data4[4] = 0xC9; g.Data4[5] = 0x69; g.Data4[6] = 0x72; g.Data4[7] = 0x3B;
+	return g;
+}
+
+// EFI_FILE_INFO_ID {09576E92-6D3F-11D2-8E39-00A0C969723B}
+static NOINLINE EFI_GUID MakeFileInfoGuid()
+{
+	EFI_GUID g;
+	g.Data1 = 0x09576E92;
+	g.Data2 = 0x6D3F;
+	g.Data3 = 0x11D2;
+	g.Data4[0] = 0x8E; g.Data4[1] = 0x39; g.Data4[2] = 0x00; g.Data4[3] = 0xA0;
+	g.Data4[4] = 0xC9; g.Data4[5] = 0x69; g.Data4[6] = 0x72; g.Data4[7] = 0x3B;
+	return g;
+}
+
+// =============================================================================
+// Helper: Query file size via EFI_FILE_INFO
+// =============================================================================
+
+static NOINLINE USIZE QueryFileSize(EFI_FILE_PROTOCOL *fp)
+{
+	EFI_GUID FileInfoId = MakeFileInfoGuid();
+	USIZE InfoSize = 0;
+	fp->GetInfo(fp, &FileInfoId, &InfoSize, nullptr);
+	if (InfoSize == 0)
+		return 0;
+
+	EFI_CONTEXT *ctx = GetEfiContext();
+	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
+
+	USIZE size = 0;
+	EFI_FILE_INFO *FileInfo = nullptr;
+	if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, InfoSize, (PVOID *)&FileInfo)))
+	{
+		if (!EFI_ERROR_CHECK(fp->GetInfo(fp, &FileInfoId, &InfoSize, FileInfo)))
+			size = FileInfo->FileSize;
+		bs->FreePool(FileInfo);
+	}
+	return size;
+}
+
+// =============================================================================
+// Helper: Truncate file to zero length via EFI_FILE_INFO
+// =============================================================================
+
+static NOINLINE VOID TruncateFile(EFI_FILE_PROTOCOL *fp)
+{
+	EFI_GUID FileInfoId = MakeFileInfoGuid();
+	USIZE InfoSize = 0;
+	fp->GetInfo(fp, &FileInfoId, &InfoSize, nullptr);
+	if (InfoSize == 0)
+		return;
+
+	EFI_CONTEXT *ctx = GetEfiContext();
+	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
+
+	EFI_FILE_INFO *FileInfo = nullptr;
+	if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, InfoSize, (PVOID *)&FileInfo)))
+	{
+		if (!EFI_ERROR_CHECK(fp->GetInfo(fp, &FileInfoId, &InfoSize, FileInfo)))
+		{
+			FileInfo->FileSize = 0;
+			fp->SetInfo(fp, &FileInfoId, InfoSize, FileInfo);
+		}
+		bs->FreePool(FileInfo);
+	}
+}
+
+// =============================================================================
 // Helper: Get Root Directory Handle
 // =============================================================================
 
@@ -23,19 +104,7 @@ static EFI_FILE_PROTOCOL *GetRootDirectory()
 
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
 
-	// EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID {964E5B22-6459-11D2-8E39-00A0C969723B}
-	EFI_GUID FsGuid;
-	FsGuid.Data1 = 0x964E5B22;
-	FsGuid.Data2 = 0x6459;
-	FsGuid.Data3 = 0x11D2;
-	FsGuid.Data4[0] = 0x8E;
-	FsGuid.Data4[1] = 0x39;
-	FsGuid.Data4[2] = 0x00;
-	FsGuid.Data4[3] = 0xA0;
-	FsGuid.Data4[4] = 0xC9;
-	FsGuid.Data4[5] = 0x69;
-	FsGuid.Data4[6] = 0x72;
-	FsGuid.Data4[7] = 0x3B;
+	EFI_GUID FsGuid = MakeFsProtocolGuid();
 
 	USIZE HandleCount = 0;
 	EFI_HANDLE *HandleBuffer = nullptr;
@@ -123,81 +192,10 @@ Result<File, Error> FileSystem::Open(PCWCHAR path, INT32 flags)
 
 	// Handle truncate flag
 	if (flags & FS_TRUNCATE)
-	{
-		// Set file size to 0 using SetInfo
-		// EFI_FILE_INFO_ID {09576E92-6D3F-11D2-8E39-00A0C969723B}
-		EFI_GUID FileInfoId;
-		FileInfoId.Data1 = 0x09576E92;
-		FileInfoId.Data2 = 0x6D3F;
-		FileInfoId.Data3 = 0x11D2;
-		FileInfoId.Data4[0] = 0x8E;
-		FileInfoId.Data4[1] = 0x39;
-		FileInfoId.Data4[2] = 0x00;
-		FileInfoId.Data4[3] = 0xA0;
-		FileInfoId.Data4[4] = 0xC9;
-		FileInfoId.Data4[5] = 0x69;
-		FileInfoId.Data4[6] = 0x72;
-		FileInfoId.Data4[7] = 0x3B;
-
-		// Get current file info size
-		USIZE InfoSize = 0;
-		FileHandle->GetInfo(FileHandle, &FileInfoId, &InfoSize, nullptr);
-
-		if (InfoSize > 0)
-		{
-			EFI_CONTEXT *ctx = GetEfiContext();
-			EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
-
-			EFI_FILE_INFO *FileInfo = nullptr;
-			if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, InfoSize, (PVOID *)&FileInfo)))
-			{
-				if (!EFI_ERROR_CHECK(FileHandle->GetInfo(FileHandle, &FileInfoId, &InfoSize, FileInfo)))
-				{
-					FileInfo->FileSize = 0;
-					FileHandle->SetInfo(FileHandle, &FileInfoId, InfoSize, FileInfo);
-				}
-				bs->FreePool(FileInfo);
-			}
-		}
-	}
+		TruncateFile(FileHandle);
 
 	// Query file size before constructing the File (keeps the constructor trivial)
-	USIZE size = 0;
-	{
-		EFI_FILE_PROTOCOL *fp = FileHandle;
-
-		EFI_GUID FileInfoId;
-		FileInfoId.Data1 = 0x09576E92;
-		FileInfoId.Data2 = 0x6D3F;
-		FileInfoId.Data3 = 0x11D2;
-		FileInfoId.Data4[0] = 0x8E;
-		FileInfoId.Data4[1] = 0x39;
-		FileInfoId.Data4[2] = 0x00;
-		FileInfoId.Data4[3] = 0xA0;
-		FileInfoId.Data4[4] = 0xC9;
-		FileInfoId.Data4[5] = 0x69;
-		FileInfoId.Data4[6] = 0x72;
-		FileInfoId.Data4[7] = 0x3B;
-
-		USIZE InfoSize = 0;
-		fp->GetInfo(fp, &FileInfoId, &InfoSize, nullptr);
-
-		if (InfoSize > 0)
-		{
-			EFI_CONTEXT *ctx = GetEfiContext();
-			EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
-
-			EFI_FILE_INFO *FileInfo = nullptr;
-			if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, InfoSize, (PVOID *)&FileInfo)))
-			{
-				if (!EFI_ERROR_CHECK(fp->GetInfo(fp, &FileInfoId, &InfoSize, FileInfo)))
-				{
-					size = FileInfo->FileSize;
-				}
-				bs->FreePool(FileInfo);
-			}
-		}
-	}
+	USIZE size = QueryFileSize(FileHandle);
 
 	return Result<File, Error>::Ok(File((PVOID)FileHandle, size));
 }

@@ -45,7 +45,7 @@ Result<void, Error> Socket::Open()
 		SockAddr6 addr6;
 	} addrBuffer;
 
-	UINT32 addrLen = SocketAddressHelper::PrepareAddress(ip, port, &addrBuffer, sizeof(addrBuffer));
+	UINT32 addrLen = SocketAddressHelper::PrepareAddress(ip, port, Span<UINT8>((UINT8 *)&addrBuffer, sizeof(addrBuffer)));
 	if (addrLen == 0)
 		return Result<void, Error>::Err(Error::Socket_OpenFailed_Connect);
 

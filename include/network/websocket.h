@@ -77,7 +77,7 @@ private:
 	TLSClient tlsContext;
 	BOOL isConnected;
 
-	[[nodiscard]] Result<void, Error> ReceiveRestrict(PVOID buffer, UINT32 size);
+	[[nodiscard]] Result<void, Error> ReceiveRestrict(Span<CHAR> buffer);
 	[[nodiscard]] Result<void, Error> ReceiveFrame(WebSocketFrame &frame);
 	static VOID MaskFrame(WebSocketFrame &frame, UINT32 maskKey);
 
@@ -132,9 +132,9 @@ public:
 	// Factory — caller MUST check the result (enforced by [[nodiscard]])
 	[[nodiscard]] static Result<WebSocketClient, Error> Create(PCCHAR url);
 
-	[[nodiscard]] BOOL IsValid() const { return tlsContext.IsValid(); }
-	[[nodiscard]] BOOL IsSecure() const { return tlsContext.IsSecure(); }
-	[[nodiscard]] BOOL IsConnected() const { return isConnected; }
+	BOOL IsValid() const { return tlsContext.IsValid(); }
+	BOOL IsSecure() const { return tlsContext.IsSecure(); }
+	BOOL IsConnected() const { return isConnected; }
 	[[nodiscard]] Result<void, Error> Open();
 	[[nodiscard]] Result<void, Error> Close();
 	[[nodiscard]] Result<WebSocketMessage, Error> Read();

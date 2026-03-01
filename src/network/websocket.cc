@@ -197,13 +197,14 @@ Result<UINT32, Error> WebSocketClient::Write(Span<const CHAR> buffer, WebSocketO
 	return Result<UINT32, Error>::Ok(bufferLength);
 }
 
-// Read exactly `size` bytes from the TLS transport
-Result<void, Error> WebSocketClient::ReceiveRestrict(PVOID buffer, UINT32 size)
+// Read exactly buffer.Size() bytes from the TLS transport
+Result<void, Error> WebSocketClient::ReceiveRestrict(Span<CHAR> buffer)
 {
+	UINT32 size = (UINT32)buffer.Size();
 	UINT32 totalBytesRead = 0;
 	while (totalBytesRead < size)
 	{
-		auto readResult = tlsContext.Read(Span<CHAR>((PCHAR)buffer + totalBytesRead, size - totalBytesRead));
+		auto readResult = tlsContext.Read(Span<CHAR>(buffer.Data() + totalBytesRead, size - totalBytesRead));
 		if (!readResult || readResult.Value() <= 0)
 			return Result<void, Error>::Err(readResult, Error::Ws_ReceiveFailed);
 		totalBytesRead += (UINT32)readResult.Value();
@@ -235,7 +236,7 @@ VOID WebSocketClient::MaskFrame(WebSocketFrame &frame, UINT32 maskKey)
 Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 {
 	UINT8 header[2] = {0};
-	auto headerResult = ReceiveRestrict(&header, 2);
+	auto headerResult = ReceiveRestrict(Span<CHAR>((PCHAR)header, sizeof(header)));
 	if (!headerResult)
 		return Result<void, Error>::Err(headerResult, Error::Ws_ReceiveFailed);
 
@@ -258,7 +259,7 @@ Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 	if (lengthBits == 126)
 	{
 		UINT16 len16 = 0;
-		auto lenResult = ReceiveRestrict(&len16, 2);
+		auto lenResult = ReceiveRestrict(Span<CHAR>((PCHAR)&len16, sizeof(len16)));
 		if (!lenResult)
 			return Result<void, Error>::Err(lenResult, Error::Ws_ReceiveFailed);
 		frame.length = UINT16SwapByteOrder(len16);
@@ -266,7 +267,7 @@ Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 	else if (lengthBits == 127)
 	{
 		UINT64 len64 = 0;
-		auto lenResult = ReceiveRestrict(&len64, 8);
+		auto lenResult = ReceiveRestrict(Span<CHAR>((PCHAR)&len64, sizeof(len64)));
 		if (!lenResult)
 			return Result<void, Error>::Err(lenResult, Error::Ws_ReceiveFailed);
 		frame.length = UINT64SwapByteOrder(len64);
@@ -283,7 +284,7 @@ Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 	UINT32 frameMask = 0;
 	if (frame.mask)
 	{
-		auto maskResult = ReceiveRestrict(&frameMask, 4);
+		auto maskResult = ReceiveRestrict(Span<CHAR>((PCHAR)&frameMask, sizeof(frameMask)));
 		if (!maskResult)
 			return Result<void, Error>::Err(maskResult, Error::Ws_ReceiveFailed);
 	}
@@ -295,7 +296,7 @@ Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 		if (!frame.data)
 			return Result<void, Error>::Err(Error::Ws_AllocFailed);
 
-		auto dataResult = ReceiveRestrict(frame.data, (UINT32)frame.length);
+		auto dataResult = ReceiveRestrict(Span<CHAR>(frame.data, (USIZE)frame.length));
 		if (!dataResult)
 		{
 			delete[] frame.data;

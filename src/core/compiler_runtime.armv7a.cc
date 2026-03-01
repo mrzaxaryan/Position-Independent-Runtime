@@ -551,11 +551,11 @@ extern "C"
      */
     COMPILER_RUNTIME INT64 __aeabi_d2lz(UINT64 bits)
     {
-        UINT64 sign_bit = bits & 0x8000000000000000ULL;
-        UINT64 exp_bits = bits & 0x7FF0000000000000ULL;
-        UINT64 mantissa_bits = bits & 0x000FFFFFFFFFFFFFULL;
+        UINT64 signBit = bits & 0x8000000000000000ULL;
+        UINT64 expBits = bits & 0x7FF0000000000000ULL;
+        UINT64 mantissaBits = bits & 0x000FFFFFFFFFFFFFULL;
 
-        INT32 exponent = (INT32)(exp_bits >> 52) - 1023;
+        INT32 exponent = (INT32)(expBits >> 52) - 1023;
 
         // If exponent < 0, result is 0 (value is between -1 and 1)
         if (exponent < 0)
@@ -564,25 +564,25 @@ extern "C"
         // If exponent >= 63, overflow
         if (exponent >= 63)
         {
-            if (sign_bit)
+            if (signBit)
                 return 0x8000000000000000LL; // INT64_MIN
             else
                 return 0x7FFFFFFFFFFFFFFFLL; // INT64_MAX
         }
 
         // Add implicit leading 1 bit
-        UINT64 mantissa_with_one = mantissa_bits | 0x0010000000000000ULL;
+        UINT64 mantissaWithOne = mantissaBits | 0x0010000000000000ULL;
 
         // Shift to get integer value
-        UINT64 int_value;
+        UINT64 intValue;
         if (exponent <= 52)
-            int_value = mantissa_with_one >> (52 - exponent);
+            intValue = mantissaWithOne >> (52 - exponent);
         else
-            int_value = mantissa_with_one << (exponent - 52);
+            intValue = mantissaWithOne << (exponent - 52);
 
         // Apply sign
-        INT64 result = (INT64)int_value;
-        if (sign_bit)
+        INT64 result = (INT64)intValue;
+        if (signBit)
             result = -result;
 
         return result;
@@ -599,15 +599,15 @@ extern "C"
      */
     COMPILER_RUNTIME UINT64 __aeabi_d2ulz(UINT64 bits)
     {
-        UINT64 sign_bit = bits & 0x8000000000000000ULL;
-        UINT64 exp_bits = bits & 0x7FF0000000000000ULL;
-        UINT64 mantissa_bits = bits & 0x000FFFFFFFFFFFFFULL;
+        UINT64 signBit = bits & 0x8000000000000000ULL;
+        UINT64 expBits = bits & 0x7FF0000000000000ULL;
+        UINT64 mantissaBits = bits & 0x000FFFFFFFFFFFFFULL;
 
         // Negative values return 0
-        if (sign_bit)
+        if (signBit)
             return 0ULL;
 
-        INT32 exponent = (INT32)(exp_bits >> 52) - 1023;
+        INT32 exponent = (INT32)(expBits >> 52) - 1023;
 
         // If exponent < 0, result is 0
         if (exponent < 0)
@@ -618,16 +618,16 @@ extern "C"
             return 0xFFFFFFFFFFFFFFFFULL; // UINT64_MAX
 
         // Add implicit leading 1 bit
-        UINT64 mantissa_with_one = mantissa_bits | 0x0010000000000000ULL;
+        UINT64 mantissaWithOne = mantissaBits | 0x0010000000000000ULL;
 
         // Shift to get integer value
-        UINT64 int_value;
+        UINT64 intValue;
         if (exponent <= 52)
-            int_value = mantissa_with_one >> (52 - exponent);
+            intValue = mantissaWithOne >> (52 - exponent);
         else
-            int_value = mantissa_with_one << (exponent - 52);
+            intValue = mantissaWithOne << (exponent - 52);
 
-        return int_value;
+        return intValue;
     }
 
 } // extern "C"

@@ -92,7 +92,7 @@ public:
         if (!ownsMemory)
             size = 0;
     }
-    INT32 GetReaded() const { return readPos; }
-    VOID AppendReaded(INT32 sz) { readPos += sz; }
+    INT32 GetReadPosition() const { return readPos; }
+    VOID AdvanceReadPosition(INT32 sz) { readPos += sz; }
     VOID ResetReadPos() { readPos = 0; }
 };
