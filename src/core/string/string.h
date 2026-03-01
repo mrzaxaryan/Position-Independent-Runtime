@@ -399,7 +399,7 @@ public:
 
 	/**
 	 * @brief Convert UTF-8 string to UTF-16 (wide string)
-	 * @param utf8 Source UTF-8 string (null-terminated)
+	 * @param utf8 Source UTF-8 string span
 	 * @param wide Destination wide string buffer span
 	 * @return Number of wide characters written (excluding null terminator)
 	 *
@@ -412,7 +412,7 @@ public:
 	 * @see RFC 2781 — UTF-16, an encoding of ISO 10646
 	 *      https://datatracker.ietf.org/doc/html/rfc2781
 	 */
-	static USIZE Utf8ToWide(PCCHAR utf8, Span<WCHAR> wide);
+	static USIZE Utf8ToWide(Span<const CHAR> utf8, Span<WCHAR> wide);
 
 	/// @}
 };

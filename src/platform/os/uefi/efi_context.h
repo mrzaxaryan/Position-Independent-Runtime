@@ -43,12 +43,12 @@ inline constexpr UINT32 IA32_GS_BASE = 0xC0000101;
  * CR4.FSGSBASE to be enabled, which UEFI firmware may not set.
  * WRMSR works in ring 0 (where UEFI apps run) without this requirement.
  *
- * @param ctx Pointer to the EFI context to store
+ * @param ctx Reference to the EFI context to store
  */
-inline void SetEfiContextRegister(EFI_CONTEXT *ctx)
+inline void SetEfiContextRegister(EFI_CONTEXT &ctx)
 {
 #if defined(ARCHITECTURE_X86_64)
-	UINT64 value = reinterpret_cast<UINT64>(ctx);
+	UINT64 value = reinterpret_cast<UINT64>(&ctx);
 	UINT32 low = static_cast<UINT32>(value);
 	UINT32 high = static_cast<UINT32>(value >> 32);
 	__asm__ volatile(
@@ -57,7 +57,7 @@ inline void SetEfiContextRegister(EFI_CONTEXT *ctx)
 		: "c"(IA32_GS_BASE), "a"(low), "d"(high)
 		: "memory");
 #elif defined(ARCHITECTURE_AARCH64)
-	__asm__ volatile("msr tpidr_el0, %0" : : "r"(ctx) : "memory");
+	__asm__ volatile("msr tpidr_el0, %0" : : "r"(&ctx) : "memory");
 #endif
 }
 

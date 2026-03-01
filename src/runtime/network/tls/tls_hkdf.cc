@@ -21,7 +21,7 @@ INT32 TlsHKDF::Label(Span<const CHAR> label, Span<const UCHAR> data, Span<UCHAR>
 
     LOG_DEBUG("Creating HKDF label with label_len: %d, data_len: %d, length: %d", labelLen, dataLen, length);
 
-    BinaryWriter writer((PVOID)hkdflabel.Data(), hkdflabel.Size());
+    BinaryWriter writer(Span<UINT8>(hkdflabel.Data(), hkdflabel.Size()));
 
     writer.WriteU16BE(length);
     writer.WriteU8((UINT8)(prefixLen + labelLen));

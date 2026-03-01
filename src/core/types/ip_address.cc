@@ -2,25 +2,23 @@
 #include "core/memory/memory.h"
 #include "core/string/string.h"
 
-// Convert string to IPAddress (supports both IPv4 and IPv6)
-Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
+// Convert string span to IPAddress (supports both IPv4 and IPv6)
+Result<IPAddress, Error> IPAddress::FromString(Span<const CHAR> ipString)
 {
-	if (ipString == nullptr)
+	if (ipString.Size() == 0)
 	{
 		return Result<IPAddress, Error>::Err(Error::IpAddress_ParseFailed);
 	}
 
 	// Check if it's IPv6 (contains ':')
-	PCCHAR pChar = ipString;
 	BOOL hasColon = false;
-	while (*pChar != '\0')
+	for (USIZE k = 0; k < ipString.Size(); k++)
 	{
-		if (*pChar == ':')
+		if (ipString[k] == ':')
 		{
 			hasColon = true;
 			break;
 		}
-		pChar++;
 	}
 
 	if (hasColon)
@@ -33,15 +31,15 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 		UINT32 groupIndex = 0;
 		UINT32 doubleColonPos = 0xFFFFFFFF;
 		BOOL foundDoubleColon = false;
-		PCCHAR pCurrent = ipString;
+		USIZE pos = 0;
 		CHAR hexBuffer[5];
 		UINT32 hexIndex = 0;
 
-		while (*pCurrent != '\0' && groupIndex < 8)
+		while (pos < ipString.Size() && groupIndex < 8)
 		{
-			if (*pCurrent == ':')
+			if (ipString[pos] == ':')
 			{
-				if (*(pCurrent + 1) == ':' && !foundDoubleColon)
+				if (pos + 1 < ipString.Size() && ipString[pos + 1] == ':' && !foundDoubleColon)
 				{
 					// Flush accumulated hex digits before :: as a separate group
 					if (hexIndex > 0 && groupIndex < 8)
@@ -55,8 +53,8 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 					// Handle double colon
 					foundDoubleColon = true;
 					doubleColonPos = groupIndex;
-					pCurrent += 2;
-					if (*pCurrent == '\0')
+					pos += 2;
+					if (pos >= ipString.Size())
 						break;
 					continue;
 				}
@@ -68,22 +66,22 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 					ipv6[groupIndex * 2 + 1] = (UINT8)(value & 0xFF);
 					groupIndex++;
 					hexIndex = 0;
-					pCurrent++;
+					pos++;
 				}
 				else
 				{
-					pCurrent++;
+					pos++;
 				}
 			}
-			else if ((*pCurrent >= '0' && *pCurrent <= '9') ||
-					 (*pCurrent >= 'a' && *pCurrent <= 'f') ||
-					 (*pCurrent >= 'A' && *pCurrent <= 'F'))
+			else if ((ipString[pos] >= '0' && ipString[pos] <= '9') ||
+					 (ipString[pos] >= 'a' && ipString[pos] <= 'f') ||
+					 (ipString[pos] >= 'A' && ipString[pos] <= 'F'))
 			{
 				if (hexIndex < 4)
 				{
-					hexBuffer[hexIndex++] = *pCurrent;
+					hexBuffer[hexIndex++] = ipString[pos];
 				}
-				pCurrent++;
+				pos++;
 			}
 			else
 			{
@@ -129,36 +127,33 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 		CHAR currentOctet[8];
 		UINT32 currentOctetIndex = 0;
 		UINT32 completedOctetCount = 0;
-		UINT32 endOfOctet = 0;
-		UINT32 endOfString = 0;
 		UINT8 octets[4];
 		UINT32 addr = 0;
 
 		Memory::Zero(currentOctet, sizeof(currentOctet));
-		currentOctetIndex = 0;
-		PCCHAR currentByte = ipString;
 
-		for (;;)
+		for (USIZE pos = 0; pos <= ipString.Size(); pos++)
 		{
-			endOfOctet = 0;
-			if (*currentByte == '\0')
+			BOOL endOfOctet = false;
+			BOOL endOfString = (pos == ipString.Size());
+
+			if (endOfString)
 			{
-				endOfOctet = 1;
-				endOfString = 1;
+				endOfOctet = true;
 			}
-			else if (*currentByte == '.')
+			else if (ipString[pos] == '.')
 			{
-				endOfOctet = 1;
+				endOfOctet = true;
 			}
 			else
 			{
-				if (*currentByte >= '0' && *currentByte <= '9')
+				if (ipString[pos] >= '0' && ipString[pos] <= '9')
 				{
 					if (currentOctetIndex > 2)
 					{
 						return Result<IPAddress, Error>::Err(Error::IpAddress_ParseFailed);
 					}
-					currentOctet[currentOctetIndex] = *currentByte;
+					currentOctet[currentOctetIndex] = ipString[pos];
 					currentOctetIndex++;
 				}
 				else
@@ -167,14 +162,14 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 				}
 			}
 
-			if (endOfOctet != 0)
+			if (endOfOctet)
 			{
 				if (currentOctetIndex == 0)
 				{
 					return Result<IPAddress, Error>::Err(Error::IpAddress_ParseFailed);
 				}
 
-				auto octetResult = StringUtils::ParseInt64(currentOctet);
+				auto octetResult = StringUtils::ParseInt64(Span<const CHAR>(currentOctet, currentOctetIndex));
 				if (!octetResult)
 				{
 					return Result<IPAddress, Error>::Err(Error::IpAddress_ParseFailed);
@@ -193,7 +188,7 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 				octets[completedOctetCount] = (UINT8)octet;
 				completedOctetCount++;
 
-				if (endOfString != 0)
+				if (endOfString)
 				{
 					break;
 				}
@@ -201,8 +196,6 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 				Memory::Zero(currentOctet, sizeof(currentOctet));
 				currentOctetIndex = 0;
 			}
-
-			currentByte++;
 		}
 
 		if (completedOctetCount != 4)
@@ -213,6 +206,16 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 		Memory::Copy((PVOID)&addr, octets, 4);
 		return Result<IPAddress, Error>::Ok(IPAddress(addr));
 	}
+}
+
+// Convert null-terminated string to IPAddress (convenience overload)
+Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
+{
+	if (ipString == nullptr)
+	{
+		return Result<IPAddress, Error>::Err(Error::IpAddress_ParseFailed);
+	}
+	return FromString(Span<const CHAR>(ipString, StringUtils::Length(ipString)));
 }
 
 // Convert IP address to string

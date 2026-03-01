@@ -127,7 +127,7 @@ public:
      * For client: local = client_write, remote = server_write
      * For server: local = server_write, remote = client_write
      */
-    [[nodiscard]] Result<void, Error> Initialize(Span<const UINT8> localKey, Span<const UINT8> remoteKey, const UCHAR (&localIv)[TLS_CHACHA20_IV_LENGTH], const UCHAR (&remoteIv)[TLS_CHACHA20_IV_LENGTH]);
+    [[nodiscard]] Result<void, Error> Initialize(Span<const UINT8, POLY1305_KEYLEN> localKey, Span<const UINT8, POLY1305_KEYLEN> remoteKey, const UCHAR (&localIv)[TLS_CHACHA20_IV_LENGTH], const UCHAR (&remoteIv)[TLS_CHACHA20_IV_LENGTH]);
 
     /**
      * @brief Encrypts and authenticates a TLS record

@@ -52,6 +52,7 @@
 #pragma once
 
 #include "core/types/primitives.h"
+#include "core/types/span.h"
 
 /**
  * @class DOUBLE
@@ -196,18 +197,20 @@ public:
 	/// @{
 
 	/**
-	 * @brief Parse a decimal string to DOUBLE
-	 * @param s Null-terminated string to parse (supports sign, integer, and fractional parts)
-	 * @return Parsed DOUBLE value, or +0.0 if s is null
+	 * @brief Parse a decimal string span to DOUBLE
+	 * @param s String span to parse (supports sign, integer, and fractional parts)
+	 * @return Parsed DOUBLE value, or +0.0 if empty
 	 *
 	 * @details Performs manual decimal-to-binary floating-point conversion without
 	 * CRT functions (strtod, atof). Handles optional sign, integer digits, and
 	 * fractional digits separated by '.'.
 	 */
-	static DOUBLE Parse(PCCHAR s) noexcept
+	static DOUBLE Parse(Span<const CHAR> s) noexcept
 	{
-		if (!s)
+		if (s.Size() == 0)
 			return DOUBLE(INT32(0));
+
+		USIZE i = 0;
 
 		// Initialize result variables (use INT32 constructor to avoid .rdata)
 		DOUBLE sign = DOUBLE(INT32(1));
@@ -217,36 +220,51 @@ public:
 		DOUBLE tenDouble = DOUBLE(INT32(10));
 		DOUBLE minusOne = DOUBLE(INT32(-1));
 		// sign
-		if (*s == '-')
+		if (s[i] == '-')
 		{
 			sign = minusOne;
-			s++;
+			i++;
 		}
-		else if (*s == '+')
+		else if (s[i] == '+')
 		{
-			s++;
+			i++;
 		}
 
 		// integer part
-		while (*s >= '0' && *s <= '9')
+		while (i < s.Size() && s[i] >= '0' && s[i] <= '9')
 		{
-			result = result * tenDouble + DOUBLE(INT32(*s - '0'));
-			s++;
+			result = result * tenDouble + DOUBLE(INT32(s[i] - '0'));
+			i++;
 		}
 
 		// fractional part
-		if (*s == '.')
+		if (i < s.Size() && s[i] == '.')
 		{
-			s++; // skip the decimal point
-			while (*s >= '0' && *s <= '9')
+			i++; // skip the decimal point
+			while (i < s.Size() && s[i] >= '0' && s[i] <= '9')
 			{
-				frac = frac * tenDouble + DOUBLE(INT32(*s - '0'));
+				frac = frac * tenDouble + DOUBLE(INT32(s[i] - '0'));
 				base = base * tenDouble;
-				s++;
+				i++;
 			}
 		}
 
 		return sign * (result + frac / base);
+	}
+
+	/**
+	 * @brief Parse a null-terminated decimal string to DOUBLE
+	 * @param s Null-terminated string to parse
+	 * @return Parsed DOUBLE value, or +0.0 if s is null
+	 */
+	static DOUBLE Parse(PCCHAR s) noexcept
+	{
+		if (!s)
+			return DOUBLE(INT32(0));
+		USIZE len = 0;
+		while (s[len] != '\0')
+			len++;
+		return Parse(Span<const CHAR>(s, len));
 	}
 
 	/// @}

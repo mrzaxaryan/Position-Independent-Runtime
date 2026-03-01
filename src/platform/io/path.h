@@ -17,16 +17,16 @@ class Path
 public:
     /// @brief Combine two paths into one, ensuring proper path separators
     /// @tparam TChar Character type (CHAR or WCHAR)
-    /// @param path1 First path to combine
-    /// @param path2 Second path to combine
+    /// @param path1 First path to combine (read-only span)
+    /// @param path2 Second path to combine (read-only span)
     /// @param out Output buffer to write combined path into
     /// @return Number of characters written (excluding null terminator), 0 on overflow
 
     template <TCHAR TChar>
-    static constexpr USIZE Combine(const TChar *path1, const TChar *path2, Span<TChar> out)
+    static constexpr USIZE Combine(Span<const TChar> path1, Span<const TChar> path2, Span<TChar> out)
     {
-        USIZE len1 = StringUtils::Length(path1);
-        USIZE len2 = StringUtils::Length(path2);
+        USIZE len1 = path1.Size();
+        USIZE len2 = path2.Size();
         BOOL needSep = len1 > 0 && path1[len1 - 1] != (TChar)PATH_SEPARATOR;
         USIZE totalLen = len1 + (needSep ? 1 : 0) + len2;
 
@@ -49,14 +49,14 @@ public:
 
     /// @brief Get the file name from a full path
     /// @tparam TChar Character type (CHAR or WCHAR)
-    /// @param fullPath The full file path
+    /// @param fullPath The full file path (read-only span)
     /// @param out Output buffer to write file name into
     /// @return Number of characters written (excluding null terminator), 0 on overflow
 
     template <TCHAR TChar>
-    static constexpr USIZE GetFileName(const TChar *fullPath, Span<TChar> out)
+    static constexpr USIZE GetFileName(Span<const TChar> fullPath, Span<TChar> out)
     {
-        USIZE len = StringUtils::Length(fullPath);
+        USIZE len = fullPath.Size();
         SSIZE lastSeparator = -1;
 
         for (USIZE i = 0; i < len; ++i)
@@ -65,31 +65,31 @@ public:
                 lastSeparator = (SSIZE)i;
         }
 
-        const TChar *name = (lastSeparator == -1) ? fullPath : (fullPath + lastSeparator + 1);
-        USIZE nameLen = (lastSeparator == -1) ? len : (len - (USIZE)lastSeparator - 1);
+        USIZE nameStart = (lastSeparator == -1) ? 0 : ((USIZE)lastSeparator + 1);
+        USIZE nameLen = len - nameStart;
 
         if (out.Size() == 0 || nameLen >= out.Size())
             return 0;
 
         for (USIZE i = 0; i < nameLen; ++i)
-            out[i] = name[i];
+            out[i] = fullPath[nameStart + i];
         out[nameLen] = (TChar)0;
         return nameLen;
     }
 
     /// @brief Get the file extension from a file name
     /// @tparam TChar Character type (CHAR or WCHAR)
-    /// @param fileName File name to extract the extension from
+    /// @param fileName File name to extract the extension from (read-only span)
     /// @param out Output buffer to write extension into (empty string if no extension)
     /// @return Number of characters written (excluding null terminator), 0 on overflow
 
     template <TCHAR TChar>
-    static constexpr USIZE GetExtension(const TChar *fileName, Span<TChar> out)
+    static constexpr USIZE GetExtension(Span<const TChar> fileName, Span<TChar> out)
     {
         if (out.Size() == 0)
             return 0;
 
-        USIZE len = StringUtils::Length(fileName);
+        USIZE len = fileName.Size();
         SSIZE lastDot = -1;
 
         for (USIZE i = 0; i < len; ++i)
@@ -116,17 +116,17 @@ public:
 
     /// @brief Get the directory name from a full path
     /// @tparam TChar Character type (CHAR or WCHAR)
-    /// @param fullPath Full file path to extract the directory name from
+    /// @param fullPath Full file path to extract the directory name from (read-only span)
     /// @param out Output buffer to write directory name into (empty string if no directory)
     /// @return Number of characters written (excluding null terminator), 0 on overflow
 
     template <TCHAR TChar>
-    static constexpr USIZE GetDirectoryName(const TChar *fullPath, Span<TChar> out)
+    static constexpr USIZE GetDirectoryName(Span<const TChar> fullPath, Span<TChar> out)
     {
         if (out.Size() == 0)
             return 0;
 
-        USIZE len = StringUtils::Length(fullPath);
+        USIZE len = fullPath.Size();
         SSIZE lastSeparator = -1;
 
         for (USIZE i = 0; i < len; ++i)

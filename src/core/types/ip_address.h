@@ -152,8 +152,15 @@ public:
 	static constexpr IPAddress FromIPv6(const UINT8 (&ipv6Address)[16]) { return IPAddress(ipv6Address); }
 
 	/**
-	 * @brief Parse IP address from string
-	 * @param ipString String representation (e.g., "192.168.1.1" or "::1")
+	 * @brief Parse IP address from string span
+	 * @param ipString String span representation (e.g., "192.168.1.1" or "::1")
+	 * @return Ok(IPAddress) on success, Err(IpAddress_ParseFailed) on failure
+	 */
+	[[nodiscard]] static Result<IPAddress, Error> FromString(Span<const CHAR> ipString);
+
+	/**
+	 * @brief Parse IP address from null-terminated string
+	 * @param ipString Null-terminated string representation (e.g., "192.168.1.1" or "::1")
 	 * @return Ok(IPAddress) on success, Err(IpAddress_ParseFailed) on failure
 	 */
 	[[nodiscard]] static Result<IPAddress, Error> FromString(PCCHAR ipString);

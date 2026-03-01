@@ -18,24 +18,24 @@
  *
  * USAGE:
  *   BOOL allPassed = true;
- *   RunTest(allPassed, TestFunction, L"Test description"_embed);
+ *   RunTest(allPassed, TestFunction, "Test description"_embed);
  *
  * @param allPassedVar - Boolean variable to track overall test status
  * @param testFunc     - Test function to execute (must return BOOL)
- * @param description  - Human-readable description of the test (wide embedded string)
+ * @param description  - Human-readable description of the test (embedded string)
  * @return true if test passed, false otherwise
  */
 #if defined(ENABLE_LOGGING)
 template <typename TestFunc>
-inline BOOL RunTest(BOOL &allPassedVar, TestFunc testFunc, PCWCHAR description)
+inline BOOL RunTest(BOOL &allPassedVar, TestFunc testFunc, PCCHAR description)
 {
 	if (!testFunc())
 	{
 		allPassedVar = false;
-		LOG_ERROR("  FAILED: %ls", description);
+		LOG_ERROR("  FAILED: %s", description);
 		return false;
 	}
-	LOG_INFO("  PASSED: %ls", description);
+	LOG_INFO("  PASSED: %s", description);
 	return true;
 }
 #else

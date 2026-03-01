@@ -208,20 +208,20 @@ static VOID EFIAPI EmptyNotify(EFI_EVENT Event, PVOID Context)
 
 // Wait for async operation with Poll to drive network stack
 template <typename TCP_PROTOCOL>
-static EFI_STATUS WaitForCompletion(EFI_BOOT_SERVICES *bs, TCP_PROTOCOL *Tcp, EFI_EVENT Event, volatile EFI_STATUS *TokenStatus, UINT64 TimeoutMs)
+static EFI_STATUS WaitForCompletion(EFI_BOOT_SERVICES *bs, TCP_PROTOCOL *Tcp, EFI_EVENT Event, volatile EFI_STATUS &TokenStatus, UINT64 TimeoutMs)
 {
 	(VOID) Event;
 
 	// Check immediately - fast path
 	Tcp->Poll(Tcp);
-	if (*TokenStatus != EFI_NOT_READY)
+	if (TokenStatus != EFI_NOT_READY)
 		return EFI_SUCCESS;
 
 	// Poll loop with short stalls
 	for (UINT64 i = 0; i < TimeoutMs; i++)
 	{
 		Tcp->Poll(Tcp);
-		if (*TokenStatus != EFI_NOT_READY)
+		if (TokenStatus != EFI_NOT_READY)
 			return EFI_SUCCESS;
 		bs->Stall(1000); // 1ms
 	}
@@ -439,7 +439,7 @@ Result<void, Error> Socket::Open()
 		Status = sockCtx->Tcp6->Connect(sockCtx->Tcp6, &ConnectToken);
 		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			Status = WaitForCompletion(bs, sockCtx->Tcp6, ConnectEvent, &ConnectToken.CompletionToken.Status, 5000);
+			Status = WaitForCompletion(bs, sockCtx->Tcp6, ConnectEvent, ConnectToken.CompletionToken.Status, 5000);
 			success = !EFI_ERROR_CHECK(Status) && !EFI_ERROR_CHECK(ConnectToken.CompletionToken.Status);
 		}
 		else
@@ -497,7 +497,7 @@ Result<void, Error> Socket::Open()
 		Status = sockCtx->Tcp4->Connect(sockCtx->Tcp4, &ConnectToken);
 		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			Status = WaitForCompletion(bs, sockCtx->Tcp4, ConnectEvent, &ConnectToken.CompletionToken.Status, 5000);
+			Status = WaitForCompletion(bs, sockCtx->Tcp4, ConnectEvent, ConnectToken.CompletionToken.Status, 5000);
 			success = !EFI_ERROR_CHECK(Status) && !EFI_ERROR_CHECK(ConnectToken.CompletionToken.Status);
 		}
 		else
@@ -557,7 +557,7 @@ Result<void, Error> Socket::Close()
 
 				EFI_STATUS Status = sockCtx->Tcp6->Close(sockCtx->Tcp6, &CloseToken);
 				if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
-					WaitForCompletion(bs, sockCtx->Tcp6, CloseEvent, &CloseToken.CompletionToken.Status, 100);
+					WaitForCompletion(bs, sockCtx->Tcp6, CloseEvent, CloseToken.CompletionToken.Status, 100);
 
 				bs->CloseEvent(CloseEvent);
 			}
@@ -590,7 +590,7 @@ Result<void, Error> Socket::Close()
 
 				EFI_STATUS Status = sockCtx->Tcp4->Close(sockCtx->Tcp4, &CloseToken);
 				if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
-					WaitForCompletion(bs, sockCtx->Tcp4, CloseEvent, &CloseToken.CompletionToken.Status, 100);
+					WaitForCompletion(bs, sockCtx->Tcp4, CloseEvent, CloseToken.CompletionToken.Status, 100);
 
 				bs->CloseEvent(CloseEvent);
 			}
@@ -739,7 +739,7 @@ Result<SSIZE, Error> Socket::Read(Span<CHAR> buffer)
 		EFI_STATUS Status = sockCtx->Tcp6->Receive(sockCtx->Tcp6, &RxToken);
 		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp6, RxEvent, &RxToken.CompletionToken.Status, 60000)) &&
+			if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp6, RxEvent, RxToken.CompletionToken.Status, 60000)) &&
 			    !EFI_ERROR_CHECK(RxToken.CompletionToken.Status))
 				bytesRead = (SSIZE)RxData.DataLength;
 		}
@@ -766,7 +766,7 @@ Result<SSIZE, Error> Socket::Read(Span<CHAR> buffer)
 		EFI_STATUS Status = sockCtx->Tcp4->Receive(sockCtx->Tcp4, &RxToken);
 		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp4, RxEvent, &RxToken.CompletionToken.Status, 60000)) &&
+			if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp4, RxEvent, RxToken.CompletionToken.Status, 60000)) &&
 			    !EFI_ERROR_CHECK(RxToken.CompletionToken.Status))
 				bytesRead = (SSIZE)RxData.DataLength;
 		}
@@ -840,7 +840,7 @@ Result<UINT32, Error> Socket::Write(Span<const CHAR> buffer)
 		EFI_STATUS Status = sockCtx->Tcp6->Transmit(sockCtx->Tcp6, &TxToken);
 		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp6, TxEvent, &TxToken.CompletionToken.Status, 30000)) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
+			if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp6, TxEvent, TxToken.CompletionToken.Status, 30000)) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
 				sent = true;
 		}
 		else
@@ -867,7 +867,7 @@ Result<UINT32, Error> Socket::Write(Span<const CHAR> buffer)
 		EFI_STATUS Status = sockCtx->Tcp4->Transmit(sockCtx->Tcp4, &TxToken);
 		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
 		{
-			if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp4, TxEvent, &TxToken.CompletionToken.Status, 30000)) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
+			if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp4, TxEvent, TxToken.CompletionToken.Status, 30000)) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
 				sent = true;
 		}
 		else

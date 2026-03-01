@@ -35,14 +35,14 @@ class DateTime
 private:
     // Helper functions to convert numbers to strings
     template <TCHAR TChar>
-    static constexpr VOID Put2(TChar *dst, UINT32 v)
+    static constexpr VOID Put2(Span<TChar> dst, UINT32 v)
     {
         dst[0] = (TChar)('0' + ((v / 10u) % 10u));
         dst[1] = (TChar)('0' + (v % 10u));
     }
     // Helper function to convert 4-digit year to string
     template <TCHAR TChar>
-    static constexpr VOID Put4(TChar *dst, UINT32 v)
+    static constexpr VOID Put4(Span<TChar> dst, UINT32 v)
     {
         dst[0] = (TChar)('0' + ((v / 1000u) % 10u));
         dst[1] = (TChar)('0' + ((v / 100u) % 10u));
@@ -71,11 +71,11 @@ public:
     {
         TimeOnlyString<TChar> out{};
 
-        Put2<TChar>(&out[0], (UINT32)Hours);
+        Put2<TChar>(Span<TChar>(&out[0], 2), (UINT32)Hours);
         out[2] = (TChar)':';
-        Put2<TChar>(&out[3], (UINT32)Minutes);
+        Put2<TChar>(Span<TChar>(&out[3], 2), (UINT32)Minutes);
         out[5] = (TChar)':';
-        Put2<TChar>(&out[6], (UINT32)Seconds);
+        Put2<TChar>(Span<TChar>(&out[6], 2), (UINT32)Seconds);
 
         out[8] = (TChar)0;
         return out;
@@ -87,11 +87,11 @@ public:
     {
         DateOnlyString<TChar> out{};
 
-        Put4<TChar>(&out[0], (UINT32)Years);
+        Put4<TChar>(Span<TChar>(&out[0], 4), (UINT32)Years);
         out[4] = (TChar)'-';
-        Put2<TChar>(&out[5], (UINT32)Monthes);
+        Put2<TChar>(Span<TChar>(&out[5], 2), (UINT32)Monthes);
         out[7] = (TChar)'-';
-        Put2<TChar>(&out[8], (UINT32)Days);
+        Put2<TChar>(Span<TChar>(&out[8], 2), (UINT32)Days);
 
         out[10] = (TChar)0;
         return out;
@@ -104,19 +104,19 @@ public:
         DateTimeString<TChar> out{};
 
         // Date
-        Put4<TChar>(&out[0], (UINT32)Years);
+        Put4<TChar>(Span<TChar>(&out[0], 4), (UINT32)Years);
         out[4] = (TChar)'-';
-        Put2<TChar>(&out[5], (UINT32)Monthes);
+        Put2<TChar>(Span<TChar>(&out[5], 2), (UINT32)Monthes);
         out[7] = (TChar)'-';
-        Put2<TChar>(&out[8], (UINT32)Days);
+        Put2<TChar>(Span<TChar>(&out[8], 2), (UINT32)Days);
         out[10] = (TChar)' ';
 
         // Time
-        Put2<TChar>(&out[11], (UINT32)Hours);
+        Put2<TChar>(Span<TChar>(&out[11], 2), (UINT32)Hours);
         out[13] = (TChar)':';
-        Put2<TChar>(&out[14], (UINT32)Minutes);
+        Put2<TChar>(Span<TChar>(&out[14], 2), (UINT32)Minutes);
         out[16] = (TChar)':';
-        Put2<TChar>(&out[17], (UINT32)Seconds);
+        Put2<TChar>(Span<TChar>(&out[17], 2), (UINT32)Seconds);
 
         out[19] = (TChar)0;
         return out;

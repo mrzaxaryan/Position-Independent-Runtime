@@ -19,12 +19,12 @@
 
 #include "platform/platform.h"
 #if defined(ENABLE_LOGGING)
-// Convenience macros that automatically embed wide strings
-#define LOG_INFO(format, ...) Logger::Info<WCHAR>(L##format##_embed, ##__VA_ARGS__)
-#define LOG_ERROR(format, ...) Logger::Error<WCHAR>(L##format##_embed, ##__VA_ARGS__)
-#define LOG_WARNING(format, ...) Logger::Warning<WCHAR>(L##format##_embed, ##__VA_ARGS__)
+// Convenience macros that automatically embed strings
+#define LOG_INFO(format, ...) Logger::Info<CHAR>(format##_embed, ##__VA_ARGS__)
+#define LOG_ERROR(format, ...) Logger::Error<CHAR>(format##_embed, ##__VA_ARGS__)
+#define LOG_WARNING(format, ...) Logger::Warning<CHAR>(format##_embed, ##__VA_ARGS__)
 #if defined(ENABLE_DEBUG_LOGGING)
-#define LOG_DEBUG(format, ...) Logger::Debug<WCHAR>(L##format##_embed, ##__VA_ARGS__)
+#define LOG_DEBUG(format, ...) Logger::Debug<CHAR>(format##_embed, ##__VA_ARGS__)
 #else
 #define LOG_DEBUG(format, ...)
 #endif // ENABLE_DEBUG_LOGGING
@@ -50,10 +50,10 @@ private:
 	/**
 	 * ConsoleCallback - Callback for console output (with ANSI colors)
 	 */
-	static BOOL ConsoleCallbackW(PVOID context, WCHAR ch)
+	static BOOL ConsoleCallbackA(PVOID context, CHAR ch)
 	{
 		(VOID) context;
-		return Console::Write(Span<const WCHAR>(&ch, 1));
+		return Console::Write(Span<const CHAR>(&ch, 1));
 	}
 
 	/**
@@ -64,20 +64,20 @@ private:
 	 * combinations appear across the codebase.
 	 *
 	 * @param colorPrefix - ANSI-colored prefix (e.g., "\033[0;32m[INF] ")
-	 * @param format      - Wide format string with embedded specifiers
+	 * @param format      - Format string with embedded specifiers
 	 * @param args        - Pre-erased argument array (nullptr when argCount == 0)
 	 * @param argCount    - Number of arguments
 	 */
-	static NOINLINE VOID TimestampedLogOutput(const WCHAR *colorPrefix, const WCHAR *format, Span<const StringFormatter::Argument> args)
+	static NOINLINE VOID TimestampedLogOutput(const CHAR *colorPrefix, const CHAR *format, Span<const StringFormatter::Argument> args)
 	{
 		DateTime now = DateTime::Now();
-		TimeOnlyString<WCHAR> timeStr = now.ToTimeOnlyString<WCHAR>();
+		TimeOnlyString<CHAR> timeStr = now.ToTimeOnlyString<CHAR>();
 
-		auto consoleW = EMBED_FUNC(ConsoleCallbackW);
+		auto consoleA = EMBED_FUNC(ConsoleCallbackA);
 
-		StringFormatter::Format<WCHAR>(consoleW, nullptr, L"%ls[%ls] "_embed, colorPrefix, (const WCHAR *)timeStr);
-		StringFormatter::FormatWithArgs<WCHAR>(consoleW, nullptr, format, args);
-		StringFormatter::Format<WCHAR>(consoleW, nullptr, L"\033[0m\n"_embed);
+		StringFormatter::Format<CHAR>(consoleA, nullptr, "%s[%s] "_embed, colorPrefix, (const CHAR *)timeStr);
+		StringFormatter::FormatWithArgs<CHAR>(consoleA, nullptr, format, args);
+		StringFormatter::Format<CHAR>(consoleA, nullptr, "\033[0m\n"_embed);
 	}
 
 public:
@@ -91,11 +91,11 @@ public:
 	static VOID Info(const TChar *format, Args... args)
 	{
 		if constexpr (sizeof...(Args) == 0)
-			TimestampedLogOutput(L"\033[0;32m[INF] "_embed, format, Span<const StringFormatter::Argument>());
+			TimestampedLogOutput("\033[0;32m[INF] "_embed, format, Span<const StringFormatter::Argument>());
 		else
 		{
 			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
-			TimestampedLogOutput(L"\033[0;32m[INF] "_embed, format, Span<const StringFormatter::Argument>(argArray));
+			TimestampedLogOutput("\033[0;32m[INF] "_embed, format, Span<const StringFormatter::Argument>(argArray));
 		}
 	}
 
@@ -109,11 +109,11 @@ public:
 	static VOID Error(const TChar *format, Args... args)
 	{
 		if constexpr (sizeof...(Args) == 0)
-			TimestampedLogOutput(L"\033[0;31m[ERR] "_embed, format, Span<const StringFormatter::Argument>());
+			TimestampedLogOutput("\033[0;31m[ERR] "_embed, format, Span<const StringFormatter::Argument>());
 		else
 		{
 			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
-			TimestampedLogOutput(L"\033[0;31m[ERR] "_embed, format, Span<const StringFormatter::Argument>(argArray));
+			TimestampedLogOutput("\033[0;31m[ERR] "_embed, format, Span<const StringFormatter::Argument>(argArray));
 		}
 	}
 
@@ -127,11 +127,11 @@ public:
 	static VOID Warning(const TChar *format, Args... args)
 	{
 		if constexpr (sizeof...(Args) == 0)
-			TimestampedLogOutput(L"\033[0;33m[WRN] "_embed, format, Span<const StringFormatter::Argument>());
+			TimestampedLogOutput("\033[0;33m[WRN] "_embed, format, Span<const StringFormatter::Argument>());
 		else
 		{
 			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
-			TimestampedLogOutput(L"\033[0;33m[WRN] "_embed, format, Span<const StringFormatter::Argument>(argArray));
+			TimestampedLogOutput("\033[0;33m[WRN] "_embed, format, Span<const StringFormatter::Argument>(argArray));
 		}
 	}
 
@@ -145,11 +145,11 @@ public:
 	static VOID Debug(const TChar *format, Args... args)
 	{
 		if constexpr (sizeof...(Args) == 0)
-			TimestampedLogOutput(L"\033[0;33m[DBG] "_embed, format, Span<const StringFormatter::Argument>());
+			TimestampedLogOutput("\033[0;33m[DBG] "_embed, format, Span<const StringFormatter::Argument>());
 		else
 		{
 			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
-			TimestampedLogOutput(L"\033[0;33m[DBG] "_embed, format, Span<const StringFormatter::Argument>(argArray));
+			TimestampedLogOutput("\033[0;33m[DBG] "_embed, format, Span<const StringFormatter::Argument>(argArray));
 		}
 	}
 };

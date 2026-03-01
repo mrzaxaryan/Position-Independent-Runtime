@@ -45,7 +45,7 @@
  * @par Example Usage:
  * @code
  * UINT8 packet[128];
- * BinaryWriter writer(packet, sizeof(packet));
+ * BinaryWriter writer(Span<UINT8>(packet));
  *
  * writer.WriteU8(0x16);                 // Content type
  * writer.WriteU16BE(0x0303);            // TLS version
@@ -68,23 +68,12 @@ public:
 	/// @{
 
 	/**
-	 * @brief Construct a writer with explicit initial offset
-	 * @param address Base address of the output buffer
+	 * @brief Construct a writer from a mutable byte span with explicit initial offset
+	 * @param data Span of bytes to write into
 	 * @param offset Initial write offset in bytes
-	 * @param maxSize Maximum number of bytes that can be written
 	 */
-	constexpr BinaryWriter(PVOID address, USIZE offset, USIZE maxSize)
-		: address(address), offset(offset), maxSize(maxSize)
-	{
-	}
-
-	/**
-	 * @brief Construct a writer starting at offset zero
-	 * @param address Base address of the output buffer
-	 * @param maxSize Maximum number of bytes that can be written
-	 */
-	constexpr BinaryWriter(PVOID address, USIZE maxSize)
-		: address(address), offset(0), maxSize(maxSize)
+	constexpr BinaryWriter(Span<UINT8> data, USIZE offset)
+		: address((PVOID)data.Data()), offset(offset), maxSize(data.Size())
 	{
 	}
 

@@ -22,7 +22,7 @@ ChaCha20Encoder::ChaCha20Encoder()
 }
 
 // Initialize the ChaCha20 encoder with keys and IVs
-Result<void, Error> ChaCha20Encoder::Initialize(Span<const UINT8> localKey, Span<const UINT8> remoteKey, const UCHAR (&localIv)[TLS_CHACHA20_IV_LENGTH], const UCHAR (&remoteIv)[TLS_CHACHA20_IV_LENGTH])
+Result<void, Error> ChaCha20Encoder::Initialize(Span<const UINT8, POLY1305_KEYLEN> localKey, Span<const UINT8, POLY1305_KEYLEN> remoteKey, const UCHAR (&localIv)[TLS_CHACHA20_IV_LENGTH], const UCHAR (&remoteIv)[TLS_CHACHA20_IV_LENGTH])
 {
     UINT32 counter = 1;
     this->ivLength = TLS_CHACHA20_IV_LENGTH;
@@ -50,7 +50,7 @@ VOID ChaCha20Encoder::Encode(TlsBuffer &out, Span<const CHAR> packet, Span<const
     LOG_DEBUG("Encoding packet with Chacha20 encoder, packet size: %d bytes", packetSize);
     out.AppendSize(packetSize + POLY1305_TAGLEN);
     UCHAR poly1305_key[POLY1305_KEYLEN];
-    this->localCipher.IvUpdate(this->localNonce, Span<const UINT8>(sequence, 8), (UINT8 *)&counter);
+    this->localCipher.IvUpdate(this->localNonce, Span<const UINT8, 8>(sequence), (UINT8 *)&counter);
     LOG_DEBUG("Chacha20 encoder updated IV with sequence: %p, counter: %d", sequence, counter);
     this->localCipher.Poly1305Key(poly1305_key);
     LOG_DEBUG("Chacha20 encoder computed Poly1305 key: %p", poly1305_key);
@@ -73,7 +73,7 @@ Result<void, Error> ChaCha20Encoder::Decode(TlsBuffer &in, TlsBuffer &out, Span<
     UINT32 counter = 1;
 
     // Update IV with sequence number and counter
-    this->remoteCipher.IvUpdate(this->remoteNonce, Span<const UINT8>(sequence, 8), (PUCHAR)&counter);
+    this->remoteCipher.IvUpdate(this->remoteNonce, Span<const UINT8, 8>(sequence), (PUCHAR)&counter);
     LOG_DEBUG("Chacha20 encoder updated IV with sequence: %p, counter: %d", sequence, counter);
 
     // Generate Poly1305 key from current cipher state

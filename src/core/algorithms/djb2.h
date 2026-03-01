@@ -34,6 +34,7 @@
 
 #pragma once
 #include "core/types/primitives.h"
+#include "core/types/span.h"
 #include "core/string/string.h"
 
 /**
@@ -148,6 +149,32 @@ public:
 	{
 		UINT64 h = Seed;
 		for (UINT64 i = 0; value[i] != (TChar)0; ++i)
+		{
+			TChar c = StringUtils::ToLowerCase(value[i]);
+			h = ((h << 5) + h) + (UINT64)c;
+		}
+		return h;
+	}
+
+	/**
+	 * @brief Computes a case-insensitive DJB2 hash over a bounded span
+	 *
+	 * @details Same algorithm as Hash(const TChar*), but operates on a
+	 * size-bounded Span rather than relying on null termination. Suitable
+	 * for hashing substrings or buffers that may not be null-terminated.
+	 *
+	 * @tparam TChar Character type (CHAR or WCHAR)
+	 * @param value Span of characters to hash
+	 * @return 64-bit DJB2 hash of the lowercased input
+	 *
+	 * @see DJB2 Hash Function — Daniel J. Bernstein, comp.lang.c (1991)
+	 *      https://cr.yp.to/cdb.html
+	 */
+	template <typename TChar>
+	static constexpr UINT64 Hash(Span<const TChar> value)
+	{
+		UINT64 h = Seed;
+		for (USIZE i = 0; i < value.Size(); ++i)
 		{
 			TChar c = StringUtils::ToLowerCase(value[i]);
 			h = ((h << 5) + h) + (UINT64)c;

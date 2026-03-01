@@ -78,15 +78,7 @@ Result<DOUBLE, Error> StringUtils::StrToFloat(Span<const CHAR> str) noexcept
 		return Result<DOUBLE, Error>::Err(Error::String_ParseFloatFailed);
 	}
 
-	CHAR buffer[64];
-	USIZE copyLen = str.Size() < 63 ? str.Size() : 63;
-	for (USIZE i = 0; i < copyLen; i++)
-	{
-		buffer[i] = str[i];
-	}
-	buffer[copyLen] = '\0';
-
-	DOUBLE result = DOUBLE::Parse(buffer);
+	DOUBLE result = DOUBLE::Parse(str);
 	return Result<DOUBLE, Error>::Ok(result);
 }
 
@@ -96,9 +88,9 @@ Result<DOUBLE, Error> StringUtils::StrToFloat(Span<const CHAR> str) noexcept
 
 // Converts a UTF-8 string to wide string (UTF-16)
 // Returns the number of wide characters written (excluding null terminator)
-USIZE StringUtils::Utf8ToWide(PCCHAR utf8, Span<WCHAR> wide)
+USIZE StringUtils::Utf8ToWide(Span<const CHAR> utf8, Span<WCHAR> wide)
 {
-	if (!utf8 || wide.Size() < 3)
+	if (utf8.Size() == 0 || wide.Size() < 3)
 	{
 		if (wide.Size() > 0)
 			wide[0] = L'\0';
@@ -106,11 +98,12 @@ USIZE StringUtils::Utf8ToWide(PCCHAR utf8, Span<WCHAR> wide)
 	}
 
 	USIZE wideLen = 0;
+	USIZE i = 0;
 
-	while (*utf8 && wideLen + 2 < wide.Size())
+	while (i < utf8.Size() && utf8[i] != '\0' && wideLen + 2 < wide.Size())
 	{
 		UINT32 ch;
-		UINT8 byte = (UINT8)*utf8++;
+		UINT8 byte = (UINT8)utf8[i++];
 
 		if (byte < 0x80)
 		{
@@ -119,26 +112,26 @@ USIZE StringUtils::Utf8ToWide(PCCHAR utf8, Span<WCHAR> wide)
 		else if ((byte & 0xE0) == 0xC0)
 		{
 			ch = (byte & 0x1F) << 6;
-			if (*utf8)
-				ch |= (*utf8++ & 0x3F);
+			if (i < utf8.Size() && utf8[i] != '\0')
+				ch |= (utf8[i++] & 0x3F);
 		}
 		else if ((byte & 0xF0) == 0xE0)
 		{
 			ch = (byte & 0x0F) << 12;
-			if (*utf8)
-				ch |= (*utf8++ & 0x3F) << 6;
-			if (*utf8)
-				ch |= (*utf8++ & 0x3F);
+			if (i < utf8.Size() && utf8[i] != '\0')
+				ch |= (utf8[i++] & 0x3F) << 6;
+			if (i < utf8.Size() && utf8[i] != '\0')
+				ch |= (utf8[i++] & 0x3F);
 		}
 		else if ((byte & 0xF8) == 0xF0)
 		{
 			ch = (byte & 0x07) << 18;
-			if (*utf8)
-				ch |= (*utf8++ & 0x3F) << 12;
-			if (*utf8)
-				ch |= (*utf8++ & 0x3F) << 6;
-			if (*utf8)
-				ch |= (*utf8++ & 0x3F);
+			if (i < utf8.Size() && utf8[i] != '\0')
+				ch |= (utf8[i++] & 0x3F) << 12;
+			if (i < utf8.Size() && utf8[i] != '\0')
+				ch |= (utf8[i++] & 0x3F) << 6;
+			if (i < utf8.Size() && utf8[i] != '\0')
+				ch |= (utf8[i++] & 0x3F);
 
 			// Encode as surrogate pair for characters > 0xFFFF
 			if (ch >= 0x10000)

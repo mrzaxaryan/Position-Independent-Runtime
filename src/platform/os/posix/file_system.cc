@@ -326,7 +326,7 @@ Result<void, Error> DirectoryIterator::Next()
 	bsd_dirent64 *d = (bsd_dirent64 *)(buffer + bpos);
 #endif
 
-	StringUtils::Utf8ToWide(d->d_name, Span<WCHAR>(currentEntry.name, 256));
+	StringUtils::Utf8ToWide(Span<const CHAR>(d->d_name, StringUtils::Length(d->d_name)), Span<WCHAR>(currentEntry.name, 256));
 
 	currentEntry.isDirectory = (d->d_type == DT_DIR);
 	currentEntry.isDrive = false;

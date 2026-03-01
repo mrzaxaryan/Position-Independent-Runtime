@@ -618,7 +618,7 @@ Result<void, Error> TlsClient::ProcessReceive()
     LOG_DEBUG("Received %lld bytes from socket for client: %p", len, this);
     recvBuffer.AppendSize((INT32)len);
 
-    BinaryReader reader((PVOID)recvBuffer.GetBuffer(), (USIZE)recvBuffer.GetSize());
+    BinaryReader reader(Span<const UINT8>((const UINT8*)recvBuffer.GetBuffer(), (USIZE)recvBuffer.GetSize()));
 
     while (reader.Remaining() >= 5)
     {

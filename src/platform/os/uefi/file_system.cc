@@ -43,11 +43,11 @@ static NOINLINE EFI_GUID MakeFileInfoGuid()
 // Helper: Query file size via EFI_FILE_INFO
 // =============================================================================
 
-static NOINLINE USIZE QueryFileSize(EFI_FILE_PROTOCOL *fp)
+static NOINLINE USIZE QueryFileSize(EFI_FILE_PROTOCOL &fp)
 {
 	EFI_GUID FileInfoId = MakeFileInfoGuid();
 	USIZE InfoSize = 0;
-	fp->GetInfo(fp, &FileInfoId, &InfoSize, nullptr);
+	fp.GetInfo(&fp, &FileInfoId, &InfoSize, nullptr);
 	if (InfoSize == 0)
 		return 0;
 
@@ -58,7 +58,7 @@ static NOINLINE USIZE QueryFileSize(EFI_FILE_PROTOCOL *fp)
 	EFI_FILE_INFO *FileInfo = nullptr;
 	if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, InfoSize, (PVOID *)&FileInfo)))
 	{
-		if (!EFI_ERROR_CHECK(fp->GetInfo(fp, &FileInfoId, &InfoSize, FileInfo)))
+		if (!EFI_ERROR_CHECK(fp.GetInfo(&fp, &FileInfoId, &InfoSize, FileInfo)))
 			size = FileInfo->FileSize;
 		bs->FreePool(FileInfo);
 	}
@@ -69,11 +69,11 @@ static NOINLINE USIZE QueryFileSize(EFI_FILE_PROTOCOL *fp)
 // Helper: Truncate file to zero length via EFI_FILE_INFO
 // =============================================================================
 
-static NOINLINE VOID TruncateFile(EFI_FILE_PROTOCOL *fp)
+static NOINLINE VOID TruncateFile(EFI_FILE_PROTOCOL &fp)
 {
 	EFI_GUID FileInfoId = MakeFileInfoGuid();
 	USIZE InfoSize = 0;
-	fp->GetInfo(fp, &FileInfoId, &InfoSize, nullptr);
+	fp.GetInfo(&fp, &FileInfoId, &InfoSize, nullptr);
 	if (InfoSize == 0)
 		return;
 
@@ -83,10 +83,10 @@ static NOINLINE VOID TruncateFile(EFI_FILE_PROTOCOL *fp)
 	EFI_FILE_INFO *FileInfo = nullptr;
 	if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, InfoSize, (PVOID *)&FileInfo)))
 	{
-		if (!EFI_ERROR_CHECK(fp->GetInfo(fp, &FileInfoId, &InfoSize, FileInfo)))
+		if (!EFI_ERROR_CHECK(fp.GetInfo(&fp, &FileInfoId, &InfoSize, FileInfo)))
 		{
 			FileInfo->FileSize = 0;
-			fp->SetInfo(fp, &FileInfoId, InfoSize, FileInfo);
+			fp.SetInfo(&fp, &FileInfoId, InfoSize, FileInfo);
 		}
 		bs->FreePool(FileInfo);
 	}
@@ -192,10 +192,10 @@ Result<File, Error> FileSystem::Open(PCWCHAR path, INT32 flags)
 
 	// Handle truncate flag
 	if (flags & FS_TRUNCATE)
-		TruncateFile(FileHandle);
+		TruncateFile(*FileHandle);
 
 	// Query file size before constructing the File (keeps the constructor trivial)
-	USIZE size = QueryFileSize(FileHandle);
+	USIZE size = QueryFileSize(*FileHandle);
 
 	return Result<File, Error>::Ok(File((PVOID)FileHandle, size));
 }

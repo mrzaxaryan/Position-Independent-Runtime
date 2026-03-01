@@ -23,7 +23,7 @@ ENTRYPOINT INT32 entry_point(VOID)
 	EFI_CONTEXT efiContext = {};
 	efiContext.ImageHandle = ImageHandle;
 	efiContext.SystemTable = SystemTable;
-	SetEfiContextRegister(&efiContext);
+	SetEfiContextRegister(efiContext);
 	// Disable watchdog timer (default is 5 minutes)
 	SystemTable->BootServices->SetWatchdogTimer(0, 0, 0, nullptr);
 #endif

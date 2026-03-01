@@ -46,7 +46,7 @@
  * @code
  * UINT8 packet[128];
  * // ... fill packet from network ...
- * BinaryReader reader(packet, sizeof(packet));
+ * BinaryReader reader(Span<const UINT8>(packet));
  *
  * UINT16 type   = reader.ReadU16BE();   // 2 bytes, big-endian
  * UINT32 length = reader.ReadU24BE();   // 3 bytes, big-endian
@@ -68,23 +68,12 @@ public:
 	/// @{
 
 	/**
-	 * @brief Construct a reader with explicit initial offset
-	 * @param address Base address of the data buffer
+	 * @brief Construct a reader from a byte span with explicit initial offset
+	 * @param data Span of bytes to read from
 	 * @param offset Initial read offset in bytes
-	 * @param maxSize Maximum number of bytes that can be read
 	 */
-	constexpr BinaryReader(PCVOID address, USIZE offset, USIZE maxSize)
-		: address(address), offset(offset), maxSize(maxSize)
-	{
-	}
-
-	/**
-	 * @brief Construct a reader starting at offset zero
-	 * @param address Base address of the data buffer
-	 * @param maxSize Maximum number of bytes that can be read
-	 */
-	constexpr BinaryReader(PCVOID address, USIZE maxSize)
-		: address(address), offset(0), maxSize(maxSize)
+	constexpr BinaryReader(Span<const UINT8> data, USIZE offset)
+		: address(data.Data()), offset(offset), maxSize(data.Size())
 	{
 	}
 
