@@ -7,6 +7,13 @@
 #include "http.h"
 #include "embedded_string.h"
 
+/**
+ * @brief Performs the WebSocket opening handshake (RFC 6455 Section 4)
+ * @details Sends the HTTP Upgrade request with Sec-WebSocket-Key (16 random bytes,
+ * Base64-encoded per Section 4.1) and validates the server responds with HTTP 101.
+ * Falls back to IPv4 if the initial IPv6 connection attempt fails.
+ * @see https://datatracker.ietf.org/doc/html/rfc6455#section-4
+ */
 Result<void, Error> WebSocketClient::Open()
 {
 	BOOL isSecure = tlsContext.IsSecure();
@@ -44,7 +51,7 @@ Result<void, Error> WebSocketClient::Open()
 		return Result<void, Error>::Err(openResult, Error::Ws_TransportFailed);
 	}
 
-	// Generate random 16-byte WebSocket key (RFC 6455: 16 random bytes, base64-encoded)
+	// RFC 6455 Section 4.1: Sec-WebSocket-Key is 16 random bytes, Base64-encoded (24 chars)
 	UINT32 key[4];
 	Random random;
 	for (INT32 i = 0; i < 4; i++)
@@ -86,11 +93,18 @@ Result<void, Error> WebSocketClient::Open()
 	return Result<void, Error>::Ok();
 }
 
+/**
+ * @brief Sends a Close frame with status 1000 (Normal Closure) and tears down the transport
+ * @details Implements RFC 6455 Section 7.1.1 — the client initiates the closing handshake
+ * by sending a Close frame whose payload is the 2-byte status code in network byte order.
+ * @see https://datatracker.ietf.org/doc/html/rfc6455#section-7
+ * @see https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1
+ */
 Result<void, Error> WebSocketClient::Close()
 {
 	if (isConnected)
 	{
-		// Send a WebSocket CLOSE frame (status code 1000 = normal closure, big-endian)
+		// RFC 6455 Section 5.5.1: Send Close frame with status code 1000 (Normal Closure, big-endian)
 		UINT16 statusCode = UINT16SwapByteOrder(1000);
 		(void)Write(Span<const CHAR>((const CHAR *)&statusCode, sizeof(statusCode)), OPCODE_CLOSE);
 	}
@@ -101,6 +115,15 @@ Result<void, Error> WebSocketClient::Close()
 	return Result<void, Error>::Ok();
 }
 
+/**
+ * @brief Constructs and sends a masked WebSocket frame (RFC 6455 Section 5.2, 5.3)
+ * @details Builds the frame header with FIN=1 and the appropriate payload length encoding
+ * (7-bit / 16-bit / 64-bit). Generates a random 32-bit masking key and XOR-masks the
+ * entire payload — client-to-server frames MUST be masked per Section 5.1. Small frames
+ * are coalesced into a single TLS write; large frames stream in 256-byte masked chunks.
+ * @see https://datatracker.ietf.org/doc/html/rfc6455#section-5.2
+ * @see https://datatracker.ietf.org/doc/html/rfc6455#section-5.3
+ */
 Result<UINT32, Error> WebSocketClient::Write(Span<const CHAR> buffer, WebSocketOpcode opcode)
 {
 	UINT32 bufferLength = (UINT32)buffer.Size();
@@ -113,7 +136,7 @@ Result<UINT32, Error> WebSocketClient::Write(Span<const CHAR> buffer, WebSocketO
 	UINT8 header[14];
 	UINT32 headerLength;
 
-	// FIN bit + opcode
+	// RFC 6455 Section 5.2: byte 0 = FIN (bit 7) | opcode (bits 0-3)
 	header[0] = (UINT8)(opcode | 0x80);
 
 	// Generate masking key from a single random value
@@ -121,7 +144,7 @@ Result<UINT32, Error> WebSocketClient::Write(Span<const CHAR> buffer, WebSocketO
 	UINT32 maskKeyVal = (UINT32)random.Get();
 	PUINT8 maskKey = (PUINT8)&maskKeyVal;
 
-	// Encode payload length + mask bit
+	// RFC 6455 Section 5.2: byte 1 = MASK (bit 7) | payload length (bits 0-6)
 	if (bufferLength <= 125)
 	{
 		header[1] = (UINT8)(bufferLength | 0x80);
@@ -197,7 +220,12 @@ Result<UINT32, Error> WebSocketClient::Write(Span<const CHAR> buffer, WebSocketO
 	return Result<UINT32, Error>::Ok(bufferLength);
 }
 
-// Read exactly buffer.Size() bytes from the TLS transport
+/**
+ * @brief Reads exactly buffer.Size() bytes from the TLS transport
+ * @details Loops over TlsClient::Read until all requested bytes are received.
+ * Returns Err immediately if any individual read returns an error or zero bytes.
+ * Used by ReceiveFrame to read fixed-size frame header fields and payload data.
+ */
 Result<void, Error> WebSocketClient::ReceiveRestrict(Span<CHAR> buffer)
 {
 	UINT32 size = (UINT32)buffer.Size();
@@ -212,6 +240,13 @@ Result<void, Error> WebSocketClient::ReceiveRestrict(Span<CHAR> buffer)
 	return Result<void, Error>::Ok();
 }
 
+/**
+ * @brief Applies the RFC 6455 Section 5.3 XOR masking transformation in-place
+ * @details Iterates over frame.data applying: data[i] ^= maskKey[i % 4].
+ * Processes 4 bytes per iteration in the main loop, then handles 0–3 trailing bytes.
+ * The same function both masks and unmasks since XOR is self-inverse.
+ * @see https://datatracker.ietf.org/doc/html/rfc6455#section-5.3
+ */
 VOID WebSocketClient::MaskFrame(WebSocketFrame &frame, UINT32 maskKey)
 {
 	PUINT8 mask = (PUINT8)&maskKey;
@@ -233,6 +268,19 @@ VOID WebSocketClient::MaskFrame(WebSocketFrame &frame, UINT32 maskKey)
 		d[i] ^= mask[i & 3];
 }
 
+/**
+ * @brief Reads and parses a single WebSocket frame from the transport (RFC 6455 Section 5.2)
+ * @details Parses the wire format:
+ *   Byte 0: [FIN:1][RSV1:1][RSV2:1][RSV3:1][opcode:4]
+ *   Byte 1: [MASK:1][payload_len:7]
+ *   If payload_len == 126: next 2 bytes are the 16-bit length (network byte order)
+ *   If payload_len == 127: next 8 bytes are the 64-bit length (network byte order)
+ *   If MASK == 1: next 4 bytes are the masking key
+ *   Remaining bytes: payload data (unmasked after reading if MASK was set)
+ *
+ * Rejects frames with non-zero RSV bits (Section 5.2) and payloads > 64 MB.
+ * @see https://datatracker.ietf.org/doc/html/rfc6455#section-5.2
+ */
 Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 {
 	UINT8 header[2] = {0};
@@ -250,7 +298,7 @@ Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 	frame.opcode = (WebSocketOpcode)(b1 & 0x0F);
 	frame.mask = (b2 >> 7) & 1;
 
-	// RFC 6455 Section 5.2: RSV1-3 must be 0 unless extensions are negotiated
+	// RFC 6455 Section 5.2: RSV1-3 MUST be 0 unless an extension defining their meaning is negotiated
 	if (frame.rsv1 || frame.rsv2 || frame.rsv3)
 		return Result<void, Error>::Err(Error::Ws_InvalidFrame);
 
@@ -311,6 +359,22 @@ Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 	return Result<void, Error>::Ok();
 }
 
+/**
+ * @brief Reads the next complete WebSocket message, reassembling fragmented frames
+ * @details Implements message reception per RFC 6455 Section 5.4 (Fragmentation):
+ *   - An unfragmented message is a single frame with FIN=1 and opcode != 0
+ *   - A fragmented message starts with opcode != 0 and FIN=0, followed by zero or more
+ *     continuation frames (opcode=0, FIN=0), ending with a continuation frame with FIN=1
+ *   - Payloads from all fragments are concatenated into a single WebSocketMessage
+ *
+ * Control frames (Close, Ping, Pong) may be interleaved between data fragments:
+ *   - Close (Section 5.5.1): echoes the status code and returns Err(Ws_ConnectionClosed)
+ *   - Ping (Section 5.5.2): responds with Pong carrying the same Application Data
+ *   - Pong (Section 5.5.3): silently discarded (unsolicited pongs are allowed)
+ *
+ * @see https://datatracker.ietf.org/doc/html/rfc6455#section-5.4
+ * @see https://datatracker.ietf.org/doc/html/rfc6455#section-5.5
+ */
 Result<WebSocketMessage, Error> WebSocketClient::Read()
 {
 	if (!isConnected)
@@ -383,7 +447,7 @@ Result<WebSocketMessage, Error> WebSocketClient::Read()
 		}
 		else if (frame.opcode == OPCODE_CLOSE)
 		{
-			// Send close response per RFC 6455 Section 5.5.1
+			// RFC 6455 Section 5.5.1: echo the 2-byte status code back in the Close response
 			(void)Write(Span<const CHAR>(frame.data, (frame.length >= 2) ? 2 : 0), OPCODE_CLOSE);
 			delete[] frame.data;
 			isConnected = false;
@@ -413,10 +477,20 @@ Result<WebSocketMessage, Error> WebSocketClient::Read()
 	return Result<WebSocketMessage, Error>::Ok(static_cast<WebSocketMessage &&>(message));
 }
 
-/// @brief Factory method for WebSocketClient — creates from URL with DNS resolution
-/// @param url The WebSocket URL (ws:// or wss://) to connect to
-/// @return Ok(WebSocketClient) on success, or Err with Ws_CreateFailed on failure
-
+/**
+ * @brief Factory method — creates a WebSocketClient from a ws:// or wss:// URL
+ * @param url Null-terminated WebSocket URL (ws:// or wss://)
+ * @return Ok(WebSocketClient) ready for Open(), or Err(Ws_CreateFailed) on failure
+ *
+ * @details Performs three setup steps:
+ *   1. Parses the URL into host, path, port, and secure flag via HttpClient::ParseUrl
+ *   2. Resolves the hostname to an IP address via DNS::Resolve (AAAA first, A fallback)
+ *   3. Creates the TLS transport via TlsClient::Create (with IPv4 fallback on IPv6 failure)
+ *
+ * The returned client is in the CLOSED state — call Open() to initiate the
+ * opening handshake defined in RFC 6455 Section 4.
+ * @see https://datatracker.ietf.org/doc/html/rfc6455#section-3
+ */
 Result<WebSocketClient, Error> WebSocketClient::Create(PCCHAR url)
 {
 	CHAR host[254];
