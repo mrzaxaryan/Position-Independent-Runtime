@@ -15,8 +15,9 @@ env:
   LLVM_VERSION: "21.1.0"
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,6 +64,15 @@ jobs:
             build/
             !build/**/cmake/
 
+      - name: Test -O0 elf
+        if: always()
+        uses: vmactions/solaris-vm@v1
+        with:
+          run: |
+            TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+            chmod +x "$TEST_ELF"
+            "$TEST_ELF"
+
       - name: Build -O1
         if: always()
         run: |
@@ -79,6 +89,15 @@ jobs:
           path: |
             build/
             !build/**/cmake/
+
+      - name: Test -O1 elf
+        if: always()
+        uses: vmactions/solaris-vm@v1
+        with:
+          run: |
+            TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+            chmod +x "$TEST_ELF"
+            "$TEST_ELF"
 
       - name: Build -O2
         if: always()
@@ -97,6 +116,15 @@ jobs:
             build/
             !build/**/cmake/
 
+      - name: Test -O2 elf
+        if: always()
+        uses: vmactions/solaris-vm@v1
+        with:
+          run: |
+            TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+            chmod +x "$TEST_ELF"
+            "$TEST_ELF"
+
       - name: Build -O3
         if: always()
         run: |
@@ -113,6 +141,15 @@ jobs:
           path: |
             build/
             !build/**/cmake/
+
+      - name: Test -O3 elf
+        if: always()
+        uses: vmactions/solaris-vm@v1
+        with:
+          run: |
+            TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+            chmod +x "$TEST_ELF"
+            "$TEST_ELF"
 
       - name: Build -Os
         if: always()
@@ -131,6 +168,15 @@ jobs:
             build/
             !build/**/cmake/
 
+      - name: Test -Os elf
+        if: always()
+        uses: vmactions/solaris-vm@v1
+        with:
+          run: |
+            TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+            chmod +x "$TEST_ELF"
+            "$TEST_ELF"
+
       - name: Build -Oz
         if: always()
         run: |
@@ -148,6 +194,15 @@ jobs:
             build/
             !build/**/cmake/
 
+      - name: Test -Oz elf
+        if: always()
+        uses: vmactions/solaris-vm@v1
+        with:
+          run: |
+            TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+            chmod +x "$TEST_ELF"
+            "$TEST_ELF"
+
       - name: Build -Og
         if: always()
         run: |
@@ -164,3 +219,12 @@ jobs:
           path: |
             build/
             !build/**/cmake/
+
+      - name: Test -Og elf
+        if: always()
+        uses: vmactions/solaris-vm@v1
+        with:
+          run: |
+            TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
+            chmod +x "$TEST_ELF"
+            "$TEST_ELF"
