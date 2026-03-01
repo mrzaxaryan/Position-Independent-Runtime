@@ -62,8 +62,7 @@ public:
     }
 
     // Factory — caller MUST check the result (enforced by [[nodiscard]])
-    [[nodiscard]] static Result<HttpClient, Error> Create(PCCHAR url);
-    [[nodiscard]] static Result<HttpClient, Error> Create(PCCHAR url, PCCHAR ipAddress);
+    [[nodiscard]] static Result<HttpClient, Error> Create(Span<const CHAR> url);
 
     constexpr BOOL IsValid() const { return tlsContext.IsValid(); }
     constexpr BOOL IsSecure() const { return tlsContext.IsSecure(); }
@@ -76,7 +75,7 @@ public:
     [[nodiscard]] Result<void, Error> SendGetRequest();
     [[nodiscard]] Result<void, Error> SendPostRequest(Span<const CHAR> data);
     // Static method to parse a URL into its components (host, path, port, secure) and validate the format
-    [[nodiscard]] static Result<void, Error> ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&path)[2048], UINT16 &port, BOOL &secure);
+    [[nodiscard]] static Result<void, Error> ParseUrl(Span<const CHAR> url, CHAR (&host)[254], CHAR (&path)[2048], UINT16 &port, BOOL &secure);
     // Read HTTP response headers using a rolling window (no buffer needed).
     // Returns Ok(contentLength) if headers were read and status matches expectedStatus.
     // contentLength is the Content-Length value or -1 if not present.

@@ -17,7 +17,7 @@ private:
 		LOG_INFO("Test: WebSocket Client Creation");
 
 		auto wsUrl = "ws://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create((PCCHAR)wsUrl);
+		auto createResult = WebSocketClient::Create(wsUrl);
 		if (!createResult)
 		{
 			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
@@ -34,7 +34,7 @@ private:
 		LOG_INFO("Test: Basic Secure WebSocket Connection (wss://)");
 
 		auto wssUrl = "wss://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create((PCCHAR)wssUrl);
+		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
 			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
@@ -60,7 +60,7 @@ private:
 		LOG_INFO("Test: WebSocket Text Echo");
 
 		auto wssUrl = "wss://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create((PCCHAR)wssUrl);
+		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
 			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
@@ -133,7 +133,7 @@ private:
 		LOG_INFO("Test: WebSocket Binary Echo");
 
 		auto wssUrl = "wss://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create((PCCHAR)wssUrl);
+		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
 			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
@@ -217,7 +217,7 @@ private:
 		LOG_INFO("Test: Multiple Sequential Messages");
 
 		auto wssUrl = "wss://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create((PCCHAR)wssUrl);
+		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
 			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
@@ -320,7 +320,7 @@ private:
 		LOG_INFO("Test: Large Message Handling");
 
 		auto wssUrl = "wss://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create((PCCHAR)wssUrl);
+		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
 			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
@@ -406,7 +406,7 @@ private:
 		LOG_INFO("Test: WebSocket Close Handshake");
 
 		auto wssUrl = "wss://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create((PCCHAR)wssUrl);
+		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
 			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());

@@ -25,7 +25,7 @@ Result<void, Error> WebSocketClient::Open()
 	{
 		LOG_DEBUG("Failed to open network transport for WebSocket client using IPv6 address, attempting IPv4 fallback");
 
-		auto dnsResult = DNS::Resolve(hostName, DnsRecordType::A);
+		auto dnsResult = DNS::Resolve(Span<const CHAR>(hostName, StringUtils::Length(hostName)), DnsRecordType::A);
 		if (!dnsResult)
 		{
 			LOG_ERROR("Failed to resolve IPv4 address for %s, cannot connect to WebSocket server", hostName);
@@ -479,7 +479,7 @@ Result<WebSocketMessage, Error> WebSocketClient::Read()
 
 /**
  * @brief Factory method — creates a WebSocketClient from a ws:// or wss:// URL
- * @param url Null-terminated WebSocket URL (ws:// or wss://)
+ * @param url WebSocket URL (ws:// or wss://)
  * @return Ok(WebSocketClient) ready for Open(), or Err(Ws_CreateFailed) on failure
  *
  * @details Performs three setup steps:
@@ -491,7 +491,7 @@ Result<WebSocketMessage, Error> WebSocketClient::Read()
  * opening handshake defined in RFC 6455 Section 4.
  * @see https://datatracker.ietf.org/doc/html/rfc6455#section-3
  */
-Result<WebSocketClient, Error> WebSocketClient::Create(PCCHAR url)
+Result<WebSocketClient, Error> WebSocketClient::Create(Span<const CHAR> url)
 {
 	CHAR host[254];
 	CHAR parsedPath[2048];
@@ -501,7 +501,8 @@ Result<WebSocketClient, Error> WebSocketClient::Create(PCCHAR url)
 	if (!parseResult)
 		return Result<WebSocketClient, Error>::Err(Error::Ws_CreateFailed);
 
-	auto dnsResult = DNS::Resolve(host);
+	Span<const CHAR> hostSpan(host, StringUtils::Length(host));
+	auto dnsResult = DNS::Resolve(hostSpan);
 	if (!dnsResult)
 	{
 		LOG_ERROR("Failed to resolve hostname %s", host);
@@ -514,7 +515,7 @@ Result<WebSocketClient, Error> WebSocketClient::Create(PCCHAR url)
 	// IPv6 socket creation can fail on platforms without IPv6 support (e.g. UEFI)
 	if (!tlsResult && ip.IsIPv6())
 	{
-		auto dnsResultV4 = DNS::Resolve(host, DnsRecordType::A);
+		auto dnsResultV4 = DNS::Resolve(hostSpan, DnsRecordType::A);
 		if (dnsResultV4)
 		{
 			ip = dnsResultV4.Value();

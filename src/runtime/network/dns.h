@@ -73,7 +73,7 @@ class DNS
 private:
 	/**
 	 * @brief Resolves a hostname via DNS-over-HTTPS to a single DoH server
-	 * @param host Null-terminated hostname to resolve (e.g., "example.com")
+	 * @param host Hostname to resolve (e.g., "example.com")
 	 * @param dnsServerIp IP address of the DoH server to query
 	 * @param dnsServerName TLS SNI hostname for the DoH server (e.g., "one.one.one.one")
 	 * @param dnstype Record type to query — A (IPv4) or AAAA (IPv6), defaults to AAAA
@@ -92,11 +92,11 @@ private:
 	 * @see RFC 1035 Section 4.1 — Message Format
 	 *      https://datatracker.ietf.org/doc/html/rfc1035#section-4.1
 	 */
-	[[nodiscard]] static Result<IPAddress, Error> ResolveOverHttp(PCCHAR host, const IPAddress &dnsServerIp, PCCHAR dnsServerName, DnsRecordType dnstype = DnsRecordType::AAAA);
+	[[nodiscard]] static Result<IPAddress, Error> ResolveOverHttp(Span<const CHAR> host, const IPAddress &dnsServerIp, Span<const CHAR> dnsServerName, DnsRecordType dnstype = DnsRecordType::AAAA);
 
 	/**
 	 * @brief Tries multiple IP addresses for a single DoH provider until one succeeds
-	 * @param host Null-terminated hostname to resolve
+	 * @param host Hostname to resolve
 	 * @param ips Array of DoH server IP addresses to try in order
 	 * @param serverName TLS SNI hostname for the DoH server
 	 * @param dnstype Record type to query — A (IPv4) or AAAA (IPv6)
@@ -107,7 +107,7 @@ private:
 	 * against individual server failures (e.g., Cloudflare 1.1.1.1 down, fallback to 1.0.0.1).
 	 */
 	template <UINT32 N>
-	[[nodiscard]] static Result<IPAddress, Error> ResolveWithFallback(PCCHAR host, const IPAddress (&ips)[N], PCCHAR serverName, DnsRecordType dnstype)
+	[[nodiscard]] static Result<IPAddress, Error> ResolveWithFallback(Span<const CHAR> host, const IPAddress (&ips)[N], Span<const CHAR> serverName, DnsRecordType dnstype)
 	{
 		for (UINT32 i = 0; i < N; i++)
 		{
@@ -121,7 +121,7 @@ private:
 public:
 	/**
 	 * @brief Resolves a hostname to an IP address using DoH with automatic provider and protocol fallback
-	 * @param host Null-terminated hostname to resolve (e.g., "example.com")
+	 * @param host Hostname to resolve (e.g., "example.com")
 	 * @param dnstype Record type to query — A (IPv4) or AAAA (IPv6), defaults to AAAA
 	 * @return Ok(IPAddress) on success, or Err(Dns_ResolveFailed) if all providers and fallbacks fail
 	 *
@@ -132,11 +132,11 @@ public:
 	 * If the requested type is AAAA and all attempts fail, automatically retries with A (IPv4)
 	 * through both providers. This handles environments without IPv6 connectivity.
 	 */
-	[[nodiscard]] static Result<IPAddress, Error> Resolve(PCCHAR host, DnsRecordType dnstype = DnsRecordType::AAAA);
+	[[nodiscard]] static Result<IPAddress, Error> Resolve(Span<const CHAR> host, DnsRecordType dnstype = DnsRecordType::AAAA);
 
 	/**
 	 * @brief Resolves a hostname via Cloudflare DNS-over-HTTPS (1.1.1.1 / 1.0.0.1)
-	 * @param host Null-terminated hostname to resolve
+	 * @param host Hostname to resolve
 	 * @param dnstype Record type to query — A (IPv4) or AAAA (IPv6), defaults to AAAA
 	 * @return Ok(IPAddress) on success, or Err if both Cloudflare servers fail
 	 *
@@ -145,11 +145,11 @@ public:
 	 *
 	 * @see https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/
 	 */
-	[[nodiscard]] static Result<IPAddress, Error> CloudflareResolve(PCCHAR host, DnsRecordType dnstype = DnsRecordType::AAAA);
+	[[nodiscard]] static Result<IPAddress, Error> CloudflareResolve(Span<const CHAR> host, DnsRecordType dnstype = DnsRecordType::AAAA);
 
 	/**
 	 * @brief Resolves a hostname via Google DNS-over-HTTPS (8.8.8.8 / 8.8.4.4)
-	 * @param host Null-terminated hostname to resolve
+	 * @param host Hostname to resolve
 	 * @param dnstype Record type to query — A (IPv4) or AAAA (IPv6), defaults to AAAA
 	 * @return Ok(IPAddress) on success, or Err if both Google servers fail
 	 *
@@ -158,5 +158,5 @@ public:
 	 *
 	 * @see https://developers.google.com/speed/public-dns/docs/doh
 	 */
-	[[nodiscard]] static Result<IPAddress, Error> GoogleResolve(PCCHAR host, DnsRecordType dnstype = DnsRecordType::AAAA);
+	[[nodiscard]] static Result<IPAddress, Error> GoogleResolve(Span<const CHAR> host, DnsRecordType dnstype = DnsRecordType::AAAA);
 };

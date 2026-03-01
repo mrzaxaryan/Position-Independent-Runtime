@@ -13,37 +13,11 @@ static USIZE AppendStr(CHAR *buf, USIZE pos, USIZE maxPos, const CHAR *str) noex
     return pos;
 }
 
-/// @brief Factory method for HttpClient — creates from URL with explicit IP address
-/// @param url The URL of the server to connect to
-/// @param ipAddress The IP address of the server to connect to
-/// @return Ok(HttpClient) on success, or Err with Http_CreateFailed on failure
-
-Result<HttpClient, Error> HttpClient::Create(PCCHAR url, PCCHAR ipAddress)
-{
-    CHAR host[254];
-    CHAR parsedPath[2048];
-    UINT16 port;
-    BOOL isSecure = false;
-    auto parseResult = ParseUrl(url, host, parsedPath, port, isSecure);
-    if (!parseResult)
-        return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
-
-    auto ipResult = IPAddress::FromString(ipAddress);
-    if (!ipResult)
-        return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
-    auto tlsResult = TlsClient::Create(host, ipResult.Value(), port, isSecure);
-    if (!tlsResult)
-        return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
-
-    HttpClient client(host, parsedPath, ipResult.Value(), port, static_cast<TlsClient &&>(tlsResult.Value()));
-    return Result<HttpClient, Error>::Ok(static_cast<HttpClient &&>(client));
-}
-
 /// @brief Factory method for HttpClient — creates from URL with DNS resolution
 /// @param url URL of the server to connect to (IP address will be resolved from the hostname)
 /// @return Ok(HttpClient) on success, or Err with Http_CreateFailed on failure
 
-Result<HttpClient, Error> HttpClient::Create(PCCHAR url)
+Result<HttpClient, Error> HttpClient::Create(Span<const CHAR> url)
 {
     CHAR host[254];
     CHAR parsedPath[2048];
@@ -53,7 +27,7 @@ Result<HttpClient, Error> HttpClient::Create(PCCHAR url)
     if (!parseResult)
         return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
 
-    auto dnsResult = DNS::Resolve(host);
+    auto dnsResult = DNS::Resolve(Span<const CHAR>(host, StringUtils::Length(host)));
     if (!dnsResult)
     {
         LOG_ERROR("Failed to resolve hostname %s", host);
@@ -66,7 +40,7 @@ Result<HttpClient, Error> HttpClient::Create(PCCHAR url)
     // IPv6 socket creation can fail on platforms without IPv6 support (e.g. UEFI)
     if (!tlsResult && ip.IsIPv6())
     {
-        auto dnsResultV4 = DNS::Resolve(host, DnsRecordType::A);
+        auto dnsResultV4 = DNS::Resolve(Span<const CHAR>(host, StringUtils::Length(host)), DnsRecordType::A);
         if (dnsResultV4)
         {
             ip = dnsResultV4.Value();
@@ -226,7 +200,7 @@ Result<void, Error> HttpClient::SendPostRequest(Span<const CHAR> data)
 /// @param secure Reference to store whether the connection is secure (true) or not (false)
 /// @return Ok on success, or Err with Http_ParseUrlFailed on failure
 
-Result<void, Error> HttpClient::ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&path)[2048], UINT16 &port, BOOL &secure)
+Result<void, Error> HttpClient::ParseUrl(Span<const CHAR> url, CHAR (&host)[254], CHAR (&path)[2048], UINT16 &port, BOOL &secure)
 {
     CHAR portBuffer[6];
 
@@ -235,8 +209,8 @@ Result<void, Error> HttpClient::ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&p
     port = 0;
     secure = false;
 
-    USIZE urlLen = StringUtils::Length(url);
-    Span<const CHAR> urlSpan(url, urlLen);
+    USIZE urlLen = url.Size();
+    Span<const CHAR> urlSpan = url;
 
     UINT8 schemeLength = 0;
     if (StringUtils::StartsWith<CHAR>(urlSpan, "ws://"_embed))
@@ -264,7 +238,7 @@ Result<void, Error> HttpClient::ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&p
         return Result<void, Error>::Err(Error::Http_ParseUrlFailed);
     }
 
-    PCCHAR pHostStart = url + schemeLength;
+    PCCHAR pHostStart = url.Data() + schemeLength;
     USIZE hostPartLen = urlLen - schemeLength;
 
     SSIZE pathIdx = StringUtils::IndexOfChar(Span<const CHAR>(pHostStart, hostPartLen), '/');

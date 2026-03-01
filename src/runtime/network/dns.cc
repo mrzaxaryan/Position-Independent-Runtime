@@ -354,7 +354,7 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
 /**
  * @brief Encodes a hostname into DNS wire format (length-prefixed labels)
  * @param output Span of bytes to write the encoded name into
- * @param host Null-terminated hostname (e.g., "www.example.com")
+ * @param host Hostname (e.g., "www.example.com")
  * @return Ok(bytes written) including the terminating zero label, or Err(Dns_QueryFailed) on error
  *
  * @details Converts a dot-delimited hostname into DNS wire format as defined in
@@ -376,12 +376,12 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
  * @see RFC 1035 Section 2.3.1 — Preferred name syntax
  *      https://datatracker.ietf.org/doc/html/rfc1035#section-2.3.1
  */
-[[nodiscard]] static Result<INT32, Error> FormatDnsName(Span<UINT8> output, PCCHAR host)
+[[nodiscard]] static Result<INT32, Error> FormatDnsName(Span<UINT8> output, Span<const CHAR> host)
 {
-	if (!host || output.Size() == 0)
+	if (host.Size() == 0 || output.Size() == 0)
 		return Result<INT32, Error>::Err(Error::Dns_QueryFailed);
 
-	UINT32 hostLen = (UINT32)StringUtils::Length(host);
+	UINT32 hostLen = (UINT32)host.Size();
 	// Worst case: hostLen bytes + 1 extra label-length byte + null terminator
 	if ((INT32)(hostLen + 2) > (INT32)output.Size())
 		return Result<INT32, Error>::Err(Error::Dns_QueryFailed);
@@ -424,7 +424,7 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
 
 /**
  * @brief Constructs a DNS query message in wire format for use with DoH (RFC 8484)
- * @param host Null-terminated hostname to query
+ * @param host Hostname to query
  * @param dnstype Record type — A (1) for IPv4 or AAAA (28) for IPv6
  * @param buffer Output span to write the DNS query message into
  * @return Ok(query size in bytes) on success, or Err(Dns_QueryFailed) if the buffer is too small
@@ -445,7 +445,7 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
  * @see RFC 8484 Section 4.1 — DNS Wire Format (POST method, no TCP length prefix)
  *      https://datatracker.ietf.org/doc/html/rfc8484#section-4.1
  */
-[[nodiscard]] static Result<UINT32, Error> GenerateQuery(PCCHAR host, DnsRecordType dnstype, Span<CHAR> buffer)
+[[nodiscard]] static Result<UINT32, Error> GenerateQuery(Span<const CHAR> host, DnsRecordType dnstype, Span<CHAR> buffer)
 {
 	if (buffer.Size() < sizeof(DNS_REQUEST_HEADER) + sizeof(DNS_REQUEST_QUESTION) + 2)
 		return Result<UINT32, Error>::Err(Error::Dns_QueryFailed);
@@ -487,7 +487,7 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
 
 /**
  * @brief Resolves a hostname via DNS-over-HTTPS (DoH) to a single DoH server
- * @param host Null-terminated hostname to resolve
+ * @param host Hostname to resolve
  * @param dnsServerIp IP address of the DoH server
  * @param dnsServerName TLS SNI hostname for certificate validation
  * @param dnstype Record type — A (IPv4) or AAAA (IPv6)
@@ -511,14 +511,14 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
  * @see RFC 8484 Section 4.2 — HTTP Response (Content-Type: application/dns-message)
  *      https://datatracker.ietf.org/doc/html/rfc8484#section-4.2
  */
-Result<IPAddress, Error> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &dnsServerIp, PCCHAR dnsServerName, DnsRecordType dnstype)
+Result<IPAddress, Error> DNS::ResolveOverHttp(Span<const CHAR> host, const IPAddress &dnsServerIp, Span<const CHAR> dnsServerName, DnsRecordType dnstype)
 {
 	// Short-circuit for "localhost" — return loopback without network I/O (RFC 6761 Section 6.3)
 	auto localhost = "localhost"_embed;
-	if (StringUtils::Equals<CHAR>(Span<const CHAR>(host, StringUtils::Length(host)), localhost))
+	if (StringUtils::Equals<CHAR>(host, localhost))
 		return Result<IPAddress, Error>::Ok(IPAddress::LocalHost(dnstype == DnsRecordType::AAAA));
 
-	auto tlsResult = TlsClient::Create(dnsServerName, dnsServerIp, 443);
+	auto tlsResult = TlsClient::Create(dnsServerName.Data(), dnsServerIp, 443);
 	if (!tlsResult)
 	{
 		LOG_WARNING("Failed to create TLS client for DNS server");
@@ -541,11 +541,10 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &dnsS
 	}
 	UINT32 querySize = queryResult.Value();
 
-	auto writeStr = [&tlsClient](PCCHAR s) -> Result<void, Error>
+	auto writeSpan = [&tlsClient](Span<const CHAR> s) -> Result<void, Error>
 	{
-		UINT32 len = StringUtils::Length(s);
-		auto r = tlsClient.Write(Span<const CHAR>(s, len));
-		if (!r || r.Value() != len)
+		auto r = tlsClient.Write(s);
+		if (!r || r.Value() != s.Size())
 			return Result<void, Error>::Err(Error::Dns_SendFailed);
 		return Result<void, Error>::Ok();
 	};
@@ -554,11 +553,11 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &dnsS
 	StringUtils::UIntToStr(querySize, Span<CHAR>(sizeBuf));
 
 	// Send HTTP/1.1 POST request per RFC 8484 Section 4.1
-	if (!writeStr("POST /dns-query HTTP/1.1\r\nHost: "_embed) ||
-		!writeStr(dnsServerName) ||
-		!writeStr("\r\nContent-Type: application/dns-message\r\nAccept: application/dns-message\r\nContent-Length: "_embed) ||
-		!writeStr(sizeBuf) ||
-		!writeStr("\r\n\r\n"_embed))
+	if (!writeSpan("POST /dns-query HTTP/1.1\r\nHost: "_embed) ||
+		!writeSpan(dnsServerName) ||
+		!writeSpan("\r\nContent-Type: application/dns-message\r\nAccept: application/dns-message\r\nContent-Length: "_embed) ||
+		!writeSpan(Span<const CHAR>(sizeBuf, StringUtils::Length(sizeBuf))) ||
+		!writeSpan("\r\n\r\n"_embed))
 	{
 		LOG_WARNING("Failed to send DNS query");
 		return Result<IPAddress, Error>::Err(Error::Dns_SendFailed);
@@ -610,7 +609,7 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &dnsS
 
 /**
  * @brief Resolves a hostname via Cloudflare's DNS-over-HTTPS service
- * @param host Null-terminated hostname to resolve
+ * @param host Hostname to resolve
  * @param dnstype Record type — A (IPv4) or AAAA (IPv6)
  * @return Ok(IPAddress) on success, or Err if both Cloudflare servers fail
  *
@@ -622,16 +621,16 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &dnsS
  *
  * @see https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/
  */
-Result<IPAddress, Error> DNS::CloudflareResolve(PCCHAR host, DnsRecordType dnstype)
+Result<IPAddress, Error> DNS::CloudflareResolve(Span<const CHAR> host, DnsRecordType dnstype)
 {
 	auto serverName = "one.one.one.one"_embed;
 	IPAddress ips[] = {IPAddress::FromIPv4(0x01010101), IPAddress::FromIPv4(0x01000001)};
-	return ResolveWithFallback(host, ips, (PCCHAR)serverName, dnstype);
+	return ResolveWithFallback(host, ips, serverName, dnstype);
 }
 
 /**
  * @brief Resolves a hostname via Google's DNS-over-HTTPS service
- * @param host Null-terminated hostname to resolve
+ * @param host Hostname to resolve
  * @param dnstype Record type — A (IPv4) or AAAA (IPv6)
  * @return Ok(IPAddress) on success, or Err if both Google servers fail
  *
@@ -643,16 +642,16 @@ Result<IPAddress, Error> DNS::CloudflareResolve(PCCHAR host, DnsRecordType dnsty
  *
  * @see https://developers.google.com/speed/public-dns/docs/doh
  */
-Result<IPAddress, Error> DNS::GoogleResolve(PCCHAR host, DnsRecordType dnstype)
+Result<IPAddress, Error> DNS::GoogleResolve(Span<const CHAR> host, DnsRecordType dnstype)
 {
 	auto serverName = "dns.google"_embed;
 	IPAddress ips[] = {IPAddress::FromIPv4(0x08080808), IPAddress::FromIPv4(0x08080404)};
-	return ResolveWithFallback(host, ips, (PCCHAR)serverName, dnstype);
+	return ResolveWithFallback(host, ips, serverName, dnstype);
 }
 
 /**
  * @brief Resolves a hostname to an IP address with automatic provider and protocol fallback
- * @param host Null-terminated hostname to resolve
+ * @param host Hostname to resolve
  * @param dnstype Record type — A (IPv4) or AAAA (IPv6), defaults to AAAA
  * @return Ok(IPAddress) on success, or Err if all resolution attempts fail
  *
@@ -666,9 +665,9 @@ Result<IPAddress, Error> DNS::GoogleResolve(PCCHAR host, DnsRecordType dnstype)
  * The AAAA→A fallback handles environments without IPv6 connectivity or hosts
  * that only have A records.
  */
-Result<IPAddress, Error> DNS::Resolve(PCCHAR host, DnsRecordType dnstype)
+Result<IPAddress, Error> DNS::Resolve(Span<const CHAR> host, DnsRecordType dnstype)
 {
-	LOG_DEBUG("Resolve(host: %s) called", host);
+	LOG_DEBUG("Resolve(host: %s) called", host.Data());
 
 	auto result = CloudflareResolve(host, dnstype);
 	if (!result)
@@ -676,7 +675,7 @@ Result<IPAddress, Error> DNS::Resolve(PCCHAR host, DnsRecordType dnstype)
 
 	if (!result && dnstype == DnsRecordType::AAAA)
 	{
-		LOG_DEBUG("IPv6 resolution failed, falling back to IPv4 (A) for %s", host);
+		LOG_DEBUG("IPv6 resolution failed, falling back to IPv4 (A) for %s", host.Data());
 		result = CloudflareResolve(host, DnsRecordType::A);
 		if (!result)
 			result = GoogleResolve(host, DnsRecordType::A);

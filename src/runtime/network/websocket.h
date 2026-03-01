@@ -211,7 +211,7 @@ public:
 
 	/**
 	 * @brief Factory method — creates a WebSocketClient from a ws:// or wss:// URL
-	 * @param url Null-terminated WebSocket URL (e.g., "wss://example.com/path")
+	 * @param url WebSocket URL (e.g., "wss://example.com/path")
 	 * @return Ok(WebSocketClient) ready for Open(), or Err(Ws_CreateFailed) on parse/DNS/TLS failure
 	 *
 	 * @details Performs URL parsing via HttpClient::ParseUrl, DNS resolution via DNS::Resolve,
@@ -220,7 +220,7 @@ public:
 	 *
 	 * The returned client is in the CLOSED state — call Open() to perform the handshake.
 	 */
-	[[nodiscard]] static Result<WebSocketClient, Error> Create(PCCHAR url);
+	[[nodiscard]] static Result<WebSocketClient, Error> Create(Span<const CHAR> url);
 
 	/** @brief Returns true if the underlying TLS transport is valid */
 	constexpr BOOL IsValid() const { return tlsContext.IsValid(); }
