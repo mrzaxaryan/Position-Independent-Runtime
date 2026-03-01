@@ -49,22 +49,22 @@ struct UINT_OF_SIZE;
 template <>
 struct UINT_OF_SIZE<1>
 {
-	using Type =UINT8;
+	using Type = UINT8;
 };
 template <>
 struct UINT_OF_SIZE<2>
 {
-	using Type =UINT16;
+	using Type = UINT16;
 };
 template <>
 struct UINT_OF_SIZE<4>
 {
-	using Type =UINT32;
+	using Type = UINT32;
 };
 template <>
 struct UINT_OF_SIZE<8>
 {
-	using Type =UINT64;
+	using Type = UINT64;
 };
 
 /**

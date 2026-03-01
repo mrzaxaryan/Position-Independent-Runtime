@@ -195,12 +195,11 @@ Result<INT64, Error> String::ParseInt64(Span<const CHAR> str) noexcept
 	return Result<INT64, Error>::Ok(result);
 }
 
-INT64 String::ParseInt64(PCCHAR str) noexcept
+Result<INT64, Error> String::ParseInt64(PCCHAR str) noexcept
 {
 	if (!str)
-		return 0;
-	auto r = ParseInt64(Span<const CHAR>(str, Length(str)));
-	return r.IsOk() ? r.Value() : 0;
+		return Result<INT64, Error>::Err(Error::String_ParseIntFailed);
+	return ParseInt64(Span<const CHAR>(str, Length(str)));
 }
 
 Result<DOUBLE, Error> String::StrToFloat(Span<const CHAR> str) noexcept

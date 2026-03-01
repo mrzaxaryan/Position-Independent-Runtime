@@ -59,7 +59,7 @@
 class BinaryReader
 {
 private:
-	PVOID address;  ///< Base address of the data buffer
+	PCVOID address;  ///< Base address of the data buffer
 	USIZE offset;   ///< Current read position (bytes from base)
 	USIZE maxSize;  ///< Maximum readable size in bytes
 
@@ -73,7 +73,7 @@ public:
 	 * @param offset Initial read offset in bytes
 	 * @param maxSize Maximum number of bytes that can be read
 	 */
-	constexpr BinaryReader(PVOID address, USIZE offset, USIZE maxSize)
+	constexpr BinaryReader(PCVOID address, USIZE offset, USIZE maxSize)
 		: address(address), offset(offset), maxSize(maxSize)
 	{
 	}
@@ -83,7 +83,7 @@ public:
 	 * @param address Base address of the data buffer
 	 * @param maxSize Maximum number of bytes that can be read
 	 */
-	constexpr BinaryReader(PVOID address, USIZE maxSize)
+	constexpr BinaryReader(PCVOID address, USIZE maxSize)
 		: address(address), offset(0), maxSize(maxSize)
 	{
 	}
@@ -93,7 +93,7 @@ public:
 	 * @param data Span of bytes to read from
 	 */
 	constexpr BinaryReader(Span<const UINT8> data)
-		: address((PVOID)data.Data()), offset(0), maxSize(data.Size())
+		: address(data.Data()), offset(0), maxSize(data.Size())
 	{
 	}
 
@@ -117,7 +117,7 @@ public:
 			return T{};
 
 		T value;
-		Memory::Copy(&value, (PCHAR)address + offset, sizeof(T));
+		Memory::Copy(&value, (PCCHAR)address + offset, sizeof(T));
 		offset += sizeof(T);
 		return value;
 	}
@@ -132,7 +132,7 @@ public:
 		if (offset + buffer.Size() > maxSize)
 			return 0;
 
-		Memory::Copy(buffer.Data(), (PCHAR)address + offset, buffer.Size());
+		Memory::Copy(buffer.Data(), (PCCHAR)address + offset, buffer.Size());
 		offset += buffer.Size();
 		return buffer.Size();
 	}
@@ -152,7 +152,7 @@ public:
 		if (offset + 2 > maxSize)
 			return 0;
 
-		PUCHAR p = (PUCHAR)address + offset;
+		const UCHAR *p = (const UCHAR *)address + offset;
 		UINT16 value = (UINT16)((p[0] << 8) | p[1]);
 		offset += 2;
 		return value;
@@ -173,7 +173,7 @@ public:
 		if (offset + 3 > maxSize)
 			return 0;
 
-		PUCHAR p = (PUCHAR)address + offset;
+		const UCHAR *p = (const UCHAR *)address + offset;
 		UINT32 value = ((UINT32)p[0] << 16) | ((UINT32)p[1] << 8) | (UINT32)p[2];
 		offset += 3;
 		return value;
@@ -194,7 +194,7 @@ public:
 		if (offset + 4 > maxSize)
 			return 0;
 
-		PUCHAR p = (PUCHAR)address + offset;
+		const UCHAR *p = (const UCHAR *)address + offset;
 		UINT32 value = ((UINT32)p[0] << 24) | ((UINT32)p[1] << 16) | ((UINT32)p[2] << 8) | (UINT32)p[3];
 		offset += 4;
 		return value;
@@ -249,13 +249,13 @@ public:
 	 * @brief Get a pointer to the current read position
 	 * @return Pointer to the byte at the current offset
 	 */
-	constexpr PVOID Current() const
+	constexpr PCVOID Current() const
 	{
-		return (PCHAR)address + offset;
+		return (PCCHAR)address + offset;
 	}
 
 	/** @brief Get the base address of the data buffer */
-	constexpr PVOID GetAddress() const { return address; }
+	constexpr PCVOID GetAddress() const { return address; }
 
 	/** @brief Get the current read offset in bytes */
 	constexpr USIZE GetOffset() const { return offset; }

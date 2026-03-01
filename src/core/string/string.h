@@ -383,9 +383,9 @@ public:
 	/**
 	 * @brief Parse null-terminated string to INT64
 	 * @param str Null-terminated string to parse
-	 * @return Parsed value (0 on failure)
+	 * @return Result containing parsed INT64 value, or Error::String_ParseIntFailed
 	 */
-	static INT64 ParseInt64(PCCHAR str) noexcept;
+	[[nodiscard]] static Result<INT64, Error> ParseInt64(PCCHAR str) noexcept;
 
 	/**
 	 * @brief Convert string to DOUBLE

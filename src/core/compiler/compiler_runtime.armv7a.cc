@@ -1,7 +1,8 @@
 /**
- * arm_eabi_runtime.cc - ARM EABI Compiler Runtime Support
+ * @file compiler_runtime.armv7a.cc
+ * @brief ARM EABI Compiler Runtime Support
  *
- * Provides division, modulo, and shift operations required by the ARM EABI specification.
+ * @details Provides division, modulo, and shift operations required by the ARM EABI specification.
  * These functions are called implicitly by the compiler when building with -nostdlib.
  *
  * Performance characteristics:
@@ -9,7 +10,7 @@
  *   - General division: O(n) where n is bit width (32 or 64)
  *   - Optimized for common cases (zero, power-of-2, small divisors)
  *
- * ARM EABI Specification Reference:
+ * @see ARM EABI Specification Reference:
  *   https://github.com/ARM-software/abi-aa/blob/main/rtabi32/rtabi32.rst
  *
  * Part of CORE (Core Abstraction Layer) - Core runtime support.
@@ -66,11 +67,11 @@ __attribute__((always_inline)) static inline UINT32 udiv32_internal(UINT32 numer
 
     // Binary long division: start from most significant bit of numerator
     // Skip leading zeros for better performance
-    const INT32 start_bit = 31 - __builtin_clz(numerator);
+    const INT32 startBit = 31 - __builtin_clz(numerator);
     UINT32 quotient = 0;
     UINT32 rem = 0;
 
-    for (INT32 i = start_bit; i >= 0; i--)
+    for (INT32 i = startBit; i >= 0; i--)
     {
         rem = (rem << 1) | ((numerator >> i) & 1);
         if (rem >= denominator)
@@ -131,11 +132,11 @@ static void udiv64_internal(UINT64 numerator, UINT64 denominator,
 
     // Binary long division: start from most significant bit of numerator
     // Skip leading zeros for better performance
-    const INT32 start_bit = 63 - __builtin_clzll(numerator);
+    const INT32 startBit = 63 - __builtin_clzll(numerator);
     UINT64 q = 0;
     UINT64 r = 0;
 
-    for (INT32 i = start_bit; i >= 0; i--)
+    for (INT32 i = startBit; i >= 0; i--)
     {
         r <<= 1;
         if ((numerator >> i) & 1ULL)
@@ -208,30 +209,30 @@ extern "C"
      *
      * Note: Force inline for maximum performance in critical path
      */
-    __attribute__((always_inline)) static inline INT64 idiv32_internal(INT32 numerator, INT32 denominator, bool want_remainder)
+    __attribute__((always_inline)) static inline INT64 idiv32_internal(INT32 numerator, INT32 denominator, BOOL wantRemainder)
     {
         if (__builtin_expect(denominator == 0, 0))
-            return want_remainder ? (((INT64)numerator << 32) | 0) : 0;
+            return wantRemainder ? (((INT64)numerator << 32) | 0) : 0;
 
         // Determine result signs and convert to absolute values
-        const bool neg_num = numerator < 0;
-        const bool neg_quot = neg_num != (denominator < 0);
-        const UINT32 abs_num = (UINT32)(neg_num ? -numerator : numerator);
-        const UINT32 abs_den = (UINT32)(denominator < 0 ? -denominator : denominator);
+        const BOOL negNum = numerator < 0;
+        const BOOL negQuot = negNum != (denominator < 0);
+        const UINT32 absNum = (UINT32)(negNum ? -numerator : numerator);
+        const UINT32 absDen = (UINT32)(denominator < 0 ? -denominator : denominator);
 
         // Perform unsigned division on absolute values
         UINT32 remainder = 0;
-        const UINT32 quotient = udiv32_internal(abs_num, abs_den, want_remainder ? &remainder : nullptr);
+        const UINT32 quotient = udiv32_internal(absNum, absDen, wantRemainder ? &remainder : nullptr);
 
         // Apply sign to quotient
-        const INT32 signed_quot = neg_quot ? -(INT32)quotient : (INT32)quotient;
+        const INT32 signedQuot = negQuot ? -(INT32)quotient : (INT32)quotient;
 
-        if (!want_remainder)
-            return signed_quot;
+        if (!wantRemainder)
+            return signedQuot;
 
         // Apply sign to remainder (takes sign of numerator) and pack result
-        const INT32 signed_rem = neg_num ? -(INT32)remainder : (INT32)remainder;
-        return ((INT64)signed_rem << 32) | (UINT32)signed_quot;
+        const INT32 signedRem = negNum ? -(INT32)remainder : (INT32)remainder;
+        return ((INT64)signedRem << 32) | (UINT32)signedQuot;
     }
 
     /**
@@ -289,7 +290,7 @@ extern "C"
      * the reference from inline assembly, preventing "unused function" warnings.
      */
     __attribute__((used)) static void divmod64_helper(INT64 numerator, INT64 denominator,
-                                                      INT64 *quotient, INT64 *remainder, bool is_signed)
+                                                      INT64 *quotient, INT64 *remainder, BOOL isSigned)
     {
         if (__builtin_expect(denominator == 0, 0))
         {
@@ -298,31 +299,31 @@ extern "C"
             return;
         }
 
-        UINT64 abs_num, abs_den;
-        bool neg_num = false, neg_quot = false;
+        UINT64 absNum, absDen;
+        BOOL negNum = false, negQuot = false;
 
-        if (is_signed)
+        if (isSigned)
         {
             // Determine result signs and convert to absolute values
-            neg_num = numerator < 0;
-            neg_quot = neg_num != (denominator < 0);
-            abs_num = (UINT64)(neg_num ? -numerator : numerator);
-            abs_den = (UINT64)(denominator < 0 ? -denominator : denominator);
+            negNum = numerator < 0;
+            negQuot = negNum != (denominator < 0);
+            absNum = (UINT64)(negNum ? -numerator : numerator);
+            absDen = (UINT64)(denominator < 0 ? -denominator : denominator);
         }
         else
         {
             // Unsigned: use values directly (no sign conversion needed)
-            abs_num = (UINT64)numerator;
-            abs_den = (UINT64)denominator;
+            absNum = (UINT64)numerator;
+            absDen = (UINT64)denominator;
         }
 
         // Perform unsigned division on absolute values
         UINT64 q, r;
-        udiv64_internal(abs_num, abs_den, &q, &r);
+        udiv64_internal(absNum, absDen, &q, &r);
 
         // Apply signs for signed operations (remainder takes sign of numerator)
-        *quotient = (is_signed && neg_quot) ? -(INT64)q : (INT64)q;
-        *remainder = (is_signed && neg_num) ? -(INT64)r : (INT64)r;
+        *quotient = (isSigned && negQuot) ? -(INT64)q : (INT64)q;
+        *remainder = (isSigned && negNum) ? -(INT64)r : (INT64)r;
     }
 
     // =========================================================================

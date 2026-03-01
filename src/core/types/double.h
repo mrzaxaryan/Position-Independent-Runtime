@@ -142,10 +142,10 @@ private:
 	// break position independence in PIC shellcode)
 	NOINLINE DISABLE_OPTIMIZATION BOOL Compare(const DOUBLE &other, CmpOp op) const noexcept
 	{
-		UINT64 ull_a = bits;
-		UINT64 ull_b = other.bits;
-		double a = __builtin_bit_cast(double, ull_a);
-		double b = __builtin_bit_cast(double, ull_b);
+		UINT64 ullA = bits;
+		UINT64 ullB = other.bits;
+		double a = __builtin_bit_cast(double, ullA);
+		double b = __builtin_bit_cast(double, ullB);
 		if (op == CMP_EQ)
 			return a == b;
 		if (op == CMP_LT)
@@ -174,10 +174,10 @@ private:
 	// break position independence in PIC shellcode)
 	NOINLINE DISABLE_OPTIMIZATION DOUBLE Arithmetic(const DOUBLE &other, ArithOp op) const noexcept
 	{
-		UINT64 ull_a = bits;
-		UINT64 ull_b = other.bits;
-		double a = __builtin_bit_cast(double, ull_a);
-		double b = __builtin_bit_cast(double, ull_b);
+		UINT64 ullA = bits;
+		UINT64 ullB = other.bits;
+		double a = __builtin_bit_cast(double, ullA);
+		double b = __builtin_bit_cast(double, ullB);
 		double result;
 		if (op == OP_ADD)
 			result = a + b;
@@ -187,8 +187,8 @@ private:
 			result = a * b;
 		else
 			result = a / b;
-		UINT64 result_ull = __builtin_bit_cast(UINT64, result);
-		return DOUBLE(result_ull);
+		UINT64 resultUll = __builtin_bit_cast(UINT64, result);
+		return DOUBLE(resultUll);
 	}
 
 public:
@@ -394,33 +394,33 @@ public:
 	 */
 	NOINLINE DISABLE_OPTIMIZATION operator INT64() const noexcept
 	{
-		UINT64 sign_bit = bits & GetSignMask();
-		UINT64 exp_bits = bits & GetExpMask();
-		UINT64 mantissa_bits = bits & GetMantissaMask();
+		UINT64 signBit = bits & GetSignMask();
+		UINT64 expBits = bits & GetExpMask();
+		UINT64 mantissaBits = bits & GetMantissaMask();
 
-		INT32 exponent = (INT32)(UINT32)(exp_bits >> EXP_SHIFT) - 1023;
+		INT32 exponent = (INT32)(UINT32)(expBits >> EXP_SHIFT) - 1023;
 
 		if (exponent < 0)
 			return 0LL;
 
 		if (exponent >= 63)
 		{
-			if ((sign_bit >> 32) != 0)
+			if ((signBit >> 32) != 0)
 				return 0x8000000000000000LL; // INT64_MIN
 			else
 				return 0x7FFFFFFFFFFFFFFFLL; // INT64_MAX
 		}
 
-		UINT64 mantissa_with_implicit_one = mantissa_bits | 0x0010000000000000ULL;
+		UINT64 mantissaWithImplicitOne = mantissaBits | 0x0010000000000000ULL;
 
-		UINT64 int_value;
+		UINT64 intValue;
 		if (exponent <= 52)
-			int_value = mantissa_with_implicit_one >> (52 - exponent);
+			intValue = mantissaWithImplicitOne >> (52 - exponent);
 		else
-			int_value = mantissa_with_implicit_one << (exponent - 52);
+			intValue = mantissaWithImplicitOne << (exponent - 52);
 
-		INT64 result = (INT64)int_value;
-		if ((sign_bit >> 32) != 0)
+		INT64 result = (INT64)intValue;
+		if ((signBit >> 32) != 0)
 			result = -result;
 
 		return result;
@@ -432,13 +432,13 @@ public:
 	 */
 	NOINLINE DISABLE_OPTIMIZATION operator UINT64() const noexcept
 	{
-		UINT64 sign_bit = bits & GetSignMask();
-		UINT64 exp_bits = bits & GetExpMask();
-		UINT64 mantissa_bits = bits & GetMantissaMask();
+		UINT64 signBit = bits & GetSignMask();
+		UINT64 expBits = bits & GetExpMask();
+		UINT64 mantissaBits = bits & GetMantissaMask();
 
-		INT32 exponent = (INT32)(UINT32)(exp_bits >> EXP_SHIFT) - 1023;
+		INT32 exponent = (INT32)(UINT32)(expBits >> EXP_SHIFT) - 1023;
 
-		if ((sign_bit >> 32) != 0)
+		if ((signBit >> 32) != 0)
 			return 0ULL;
 
 		if (exponent < 0)
@@ -447,15 +447,15 @@ public:
 		if (exponent >= 64)
 			return 0xFFFFFFFFFFFFFFFFULL; // UINT64_MAX
 
-		UINT64 mantissa_with_implicit_one = mantissa_bits | 0x0010000000000000ULL;
+		UINT64 mantissaWithImplicitOne = mantissaBits | 0x0010000000000000ULL;
 
-		UINT64 int_value;
+		UINT64 intValue;
 		if (exponent <= 52)
-			int_value = mantissa_with_implicit_one >> (52 - exponent);
+			intValue = mantissaWithImplicitOne >> (52 - exponent);
 		else
-			int_value = mantissa_with_implicit_one << (exponent - 52);
+			intValue = mantissaWithImplicitOne << (exponent - 52);
 
-		return int_value;
+		return intValue;
 	}
 
 	/**

@@ -33,18 +33,6 @@ IPAddress::IPAddress(const IPAddress &other) : version(other.version)
 	}
 }
 
-// Static factory method for IPv4
-IPAddress IPAddress::FromIPv4(UINT32 ipv4Address)
-{
-	return IPAddress(ipv4Address);
-}
-
-// Static factory method for IPv6
-IPAddress IPAddress::FromIPv6(const UINT8 (&ipv6Address)[16])
-{
-	return IPAddress(ipv6Address);
-}
-
 IPAddress IPAddress::LocalHost(BOOL ipv6)
 {
 	if (ipv6)
@@ -60,12 +48,6 @@ IPAddress IPAddress::LocalHost(BOOL ipv6)
 		// Using your specific hex format: 0x0100007F
 		return IPAddress::FromIPv4(0x0100007F);
 	}
-}
-
-// Static factory method for invalid IP
-IPAddress IPAddress::Invalid()
-{
-	return IPAddress();
 }
 
 // Convert string to IPAddress (supports both IPv4 and IPv6)
@@ -244,7 +226,12 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 					return Result<IPAddress, Error>::Err(Error::IpAddress_ParseFailed);
 				}
 
-				octet = String::ParseInt64(currentOctet);
+				auto octetResult = String::ParseInt64(currentOctet);
+				if (!octetResult)
+				{
+					return Result<IPAddress, Error>::Err(Error::IpAddress_ParseFailed);
+				}
+				octet = octetResult.Value();
 				if (octet > 255)
 				{
 					return Result<IPAddress, Error>::Err(Error::IpAddress_ParseFailed);

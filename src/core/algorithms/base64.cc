@@ -53,14 +53,13 @@
  */
 void Base64::Encode(Span<const CHAR> input, Span<CHAR> output)
 {
-	UINT32 inputSize = (UINT32)input.Size();
 	UINT32 i, o;
 
 	i = 0;
 	o = 0;
 
 	/* Process full 3-byte (24-bit) groups — RFC 4648 Section 4 */
-	while (i + 2u < inputSize)
+	while (i + 2u < (UINT32)input.Size())
 	{
 		UINT32 v =
 			((UINT32)(UINT8)input[i] << 16) |
@@ -76,13 +75,13 @@ void Base64::Encode(Span<const CHAR> input, Span<CHAR> output)
 	}
 
 	/* Tail padding — RFC 4648 Section 3.5 */
-	if (i < inputSize)
+	if (i < (UINT32)input.Size())
 	{
 		UINT32 v = ((UINT32)(UINT8)input[i] << 16);
 
 		output[o++] = (CHAR)BASE64_ENCODED_CHAR((v >> 18) & 63u);
 
-		if (i + 1u < inputSize)
+		if (i + 1u < (UINT32)input.Size())
 		{
 			/* 2 remaining bytes → 3 encoded chars + 1 pad */
 			v |= ((UINT32)(UINT8)input[i + 1] << 8);
@@ -123,14 +122,13 @@ void Base64::Encode(Span<const CHAR> input, Span<CHAR> output)
  */
 Result<void, Error> Base64::Decode(Span<const CHAR> input, Span<CHAR> output)
 {
-	UINT32 inputSize = (UINT32)input.Size();
 	UINT32 i, o;
 
 	i = 0;
 	o = 0;
 
 	/* Process full 4-character blocks — RFC 4648 Section 4 */
-	while (i + 3u < inputSize)
+	while (i + 3u < (UINT32)input.Size())
 	{
 		UINT32 a, b, c, d;
 		UINT32 v;

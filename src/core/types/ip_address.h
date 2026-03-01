@@ -116,14 +116,14 @@ public:
 	 * @param ipv4Address IPv4 address in network byte order
 	 * @return IPAddress instance
 	 */
-	static IPAddress FromIPv4(UINT32 ipv4Address);
+	FORCE_INLINE static IPAddress FromIPv4(UINT32 ipv4Address) { return IPAddress(ipv4Address); }
 
 	/**
 	 * @brief Create IPv6 address from 16-byte array
 	 * @param ipv6Address 16-byte IPv6 address
 	 * @return IPAddress instance
 	 */
-	static IPAddress FromIPv6(const UINT8 (&ipv6Address)[16]);
+	FORCE_INLINE static IPAddress FromIPv6(const UINT8 (&ipv6Address)[16]) { return IPAddress(ipv6Address); }
 
 	/**
 	 * @brief Parse IP address from string
@@ -143,7 +143,7 @@ public:
 	 * @brief Create an invalid IP address
 	 * @return IPAddress with Invalid version
 	 */
-	static IPAddress Invalid();
+	FORCE_INLINE static IPAddress Invalid() { return IPAddress(); }
 
 	/// @}
 	/// @name Validation

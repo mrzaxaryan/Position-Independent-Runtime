@@ -302,7 +302,10 @@ Result<void, Error> HttpClient::ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&p
             if (portBuffer[i] < '0' || portBuffer[i] > '9')
                 return Result<void, Error>::Err(Error::Http_ParseUrlFailed);
 
-        INT64 pnum = String::ParseInt64(portBuffer);
+        auto pnumResult = String::ParseInt64(portBuffer);
+        if (!pnumResult)
+            return Result<void, Error>::Err(Error::Http_ParseUrlFailed);
+        INT64 pnum = pnumResult.Value();
         if (pnum == 0 || pnum > 65535)
             return Result<void, Error>::Err(Error::Http_ParseUrlFailed);
         port = (UINT16)pnum;

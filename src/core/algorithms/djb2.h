@@ -108,90 +108,90 @@ consteval UINT64 ct_hash_str_seed(const CHAR *s)
 class Djb2
 {
 private:
-    /**
-     * @brief Compile-time seed derived from __DATE__ via FNV-1a
-     *
-     * @details Replaces the traditional DJB2 initial value of 5381 with a
-     * build-unique value. Because the seed changes on every compilation,
-     * precomputed hash tables from one build cannot be reused to identify
-     * API names in a binary from a different build, defeating static
-     * signature-based detection of hash constants.
-     *
-     * @see ct_hash_str_seed — FNV-1a seed generation function
-     */
-    static constexpr UINT64 Seed = ct_hash_str_seed(__DATE__);
+	/**
+	 * @brief Compile-time seed derived from __DATE__ via FNV-1a
+	 *
+	 * @details Replaces the traditional DJB2 initial value of 5381 with a
+	 * build-unique value. Because the seed changes on every compilation,
+	 * precomputed hash tables from one build cannot be reused to identify
+	 * API names in a binary from a different build, defeating static
+	 * signature-based detection of hash constants.
+	 *
+	 * @see ct_hash_str_seed — FNV-1a seed generation function
+	 */
+	static constexpr UINT64 Seed = ct_hash_str_seed(__DATE__);
 
 public:
-    /**
-     * @brief Computes a case-insensitive DJB2 hash at runtime
-     *
-     * @details Iterates over a null-terminated string, applying the DJB2 recurrence
-     * for each character:
-     * 1. Convert the character to lowercase via String::ToLowerCase()
-     * 2. Compute hash = (hash << 5) + hash + c, equivalent to hash * 33 + c
-     * 3. Repeat until the null terminator is reached
-     *
-     * The function is marked constexpr so the compiler may evaluate it at compile
-     * time when the input is a constant expression, but unlike HashCompileTime()
-     * it is not required to — it can also be called with runtime string pointers
-     * (e.g., PE export names discovered during module enumeration).
-     *
-     * @tparam TChar Character type (CHAR or WCHAR)
-     * @param value Null-terminated string to hash
-     * @return 64-bit DJB2 hash of the lowercased input
-     *
-     * @see DJB2 Hash Function — Daniel J. Bernstein, comp.lang.c (1991)
-     *      https://cr.yp.to/cdb.html
-     */
-    template <typename TChar>
-    static constexpr UINT64 Hash(const TChar *value)
-    {
-        UINT64 h = Seed;
-        for (UINT64 i = 0; value[i] != (TChar)0; ++i)
-        {
-            TChar c = String::ToLowerCase(value[i]);
-            h = ((h << 5) + h) + (UINT64)c;
-        }
-        return h;
-    }
+	/**
+	 * @brief Computes a case-insensitive DJB2 hash at runtime
+	 *
+	 * @details Iterates over a null-terminated string, applying the DJB2 recurrence
+	 * for each character:
+	 * 1. Convert the character to lowercase via String::ToLowerCase()
+	 * 2. Compute hash = (hash << 5) + hash + c, equivalent to hash * 33 + c
+	 * 3. Repeat until the null terminator is reached
+	 *
+	 * The function is marked constexpr so the compiler may evaluate it at compile
+	 * time when the input is a constant expression, but unlike HashCompileTime()
+	 * it is not required to — it can also be called with runtime string pointers
+	 * (e.g., PE export names discovered during module enumeration).
+	 *
+	 * @tparam TChar Character type (CHAR or WCHAR)
+	 * @param value Null-terminated string to hash
+	 * @return 64-bit DJB2 hash of the lowercased input
+	 *
+	 * @see DJB2 Hash Function — Daniel J. Bernstein, comp.lang.c (1991)
+	 *      https://cr.yp.to/cdb.html
+	 */
+	template <typename TChar>
+	static constexpr UINT64 Hash(const TChar *value)
+	{
+		UINT64 h = Seed;
+		for (UINT64 i = 0; value[i] != (TChar)0; ++i)
+		{
+			TChar c = String::ToLowerCase(value[i]);
+			h = ((h << 5) + h) + (UINT64)c;
+		}
+		return h;
+	}
 
-    /**
-     * @brief Computes a case-insensitive DJB2 hash at compile time
-     *
-     * @details Applies the same DJB2 recurrence as Hash(), but is declared
-     * consteval to guarantee the computation is fully resolved during
-     * compilation. The result is emitted as an immediate constant in the
-     * instruction stream, never appearing in a data section.
-     *
-     * The template parameter N is deduced from the string literal array
-     * size, restricting the input to compile-time-known string literals
-     * or constexpr arrays. Typical use is to precompute the expected hash
-     * of a target API name, which is then compared against runtime hashes
-     * computed by Hash() during PE export table enumeration:
-     *
-     * @code
-     * constexpr UINT64 ZW_CREATE_FILE = Djb2::HashCompileTime("ZwCreateFile");
-     * @endcode
-     *
-     * @tparam TChar Character type (CHAR or WCHAR)
-     * @tparam N Array size (deduced from the string literal)
-     * @param value String literal or constexpr array to hash
-     * @return 64-bit DJB2 hash computed entirely at compile time
-     *
-     * @see DJB2 Hash Function — Daniel J. Bernstein, comp.lang.c (1991)
-     *      https://cr.yp.to/cdb.html
-     */
-    template <typename TChar, UINT64 N>
-    static consteval UINT64 HashCompileTime(const TChar (&value)[N])
-    {
-        UINT64 h = Seed;
-        for (UINT64 i = 0; value[i] != (TChar)0; ++i)
-        {
-            TChar c = String::ToLowerCase(value[i]);
-            h = ((h << 5) + h) + (UINT64)c;
-        }
-        return h;
-    }
+	/**
+	 * @brief Computes a case-insensitive DJB2 hash at compile time
+	 *
+	 * @details Applies the same DJB2 recurrence as Hash(), but is declared
+	 * consteval to guarantee the computation is fully resolved during
+	 * compilation. The result is emitted as an immediate constant in the
+	 * instruction stream, never appearing in a data section.
+	 *
+	 * The template parameter N is deduced from the string literal array
+	 * size, restricting the input to compile-time-known string literals
+	 * or constexpr arrays. Typical use is to precompute the expected hash
+	 * of a target API name, which is then compared against runtime hashes
+	 * computed by Hash() during PE export table enumeration:
+	 *
+	 * @code
+	 * constexpr UINT64 ZW_CREATE_FILE = Djb2::HashCompileTime("ZwCreateFile");
+	 * @endcode
+	 *
+	 * @tparam TChar Character type (CHAR or WCHAR)
+	 * @tparam N Array size (deduced from the string literal)
+	 * @param value String literal or constexpr array to hash
+	 * @return 64-bit DJB2 hash computed entirely at compile time
+	 *
+	 * @see DJB2 Hash Function — Daniel J. Bernstein, comp.lang.c (1991)
+	 *      https://cr.yp.to/cdb.html
+	 */
+	template <typename TChar, UINT64 N>
+	static consteval UINT64 HashCompileTime(const TChar (&value)[N])
+	{
+		UINT64 h = Seed;
+		for (UINT64 i = 0; value[i] != (TChar)0; ++i)
+		{
+			TChar c = String::ToLowerCase(value[i]);
+			h = ((h << 5) + h) + (UINT64)c;
+		}
+		return h;
+	}
 };
 
 /** @} */ // end of djb2 group

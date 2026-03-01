@@ -319,7 +319,7 @@ Write(Span(ptr, len));            // explicit pointer + size
 Write(writable.Subspan(4, 16));   // slicing
 ```
 
-Use `Span<T>` for writable buffers and `Span<const T>` for read-only views. `Span<T>` implicitly converts to `Span<const T>`.
+Use `Span<T>` for writable buffers and `Span<const T>` for read-only views. `Span<T>` implicitly converts to `Span<const T>`. Core primitives that Span itself is built on (e.g., `Memory::Copy`, `Memory::Set`, `Memory::Compare`) are exempt — they take raw `(PVOID, PCVOID, USIZE)` by design.
 
 **Do not cache `Span::Size()` into a local variable** — `Size()` is `constexpr FORCE_INLINE` and compiles to a direct member access, so there is no cost to calling it repeatedly. Caching it into a local adds a redundant variable with no benefit:
 
@@ -352,8 +352,8 @@ IPAddress &ip = result.Value();  // borrow; Result still owns it
 // Good — pass Value() directly to functions:
 auto createResult = Socket::Create(result.Value(), 443);
 
-// Good — local variable for method calls:
-auto x = result.Value();
+// Good — local reference for method calls:
+auto& x = result.Value();
 x.Method();
 
 // Bad — unnecessary copy just to pass as argument:

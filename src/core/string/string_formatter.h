@@ -627,7 +627,6 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 	INT32 i = 0, j = 0;   // Index for the format string and output string
 	INT32 precision = 6;  // Default precision for floating-point numbers
 	INT32 currentArg = 0; // Current argument index
-	INT32 argCount = (INT32)args.Size();
 
 	// Validate the output string
 	if (format == nullptr)
@@ -702,7 +701,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 			if (format[i] == (TChar)'X')
 			{
 				i++; // Skip 'X'
-				if (currentArg >= argCount)
+				if (currentArg >= (INT32)args.Size())
 					continue;
 				UINT32 num = args[currentArg++].u32;
 				// Format the number as uppercase hexadecimal.
@@ -721,7 +720,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 			// NOTE: making specifiers lowercase to handle both cases (e.g., %d and %D), that's why we use ToLowerCase function
 			else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'f')
 			{
-				if (currentArg >= argCount)
+				if (currentArg >= (INT32)args.Size())
 				{
 					i++;
 					continue;
@@ -733,7 +732,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 			}
 			else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'d')
 			{ // Handle %d (signed integer)
-				if (currentArg >= argCount)
+				if (currentArg >= (INT32)args.Size())
 				{
 					i++;
 					continue;
@@ -745,7 +744,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 			}
 			else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'u')
 			{ // Handle %u (unsigned integer)
-				if (currentArg >= argCount)
+				if (currentArg >= (INT32)args.Size())
 				{
 					i++;
 					continue;
@@ -757,7 +756,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 			}
 			else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'x')
 			{ // Handle %x (hexadecimal, lowercase)
-				if (currentArg >= argCount)
+				if (currentArg >= (INT32)args.Size())
 				{
 					i++;
 					continue;
@@ -770,14 +769,14 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 			else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'p')
 			{        // Handle %p (pointer)
 				i++; // Skip 'p'
-				if (currentArg >= argCount)
+				if (currentArg >= (INT32)args.Size())
 					continue;
 				j += StringFormatter::FormatPointerAsHex(writer, context, args[currentArg++].ptr);
 				continue;
 			}
 			else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'c')
 			{ // Handle %c (character)
-				if (currentArg >= argCount)
+				if (currentArg >= (INT32)args.Size())
 				{
 					i++;
 					continue;
@@ -812,7 +811,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 			else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'s')
 			{        // Handle %s (narrow string)
 				i++; // Skip 's'
-				if (currentArg >= argCount)
+				if (currentArg >= (INT32)args.Size())
 					continue;
 				const CHAR *str = args[currentArg++].cstr;
 				if (str == nullptr)
@@ -864,7 +863,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 				if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'s')
 				{
 					i += 2; // Skip over "ws"
-					if (currentArg >= argCount)
+					if (currentArg >= (INT32)args.Size())
 						continue;
 					j += FormatWideString<TChar>(writer, context, args[currentArg++].wstr, fieldWidth, leftAlign);
 					continue;
@@ -883,7 +882,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 				if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'s')
 				{
 					i += 2; // Skip over "ls"
-					if (currentArg >= argCount)
+					if (currentArg >= (INT32)args.Size())
 						continue;
 					j += FormatWideString<TChar>(writer, context, args[currentArg++].wstr, fieldWidth, leftAlign);
 					continue;
@@ -892,7 +891,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 				else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'d')
 				{           // long int (%ld)
 					i += 2; // Skip over "ld"
-					if (currentArg >= argCount)
+					if (currentArg >= (INT32)args.Size())
 						continue;
 					// Type-aware read: on LLP64 (Windows) long is 32-bit, stored as INT32
 					const Argument &arg = args[currentArg++];
@@ -903,7 +902,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 				else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'u')
 				{           // unsigned long int (%lu)
 					i += 2; // Skip over "lu"
-					if (currentArg >= argCount)
+					if (currentArg >= (INT32)args.Size())
 						continue;
 					// Type-aware read: on LLP64 (Windows) unsigned long is 32-bit, stored as UINT32
 					const Argument &arg = args[currentArg++];
@@ -914,7 +913,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 				else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'l' && String::ToLowerCase<TChar>(format[i + 2]) == (TChar)'d')
 				{           // long long int (%lld)
 					i += 3; // Skip over "lld"
-					if (currentArg >= argCount)
+					if (currentArg >= (INT32)args.Size())
 						continue;
 					INT64 num = args[currentArg++].i64;
 					j += StringFormatter::FormatInt64(writer, context, num, fieldWidth, zeroPad, leftAlign);
@@ -923,7 +922,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 				else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'l' && String::ToLowerCase<TChar>(format[i + 2]) == (TChar)'u')
 				{
 					i += 3; // Skip over "llu"
-					if (currentArg >= argCount)
+					if (currentArg >= (INT32)args.Size())
 						continue;
 					UINT64 num = args[currentArg++].u64;
 					j += StringFormatter::FormatUInt64(writer, context, num, fieldWidth, zeroPad, leftAlign);
@@ -932,7 +931,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 				else if (format[i + 1] == (TChar)'X')
 				{           // long uppercase hex (%lX)
 					i += 2; // Skip over "lX"
-					if (currentArg >= argCount)
+					if (currentArg >= (INT32)args.Size())
 						continue;
 					const Argument &arg = args[currentArg++];
 					UINT64 num = (arg.type == Argument::Type::UINT64) ? arg.u64 : (UINT64)arg.u32;
@@ -942,7 +941,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 				else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'x')
 				{           // long hex (%lx)
 					i += 2; // Skip over "lx"
-					if (currentArg >= argCount)
+					if (currentArg >= (INT32)args.Size())
 						continue;
 					const Argument &arg = args[currentArg++];
 					UINT64 num = (arg.type == Argument::Type::UINT64) ? arg.u64 : (UINT64)arg.u32;
@@ -952,7 +951,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 				else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'l' && format[i + 2] == (TChar)'X')
 				{           // long long uppercase hex (%llX)
 					i += 3; // Skip over "llX"
-					if (currentArg >= argCount)
+					if (currentArg >= (INT32)args.Size())
 						continue;
 					UINT64 num = args[currentArg++].u64;
 					j += StringFormatter::FormatUInt64AsHex(writer, context, num, fieldWidth, 1, zeroPad, addPrefix);
@@ -961,7 +960,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 				else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'l' && String::ToLowerCase<TChar>(format[i + 2]) == (TChar)'x')
 				{           // long long hex (%llx)
 					i += 3; // Skip over "llx"
-					if (currentArg >= argCount)
+					if (currentArg >= (INT32)args.Size())
 						continue;
 					UINT64 num = args[currentArg++].u64;
 					j += StringFormatter::FormatUInt64AsHex(writer, context, num, fieldWidth, 0, zeroPad, addPrefix);
@@ -981,7 +980,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 				if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'u')
 				{           // unsigned size_t (%zu)
 					i += 2; // Skip over "zu"
-					if (currentArg >= argCount)
+					if (currentArg >= (INT32)args.Size())
 						continue;
 					// Type-aware read: on 32-bit platforms USIZE is stored as UINT32
 					const Argument &arg = args[currentArg++];
@@ -992,7 +991,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 				else if (String::ToLowerCase<TChar>(format[i + 1]) == (TChar)'d')
 				{           // signed size_t (%zd)
 					i += 2; // Skip over "zd"
-					if (currentArg >= argCount)
+					if (currentArg >= (INT32)args.Size())
 						continue;
 					// Type-aware read: on 32-bit platforms SSIZE is stored as INT32
 					const Argument &arg = args[currentArg++];
@@ -1011,7 +1010,7 @@ INT32 StringFormatter::FormatWithArgs(BOOL (*writer)(PVOID, TChar), PVOID contex
 			else if (String::ToLowerCase<TChar>(format[i]) == (TChar)'e')
 			{        // Handle %e (error value)
 				i++; // Skip 'e'
-				if (currentArg >= argCount)
+				if (currentArg >= (INT32)args.Size())
 					continue;
 				j += FormatError<TChar>(writer, context, args[currentArg++].errValue);
 				continue;

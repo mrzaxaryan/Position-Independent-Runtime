@@ -1,7 +1,8 @@
 /**
- * x86_runtime.cc - x86 Compiler Runtime Support
+ * @file compiler_runtime.i386.cc
+ * @brief x86 Compiler Runtime Support
  *
- * Provides 64-bit division, modulo, and shift operations for 32-bit x86 architecture.
+ * @details Provides 64-bit division, modulo, and shift operations for 32-bit x86 architecture.
  * These functions are called implicitly by the compiler when building with -nostdlib.
  *
  * Performance characteristics:
@@ -69,11 +70,11 @@ static inline void udiv64_internal(UINT64 numerator, UINT64 denominator,
 
     // Binary long division: start from most significant bit of numerator
     // Skip leading zeros for better performance
-    const INT32 start_bit = 63 - __builtin_clzll(numerator);
+    const INT32 startBit = 63 - __builtin_clzll(numerator);
     UINT64 q = 0;
     UINT64 r = 0;
 
-    for (INT32 i = start_bit; i >= 0; i--)
+    for (INT32 i = startBit; i >= 0; i--)
     {
         r <<= 1;
         if ((numerator >> i) & 1ULL)
@@ -164,18 +165,18 @@ extern "C"
         }
 
         // Determine result signs and convert to absolute values
-        const bool neg_num = numerator < 0;
-        const bool neg_quot = neg_num != (denominator < 0);
-        const UINT64 abs_num = (UINT64)(neg_num ? -numerator : numerator);
-        const UINT64 abs_den = (UINT64)(denominator < 0 ? -denominator : denominator);
+        const BOOL negNum = numerator < 0;
+        const BOOL negQuot = negNum != (denominator < 0);
+        const UINT64 absNum = (UINT64)(negNum ? -numerator : numerator);
+        const UINT64 absDen = (UINT64)(denominator < 0 ? -denominator : denominator);
 
         // Perform unsigned division on absolute values
         UINT64 q, r;
-        udiv64_internal(abs_num, abs_den, &q, &r);
+        udiv64_internal(absNum, absDen, &q, &r);
 
         // Apply signs (remainder takes sign of numerator)
-        *quotient = neg_quot ? -(INT64)q : (INT64)q;
-        *remainder = neg_num ? -(INT64)r : (INT64)r;
+        *quotient = negQuot ? -(INT64)q : (INT64)q;
+        *remainder = negNum ? -(INT64)r : (INT64)r;
     }
 
     // =========================================================================
