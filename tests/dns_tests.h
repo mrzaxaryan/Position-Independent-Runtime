@@ -1,7 +1,7 @@
 #pragma once
 
-#include "runtime.h"
-#include "embedded_string.h"
+#include "runtime/runtime.h"
+#include "core/types/embedded/embedded_string.h"
 #include "tests.h"
 
 class DnsTests

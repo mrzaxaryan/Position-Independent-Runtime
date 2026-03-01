@@ -1,12 +1,12 @@
-#include "tls.h"
-#include "binary_reader.h"
-#include "memory.h"
-#include "random.h"
-#include "socket.h"
-#include "string.h"
-#include "platform.h"
-#include "logger.h"
-#include "math.h"
+#include "runtime/network/tls/tls.h"
+#include "core/io/binary_reader.h"
+#include "core/memory/memory.h"
+#include "platform/system/random.h"
+#include "platform/network/socket.h"
+#include "core/string/string.h"
+#include "platform/platform.h"
+#include "platform/io/logger.h"
+#include "core/math/math.h"
 
 #define TLS_CHACHA20_POLY1305_SHA256 0x1303
 

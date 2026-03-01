@@ -1,8 +1,8 @@
-#include "socket.h"
-#include "syscall.h"
-#include "system.h"
-#include "memory.h"
-#include "ip_address.h"
+#include "platform/network/socket.h"
+#include "platform/os/macos/syscall.h"
+#include "platform/os/macos/system.h"
+#include "core/memory/memory.h"
+#include "core/types/ip_address.h"
 
 // BSD socket addresses have a sa_len field that must be set
 // macOS AF_INET6 = 30 (different from Linux 10 and Windows 23)

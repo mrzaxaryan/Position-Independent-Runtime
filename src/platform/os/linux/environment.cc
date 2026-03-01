@@ -5,10 +5,10 @@
  * Position-independent, no .rdata dependencies.
  */
 
-#include "environment.h"
-#include "syscall.h"
-#include "system.h"
-#include "memory.h"
+#include "platform/system/environment.h"
+#include "platform/os/linux/syscall.h"
+#include "platform/os/linux/system.h"
+#include "core/memory/memory.h"
 
 // Helper to compare strings (case-sensitive for Linux)
 static BOOL CompareEnvName(const CHAR *envEntry, const CHAR *name) noexcept

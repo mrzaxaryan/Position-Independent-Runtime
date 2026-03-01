@@ -1,7 +1,7 @@
 #pragma once
 
-#include "platform.h"
-#include "tls.h"
+#include "platform/platform.h"
+#include "runtime/network/tls/tls.h"
 
 // HttpClient class for making HTTP requests, supporting both secure (HTTPS) and non-secure (HTTP) connections
 class HttpClient

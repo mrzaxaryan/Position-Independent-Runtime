@@ -1,7 +1,7 @@
 #pragma once
 
-#include "platform.h"
-#include "peb.h"
+#include "platform/platform.h"
+#include "platform/os/windows/peb.h"
 
 #define SYSCALL_SSN_INVALID ((INT32) - 1)
 

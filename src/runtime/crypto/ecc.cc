@@ -1,9 +1,9 @@
 
-#include "ecc.h"
-#include "random.h"
-#include "date_time.h"
-#include "platform.h"
-#include "memory.h"
+#include "runtime/crypto/ecc.h"
+#include "platform/system/random.h"
+#include "platform/system/date_time.h"
+#include "platform/platform.h"
+#include "core/memory/memory.h"
 
 /* Curve selection options. */
 #define secp256r1 32

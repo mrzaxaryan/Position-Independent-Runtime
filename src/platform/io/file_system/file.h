@@ -1,10 +1,10 @@
 #pragma once
 
-#include "primitives.h"
-#include "span.h"
-#include "error.h"
-#include "result.h"
-#include "offset_origin.h"
+#include "core/types/primitives.h"
+#include "core/types/span.h"
+#include "core/types/error.h"
+#include "core/types/result.h"
+#include "platform/io/file_system/offset_origin.h"
 
 // Class to represent a file
 class File

@@ -40,7 +40,7 @@
 
 #pragma once
 
-#include "core.h"
+#include "core/core.h"
 
 /** @brief Maximum 64-bit words needed for largest supported curve (P-384 = 6 words) */
 #define MAX_NUM_ECC_DIGITS (384 / 64)

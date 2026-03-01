@@ -1,9 +1,9 @@
-#include "socket.h"
-#include "syscall.h"
-#include "system.h"
-#include "memory.h"
-#include "ip_address.h"
-#include "logger.h"
+#include "platform/network/socket.h"
+#include "platform/os/linux/syscall.h"
+#include "platform/os/linux/system.h"
+#include "core/memory/memory.h"
+#include "core/types/ip_address.h"
+#include "platform/io/logger.h"
 
 // Socket syscall helpers - i386 uses multiplexed socketcall(), others use direct syscalls
 static SSIZE linux_socket(INT32 domain, INT32 type, INT32 protocol)

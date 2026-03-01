@@ -1,6 +1,6 @@
-#include "random.h"
-#include "date_time.h"
-#include "platform.h"
+#include "platform/system/random.h"
+#include "platform/system/date_time.h"
+#include "platform/platform.h"
 
 static inline UINT64 GetHardwareTimestamp()
 {

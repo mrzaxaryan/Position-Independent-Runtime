@@ -31,7 +31,7 @@
  * @ingroup network
  */
 
-#include "platform.h"
+#include "platform/platform.h"
 
 /**
  * @brief DNS resource record types used in queries

@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "logger.h"
-#include "span.h"
+#include "platform/io/logger.h"
+#include "core/types/span.h"
 
 /**
  * RunTest - Run a test function with pass/fail logging

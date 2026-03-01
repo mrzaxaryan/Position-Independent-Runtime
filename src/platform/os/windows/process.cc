@@ -7,11 +7,11 @@
  * This implementation uses CreateProcessW with redirected standard handles.
  */
 
-#include "process.h"
-#include "ntdll.h"
-#include "kernel32.h"
-#include "memory.h"
-#include "peb.h"
+#include "platform/system/process.h"
+#include "platform/os/windows/ntdll.h"
+#include "platform/os/windows/kernel32.h"
+#include "core/memory/memory.h"
+#include "platform/os/windows/peb.h"
 
 // Process creation structures for Windows
 struct PS_ATTRIBUTE

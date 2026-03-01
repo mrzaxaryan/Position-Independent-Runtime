@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "efi_types.h"
-#include "efi_runtime_services.h" // For EFI_TIME
+#include "platform/os/uefi/efi_types.h"
+#include "platform/os/uefi/efi_runtime_services.h"
 
 // =============================================================================
 // Forward Declarations

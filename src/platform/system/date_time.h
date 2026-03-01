@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core.h" // primitives, TCHAR
+#include "core/core.h"
 
 // Fixed-size string template
 template <TCHAR TChar, USIZE N>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "primitives.h"
+#include "core/types/primitives.h"
 
 #pragma pack(push, 1) // Ensure no padding in structures
 // Directory entry structure

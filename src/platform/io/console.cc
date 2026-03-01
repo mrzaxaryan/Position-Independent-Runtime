@@ -1,8 +1,8 @@
-#include "console.h"
+#include "platform/io/console.h"
 
 #if !defined(PLATFORM_UEFI)
 
-#include "encoding/utf16.h"
+#include "core/encoding/utf16.h"
 
 UINT32 Console::Write(Span<const WCHAR> text)
 {

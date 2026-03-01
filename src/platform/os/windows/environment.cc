@@ -5,9 +5,9 @@
  * Position-independent, no .rdata dependencies.
  */
 
-#include "environment.h"
-#include "peb.h"
-#include "memory.h"
+#include "platform/system/environment.h"
+#include "platform/os/windows/peb.h"
+#include "core/memory/memory.h"
 
 // Extended RTL_USER_PROCESS_PARAMETERS with Environment field
 // The standard definition in peb.h doesn't include all fields

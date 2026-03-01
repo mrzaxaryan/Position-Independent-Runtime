@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "core.h"
+#include "core/core.h"
 
 /** @brief ChaCha20 block size in bytes (512 bits) */
 #define CHACHA_BLOCKLEN 64

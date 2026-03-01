@@ -1,7 +1,7 @@
 #pragma once
 
-#include "runtime.h"
-#include "sha2.h"
+#include "runtime/runtime.h"
+#include "runtime/crypto/sha2.h"
 #include "tests.h"
 
 class ShaTests

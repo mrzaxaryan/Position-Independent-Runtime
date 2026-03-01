@@ -1,7 +1,7 @@
 #pragma once
 
-#include "runtime.h"
-#include "random.h"
+#include "runtime/runtime.h"
+#include "platform/system/random.h"
 #include "tests.h"
 
 class RandomTests

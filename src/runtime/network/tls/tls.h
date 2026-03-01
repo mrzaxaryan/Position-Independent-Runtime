@@ -1,8 +1,8 @@
 #pragma once
 
-#include "platform.h"
-#include "tls_buffer.h"
-#include "tls_cipher.h"
+#include "platform/platform.h"
+#include "runtime/network/tls/tls_buffer.h"
+#include "runtime/network/tls/tls_cipher.h"
 
 // TLS state
 struct TlsState

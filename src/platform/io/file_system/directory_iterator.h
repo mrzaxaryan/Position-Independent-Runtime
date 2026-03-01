@@ -1,10 +1,10 @@
 #pragma once
 
-#include "primitives.h"
-#include "span.h"
-#include "error.h"
-#include "result.h"
-#include "directory_entry.h"
+#include "core/types/primitives.h"
+#include "core/types/span.h"
+#include "core/types/error.h"
+#include "core/types/result.h"
+#include "platform/io/file_system/directory_entry.h"
 
 // Class to iterate over directory entries
 class DirectoryIterator

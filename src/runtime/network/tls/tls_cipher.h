@@ -1,10 +1,10 @@
 #pragma once
 
-#include "core.h"
-#include "tls_buffer.h"
-#include "ecc.h"
-#include "tls_hash.h"
-#include "chacha20_encoder.h"
+#include "core/core.h"
+#include "runtime/network/tls/tls_buffer.h"
+#include "runtime/crypto/ecc.h"
+#include "runtime/network/tls/tls_hash.h"
+#include "runtime/crypto/chacha20_encoder.h"
 
 #define ECC_COUNT 2
 #define RAND_SIZE 32

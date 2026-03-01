@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "efi_types.h"
+#include "platform/os/uefi/efi_types.h"
 
 // =============================================================================
 // Simple Text Output Protocol

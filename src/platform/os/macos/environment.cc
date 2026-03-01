@@ -6,7 +6,7 @@
  * Future enhancement: use sysctl(kern.procargs2) to read process environment.
  */
 
-#include "environment.h"
+#include "platform/system/environment.h"
 
 USIZE Environment::GetVariable(const CHAR* name, Span<CHAR> buffer) noexcept
 {

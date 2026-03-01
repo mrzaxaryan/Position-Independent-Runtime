@@ -29,11 +29,11 @@
 
 #pragma once
 
-#include "primitives.h"
-#include "windows_types.h"
-#include "djb2.h"
-#include "error.h"
-#include "result.h"
+#include "core/types/primitives.h"
+#include "platform/os/windows/windows_types.h"
+#include "core/algorithms/djb2.h"
+#include "core/types/error.h"
+#include "core/types/result.h"
 
 #define EVENT_ALL_ACCESS ((0x000F0000L) | (0x00100000L) | 0x3)
 #define NT_SUCCESS(Status) ((NTSTATUS)(Status) >= 0)

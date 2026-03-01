@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "primitives.h"
+#include "core/types/primitives.h"
 
 // =============================================================================
 // C LIBRARY MEMORY FUNCTIONS

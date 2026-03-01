@@ -1,6 +1,6 @@
 #pragma once
 
-#include "primitives.h"
+#include "core/types/primitives.h"
 
 // macOS BSD syscall wrappers
 // x86_64: syscall instruction, same register convention as Linux, but carry flag

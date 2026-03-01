@@ -1,10 +1,10 @@
-#include "tls_cipher.h"
-#include "logger.h"
-#include "memory.h"
-#include "random.h"
-#include "sha2.h"
-#include "tls_hkdf.h"
-#include "math.h"
+#include "runtime/network/tls/tls_cipher.h"
+#include "platform/io/logger.h"
+#include "core/memory/memory.h"
+#include "platform/system/random.h"
+#include "runtime/crypto/sha2.h"
+#include "runtime/network/tls/tls_hkdf.h"
+#include "core/math/math.h"
 
 /// @brief Reset the TlsCipher object to its initial state
 /// @return void

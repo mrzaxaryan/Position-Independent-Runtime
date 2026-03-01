@@ -1,7 +1,7 @@
-#include "date_time.h"
-#include "primitives.h"
-#include "string.h"
-#include "console.h"
+#include "platform/system/date_time.h"
+#include "core/types/primitives.h"
+#include "core/string/string.h"
+#include "platform/io/console.h"
 
 #define MM_SHARED_USER_DATA_VA 0x7FFE0000 // address of the shared user data in the process address space
 

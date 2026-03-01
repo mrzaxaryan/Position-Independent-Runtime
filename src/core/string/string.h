@@ -26,12 +26,12 @@
 
 #pragma once
 
-#include "primitives.h"
-#include "span.h"
-#include "double.h"
-#include "embedded_string.h"
-#include "error.h"
-#include "result.h"
+#include "core/types/primitives.h"
+#include "core/types/span.h"
+#include "core/types/double.h"
+#include "core/types/embedded/embedded_string.h"
+#include "core/types/error.h"
+#include "core/types/result.h"
 
 /**
  * @class String

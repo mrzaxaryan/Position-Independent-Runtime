@@ -1,7 +1,7 @@
 #include "platform/os/windows/system.h"
-#include "platform.h"
-#include "peb.h"
-#include "djb2.h"
+#include "platform/platform.h"
+#include "platform/os/windows/peb.h"
+#include "core/algorithms/djb2.h"
 
 SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 {

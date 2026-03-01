@@ -4,8 +4,8 @@
  * Provides ExitProcess implementation for UEFI.
  */
 
-#include "platform.h"
-#include "efi_context.h"
+#include "platform/platform.h"
+#include "platform/os/uefi/efi_context.h"
 
 /**
  * ExitProcess - Shutdown the system

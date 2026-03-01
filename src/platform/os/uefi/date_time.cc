@@ -5,8 +5,8 @@
  * EFI Runtime Services and hardware timestamps.
  */
 
-#include "date_time.h"
-#include "efi_context.h"
+#include "platform/system/date_time.h"
+#include "platform/os/uefi/efi_context.h"
 
 /**
  * DateTime::Now - Get current date and time from UEFI

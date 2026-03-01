@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "platform.h" // Includes core.h (with string_formatter.h), console.h, date_time.h
+#include "platform/platform.h"
 #if defined(ENABLE_LOGGING)
 // Convenience macros that automatically embed wide strings
 #define LOG_INFO(format, ...) Logger::Info<WCHAR>(L##format##_embed, ##__VA_ARGS__)

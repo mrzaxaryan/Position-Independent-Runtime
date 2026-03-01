@@ -1,6 +1,6 @@
-#include "allocator.h"
-#include "syscall.h"
-#include "system.h"
+#include "platform/memory/allocator.h"
+#include "platform/os/macos/syscall.h"
+#include "platform/os/macos/system.h"
 
 // Memory allocator using mmap/munmap (BSD syscalls)
 // Same pattern as Linux but macOS uses MAP_ANONYMOUS = 0x1000

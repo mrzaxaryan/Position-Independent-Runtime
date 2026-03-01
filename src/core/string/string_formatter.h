@@ -40,10 +40,10 @@
 
 #pragma once
 
-#include "primitives.h"
-#include "span.h"
-#include "string.h"
-#include "error.h"
+#include "core/types/primitives.h"
+#include "core/types/span.h"
+#include "core/string/string.h"
+#include "core/types/error.h"
 
 /**
  * @class StringFormatter

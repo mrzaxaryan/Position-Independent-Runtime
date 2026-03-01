@@ -30,10 +30,10 @@
 
 #pragma once
 
-#include "primitives.h"
-#include "span.h"
-#include "error.h"
-#include "result.h"
+#include "core/types/primitives.h"
+#include "core/types/span.h"
+#include "core/types/error.h"
+#include "core/types/result.h"
 
 /**
  * @enum IPVersion

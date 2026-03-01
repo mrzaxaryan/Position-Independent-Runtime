@@ -1,7 +1,7 @@
-#include "pe.h"
-#include "peb.h"
-#include "ntdll.h"
-#include "djb2.h"
+#include "platform/os/windows/pe.h"
+#include "platform/os/windows/peb.h"
+#include "platform/os/windows/ntdll.h"
+#include "core/algorithms/djb2.h"
 
 // Get the address of an exported function from a module base address
 PVOID GetExportAddress(PVOID hModule, USIZE functionNameHash)

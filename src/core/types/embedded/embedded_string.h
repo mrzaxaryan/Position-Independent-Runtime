@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "primitives.h"
+#include "core/types/primitives.h"
 
 // =============================================================================
 // CHARACTER TYPE CONSTRAINT

@@ -45,8 +45,8 @@
 
 /// @name Base Types
 /// @{
-#include "types/primitives.h"
-#include "types/span.h"
+#include "core/types/primitives.h"
+#include "core/types/span.h"
 /// @}
 /// @{
 #include "core/types/error.h"
@@ -54,42 +54,42 @@
 
 /// @name Result Type
 /// @{
-#include "types/result.h"
+#include "core/types/result.h"
 /// @}
 
 /// @name Numeric Types
 /// @{
-#include "types/double.h"
+#include "core/types/double.h"
 /// @}
 
 /// @name Embedded Types
 /// @brief Types for position-independent storage (strings, arrays, function pointers)
 /// @{
-#include "types/embedded/embedded_string.h"
-#include "types/embedded/embedded_function_pointer.h"
-#include "types/embedded/embedded_array.h"
+#include "core/types/embedded/embedded_string.h"
+#include "core/types/embedded/embedded_function_pointer.h"
+#include "core/types/embedded/embedded_array.h"
 /// @}
 
 /// @name String Utilities
 /// @{
-#include "string/string.h"
-#include "string/string_formatter.h"
+#include "core/string/string.h"
+#include "core/string/string_formatter.h"
 /// @}
 
 /// @name Algorithms
 /// @{
-#include "algorithms/djb2.h"
-#include "algorithms/base64.h"
+#include "core/algorithms/djb2.h"
+#include "core/algorithms/base64.h"
 /// @}
 
 /// @name Encoding Utilities
 /// @{
-#include "encoding/utf16.h"
+#include "core/encoding/utf16.h"
 /// @}
 
 /// @name Network Types
 /// @{
-#include "types/ip_address.h"
+#include "core/types/ip_address.h"
 /// @}
 
 /// @name Binary I/O

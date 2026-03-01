@@ -1,9 +1,9 @@
 #pragma once
 
-#include "primitives.h"
-#include "error.h"
-#include "result.h"
-#include "file.h"
+#include "core/types/primitives.h"
+#include "core/types/error.h"
+#include "core/types/result.h"
+#include "platform/io/file_system/file.h"
 
 // Class to handle file system operations
 class FileSystem

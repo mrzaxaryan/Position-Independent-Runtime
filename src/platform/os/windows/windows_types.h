@@ -1,6 +1,6 @@
 #pragma once
 
-#include "primitives.h"
+#include "core/types/primitives.h"
 
 #define FILE_OPEN 0x00000001
 #define FILE_NON_DIRECTORY_FILE 0x00000040

@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include "efi_types.h"
-#include "efi_protocols.h"
-#include "efi_boot_services.h"
-#include "efi_runtime_services.h"
+#include "platform/os/uefi/efi_types.h"
+#include "platform/os/uefi/efi_protocols.h"
+#include "platform/os/uefi/efi_boot_services.h"
+#include "platform/os/uefi/efi_runtime_services.h"
 
 // =============================================================================
 // Configuration Table

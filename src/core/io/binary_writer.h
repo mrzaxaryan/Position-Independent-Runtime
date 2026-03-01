@@ -27,9 +27,9 @@
 
 #pragma once
 
-#include "primitives.h"
-#include "span.h"
-#include "memory.h"
+#include "core/types/primitives.h"
+#include "core/types/span.h"
+#include "core/memory/memory.h"
 
 /**
  * @class BinaryWriter

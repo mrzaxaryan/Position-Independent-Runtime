@@ -2,15 +2,15 @@
  * socket.cc - UEFI Socket Implementation using TCP4/TCP6 Protocol
  */
 
-#include "socket.h"
-#include "memory.h"
-#include "efi_context.h"
-#include "efi_tcp4_protocol.h"
-#include "efi_tcp6_protocol.h"
-#include "efi_service_binding.h"
-#include "efi_simple_network_protocol.h"
-#include "efi_ip4_config2_protocol.h"
-#include "logger.h"
+#include "platform/network/socket.h"
+#include "core/memory/memory.h"
+#include "platform/os/uefi/efi_context.h"
+#include "platform/os/uefi/efi_tcp4_protocol.h"
+#include "platform/os/uefi/efi_tcp6_protocol.h"
+#include "platform/os/uefi/efi_service_binding.h"
+#include "platform/os/uefi/efi_simple_network_protocol.h"
+#include "platform/os/uefi/efi_ip4_config2_protocol.h"
+#include "platform/io/logger.h"
 
 // =============================================================================
 // Internal Socket Context

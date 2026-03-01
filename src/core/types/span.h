@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "primitives.h"
+#include "core/types/primitives.h"
 
 /// Sentinel value indicating a runtime-determined extent
 constexpr USIZE DYNAMIC_EXTENT = static_cast<USIZE>(-1);

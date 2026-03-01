@@ -5,8 +5,8 @@
  * EFI Boot Services AllocatePool/FreePool.
  */
 
-#include "allocator.h"
-#include "efi_context.h"
+#include "platform/memory/allocator.h"
+#include "platform/os/uefi/efi_context.h"
 
 /**
  * Allocator::AllocateMemory - Allocate memory from UEFI pool

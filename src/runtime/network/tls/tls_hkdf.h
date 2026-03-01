@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core.h"
+#include "core/core.h"
 
 // HKDF (HMAC-based Key Derivation Function) for TLS 1.3
 class TlsHKDF

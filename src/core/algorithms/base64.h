@@ -33,10 +33,10 @@
 
 #pragma once
 
-#include "primitives.h"
-#include "error.h"
-#include "result.h"
-#include "span.h"
+#include "core/types/primitives.h"
+#include "core/types/error.h"
+#include "core/types/result.h"
+#include "core/types/span.h"
 
 /**
  * @class Base64

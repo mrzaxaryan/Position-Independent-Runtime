@@ -1,6 +1,6 @@
 #pragma once
 
-#include "primitives.h"
+#include "core/types/primitives.h"
 
 // =============================================================================
 // Linux Syscall Numbers (Architecture-specific)

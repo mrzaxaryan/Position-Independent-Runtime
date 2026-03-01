@@ -1,6 +1,6 @@
-#include "allocator.h"
-#include "ntdll.h"
-#include "windows_types.h"
+#include "platform/memory/allocator.h"
+#include "platform/os/windows/ntdll.h"
+#include "platform/os/windows/windows_types.h"
 
 PVOID Allocator::AllocateMemory(USIZE len)
 {

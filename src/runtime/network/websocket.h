@@ -1,6 +1,6 @@
 #pragma once
-#include "platform.h"
-#include "tls.h"
+#include "platform/platform.h"
+#include "runtime/network/tls/tls.h"
 
 /**
  * @brief WebSocket frame opcodes

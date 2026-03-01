@@ -1,7 +1,7 @@
-#include "ntdll.h"
-#include "platform.h"
-#include "platform_result.h"
-#include "peb.h"
+#include "platform/os/windows/ntdll.h"
+#include "platform/platform.h"
+#include "platform/os/windows/platform_result.h"
+#include "platform/os/windows/peb.h"
 #include "platform/os/windows/system.h"
 
 #define ResolveNtdllExportAddress(functionName) ResolveExportAddressFromPebModule(Djb2::HashCompileTime(L"ntdll.dll"), Djb2::HashCompileTime(functionName))

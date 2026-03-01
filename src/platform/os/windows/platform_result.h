@@ -1,7 +1,7 @@
 #pragma once
 
-#include "result.h"
-#include "error.h"
+#include "core/types/result.h"
+#include "core/types/error.h"
 
 namespace result
 {

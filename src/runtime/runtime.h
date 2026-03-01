@@ -7,26 +7,26 @@
 
 #pragma once
 
-#include "platform.h"
+#include "platform/platform.h"
 
 // =============================================================================
 // Cryptography
 // =============================================================================
-#include "crypto/sha2.h"
-#include "crypto/ecc.h"
-#include "crypto/chacha20.h"
-#include "crypto/chacha20_encoder.h"
+#include "runtime/crypto/sha2.h"
+#include "runtime/crypto/ecc.h"
+#include "runtime/crypto/chacha20.h"
+#include "runtime/crypto/chacha20_encoder.h"
 
 // =============================================================================
 // Networking
 // =============================================================================
-#include "network/dns.h"
-#include "network/http.h"
-#include "network/websocket.h"
+#include "runtime/network/dns.h"
+#include "runtime/network/http.h"
+#include "runtime/network/websocket.h"
 
 // TLS
-#include "network/tls/tls.h"
-#include "network/tls/tls_buffer.h"
-#include "network/tls/tls_cipher.h"
-#include "network/tls/tls_hash.h"
-#include "network/tls/tls_hkdf.h"
+#include "runtime/network/tls/tls.h"
+#include "runtime/network/tls/tls_buffer.h"
+#include "runtime/network/tls/tls_cipher.h"
+#include "runtime/network/tls/tls_hash.h"
+#include "runtime/network/tls/tls_hkdf.h"

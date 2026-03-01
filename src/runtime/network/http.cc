@@ -1,7 +1,7 @@
-#include "http.h"
-#include "dns.h"
-#include "logger.h"
-#include "embedded_string.h"
+#include "runtime/network/http.h"
+#include "runtime/network/dns.h"
+#include "platform/io/logger.h"
+#include "core/types/embedded/embedded_string.h"
 
 // Helper to append an embedded string to a buffer
 static USIZE AppendStr(CHAR *buf, USIZE pos, USIZE maxPos, const CHAR *str) noexcept

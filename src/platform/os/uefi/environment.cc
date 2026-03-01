@@ -5,7 +5,7 @@
  * This stub always returns empty/not found.
  */
 
-#include "environment.h"
+#include "platform/system/environment.h"
 
 USIZE Environment::GetVariable(const CHAR* name, Span<CHAR> buffer) noexcept
 {

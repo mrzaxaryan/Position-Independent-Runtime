@@ -1,9 +1,9 @@
-#include "primitives.h"
-#include "windows_types.h"
-#include "socket.h"
-#include "logger.h"
-#include "ntdll.h"
-#include "memory.h"
+#include "core/types/primitives.h"
+#include "platform/os/windows/windows_types.h"
+#include "platform/network/socket.h"
+#include "platform/io/logger.h"
+#include "platform/os/windows/ntdll.h"
+#include "core/memory/memory.h"
 
 #define IOCTL_AFD_BIND       ((0x00000012) << 12 | (0  << 2) | 3)
 #define IOCTL_AFD_CONNECT    ((0x00000012) << 12 | (1  << 2) | 3)

@@ -20,8 +20,8 @@
 
 #pragma once
 
-#include "primitives.h"
-#include "compiler.h"
+#include "core/types/primitives.h"
+#include "core/compiler/compiler.h"
 
 /**
  * @class BitOps

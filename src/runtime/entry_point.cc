@@ -4,7 +4,7 @@
  * Unified entry_point() entry point for all platforms.
  */
 
-#include "runtime.h"
+#include "runtime/runtime.h"
 
 INT32 start();
 

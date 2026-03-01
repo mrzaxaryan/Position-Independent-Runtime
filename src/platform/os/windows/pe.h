@@ -1,6 +1,6 @@
 #pragma once
 
-#include "primitives.h"
+#include "core/types/primitives.h"
 
 #define IMAGE_NUMBEROF_DIRECTORY_ENTRIES 16
 

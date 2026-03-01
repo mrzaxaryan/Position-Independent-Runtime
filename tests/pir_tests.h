@@ -40,7 +40,7 @@
 
 #pragma once
 
-#include "core.h"
+#include "core/core.h"
 
 #include "djb2_tests.h"
 #include "memory_tests.h"

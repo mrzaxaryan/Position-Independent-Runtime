@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "core.h" // Includes EMBEDDED_FUNCTION_POINTER, string.h, string_formatter.h
+#include "core/core.h"
 
 // EMBEDDED_FUNCTION_POINTER is now available for position-independent function pointers
 

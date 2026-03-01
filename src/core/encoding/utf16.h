@@ -29,8 +29,8 @@
 
 #pragma once
 
-#include "primitives.h"
-#include "span.h"
+#include "core/types/primitives.h"
+#include "core/types/span.h"
 
 /**
  * @class UTF16

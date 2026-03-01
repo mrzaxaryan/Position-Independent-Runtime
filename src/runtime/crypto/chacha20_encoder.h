@@ -27,9 +27,9 @@
 
 #pragma once
 
-#include "core.h"
-#include "chacha20.h"
-#include "tls_buffer.h"
+#include "core/core.h"
+#include "runtime/crypto/chacha20.h"
+#include "runtime/network/tls/tls_buffer.h"
 
 typedef struct ChaCha20Encoder ChaCha20Encoder;
 

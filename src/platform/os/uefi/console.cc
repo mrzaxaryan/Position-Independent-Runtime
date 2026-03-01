@@ -5,8 +5,8 @@
  * UEFI natively uses CHAR16 (UTF-16), which maps to our WCHAR.
  */
 
-#include "console.h"
-#include "efi_context.h"
+#include "platform/io/console.h"
+#include "platform/os/uefi/efi_context.h"
 
 UINT32 Console::Write(Span<const WCHAR> text)
 {

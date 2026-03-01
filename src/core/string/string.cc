@@ -1,5 +1,5 @@
-#include "string.h"
-#include "double.h"
+#include "core/string/string.h"
+#include "core/types/double.h"
 
 // ============================================================================
 // NUMBER CONVERSION IMPLEMENTATIONS

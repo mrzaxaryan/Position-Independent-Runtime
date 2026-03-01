@@ -33,8 +33,8 @@
  */
 
 #pragma once
-#include "primitives.h"
-#include "string.h"
+#include "core/types/primitives.h"
+#include "core/string/string.h"
 
 /**
  * @brief Compile-time FNV-1a hash for DJB2 seed generation

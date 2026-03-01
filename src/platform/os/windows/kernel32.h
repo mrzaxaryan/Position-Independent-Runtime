@@ -1,10 +1,10 @@
 #pragma once
 
-#include "primitives.h"
-#include "windows_types.h"
-#include "djb2.h"
-#include "error.h"
-#include "result.h"
+#include "core/types/primitives.h"
+#include "platform/os/windows/windows_types.h"
+#include "core/algorithms/djb2.h"
+#include "core/types/error.h"
+#include "core/types/result.h"
 
 #define HANDLE_FLAG_INHERIT 0x00000001
 #define STARTF_USESTDHANDLES 0x00000100

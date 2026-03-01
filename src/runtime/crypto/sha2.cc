@@ -29,10 +29,10 @@
  * SUCH DAMAGE.
  */
 
-#include "sha2.h"
-#include "memory.h"
-#include "primitives.h"
-#include "platform.h"
+#include "runtime/crypto/sha2.h"
+#include "core/memory/memory.h"
+#include "core/types/primitives.h"
+#include "platform/platform.h"
 
 #define CH(x, y, z)  ((x & y) ^ (~x & z))
 #define MAJ(x, y, z) ((x & y) ^ (x & z) ^ (y & z))

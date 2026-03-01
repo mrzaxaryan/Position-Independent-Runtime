@@ -4,9 +4,9 @@
  * Provides fork/exec functionality via direct syscalls.
  */
 
-#include "process.h"
-#include "syscall.h"
-#include "system.h"
+#include "platform/system/process.h"
+#include "platform/os/linux/syscall.h"
+#include "platform/os/linux/system.h"
 
 // Fork syscall wrapper
 Result<SSIZE, Error> Process::Fork() noexcept

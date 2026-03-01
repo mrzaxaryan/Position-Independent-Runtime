@@ -1,10 +1,10 @@
-#include "file_system.h"
-#include "memory.h"
+#include "platform/io/file_system/file_system.h"
+#include "core/memory/memory.h"
 #include "syscall.h"
 #include "system.h"
-#include "string.h"
-#include "utf16.h"
-#include "path.h"
+#include "core/string/string.h"
+#include "core/encoding/utf16.h"
+#include "platform/io/path.h"
 
 // =============================================================================
 // Helper: Normalize a wide path to a null-terminated UTF-8 string.

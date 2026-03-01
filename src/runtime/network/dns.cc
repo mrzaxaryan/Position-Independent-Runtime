@@ -1,11 +1,11 @@
-#include "dns.h"
-#include "binary_reader.h"
-#include "http.h"
-#include "logger.h"
-#include "memory.h"
-#include "string.h"
-#include "tls.h"
-#include "embedded_string.h"
+#include "runtime/network/dns.h"
+#include "core/io/binary_reader.h"
+#include "runtime/network/http.h"
+#include "platform/io/logger.h"
+#include "core/memory/memory.h"
+#include "core/string/string.h"
+#include "runtime/network/tls/tls.h"
+#include "core/types/embedded/embedded_string.h"
 
 /**
  * @brief DNS message header — fixed 12-byte structure at the start of every DNS message

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core.h"
-#include "tls_buffer.h"
+#include "core/core.h"
+#include "runtime/network/tls/tls_buffer.h"
 
 // Hash structure
 class TlsHash

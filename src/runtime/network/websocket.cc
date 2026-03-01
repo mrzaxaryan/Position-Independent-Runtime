@@ -1,11 +1,11 @@
-#include "websocket.h"
-#include "memory.h"
-#include "string.h"
-#include "random.h"
-#include "logger.h"
-#include "dns.h"
-#include "http.h"
-#include "embedded_string.h"
+#include "runtime/network/websocket.h"
+#include "core/memory/memory.h"
+#include "core/string/string.h"
+#include "platform/system/random.h"
+#include "platform/io/logger.h"
+#include "runtime/network/dns.h"
+#include "runtime/network/http.h"
+#include "core/types/embedded/embedded_string.h"
 
 /**
  * @brief Performs the WebSocket opening handshake (RFC 6455 Section 4)

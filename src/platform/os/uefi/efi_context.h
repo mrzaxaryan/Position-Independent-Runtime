@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "efi_system_table.h"
+#include "platform/os/uefi/efi_system_table.h"
 
 // =============================================================================
 // EFI Context Structure

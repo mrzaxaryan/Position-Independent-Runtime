@@ -1,8 +1,8 @@
-#include "chacha20.h"
-#include "memory.h"
-#include "platform.h"
-#include "logger.h"
-#include "bitops.h"
+#include "runtime/crypto/chacha20.h"
+#include "core/memory/memory.h"
+#include "platform/platform.h"
+#include "platform/io/logger.h"
+#include "core/math/bitops.h"
 
 // ChaCha20 implementation by D. J. Bernstein
 // Public domain.

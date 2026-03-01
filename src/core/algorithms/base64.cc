@@ -1,4 +1,4 @@
-#include "base64.h"
+#include "core/algorithms/base64.h"
 
 /// Padding character '=' used to align encoded output to a 4-character boundary
 /// @see RFC 4648 Section 3.5 — Canonical Encoding

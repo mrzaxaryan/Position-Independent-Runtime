@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "core.h"
+#include "core/core.h"
 
 // Process constants
 constexpr INT32 PROCESS_INVALID_PID = -1;

@@ -1,6 +1,6 @@
-#include "console.h"
-#include "syscall.h"
-#include "system.h"
+#include "platform/io/console.h"
+#include "platform/os/linux/syscall.h"
+#include "platform/os/linux/system.h"
 
 UINT32 Console::Write(Span<const CHAR> text)
 {

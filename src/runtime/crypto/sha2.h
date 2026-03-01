@@ -39,8 +39,8 @@
 
 #pragma once
 
-#include "core.h"
-#include "bitops.h"
+#include "core/core.h"
+#include "core/math/bitops.h"
 
 /** @brief SHA-256 digest size in bytes (256 bits) */
 #define SHA256_DIGEST_SIZE (256 / 8)

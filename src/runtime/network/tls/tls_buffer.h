@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core.h"
+#include "core/core.h"
 
 // Unified TLS buffer for both reading and writing
 class TlsBuffer

@@ -1,6 +1,6 @@
-#include "allocator.h"
-#include "syscall.h"
-#include "system.h"
+#include "platform/memory/allocator.h"
+#include "platform/os/linux/syscall.h"
+#include "platform/os/linux/system.h"
 
 // Memory allocator using mmap/munmap
 // Each allocation is a separate mmap, which is simple but not efficient for

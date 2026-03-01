@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "primitives.h"
+#include "core/types/primitives.h"
 
 // =============================================================================
 // UEFI Calling Convention

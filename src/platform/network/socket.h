@@ -40,8 +40,8 @@
 
 #pragma once
 
-#include "core.h"
-#include "error.h"
+#include "core/core.h"
+#include "core/types/error.h"
 
 /** @name Address Families
  * @brief Protocol family constants for socket creation.

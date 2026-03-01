@@ -1,9 +1,9 @@
-#include "tls_hkdf.h"
-#include "binary_writer.h"
-#include "logger.h"
-#include "memory.h"
-#include "sha2.h"
-#include "tls_buffer.h"
+#include "runtime/network/tls/tls_hkdf.h"
+#include "core/io/binary_writer.h"
+#include "platform/io/logger.h"
+#include "core/memory/memory.h"
+#include "runtime/crypto/sha2.h"
+#include "runtime/network/tls/tls_buffer.h"
 
 /// @brief Create an HKDF label according to TLS 1.3 specification
 /// @param label The label to use in the HKDF label

@@ -1,7 +1,7 @@
-#include "console.h"
-#include "platform.h"
-#include "ntdll.h"
-#include "peb.h"
+#include "platform/io/console.h"
+#include "platform/platform.h"
+#include "platform/os/windows/ntdll.h"
+#include "platform/os/windows/peb.h"
 
 UINT32 Console::Write(Span<const CHAR> text)
 {

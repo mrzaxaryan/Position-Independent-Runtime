@@ -1,6 +1,6 @@
-#include "platform.h"
-#include "syscall.h"
-#include "system.h"
+#include "platform/platform.h"
+#include "platform/os/linux/syscall.h"
+#include "platform/os/linux/system.h"
 
 // Linux process exit implementation
 NO_RETURN VOID ExitProcess(USIZE code)

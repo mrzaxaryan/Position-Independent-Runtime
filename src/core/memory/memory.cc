@@ -1,5 +1,5 @@
-#include "memory.h"
-#include "compiler.h"
+#include "core/memory/memory.h"
+#include "core/compiler/compiler.h"
 
 extern "C" COMPILER_RUNTIME PVOID memset(PVOID dest, INT32 ch, USIZE count)
 {

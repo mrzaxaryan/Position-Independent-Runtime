@@ -1,9 +1,9 @@
-#include "file_system.h"
-#include "logger.h"
-#include "primitives.h"
-#include "string.h"
-#include "windows_types.h"
-#include "ntdll.h"
+#include "platform/io/file_system/file_system.h"
+#include "platform/io/logger.h"
+#include "core/types/primitives.h"
+#include "core/string/string.h"
+#include "platform/os/windows/windows_types.h"
+#include "platform/os/windows/ntdll.h"
 
 // --- Internal Constructor (trivial — never fails) ---
 File::File(PVOID handle, USIZE size) : fileHandle(handle), fileSize(size) {}

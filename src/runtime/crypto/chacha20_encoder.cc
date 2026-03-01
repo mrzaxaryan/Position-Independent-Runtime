@@ -1,6 +1,6 @@
-#include "chacha20_encoder.h"
-#include "logger.h"
-#include "memory.h"
+#include "runtime/crypto/chacha20_encoder.h"
+#include "platform/io/logger.h"
+#include "core/memory/memory.h"
 
 // ChaCha20Encoder Class Implementation
 
