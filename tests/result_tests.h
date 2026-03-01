@@ -13,38 +13,38 @@ public:
 		LOG_INFO("Running Result Tests...");
 
 		// Construction
-		RunTest(allPassed, EMBED_FUNC(TestOkConstruction), L"Ok construction"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestErrConstruction), L"Err construction"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestVoidOk), L"Void Ok construction"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestVoidErr), L"Void Err construction"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestOkConstruction), "Ok construction"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestErrConstruction), "Err construction"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestVoidOk), "Void Ok construction"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestVoidErr), "Void Err construction"_embed);
 
 		// Queries
-		RunTest(allPassed, EMBED_FUNC(TestIsOkIsErr), L"IsOk/IsErr mutual exclusivity"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestOperatorBool), L"operator BOOL"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestIsOkIsErr), "IsOk/IsErr mutual exclusivity"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestOperatorBool), "operator BOOL"_embed);
 
 		// Value access
-		RunTest(allPassed, EMBED_FUNC(TestValueAccess), L"Value access"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestValueMutation), L"Value mutation"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestValueAccess), "Value access"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestValueMutation), "Value mutation"_embed);
 
 		// Move semantics
-		RunTest(allPassed, EMBED_FUNC(TestMoveConstruction), L"Move construction"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestMoveAssignment), L"Move assignment"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestVoidMoveConstruction), L"Void move construction"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestMoveConstruction), "Move construction"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestMoveAssignment), "Move assignment"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestVoidMoveConstruction), "Void move construction"_embed);
 
 		// Non-trivial destructor
-		RunTest(allPassed, EMBED_FUNC(TestNonTrivialDestructor), L"Non-trivial destructor"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestMoveTransfersOwnership), L"Move transfers ownership"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestNonTrivialDestructor), "Non-trivial destructor"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestMoveTransfersOwnership), "Move transfers ownership"_embed);
 
 		// Single-error storage (E = Error)
-		RunTest(allPassed, EMBED_FUNC(TestSingleError), L"Single error storage"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestTwoArgErrCompat), L"Two-arg Err compatibility"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestPropagationErrCompat), L"Propagation Err compatibility"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestSingleError), "Single error storage"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestTwoArgErrCompat), "Two-arg Err compatibility"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestPropagationErrCompat), "Propagation Err compatibility"_embed);
 
 		// Non-chainable E
-		RunTest(allPassed, EMBED_FUNC(TestNonChainableErr), L"Non-chainable E type"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestNonChainableErr), "Non-chainable E type"_embed);
 
 		// Type aliases
-		RunTest(allPassed, EMBED_FUNC(TestTypeAliases), L"Type aliases"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestTypeAliases), "Type aliases"_embed);
 
 		if (allPassed)
 			LOG_INFO("All Result tests passed!");

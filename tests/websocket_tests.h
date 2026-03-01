@@ -442,13 +442,13 @@ public:
 		LOG_INFO("Running WebSocket Tests...");
 		LOG_INFO("  Test Server: echo.websocket.org (wss://)");
 
-		RunTest(allPassed, EMBED_FUNC(TestWebSocketCreation), L"WebSocket client creation"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestSecureWebSocketConnection), L"Secure WebSocket connection"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWebSocketTextEcho), L"WebSocket text echo"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWebSocketBinaryEcho), L"WebSocket binary echo"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestMultipleMessages), L"Multiple messages"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestLargeMessage), L"Large message"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWebSocketClose), L"WebSocket close"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestWebSocketCreation), "WebSocket client creation"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestSecureWebSocketConnection), "Secure WebSocket connection"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestWebSocketTextEcho), "WebSocket text echo"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestWebSocketBinaryEcho), "WebSocket binary echo"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestMultipleMessages), "Multiple messages"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestLargeMessage), "Large message"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestWebSocketClose), "WebSocket close"_embed);
 
 		if (allPassed)
 			LOG_INFO("All WebSocket tests passed!");

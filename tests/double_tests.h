@@ -12,15 +12,15 @@ public:
 
 		LOG_INFO("Running DOUBLE Tests...");
 
-		RunTest(allPassed, EMBED_FUNC(TestConstruction), L"Construction"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestIntToDouble), L"Integer to DOUBLE"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestDoubleToInt), L"DOUBLE to integer"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestArithmetic), L"Arithmetic"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestComparisons), L"Comparisons"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestNegation), L"Negation"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestEmbeddedLiterals), L"Embedded literals"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestEdgeCases), L"Edge cases"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestArrayFormatting), L"Array formatting"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestConstruction), "Construction"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestIntToDouble), "Integer to DOUBLE"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestDoubleToInt), "DOUBLE to integer"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestArithmetic), "Arithmetic"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestComparisons), "Comparisons"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestNegation), "Negation"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestEmbeddedLiterals), "Embedded literals"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestEdgeCases), "Edge cases"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestArrayFormatting), "Array formatting"_embed);
 
 		if (allPassed)
 			LOG_INFO("All DOUBLE tests passed!");

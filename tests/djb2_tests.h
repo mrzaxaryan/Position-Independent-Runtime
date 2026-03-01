@@ -12,12 +12,12 @@ public:
 
 		LOG_INFO("Running DJB2 Hash Tests...");
 
-		RunTest(allPassed, EMBED_FUNC(TestBasicHashConsistency), L"Basic hash consistency"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestCaseInsensitivity), L"Case insensitivity"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestEmptyString), L"Empty string"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestCompileTimeMatchesRuntime), L"Compile-time matches runtime"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestDifferentStringsProduceDifferentHashes), L"Different strings produce different hashes"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWideCharSupport), L"Wide character support"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestBasicHashConsistency), "Basic hash consistency"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestCaseInsensitivity), "Case insensitivity"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestEmptyString), "Empty string"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestCompileTimeMatchesRuntime), "Compile-time matches runtime"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestDifferentStringsProduceDifferentHashes), "Different strings produce different hashes"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestWideCharSupport), "Wide character support"_embed);
 
 		if (allPassed)
 			LOG_INFO("All DJB2 tests passed!");

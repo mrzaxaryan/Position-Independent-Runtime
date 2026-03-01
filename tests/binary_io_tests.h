@@ -11,18 +11,18 @@ public:
 		BOOL allPassed = true;
 		LOG_INFO("Running BinaryIO Tests...");
 
-		RunTest(allPassed, EMBED_FUNC(TestReaderReadU8), L"BinaryReader Read<UINT8>"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestReaderReadU16BE), L"BinaryReader ReadU16BE"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestReaderReadU24BE), L"BinaryReader ReadU24BE"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestReaderReadU32BE), L"BinaryReader ReadU32BE"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestReaderSkipAndRemaining), L"BinaryReader Skip and Remaining"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestReaderSetOffset), L"BinaryReader SetOffset"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestReaderBoundsCheck), L"BinaryReader bounds checking"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWriterWriteU8), L"BinaryWriter WriteU8"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWriterWriteU16BE), L"BinaryWriter WriteU16BE"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWriterWriteU32BE), L"BinaryWriter WriteU32BE"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWriterBoundsCheck), L"BinaryWriter bounds checking"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestRoundTrip), L"BinaryReader/Writer round-trip"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestReaderReadU8), "BinaryReader Read<UINT8>"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestReaderReadU16BE), "BinaryReader ReadU16BE"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestReaderReadU24BE), "BinaryReader ReadU24BE"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestReaderReadU32BE), "BinaryReader ReadU32BE"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestReaderSkipAndRemaining), "BinaryReader Skip and Remaining"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestReaderSetOffset), "BinaryReader SetOffset"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestReaderBoundsCheck), "BinaryReader bounds checking"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestWriterWriteU8), "BinaryWriter WriteU8"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestWriterWriteU16BE), "BinaryWriter WriteU16BE"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestWriterWriteU32BE), "BinaryWriter WriteU32BE"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestWriterBoundsCheck), "BinaryWriter bounds checking"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestRoundTrip), "BinaryReader/Writer round-trip"_embed);
 
 		if (allPassed)
 			LOG_INFO("All BinaryIO tests passed!");
@@ -39,7 +39,7 @@ private:
 		data[0] = 0x42;
 		data[1] = 0xFF;
 		data[2] = 0x00;
-		BinaryReader reader(Span<const UINT8>(data));
+		BinaryReader reader{Span<const UINT8>(data)};
 
 		if (reader.Read<UINT8>() != 0x42)
 			return false;
@@ -61,7 +61,7 @@ private:
 		data[1] = 0x34;
 		data[2] = 0xAB;
 		data[3] = 0xCD;
-		BinaryReader reader(Span<const UINT8>(data));
+		BinaryReader reader{Span<const UINT8>(data)};
 
 		UINT16 val1 = reader.ReadU16BE();
 		if (val1 != 0x1234)
@@ -84,7 +84,7 @@ private:
 		data[0] = 0x12;
 		data[1] = 0x34;
 		data[2] = 0x56;
-		BinaryReader reader(Span<const UINT8>(data));
+		BinaryReader reader{Span<const UINT8>(data)};
 
 		UINT32 val = reader.ReadU24BE();
 		if (val != 0x123456)
@@ -104,7 +104,7 @@ private:
 		data[1] = 0x34;
 		data[2] = 0x56;
 		data[3] = 0x78;
-		BinaryReader reader(Span<const UINT8>(data));
+		BinaryReader reader{Span<const UINT8>(data)};
 
 		UINT32 val = reader.ReadU32BE();
 		if (val != 0x12345678)
@@ -120,7 +120,7 @@ private:
 	{
 		UINT8 data[10];
 		Memory::Zero(data, sizeof(data));
-		BinaryReader reader(Span<const UINT8>(data));
+		BinaryReader reader{Span<const UINT8>(data)};
 
 		if (reader.Remaining() != 10)
 			return false;
@@ -151,7 +151,7 @@ private:
 		data[1] = 0xBB;
 		data[2] = 0xCC;
 		data[3] = 0xDD;
-		BinaryReader reader(Span<const UINT8>(data));
+		BinaryReader reader{Span<const UINT8>(data)};
 
 		reader.Skip(2);
 		if (reader.Read<UINT8>() != 0xCC)
@@ -181,7 +181,7 @@ private:
 		UINT8 data[2];
 		data[0] = 0x12;
 		data[1] = 0x34;
-		BinaryReader reader(Span<const UINT8>(data));
+		BinaryReader reader{Span<const UINT8>(data)};
 
 		// ReadU32BE should fail (only 2 bytes)
 		UINT32 val32 = reader.ReadU32BE();
@@ -207,7 +207,7 @@ private:
 	{
 		UINT8 buf[4];
 		Memory::Zero(buf, sizeof(buf));
-		BinaryWriter writer(Span<UINT8>(buf));
+		BinaryWriter writer{Span<UINT8>(buf)};
 
 		writer.WriteU8(0xAA);
 		writer.WriteU8(0xBB);
@@ -224,7 +224,7 @@ private:
 	{
 		UINT8 buf[4];
 		Memory::Zero(buf, sizeof(buf));
-		BinaryWriter writer(Span<UINT8>(buf));
+		BinaryWriter writer{Span<UINT8>(buf)};
 
 		writer.WriteU16BE(0x1234);
 
@@ -241,7 +241,7 @@ private:
 	{
 		UINT8 buf[4];
 		Memory::Zero(buf, sizeof(buf));
-		BinaryWriter writer(Span<UINT8>(buf));
+		BinaryWriter writer{Span<UINT8>(buf)};
 
 		writer.WriteU32BE(0x12345678);
 
@@ -257,7 +257,7 @@ private:
 	{
 		UINT8 buf[2];
 		Memory::Zero(buf, sizeof(buf));
-		BinaryWriter writer(Span<UINT8>(buf));
+		BinaryWriter writer{Span<UINT8>(buf)};
 
 		// WriteU32BE should fail (only 2 bytes capacity)
 		if (writer.WriteU32BE(0x12345678) != nullptr)
@@ -282,14 +282,14 @@ private:
 		Memory::Zero(buf, sizeof(buf));
 
 		// Write big-endian values
-		BinaryWriter writer(Span<UINT8>(buf));
+		BinaryWriter writer{Span<UINT8>(buf)};
 		writer.WriteU8(0x42);
 		writer.WriteU16BE(0x1234);
 		writer.WriteU24BE(0xABCDEF);
 		writer.WriteU32BE(0xDEADBEEF);
 
 		// Read them back
-		BinaryReader reader(Span<const UINT8>(buf, writer.GetOffset()));
+		BinaryReader reader{Span<const UINT8>(buf, writer.GetOffset())};
 
 		if (reader.Read<UINT8>() != 0x42)
 			return false;

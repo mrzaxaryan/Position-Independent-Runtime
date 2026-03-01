@@ -12,13 +12,13 @@ public:
 
 		LOG_INFO("Running Prng Tests...");
 
-		RunTest(allPassed, EMBED_FUNC(TestDeterministicSequence), L"Deterministic sequence with known seed"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestDifferentSeeds), L"Different seeds produce different sequences"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestValueRange), L"Values within [0, MAX)"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestGetArray), L"GetArray fills buffer"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestGetChar), L"GetChar produces lowercase a-z"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestGetString), L"GetString fills and null-terminates"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestIsSeeded), L"IsSeeded and Seed"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestDeterministicSequence), "Deterministic sequence with known seed"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestDifferentSeeds), "Different seeds produce different sequences"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestValueRange), "Values within [0, MAX)"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestGetArray), "GetArray fills buffer"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestGetChar), "GetChar produces lowercase a-z"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestGetString), "GetString fills and null-terminates"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestIsSeeded), "IsSeeded and Seed"_embed);
 
 		if (allPassed)
 			LOG_INFO("All Prng tests passed!");

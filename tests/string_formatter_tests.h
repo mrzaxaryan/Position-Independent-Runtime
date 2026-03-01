@@ -12,15 +12,15 @@ public:
 
 		LOG_INFO("Running StringFormatter Tests...");
 
-		RunTest(allPassed, EMBED_FUNC(TestIntegerFormat), L"Integer format"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestUnsignedFormat), L"Unsigned format"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestHexFormat), L"Hex format"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestStringFormat), L"String format"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestCharFormat), L"Char format"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWidthPadding), L"Width and padding"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestFloatFormat), L"Float format"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestPercentLiteral), L"Percent literal"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestErrorFormat), L"Error format"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestIntegerFormat), "Integer format"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestUnsignedFormat), "Unsigned format"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestHexFormat), "Hex format"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestStringFormat), "String format"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestCharFormat), "Char format"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestWidthPadding), "Width and padding"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestFloatFormat), "Float format"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestPercentLiteral), "Percent literal"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestErrorFormat), "Error format"_embed);
 		// RunTest(allPassed, TestSizeFormat, L"Size format"_embed);
 
 		if (allPassed)
