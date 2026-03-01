@@ -24,7 +24,7 @@ DateTime DateTime::Now()
 	UINT64 totalSeconds = (UINT64)tv.tv_sec;
 	UINT64 nanoseconds = (UINT64)tv.tv_usec * 1000ULL;
 
-	const UINT64 SECONDS_PER_DAY = 86400;
+	constexpr UINT64 SECONDS_PER_DAY = 86400;
 
 	UINT64 days = totalSeconds / SECONDS_PER_DAY;
 	UINT64 timeOfDay = totalSeconds % SECONDS_PER_DAY;

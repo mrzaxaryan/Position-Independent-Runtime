@@ -1,7 +1,15 @@
 #include "platform/io/file_system/file_system.h"
 #include "core/memory/memory.h"
-#include "syscall.h"
-#include "system.h"
+#if defined(PLATFORM_LINUX)
+#include "platform/os/linux/common/syscall.h"
+#include "platform/os/linux/common/system.h"
+#elif defined(PLATFORM_MACOS)
+#include "platform/os/macos/common/syscall.h"
+#include "platform/os/macos/common/system.h"
+#elif defined(PLATFORM_SOLARIS)
+#include "platform/os/solaris/common/syscall.h"
+#include "platform/os/solaris/common/system.h"
+#endif
 #include "core/string/string.h"
 #include "core/encoding/utf16.h"
 #include "platform/io/path.h"

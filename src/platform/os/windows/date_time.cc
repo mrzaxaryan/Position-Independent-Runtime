@@ -69,8 +69,8 @@ DateTime DateTime::Now()
 	UINT64 local100ns = (UINT64)local100ns_s;
 
 	// 3) Split into date/time
-	const UINT64 TICKS_PER_SEC = 10000000ULL;
-	const UINT64 TICKS_PER_DAY = 86400ULL * TICKS_PER_SEC;
+	constexpr UINT64 TICKS_PER_SEC = 10000000ULL;
+	constexpr UINT64 TICKS_PER_DAY = 86400ULL * TICKS_PER_SEC;
 
 	UINT64 days = local100ns / TICKS_PER_DAY;
 	UINT64 dayTicks = local100ns % TICKS_PER_DAY;

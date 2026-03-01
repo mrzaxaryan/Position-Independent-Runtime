@@ -26,7 +26,7 @@ static inline UINT64 GetHardwareTimestamp()
 #endif
 }
 
-void Random::EnsureSeeded()
+VOID Random::EnsureSeeded()
 {
 	if (!prng.IsSeeded())
 		prng.Seed(GetHardwareTimestamp());

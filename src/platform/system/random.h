@@ -25,7 +25,7 @@ private:
 	Prng prng;
 
 	/// Lazy-seed from hardware timestamp (defined in random.cc)
-	void EnsureSeeded();
+	VOID EnsureSeeded();
 
 public:
 	VOID *operator new(USIZE) = delete;

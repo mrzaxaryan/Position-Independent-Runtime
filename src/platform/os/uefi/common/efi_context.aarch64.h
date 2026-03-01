@@ -11,7 +11,7 @@ struct EFI_CONTEXT;
  *
  * @param ctx Reference to the EFI context to store
  */
-inline void SetEfiContextRegister(EFI_CONTEXT &ctx)
+inline VOID SetEfiContextRegister(EFI_CONTEXT &ctx)
 {
 	__asm__ volatile("msr tpidr_el0, %0" : : "r"(&ctx) : "memory");
 }

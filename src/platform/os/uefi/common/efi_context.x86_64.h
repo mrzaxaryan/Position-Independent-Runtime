@@ -18,7 +18,7 @@ inline constexpr UINT32 IA32_GS_BASE = 0xC0000101;
  *
  * @param ctx Reference to the EFI context to store
  */
-inline void SetEfiContextRegister(EFI_CONTEXT &ctx)
+inline VOID SetEfiContextRegister(EFI_CONTEXT &ctx)
 {
 	UINT64 value = reinterpret_cast<UINT64>(&ctx);
 	UINT32 low = static_cast<UINT32>(value);

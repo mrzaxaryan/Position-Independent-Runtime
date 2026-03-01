@@ -16,23 +16,23 @@ static SSIZE linux_socket(INT32 domain, INT32 type, INT32 protocol)
 #endif
 }
 
-static SSIZE linux_bind(SSIZE sockfd, const SockAddr *addr, UINT32 addrlen)
+static SSIZE linux_bind(SSIZE sockfd, const SockAddr &addr, UINT32 addrlen)
 {
 #if defined(ARCHITECTURE_I386)
-	USIZE args[3] = {(USIZE)sockfd, (USIZE)addr, addrlen};
+	USIZE args[3] = {(USIZE)sockfd, (USIZE)&addr, addrlen};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_BIND, (USIZE)args);
 #else
-	return System::Call(SYS_BIND, sockfd, (USIZE)addr, addrlen);
+	return System::Call(SYS_BIND, sockfd, (USIZE)&addr, addrlen);
 #endif
 }
 
-static SSIZE linux_connect(SSIZE sockfd, const SockAddr *addr, UINT32 addrlen)
+static SSIZE linux_connect(SSIZE sockfd, const SockAddr &addr, UINT32 addrlen)
 {
 #if defined(ARCHITECTURE_I386)
-	USIZE args[3] = {(USIZE)sockfd, (USIZE)addr, addrlen};
+	USIZE args[3] = {(USIZE)sockfd, (USIZE)&addr, addrlen};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_CONNECT, (USIZE)args);
 #else
-	return System::Call(SYS_CONNECT, sockfd, (USIZE)addr, addrlen);
+	return System::Call(SYS_CONNECT, sockfd, (USIZE)&addr, addrlen);
 #endif
 }
 
@@ -56,13 +56,13 @@ static SSIZE linux_recv(SSIZE sockfd, VOID *buf, USIZE len, INT32 flags)
 #endif
 }
 
-static SSIZE linux_getsockopt(SSIZE sockfd, INT32 level, INT32 optname, PVOID optval, UINT32 *optlen)
+static SSIZE linux_getsockopt(SSIZE sockfd, INT32 level, INT32 optname, PVOID optval, UINT32 &optlen)
 {
 #if defined(ARCHITECTURE_I386)
-	USIZE args[5] = {(USIZE)sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)optlen};
+	USIZE args[5] = {(USIZE)sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)&optlen};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_GETSOCKOPT, (USIZE)args);
 #else
-	return System::Call(SYS_GETSOCKOPT, sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)optlen);
+	return System::Call(SYS_GETSOCKOPT, sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)&optlen);
 #endif
 }
 
@@ -75,9 +75,9 @@ static SSIZE linux_fcntl(SSIZE fd, INT32 cmd, SSIZE arg = 0)
 #endif
 }
 
-static SSIZE linux_ppoll(struct pollfd *fds, USIZE nfds, const struct timespec *timeout)
+static SSIZE linux_ppoll(struct pollfd &fds, USIZE nfds, const struct timespec &timeout)
 {
-	return System::Call(SYS_PPOLL, (USIZE)fds, nfds, (USIZE)timeout, 0, 0);
+	return System::Call(SYS_PPOLL, (USIZE)&fds, nfds, (USIZE)&timeout, 0, 0);
 }
 
 Result<Socket, Error> Socket::Create(const IPAddress &ipAddress, UINT16 port)
@@ -96,7 +96,7 @@ Result<void, Error> Socket::Bind(SockAddr &socketAddress, INT32 shareType)
 
 	SSIZE sockfd  = (SSIZE)handle;
 	UINT32 addrLen = (socketAddress.SinFamily == AF_INET6) ? sizeof(SockAddr6) : sizeof(SockAddr);
-	SSIZE  result  = linux_bind(sockfd, &socketAddress, addrLen);
+	SSIZE  result  = linux_bind(sockfd, socketAddress, addrLen);
 	if (result != 0)
 	{
 		return Result<void, Error>::Err(
@@ -130,7 +130,7 @@ Result<void, Error> Socket::Open()
 	if (setResult < 0)
 		return Result<void, Error>::Err(Error::Posix((UINT32)(-setResult)), Error::Socket_OpenFailed_Connect);
 
-	SSIZE result = linux_connect(sockfd, (SockAddr *)&addrBuffer, addrLen);
+	SSIZE result = linux_connect(sockfd, *(const SockAddr *)&addrBuffer, addrLen);
 	if (result != 0 && (-result) != EINPROGRESS)
 	{
 		// Restore blocking mode before returning error
@@ -152,7 +152,7 @@ Result<void, Error> Socket::Open()
 		timeout.tv_sec = 5;
 		timeout.tv_nsec = 0;
 
-		SSIZE pollResult = linux_ppoll(&pfd, 1, &timeout);
+		SSIZE pollResult = linux_ppoll(pfd, 1, timeout);
 		if (pollResult <= 0)
 		{
 			(void)linux_fcntl(sockfd, F_SETFL, flags);
@@ -162,7 +162,7 @@ Result<void, Error> Socket::Open()
 		// Check for connection error
 		INT32 sockError = 0;
 		UINT32 optLen = sizeof(sockError);
-		(void)linux_getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &sockError, &optLen);
+		(void)linux_getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &sockError, optLen);
 		if (sockError != 0)
 		{
 			(void)linux_fcntl(sockfd, F_SETFL, flags);
