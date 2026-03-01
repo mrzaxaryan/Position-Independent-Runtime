@@ -34,85 +34,85 @@
 class BitOps
 {
 public:
-    /**
-     * @brief Rotate right (circular shift right)
-     * @tparam T Unsigned integer type (UINT32, UINT64, etc.)
-     * @param x Value to rotate
-     * @param n Number of bits to rotate by
-     * @return Value rotated right by n bits
-     *
-     * @details Performs a circular right shift where bits shifted out on the right
-     * are shifted back in on the left. Compiles to a single ROR instruction on
-     * x86/x64 and ARM architectures.
-     *
-     * @par Example:
-     * @code
-     * UINT32 val = 0x12345678;
-     * UINT32 rotated = BitOps::ROTR(val, 8);  // 0x78123456
-     * @endcode
-     */
-    template<typename T>
-    static constexpr FORCE_INLINE T ROTR(T x, UINT32 n)
-    {
-        constexpr UINT32 bits = sizeof(T) * 8;
-        return (x >> n) | (x << (bits - n));
-    }
+	/**
+	 * @brief Rotate right (circular shift right)
+	 * @tparam T Unsigned integer type (UINT32, UINT64, etc.)
+	 * @param x Value to rotate
+	 * @param n Number of bits to rotate by
+	 * @return Value rotated right by n bits
+	 *
+	 * @details Performs a circular right shift where bits shifted out on the right
+	 * are shifted back in on the left. Compiles to a single ROR instruction on
+	 * x86/x64 and ARM architectures.
+	 *
+	 * @par Example:
+	 * @code
+	 * UINT32 val = 0x12345678;
+	 * UINT32 rotated = BitOps::ROTR(val, 8);  // 0x78123456
+	 * @endcode
+	 */
+	template<typename T>
+	static constexpr FORCE_INLINE T ROTR(T x, UINT32 n)
+	{
+		constexpr UINT32 bits = sizeof(T) * 8;
+		return (x >> n) | (x << (bits - n));
+	}
 
-    /**
-     * @brief Rotate left (circular shift left)
-     * @tparam T Unsigned integer type (UINT32, UINT64, etc.)
-     * @param x Value to rotate
-     * @param n Number of bits to rotate by
-     * @return Value rotated left by n bits
-     *
-     * @details Performs a circular left shift where bits shifted out on the left
-     * are shifted back in on the right. Compiles to a single ROL instruction on
-     * x86/x64 architectures.
-     *
-     * @par Example:
-     * @code
-     * UINT32 val = 0x12345678;
-     * UINT32 rotated = BitOps::ROTL(val, 8);  // 0x34567812
-     * @endcode
-     */
-    template<typename T>
-    static constexpr FORCE_INLINE T ROTL(T x, UINT32 n)
-    {
-        constexpr UINT32 bits = sizeof(T) * 8;
-        return (x << n) | (x >> (bits - n));
-    }
+	/**
+	 * @brief Rotate left (circular shift left)
+	 * @tparam T Unsigned integer type (UINT32, UINT64, etc.)
+	 * @param x Value to rotate
+	 * @param n Number of bits to rotate by
+	 * @return Value rotated left by n bits
+	 *
+	 * @details Performs a circular left shift where bits shifted out on the left
+	 * are shifted back in on the right. Compiles to a single ROL instruction on
+	 * x86/x64 architectures.
+	 *
+	 * @par Example:
+	 * @code
+	 * UINT32 val = 0x12345678;
+	 * UINT32 rotated = BitOps::ROTL(val, 8);  // 0x34567812
+	 * @endcode
+	 */
+	template<typename T>
+	static constexpr FORCE_INLINE T ROTL(T x, UINT32 n)
+	{
+		constexpr UINT32 bits = sizeof(T) * 8;
+		return (x << n) | (x >> (bits - n));
+	}
 
-    /**
-     * @brief Rotate 32-bit value right
-     * @param x Value to rotate
-     * @param n Number of bits to rotate by
-     * @return Value rotated right by n bits
-     */
-    static constexpr FORCE_INLINE UINT32 ROTR32(UINT32 x, UINT32 n) { return ROTR(x, n); }
+	/**
+	 * @brief Rotate 32-bit value right
+	 * @param x Value to rotate
+	 * @param n Number of bits to rotate by
+	 * @return Value rotated right by n bits
+	 */
+	static constexpr FORCE_INLINE UINT32 ROTR32(UINT32 x, UINT32 n) { return ROTR(x, n); }
 
-    /**
-     * @brief Rotate 32-bit value left
-     * @param x Value to rotate
-     * @param n Number of bits to rotate by
-     * @return Value rotated left by n bits
-     */
-    static constexpr FORCE_INLINE UINT32 ROTL32(UINT32 x, UINT32 n) { return ROTL(x, n); }
+	/**
+	 * @brief Rotate 32-bit value left
+	 * @param x Value to rotate
+	 * @param n Number of bits to rotate by
+	 * @return Value rotated left by n bits
+	 */
+	static constexpr FORCE_INLINE UINT32 ROTL32(UINT32 x, UINT32 n) { return ROTL(x, n); }
 
-    /**
-     * @brief Rotate 64-bit value right
-     * @param x Value to rotate
-     * @param n Number of bits to rotate by
-     * @return Value rotated right by n bits
-     */
-    static constexpr FORCE_INLINE UINT64 ROTR64(UINT64 x, UINT32 n) { return ROTR(x, n); }
+	/**
+	 * @brief Rotate 64-bit value right
+	 * @param x Value to rotate
+	 * @param n Number of bits to rotate by
+	 * @return Value rotated right by n bits
+	 */
+	static constexpr FORCE_INLINE UINT64 ROTR64(UINT64 x, UINT32 n) { return ROTR(x, n); }
 
-    /**
-     * @brief Rotate 64-bit value left
-     * @param x Value to rotate
-     * @param n Number of bits to rotate by
-     * @return Value rotated left by n bits
-     */
-    static constexpr FORCE_INLINE UINT64 ROTL64(UINT64 x, UINT32 n) { return ROTL(x, n); }
+	/**
+	 * @brief Rotate 64-bit value left
+	 * @param x Value to rotate
+	 * @param n Number of bits to rotate by
+	 * @return Value rotated left by n bits
+	 */
+	static constexpr FORCE_INLINE UINT64 ROTL64(UINT64 x, UINT32 n) { return ROTL(x, n); }
 };
 
 /** @} */ // end of bitops group

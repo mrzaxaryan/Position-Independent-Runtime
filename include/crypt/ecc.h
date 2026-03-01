@@ -193,7 +193,7 @@ private:
     // =========================================================================
 
     /** @brief Tests if point is at infinity */
-    INT32 IsZero(EccPoint &point);
+    INT32 IsZero(const EccPoint &point);
 
     /** @brief Point doubling in Jacobian coordinates */
     VOID DoubleJacobian(UINT64 (&X1)[MAX_NUM_ECC_DIGITS], UINT64 (&Y1)[MAX_NUM_ECC_DIGITS], UINT64 (&Z1)[MAX_NUM_ECC_DIGITS]);

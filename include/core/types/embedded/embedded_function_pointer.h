@@ -62,73 +62,73 @@ template <typename FuncPtr, FuncPtr Func>
 class EMBEDDED_FUNCTION_POINTER
 {
 public:
-    /**
-     * @brief Returns position-independent function pointer
-     * @return Function pointer computed using PC-relative addressing
-     *
-     * @details Uses inline assembly to compute PC/RIP-relative addresses.
-     * Architecture is selected at compile-time via CMake-defined macros.
-     *
-     * @par Architecture-Specific Implementation:
-     *
-     * **i386 (PLATFORM_WINDOWS_I386):**
-     * @code{.asm}
-     * call 1f          ; Push return address onto stack
-     * 1:
-     * pop %eax         ; Get current EIP in eax
-     * leal offset(%eax), %eax  ; Compute: target - label_1b + eip
-     * @endcode
-     *
-     * **x86_64:**
-     * @code{.asm}
-     * leaq offset(%rip), %rax  ; Direct RIP-relative addressing
-     * @endcode
-     *
-     * **armv7a (PLATFORM_WINDOWS_ARMV7A):**
-     * @code{.asm}
-     * ldr r0, =target   ; Load via PC-relative literal pool
-     * @endcode
-     *
-     * **aarch64:**
-     * @code{.asm}
-     * adr x0, target    ; PC-relative address (±1MB range)
-     * @endcode
-     *
-     * @note NOINLINE ensures stable addresses for PC-relative calculations.
-     * The offset is calculated by the assembler as (Func - label), which is
-     * a pure compile-time constant. No absolute addresses at runtime!
-     */
-    NOINLINE static FuncPtr Get() noexcept
-    {
-        FuncPtr result;
+	/**
+	 * @brief Returns position-independent function pointer
+	 * @return Function pointer computed using PC-relative addressing
+	 *
+	 * @details Uses inline assembly to compute PC/RIP-relative addresses.
+	 * Architecture is selected at compile-time via CMake-defined macros.
+	 *
+	 * @par Architecture-Specific Implementation:
+	 *
+	 * **i386 (PLATFORM_WINDOWS_I386):**
+	 * @code{.asm}
+	 * call 1f          ; Push return address onto stack
+	 * 1:
+	 * pop %eax         ; Get current EIP in eax
+	 * leal offset(%eax), %eax  ; Compute: target - label_1b + eip
+	 * @endcode
+	 *
+	 * **x86_64:**
+	 * @code{.asm}
+	 * leaq offset(%rip), %rax  ; Direct RIP-relative addressing
+	 * @endcode
+	 *
+	 * **armv7a (PLATFORM_WINDOWS_ARMV7A):**
+	 * @code{.asm}
+	 * ldr r0, =target   ; Load via PC-relative literal pool
+	 * @endcode
+	 *
+	 * **aarch64:**
+	 * @code{.asm}
+	 * adr x0, target    ; PC-relative address (±1MB range)
+	 * @endcode
+	 *
+	 * @note NOINLINE ensures stable addresses for PC-relative calculations.
+	 * The offset is calculated by the assembler as (Func - label), which is
+	 * a pure compile-time constant. No absolute addresses at runtime!
+	 */
+	NOINLINE static FuncPtr Get() noexcept
+	{
+		FuncPtr result;
 
 #if defined(PLATFORM_WINDOWS_I386)
-        // i386: Use call/pop to get EIP, then compute PC-relative offset
-        __asm__ volatile(
-            "call 1f\n" // Push return address onto stack
-            "1:\n"
-            "popl %%eax\n"                // Get current EIP in eax
-            "leal %c1-1b(%%eax), %%eax\n" // Compute: target - label_1b + eip
-            "movl %%eax, %0\n"            // Store result
-            : "=m"(result)                // Output: result variable
-            : "i"(Func)                   // Input: target (compile-time constant)
-            : "eax"                       // Clobber: eax register
-        );
+		// i386: Use call/pop to get EIP, then compute PC-relative offset
+		__asm__ volatile(
+			"call 1f\n" // Push return address onto stack
+			"1:\n"
+			"popl %%eax\n"                // Get current EIP in eax
+			"leal %c1-1b(%%eax), %%eax\n" // Compute: target - label_1b + eip
+			"movl %%eax, %0\n"            // Store result
+			: "=m"(result)                // Output: result variable
+			: "i"(Func)                   // Input: target (compile-time constant)
+			: "eax"                       // Clobber: eax register
+		);
 #elif defined(PLATFORM_WINDOWS_ARMV7A)
-        // armv7a: Use LDR pseudo-instruction for PC-relative addressing
-        __asm__ volatile(
-            "ldr %0, =%1\n" // Load address via PC-relative literal pool
-            : "=r"(result)  // Output: result variable
-            : "X"(Func)     // Input: target address
-        );
+		// armv7a: Use LDR pseudo-instruction for PC-relative addressing
+		__asm__ volatile(
+			"ldr %0, =%1\n" // Load address via PC-relative literal pool
+			: "=r"(result)  // Output: result variable
+			: "X"(Func)     // Input: target address
+		);
 #else
-        // Fallback for other architectures: direct assignment
-        // This works on most modern architectures with PIC support
-        result = Func;
+		// Fallback for other architectures: direct assignment
+		// This works on most modern architectures with PIC support
+		result = Func;
 #endif
 
-        return result;
-    }
+		return result;
+	}
 };
 
 /**
@@ -147,6 +147,6 @@ public:
  * @endcode
  */
 #define EMBED_FUNC(func_name) \
-    EMBEDDED_FUNCTION_POINTER<decltype(&func_name), &func_name>::Get()
+	EMBEDDED_FUNCTION_POINTER<decltype(&func_name), &func_name>::Get()
 
 /** @} */ // end of embedded_func group

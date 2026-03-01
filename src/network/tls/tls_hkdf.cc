@@ -7,14 +7,12 @@
 
 /// @brief Create an HKDF label according to TLS 1.3 specification
 /// @param label The label to use in the HKDF label
-/// @param labelLen The length of the label
 /// @param data The data to include in the HKDF label
-/// @param dataLen The length of the data
-/// @param hkdflabel The buffer to store the created HKDF label
+/// @param hkdflabel The output buffer to store the created HKDF label
 /// @param length Length of the output keying material (OKM) that will be derived using this label
 /// @return The total length of the created HKDF label
 
-INT32 TlsHKDF::Label(Span<const CHAR> label, Span<const UCHAR> data, PUCHAR hkdflabel, UINT16 length)
+INT32 TlsHKDF::Label(Span<const CHAR> label, Span<const UCHAR> data, Span<UCHAR> hkdflabel, UINT16 length)
 {
     auto prefix = "tls13 "_embed;
     UCHAR labelLen = (UCHAR)label.Size();
@@ -23,7 +21,7 @@ INT32 TlsHKDF::Label(Span<const CHAR> label, Span<const UCHAR> data, PUCHAR hkdf
 
     LOG_DEBUG("Creating HKDF label with label_len: %d, data_len: %d, length: %d", labelLen, dataLen, length);
 
-    BinaryWriter writer((PVOID)hkdflabel, 512);
+    BinaryWriter writer((PVOID)hkdflabel.Data(), hkdflabel.Size());
 
     writer.WriteU16BE(length);
     writer.WriteU8((UINT8)(prefixLen + labelLen));
@@ -132,7 +130,7 @@ VOID TlsHKDF::ExpandLabel(Span<UCHAR> output, Span<const UCHAR> secret, Span<con
 {
     UCHAR hkdfLabel[512];
     UINT32 outlen = (UINT32)output.Size();
-    INT32 len = TlsHKDF::Label(label, data, hkdfLabel, outlen);
+    INT32 len = TlsHKDF::Label(label, data, Span<UCHAR>(hkdfLabel), outlen);
     LOG_DEBUG("Expanding HKDF label with output length: %d, secret length: %d, label length: %d, data length: %d", outlen, (UINT32)secret.Size(), (UINT32)label.Size(), (UINT32)data.Size());
     TlsHKDF::Expand(output, secret, Span<const UCHAR>(hkdfLabel, len));
 }

@@ -6,7 +6,7 @@
 class TlsHKDF
 {
 private:
-    static INT32 Label(Span<const CHAR> label, Span<const UCHAR> data, PUCHAR hkdflabel, UINT16 length);
+    static INT32 Label(Span<const CHAR> label, Span<const UCHAR> data, Span<UCHAR> hkdflabel, UINT16 length);
 
 public:
     static VOID Extract(Span<UCHAR> output, Span<const UCHAR> salt, Span<const UCHAR> ikm);

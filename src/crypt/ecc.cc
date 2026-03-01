@@ -518,7 +518,7 @@ VOID Ecc::VliModInv(UINT64 (&pResult)[MAX_NUM_ECC_DIGITS], const UINT64 (&pInput
 /* ------ Point operations ------ */
 
 /* Returns 1 if point is the point at infinity, 0 otherwise. */
-INT32 Ecc::IsZero(EccPoint &point)
+INT32 Ecc::IsZero(const EccPoint &point)
 {
     return (this->VliIsZero(point.x) && this->VliIsZero(point.y));
 }
