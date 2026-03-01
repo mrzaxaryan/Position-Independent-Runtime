@@ -6,11 +6,21 @@
             "${workspaceFolder}/src",
             "${workspaceFolder}/src/core",
             "${workspaceFolder}/src/core/algorithms",
+            "${workspaceFolder}/src/core/compiler",
             "${workspaceFolder}/src/core/encoding",
+            "${workspaceFolder}/src/core/io",
+            "${workspaceFolder}/src/core/math",
+            "${workspaceFolder}/src/core/memory",
             "${workspaceFolder}/src/core/string",
             "${workspaceFolder}/src/core/types",
             "${workspaceFolder}/src/core/types/embedded",
             "${workspaceFolder}/src/platform",
+            "${workspaceFolder}/src/platform/io",
+            "${workspaceFolder}/src/platform/io/file_system",
+            "${workspaceFolder}/src/platform/memory",
+            "${workspaceFolder}/src/platform/network",
+            "${workspaceFolder}/src/platform/os",
+            "${workspaceFolder}/src/platform/system",
             "${workspaceFolder}/src/runtime",
             "${workspaceFolder}/src/runtime/crypto",
             "${workspaceFolder}/src/runtime/network",
@@ -34,7 +44,7 @@
             ],
             "includePath": [
                 "${commonInclude}",
-                "${workspaceFolder}/src/platform/windows"
+                "${workspaceFolder}/src/platform/os/windows"
             ]
         },
         {
@@ -52,7 +62,7 @@
             ],
             "includePath": [
                 "${commonInclude}",
-                "${workspaceFolder}/src/platform/windows"
+                "${workspaceFolder}/src/platform/os/windows"
             ]
         },
         {
@@ -70,7 +80,7 @@
             ],
             "includePath": [
                 "${commonInclude}",
-                "${workspaceFolder}/src/platform/windows"
+                "${workspaceFolder}/src/platform/os/windows"
             ]
         },
         {
@@ -88,7 +98,8 @@
             ],
             "includePath": [
                 "${commonInclude}",
-                "${workspaceFolder}/src/platform/linux"
+                "${workspaceFolder}/src/platform/os/linux",
+                "${workspaceFolder}/src/platform/os/posix"
             ]
         },
         {
@@ -106,7 +117,8 @@
             ],
             "includePath": [
                 "${commonInclude}",
-                "${workspaceFolder}/src/platform/linux"
+                "${workspaceFolder}/src/platform/os/linux",
+                "${workspaceFolder}/src/platform/os/posix"
             ]
         },
         {
@@ -124,7 +136,8 @@
             ],
             "includePath": [
                 "${commonInclude}",
-                "${workspaceFolder}/src/platform/linux"
+                "${workspaceFolder}/src/platform/os/linux",
+                "${workspaceFolder}/src/platform/os/posix"
             ]
         },
         {
@@ -142,7 +155,8 @@
             ],
             "includePath": [
                 "${commonInclude}",
-                "${workspaceFolder}/src/platform/linux"
+                "${workspaceFolder}/src/platform/os/linux",
+                "${workspaceFolder}/src/platform/os/posix"
             ]
         },
         {
@@ -160,7 +174,8 @@
             ],
             "includePath": [
                 "${commonInclude}",
-                "${workspaceFolder}/src/platform/macos"
+                "${workspaceFolder}/src/platform/os/macos",
+                "${workspaceFolder}/src/platform/os/posix"
             ]
         },
         {
@@ -178,7 +193,8 @@
             ],
             "includePath": [
                 "${commonInclude}",
-                "${workspaceFolder}/src/platform/macos"
+                "${workspaceFolder}/src/platform/os/macos",
+                "${workspaceFolder}/src/platform/os/posix"
             ]
         },
         {
@@ -196,7 +212,7 @@
             ],
             "includePath": [
                 "${commonInclude}",
-                "${workspaceFolder}/src/platform/uefi"
+                "${workspaceFolder}/src/platform/os/uefi"
             ]
         },
         {
@@ -214,7 +230,7 @@
             ],
             "includePath": [
                 "${commonInclude}",
-                "${workspaceFolder}/src/platform/uefi"
+                "${workspaceFolder}/src/platform/os/uefi"
             ]
         }
     ]

@@ -26,26 +26,8 @@ static inline UINT64 GetHardwareTimestamp()
 #endif
 }
 
-// Function to get a random number in the range of 0 to RANDOM_MAX
-INT32 Random::Get()
+void Random::EnsureSeeded()
 {
-    // Lazy seed on first call
-    if (seed == 0)
-        seed = GetHardwareTimestamp();
-
-    // xorshift64 (Marsaglia)
-    seed ^= seed << 13;
-    seed ^= seed >> 7;
-    seed ^= seed << 17;
-    return static_cast<INT32>(seed & 0x7FFFFFFF);
-}
-
-// Function to fill a buffer with random bytes
-INT32 Random::GetArray(Span<UINT8> buffer)
-{
-    USIZE size = buffer.Size();
-    // Fill the buffer with random bytes
-    for (USIZE i = 0; i < size; ++i)
-        buffer[i] = (UINT8)(Random::Get() & 0xFF); // Get random byte
-    return 1;                                      // Indicate success
+    if (!prng.IsSeeded())
+        prng.Seed(GetHardwareTimestamp());
 }

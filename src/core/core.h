@@ -40,6 +40,7 @@
 #include "core/math/math.h"
 #include "core/math/byteorder.h"
 #include "core/math/bitops.h"
+#include "core/math/prng.h"
 /// @}
 
 /// @name Base Types

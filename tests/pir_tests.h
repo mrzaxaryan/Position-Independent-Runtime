@@ -47,6 +47,7 @@
 #include "string_tests.h"
 #include "double_tests.h"
 #include "string_formatter_tests.h"
+#include "prng_tests.h"
 #include "random_tests.h"
 #include "socket_tests.h"
 #include "tls_tests.h"
@@ -80,6 +81,7 @@ static BOOL RunPIRTests()
 	RunTestSuite<Djb2Tests>(allPassed);
 	RunTestSuite<Base64Tests>(allPassed);
 	RunTestSuite<BinaryIOTests>(allPassed);
+	RunTestSuite<PrngTests>(allPassed);
 
 	// PLATFORM - Memory, System, and File I/O
 	RunTestSuite<MemoryTests>(allPassed);
