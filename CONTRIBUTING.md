@@ -124,7 +124,8 @@ platform/                   # PLATFORM layer
   io/                       # Console, Logger, FileSystem, Path
   system/                   # DateTime, Environment, Process, Random
   network/                  # Socket
-  windows/ linux/ macos/ uefi/ posix/   # Per-OS implementations
+  os/                        # Per-OS implementations
+    windows/ linux/ macos/ uefi/ posix/
 runtime/                    # RUNTIME layer (.h + .cc co-located)
   runtime.h                 # Aggregate header (CORE + PLATFORM + RUNTIME)
   crypto/                   # SHA2, ECC, ChaCha20

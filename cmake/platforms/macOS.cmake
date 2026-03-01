@@ -12,7 +12,7 @@ endif()
 pir_get_target_info()
 pir_filter_sources(windows linux uefi)
 
-list(APPEND PIR_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/platform/macos")
+list(APPEND PIR_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/platform/os/macos")
 
 # macOS-specific compiler flags
 list(APPEND PIR_BASE_FLAGS -fno-stack-protector)

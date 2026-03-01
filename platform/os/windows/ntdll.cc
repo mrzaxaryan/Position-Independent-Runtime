@@ -2,7 +2,7 @@
 #include "platform.h"
 #include "platform_result.h"
 #include "peb.h"
-#include "platform/windows/system.h"
+#include "platform/os/windows/system.h"
 
 #define ResolveNtdllExportAddress(functionName) ResolveExportAddressFromPebModule(Djb2::HashCompileTime(L"ntdll.dll"), Djb2::HashCompileTime(functionName))
 #define CALL_FUNCTION(functionName, ...) -1

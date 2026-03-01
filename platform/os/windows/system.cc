@@ -1,4 +1,4 @@
-#include "platform/windows/system.h"
+#include "platform/os/windows/system.h"
 #include "platform.h"
 #include "peb.h"
 #include "djb2.h"
