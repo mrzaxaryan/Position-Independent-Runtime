@@ -134,7 +134,6 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 		UINT32 completedOctetCount = 0;
 		UINT32 endOfOctet = 0;
 		UINT32 endOfString = 0;
-		INT64 octet = 0;
 		UINT8 octets[4];
 		UINT32 addr = 0;
 
@@ -183,7 +182,7 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 				{
 					return Result<IPAddress, Error>::Err(Error::IpAddress_ParseFailed);
 				}
-				octet = octetResult.Value();
+				auto& octet = octetResult.Value();
 				if (octet > 255)
 				{
 					return Result<IPAddress, Error>::Err(Error::IpAddress_ParseFailed);
