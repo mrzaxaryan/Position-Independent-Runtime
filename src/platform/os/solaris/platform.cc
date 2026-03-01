@@ -1,6 +1,6 @@
 #include "platform/platform.h"
-#include "platform/os/solaris/syscall.h"
-#include "platform/os/solaris/system.h"
+#include "platform/os/solaris/common/syscall.h"
+#include "platform/os/solaris/common/system.h"
 
 // Solaris process exit implementation
 NO_RETURN VOID ExitProcess(USIZE code)

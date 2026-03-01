@@ -6,8 +6,8 @@
  */
 
 #include "platform/system/environment.h"
-#include "platform/os/linux/syscall.h"
-#include "platform/os/linux/system.h"
+#include "platform/os/linux/common/syscall.h"
+#include "platform/os/linux/common/system.h"
 #include "core/memory/memory.h"
 
 // Helper to compare strings (case-sensitive for Linux)

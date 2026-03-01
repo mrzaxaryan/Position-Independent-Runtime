@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "platform/os/uefi/efi_types.h"
-#include "platform/os/uefi/efi_tcp4_protocol.h"
+#include "platform/os/uefi/common/efi_types.h"
+#include "platform/os/uefi/common/efi_tcp4_protocol.h"
 
 // =============================================================================
 // IP4 Config2 Protocol GUID

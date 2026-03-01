@@ -1,6 +1,6 @@
-#include "platform/os/windows/kernel32.h"
+#include "platform/os/windows/common/kernel32.h"
 #include "platform/platform.h"
-#include "platform/os/windows/peb.h"
+#include "platform/os/windows/common/peb.h"
 
 #define ResolveKernel32ExportAddress(functionName) ResolveExportAddressFromPebModule(Djb2::HashCompileTime(L"kernel32.dll"), Djb2::HashCompileTime(functionName))
 

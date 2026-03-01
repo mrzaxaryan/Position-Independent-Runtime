@@ -8,10 +8,10 @@
  */
 
 #include "platform/system/process.h"
-#include "platform/os/windows/ntdll.h"
-#include "platform/os/windows/kernel32.h"
+#include "platform/os/windows/common/ntdll.h"
+#include "platform/os/windows/common/kernel32.h"
 #include "core/memory/memory.h"
-#include "platform/os/windows/peb.h"
+#include "platform/os/windows/common/peb.h"
 
 // Process creation structures for Windows
 struct PS_ATTRIBUTE

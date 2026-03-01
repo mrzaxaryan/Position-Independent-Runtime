@@ -1,7 +1,7 @@
-#include "platform/os/windows/peb.h"
+#include "platform/os/windows/common/peb.h"
 #include "platform/platform.h"
 #include "core/algorithms/djb2.h"
-#include "platform/os/windows/pe.h"
+#include "platform/os/windows/common/pe.h"
 
 // Returns the current process's PEB pointer
 PPEB GetCurrentPEB(VOID)

@@ -1,6 +1,6 @@
 #include "platform/system/date_time.h"
-#include "platform/os/macos/syscall.h"
-#include "platform/os/macos/system.h"
+#include "platform/os/macos/common/syscall.h"
+#include "platform/os/macos/common/system.h"
 
 DateTime DateTime::Now()
 {

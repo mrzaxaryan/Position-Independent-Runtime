@@ -6,7 +6,7 @@
  */
 
 #include "platform/io/console.h"
-#include "platform/os/uefi/efi_context.h"
+#include "platform/os/uefi/common/efi_context.h"
 
 UINT32 Console::Write(Span<const WCHAR> text)
 {

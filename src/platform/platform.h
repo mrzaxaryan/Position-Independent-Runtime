@@ -15,9 +15,9 @@
 
 #if defined(PLATFORM_UEFI)
 // UEFI platform - include EFI types and system table
-#include "platform/os/uefi/efi_types.h"
-#include "platform/os/uefi/efi_system_table.h"
-#include "platform/os/uefi/efi_context.h"
+#include "platform/os/uefi/common/efi_types.h"
+#include "platform/os/uefi/common/efi_system_table.h"
+#include "platform/os/uefi/common/efi_context.h"
 #endif
 
 // =============================================================================

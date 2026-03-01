@@ -1,6 +1,6 @@
 #include "platform/platform.h"
-#include "platform/os/macos/syscall.h"
-#include "platform/os/macos/system.h"
+#include "platform/os/macos/common/syscall.h"
+#include "platform/os/macos/common/system.h"
 
 #if defined(ARCHITECTURE_AARCH64)
 // ARM64 macOS cannot use -static (kernel requires dyld). The linker adds

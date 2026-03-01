@@ -5,8 +5,8 @@
  */
 
 #include "platform/system/process.h"
-#include "platform/os/linux/syscall.h"
-#include "platform/os/linux/system.h"
+#include "platform/os/linux/common/syscall.h"
+#include "platform/os/linux/common/system.h"
 
 // Fork syscall wrapper
 Result<SSIZE, Error> Process::Fork() noexcept

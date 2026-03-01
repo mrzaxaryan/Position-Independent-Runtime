@@ -7,8 +7,8 @@
  */
 
 #include "platform/system/process.h"
-#include "platform/os/solaris/syscall.h"
-#include "platform/os/solaris/system.h"
+#include "platform/os/solaris/common/syscall.h"
+#include "platform/os/solaris/common/system.h"
 
 // Fork syscall wrapper
 // Solaris uses SYS_forksys (142) with subcode 0 for fork

@@ -1,6 +1,6 @@
 #include "platform/system/process.h"
-#include "platform/os/macos/syscall.h"
-#include "platform/os/macos/system.h"
+#include "platform/os/macos/common/syscall.h"
+#include "platform/os/macos/common/system.h"
 
 // Fork syscall wrapper
 Result<SSIZE, Error> Process::Fork() noexcept

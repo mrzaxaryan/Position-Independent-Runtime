@@ -1,6 +1,6 @@
 #include "platform/network/socket.h"
-#include "platform/os/solaris/syscall.h"
-#include "platform/os/solaris/system.h"
+#include "platform/os/solaris/common/syscall.h"
+#include "platform/os/solaris/common/system.h"
 #include "core/memory/memory.h"
 #include "core/types/ip_address.h"
 

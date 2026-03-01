@@ -1,6 +1,6 @@
-#include "platform/os/windows/pe.h"
-#include "platform/os/windows/peb.h"
-#include "platform/os/windows/ntdll.h"
+#include "platform/os/windows/common/pe.h"
+#include "platform/os/windows/common/peb.h"
+#include "platform/os/windows/common/ntdll.h"
 #include "core/algorithms/djb2.h"
 
 // Get the address of an exported function from a module base address

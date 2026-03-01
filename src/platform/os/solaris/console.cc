@@ -1,6 +1,6 @@
 #include "platform/io/console.h"
-#include "platform/os/solaris/syscall.h"
-#include "platform/os/solaris/system.h"
+#include "platform/os/solaris/common/syscall.h"
+#include "platform/os/solaris/common/system.h"
 
 UINT32 Console::Write(Span<const CHAR> text)
 {

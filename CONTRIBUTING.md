@@ -126,7 +126,17 @@ src/                        # Source layers
     system/                 # DateTime, Environment, Process, Random
     network/                # Socket
     os/                     # Per-OS implementations
-      windows/ linux/ macos/ uefi/ posix/
+      windows/              # Windows platform (feature .cc files)
+        common/             # PEB, PE, NTDLL, System, Kernel32, types
+      linux/                # Linux platform (feature .cc files)
+        common/             # Syscall numbers, System::Call, result conversion
+      macos/                # macOS platform (feature .cc files)
+        common/             # Syscall numbers, System::Call, result conversion
+      uefi/                 # UEFI platform (feature .cc files)
+        common/             # EFI types, protocols, boot/runtime services
+      solaris/              # Solaris platform (feature .cc files)
+        common/             # Syscall numbers, System::Call, result conversion
+      posix/                # Shared POSIX code (Linux/macOS)
   runtime/                  # RUNTIME layer (.h + .cc co-located)
     runtime.h               # Aggregate header (CORE + PLATFORM + RUNTIME)
     crypto/                 # SHA2, ECC, ChaCha20

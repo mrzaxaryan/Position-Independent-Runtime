@@ -14,7 +14,7 @@
 
 #if defined(PLATFORM_WINDOWS) || defined(PLATFORM_UEFI)
 constexpr CHAR PATH_SEPARATOR = '\\';
-#elif defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS)
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS) || defined(PLATFORM_SOLARIS)
 constexpr CHAR PATH_SEPARATOR = '/';
 #else
 #error "Path separator not defined for this platform"

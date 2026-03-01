@@ -17,8 +17,8 @@ private:
 	BOOL isBitMaskMode = false; // Flag for bitmask mode on Windows
 #endif
 
-#if defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS)
-	// Linux/macOS-specific (directory entry buffering for getdents64/getdirentries64)
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS) || defined(PLATFORM_SOLARIS)
+	// Linux/macOS/Solaris-specific (directory entry buffering for getdents64/getdirentries64)
 	CHAR buffer[1024];
 	INT32 nread;
 	INT32 bpos;

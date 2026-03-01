@@ -1,6 +1,6 @@
 #include "platform/io/console.h"
-#include "platform/os/macos/syscall.h"
-#include "platform/os/macos/system.h"
+#include "platform/os/macos/common/syscall.h"
+#include "platform/os/macos/common/system.h"
 
 UINT32 Console::Write(Span<const CHAR> text)
 {

@@ -1,6 +1,6 @@
 #include "platform/memory/allocator.h"
-#include "platform/os/solaris/syscall.h"
-#include "platform/os/solaris/system.h"
+#include "platform/os/solaris/common/syscall.h"
+#include "platform/os/solaris/common/system.h"
 
 // Memory allocator using mmap/munmap (Solaris syscalls)
 // Same pattern as Linux/macOS but with Solaris MAP_ANONYMOUS = 0x100

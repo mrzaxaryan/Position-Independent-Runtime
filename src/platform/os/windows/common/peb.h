@@ -26,7 +26,7 @@
 
 #if defined(PLATFORM_WINDOWS)
 
-#include "platform/os/windows/windows_types.h"
+#include "platform/os/windows/common/windows_types.h"
 
 /**
  * @brief Retrieves a pointer to a structure from a pointer to one of its fields.

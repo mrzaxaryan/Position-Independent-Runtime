@@ -1,6 +1,6 @@
 #include "platform/system/date_time.h"
-#include "platform/os/linux/syscall.h"
-#include "platform/os/linux/system.h"
+#include "platform/os/linux/common/syscall.h"
+#include "platform/os/linux/common/system.h"
 
 DateTime DateTime::Now()
 {

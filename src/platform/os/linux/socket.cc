@@ -1,6 +1,6 @@
 #include "platform/network/socket.h"
-#include "platform/os/linux/syscall.h"
-#include "platform/os/linux/system.h"
+#include "platform/os/linux/common/syscall.h"
+#include "platform/os/linux/common/system.h"
 #include "core/memory/memory.h"
 #include "core/types/ip_address.h"
 #include "platform/io/logger.h"

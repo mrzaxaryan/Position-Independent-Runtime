@@ -1,5 +1,5 @@
 #include "platform/platform.h"
-#include "platform/os/windows/ntdll.h"
+#include "platform/os/windows/common/ntdll.h"
 
 NO_RETURN VOID ExitProcess(USIZE code)
 {

@@ -27,7 +27,7 @@ public:
 	// casts are not allowed in constant expressions.
 	static FORCE_INLINE PVOID InvalidFileHandle()
 	{
-#if defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS)
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS) || defined(PLATFORM_SOLARIS)
 		return (PVOID)(SSIZE)-1;
 #else
 		return nullptr;

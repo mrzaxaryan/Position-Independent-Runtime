@@ -29,7 +29,7 @@
 #pragma once
 
 #include "platform/platform.h"
-#include "platform/os/windows/peb.h"
+#include "platform/os/windows/common/peb.h"
 
 /** @brief Sentinel value indicating that a valid SSN could not be resolved. */
 #define SYSCALL_SSN_INVALID ((INT32) - 1)

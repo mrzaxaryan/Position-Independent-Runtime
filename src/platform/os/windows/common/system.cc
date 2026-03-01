@@ -1,6 +1,6 @@
-#include "platform/os/windows/system.h"
+#include "platform/os/windows/common/system.h"
 #include "platform/platform.h"
-#include "platform/os/windows/peb.h"
+#include "platform/os/windows/common/peb.h"
 #include "core/algorithms/djb2.h"
 
 SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)

@@ -6,8 +6,8 @@
  */
 
 #include "platform/io/file_system/file_system.h"
-#include "platform/os/uefi/efi_context.h"
-#include "platform/os/uefi/efi_file_protocol.h"
+#include "platform/os/uefi/common/efi_context.h"
+#include "platform/os/uefi/common/efi_file_protocol.h"
 #include "core/memory/memory.h"
 #include "platform/io/path.h"
 

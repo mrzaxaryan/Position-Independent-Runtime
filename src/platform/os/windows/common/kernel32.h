@@ -19,7 +19,7 @@
 #pragma once
 
 #include "core/types/primitives.h"
-#include "platform/os/windows/windows_types.h"
+#include "platform/os/windows/common/windows_types.h"
 #include "core/algorithms/djb2.h"
 #include "core/types/error.h"
 #include "core/types/result.h"

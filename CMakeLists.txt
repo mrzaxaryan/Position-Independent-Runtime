@@ -48,7 +48,11 @@ include(${CMAKE_SOURCE_DIR}/cmake/platforms/${_platform_map_${PIR_PLATFORM}}.cma
 
 # Universal target flags (every platform uses -target for both compile and link)
 list(APPEND PIR_BASE_FLAGS -target ${PIR_TRIPLE})
-list(APPEND PIR_BASE_LINK_FLAGS -target ${PIR_TRIPLE})
+if(DEFINED PIR_LINK_TRIPLE)
+    list(APPEND PIR_BASE_LINK_FLAGS -target ${PIR_LINK_TRIPLE})
+else()
+    list(APPEND PIR_BASE_LINK_FLAGS -target ${PIR_TRIPLE})
+endif()
 
 # =============================================================================
 # Output Configuration

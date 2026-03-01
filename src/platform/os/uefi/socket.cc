@@ -4,12 +4,12 @@
 
 #include "platform/network/socket.h"
 #include "core/memory/memory.h"
-#include "platform/os/uefi/efi_context.h"
-#include "platform/os/uefi/efi_tcp4_protocol.h"
-#include "platform/os/uefi/efi_tcp6_protocol.h"
-#include "platform/os/uefi/efi_service_binding.h"
-#include "platform/os/uefi/efi_simple_network_protocol.h"
-#include "platform/os/uefi/efi_ip4_config2_protocol.h"
+#include "platform/os/uefi/common/efi_context.h"
+#include "platform/os/uefi/common/efi_tcp4_protocol.h"
+#include "platform/os/uefi/common/efi_tcp6_protocol.h"
+#include "platform/os/uefi/common/efi_service_binding.h"
+#include "platform/os/uefi/common/efi_simple_network_protocol.h"
+#include "platform/os/uefi/common/efi_ip4_config2_protocol.h"
 #include "platform/io/logger.h"
 
 // =============================================================================
