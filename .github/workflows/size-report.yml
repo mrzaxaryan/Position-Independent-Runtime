@@ -311,7 +311,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64]
+        arch: [i386, x86_64, aarch64]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -561,7 +561,9 @@ jobs:
                   ("aarch64", "uefi_aarch64"),
               ]),
               ("Solaris", [
+                  ("i386", "solaris_i386"),
                   ("x86_64", "solaris_x86_64"),
+                  ("aarch64", "solaris_aarch64"),
               ]),
           ]
 
