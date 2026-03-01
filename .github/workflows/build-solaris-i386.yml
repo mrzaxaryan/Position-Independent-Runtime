@@ -54,6 +54,14 @@ jobs:
           cmake --preset solaris-i386-release -DOPTIMIZATION_LEVEL=O0
           cmake --build --preset solaris-i386-release
 
+      - name: Inspect ELF headers
+        if: always()
+        run: |
+          ELF=$(find build -type f -name "output.elf" | head -n 1)
+          file "$ELF" || true
+          llvm-readelf -h "$ELF" || true
+          llvm-readelf -l "$ELF" || true
+
       - name: Upload Artifacts -O0
         if: always()
         uses: actions/upload-artifact@v4

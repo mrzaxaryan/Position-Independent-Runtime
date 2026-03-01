@@ -32,29 +32,22 @@ elseif(PIR_ARCH STREQUAL "aarch64")
     # No code model override needed for AArch64.
 endif()
 
-# Clang's Solaris driver doesn't support -fuse-ld=lld or --ld-path, so invoke
-# LLD directly for linking. The input objects carry the correct Solaris ELF
-# attributes from compilation, and LLD infers the output format from them.
-find_program(PIR_LLD ld.lld REQUIRED)
-set(PIR_DIRECT_LINKER TRUE)
-set(CMAKE_CXX_LINK_EXECUTABLE "\"${PIR_LLD}\" <LINK_FLAGS> <OBJECTS> -o <TARGET>")
-
-# Reset linker flags: compiler-driver flags (-nostdlib, -fno-jump-tables, -target)
-# are not valid when invoking LLD directly. The -fno-jump-tables attribute is
-# already embedded in the LTO bitcode objects from compilation, so LLD's LTO
-# pipeline honors it without any extra flag.
-set(PIR_BASE_LINK_FLAGS "")
-
-# Linker flags (no -Wl, prefix needed for direct LLD invocation)
-list(APPEND PIR_BASE_LINK_FLAGS
-    -e entry_point
+# Linker configuration (ELF via LLD)
+# Use clang++ as the linker driver with -fuse-ld=lld so it passes the correct
+# -m elf_{i386,x86_64}_sol2 emulation to LLD, producing proper Solaris ELFs.
+# Direct ld.lld invocation misses the emulation flag and produces Linux-format
+# ELFs that the Solaris kernel refuses to execute (ENOEXEC).
+pir_add_link_flags(
+    -e,entry_point
     --no-dynamic-linker
     --no-pie
     --symbol-ordering-file=${CMAKE_SOURCE_DIR}/cmake/data/function.order.solaris
     --build-id=none
-    -Map=${PIR_MAP_FILE}
+    -Map,${PIR_MAP_FILE}
 )
 
 if(PIR_BUILD_TYPE STREQUAL "release")
-    list(APPEND PIR_BASE_LINK_FLAGS --strip-all --gc-sections)
+    pir_add_link_flags(--strip-all --gc-sections)
 endif()
+
+list(APPEND PIR_BASE_LINK_FLAGS -fuse-ld=lld)
