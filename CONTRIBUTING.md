@@ -225,8 +225,32 @@ OPCODE_TEXT = 0x1, ///< Text data frame — payload is UTF-8 (RFC 6455 Section 5
 
 **When RFC documentation is optional:**
 - Internal utility functions with no protocol specification
-- Platform-specific OS API wrappers (document the OS API instead)
 - Test files
+
+### Windows NT API Documentation References
+
+Platform-specific OS API wrappers (NTDLL, Kernel32) **must** include Doxygen documentation with `@see` links to the official Microsoft Learn documentation instead of RFC links. Use the same `@see` tag pattern as RFC references: human-readable name on the first line, full URL indented on the next.
+
+- **WDK-documented functions** — most Zw* syscall wrappers are in the WDK DDI reference
+- **Partially documented functions** — some are only in Win32 DevNotes or under the Nt prefix; link to the closest available page
+- **Undocumented functions** (e.g., ZwCreateUserProcess, ZwSetInformationObject) — add `@note This function is undocumented by Microsoft.` and link to the closest documented Win32 equivalent
+
+**When Microsoft Learn documentation is required:**
+- All NTDLL Zw*/Nt* syscall wrappers
+- All NTDLL Rtl* runtime library wrappers
+- All Kernel32/Win32 API wrappers
+- Windows-specific structs, enums, and constants that correspond to documented types
+
+**Common URL patterns:**
+
+| Source | URL Pattern |
+|--------|-------------|
+| WDK DDI (wdm.h) | `https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-{function}` |
+| WDK DDI (ntifs.h) | `https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-{function}` |
+| WDK DDI (ntddk.h) | `https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/nf-ntddk-{function}` |
+| Win32 API | `https://learn.microsoft.com/en-us/windows/win32/api/{header}/nf-{header}-{function}` |
+| Win32 DevNotes | `https://learn.microsoft.com/en-us/windows/win32/devnotes/{function}` |
+| Kernel concepts | `https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/{topic}` |
 
 ### Naming
 

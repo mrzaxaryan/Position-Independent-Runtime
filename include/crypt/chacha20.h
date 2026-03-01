@@ -239,13 +239,13 @@ public:
 
     /**
      * @brief Updates IV with XOR of nonce and sequence number
-     * @param iv Original IV
-     * @param aad Additional data to XOR
-     * @param counter Block counter
+     * @param iv Original IV (12 bytes)
+     * @param aad Additional data to XOR (sequence number bytes)
+     * @param counter Block counter (nullable)
      *
      * @details Used in TLS 1.3 to derive per-record nonce.
      */
-    VOID IvUpdate(const UINT8 *iv, const UINT8 *aad, const UINT8 *counter);
+    VOID IvUpdate(Span<const UINT8, TLS_CHACHA20_IV_LENGTH> iv, Span<const UINT8> aad, const UINT8 *counter);
 
     /**
      * @brief Encrypts/decrypts data using ChaCha20

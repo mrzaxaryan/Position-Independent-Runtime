@@ -401,12 +401,12 @@ VOID ChaChaPoly1305::IVSetup96BitNonce(const UINT8 *iv, const UINT8 *counter)
     }
 }
 
-VOID ChaChaPoly1305::IvUpdate(const UINT8 *iv, const UINT8 *aad, const UINT8 *counter)
+VOID ChaChaPoly1305::IvUpdate(Span<const UINT8, TLS_CHACHA20_IV_LENGTH> iv, Span<const UINT8> aad, const UINT8 *counter)
 {
     this->input[12] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
-    this->input[13] = _private_tls_U8TO32_LITTLE(iv + 0);
-    this->input[14] = _private_tls_U8TO32_LITTLE(iv + 4) ^ _private_tls_U8TO32_LITTLE(aad);
-    this->input[15] = _private_tls_U8TO32_LITTLE(iv + 8) ^ _private_tls_U8TO32_LITTLE(aad + 4);
+    this->input[13] = _private_tls_U8TO32_LITTLE(iv.Data() + 0);
+    this->input[14] = _private_tls_U8TO32_LITTLE(iv.Data() + 4) ^ _private_tls_U8TO32_LITTLE(aad.Data());
+    this->input[15] = _private_tls_U8TO32_LITTLE(iv.Data() + 8) ^ _private_tls_U8TO32_LITTLE(aad.Data() + 4);
 }
 
 VOID ChaChaPoly1305::EncryptBytes(Span<const UINT8> m_span, Span<UINT8> c_span)

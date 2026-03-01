@@ -113,34 +113,34 @@ private:
     VOID VliClear(UINT64 *pVli);
 
     /** @brief Tests if VLI is zero */
-    INT32 VliIsZero(UINT64 *pVli);
+    INT32 VliIsZero(const UINT64 *pVli);
 
     /** @brief Tests specific bit of VLI */
-    UINT64 VliTestBit(UINT64 *pVli, UINT32 p_bit);
+    UINT64 VliTestBit(const UINT64 *pVli, UINT32 p_bit);
 
     /** @brief Returns number of significant digits */
-    UINT32 VliNumDigits(UINT64 *pVli);
+    UINT32 VliNumDigits(const UINT64 *pVli);
 
     /** @brief Returns number of significant bits */
-    UINT32 VliNumBits(UINT64 *pVli);
+    UINT32 VliNumBits(const UINT64 *pVli);
 
     /** @brief Copies VLI: pDest = pSrc */
-    VOID VliSet(UINT64 *pDest, UINT64 *pSrc);
+    VOID VliSet(UINT64 *pDest, const UINT64 *pSrc);
 
     /** @brief Compares two VLIs: returns -1, 0, or 1 */
-    INT32 VliCmp(UINT64 *pLeft, UINT64 *pRight);
+    INT32 VliCmp(const UINT64 *pLeft, const UINT64 *pRight);
 
     /** @brief Left shift: pResult = pIn << shift */
-    UINT64 VliLShift(UINT64 *pResult, UINT64 *pIn, UINT32 shift);
+    UINT64 VliLShift(UINT64 *pResult, const UINT64 *pIn, UINT32 shift);
 
     /** @brief Right shift by 1: pVli >>= 1 */
     VOID VliRShift1(UINT64 *pVli);
 
     /** @brief Addition: pResult = pLeft + pRight, returns carry */
-    UINT64 VliAdd(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight);
+    UINT64 VliAdd(UINT64 *pResult, const UINT64 *pLeft, const UINT64 *pRight);
 
     /** @brief Subtraction: pResult = pLeft - pRight, returns borrow */
-    UINT64 VliSub(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight);
+    UINT64 VliSub(UINT64 *pResult, const UINT64 *pLeft, const UINT64 *pRight);
 
     /** @brief 64x64 -> 128 bit multiplication */
     UINT128_ Mul64_64(UINT64 left, UINT64 right);
@@ -149,26 +149,26 @@ private:
     UINT128_ Add128_128(UINT128_ a, UINT128_ b);
 
     /** @brief Full multiplication: pResult = pLeft * pRight */
-    VOID VliMult(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight);
+    VOID VliMult(UINT64 *pResult, const UINT64 *pLeft, const UINT64 *pRight);
 
     /** @brief Squaring: pResult = pLeft^2 */
-    VOID VliSquare(UINT64 *pResult, UINT64 *pLeft);
+    VOID VliSquare(UINT64 *pResult, const UINT64 *pLeft);
 
     // =========================================================================
     // Modular Arithmetic
     // =========================================================================
 
     /** @brief Modular addition: pResult = (pLeft + pRight) mod pMod */
-    VOID VliModAdd(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight, UINT64 *pMod);
+    VOID VliModAdd(UINT64 *pResult, const UINT64 *pLeft, const UINT64 *pRight, const UINT64 *pMod);
 
     /** @brief Modular subtraction: pResult = (pLeft - pRight) mod pMod */
-    VOID VliModSub(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight, UINT64 *pMod);
+    VOID VliModSub(UINT64 *pResult, const UINT64 *pLeft, const UINT64 *pRight, const UINT64 *pMod);
 
     /** @brief Fast reduction mod p for 256-bit curves (P-256) */
-    VOID VliMmodFast256(UINT64 *pResult, UINT64 *pProduct);
+    VOID VliMmodFast256(UINT64 *pResult, const UINT64 *pProduct);
 
     /** @brief Helper for P-384 reduction */
-    VOID OmegaMult384(UINT64 *pResult, UINT64 *pProduct);
+    VOID OmegaMult384(UINT64 *pResult, const UINT64 *pRight);
 
     /** @brief Fast reduction mod p for 384-bit curves (P-384) */
     VOID VliMmodFast384(UINT64 *pResult, UINT64 *pProduct);
@@ -177,13 +177,13 @@ private:
     VOID MmodFast(UINT64 *pResult, UINT64 *pProduct);
 
     /** @brief Fast modular multiplication using curve-specific reduction */
-    VOID VliModMultFast(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight);
+    VOID VliModMultFast(UINT64 *pResult, const UINT64 *pLeft, const UINT64 *pRight);
 
     /** @brief Fast modular squaring using curve-specific reduction */
-    VOID VliModSquareFast(UINT64 *pResult, UINT64 *pLeft);
+    VOID VliModSquareFast(UINT64 *pResult, const UINT64 *pLeft);
 
     /** @brief Modular inverse: pResult = pInput^(-1) mod pMod */
-    VOID VliModInv(UINT64 *pResult, UINT64 *pInput, UINT64 *pMod);
+    VOID VliModInv(UINT64 *pResult, const UINT64 *pInput, const UINT64 *pMod);
 
     // =========================================================================
     // Elliptic Curve Point Operations
@@ -215,16 +215,16 @@ private:
     // =========================================================================
 
     /** @brief Converts big-endian bytes to native VLI format */
-    VOID Bytes2Native(UINT64 (&pNative)[MAX_NUM_ECC_DIGITS], const UINT8 *pBytes);
+    VOID Bytes2Native(UINT64 (&pNative)[MAX_NUM_ECC_DIGITS], Span<const UINT8> bytes);
 
     /** @brief Converts native VLI format to big-endian bytes */
-    VOID Native2Bytes(UINT8 *pBytes, const UINT64 (&pNative)[MAX_NUM_ECC_DIGITS]);
+    VOID Native2Bytes(Span<UINT8> bytes, const UINT64 (&pNative)[MAX_NUM_ECC_DIGITS]);
 
     /** @brief Computes modular square root for point decompression */
     VOID ModSqrt(UINT64 (&pA)[MAX_NUM_ECC_DIGITS]);
 
     /** @brief Decompresses point from compressed format (02/03 || x) */
-    VOID PointDecompress(EccPoint &point, const UINT8 *pCompressed);
+    VOID PointDecompress(EccPoint &point, Span<const UINT8> compressed);
 
 public:
     /**

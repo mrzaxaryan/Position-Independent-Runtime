@@ -2,18 +2,28 @@
  * @file djb2.h
  * @brief DJB2 Hash Algorithm Implementation
  *
- * @details Implements the DJB2 hash algorithm by Daniel J. Bernstein.
- * This is a fast, simple hash function commonly used for string hashing,
- * hash tables, and API name hashing in position-independent code.
+ * @details Implements the DJB2 hash algorithm, originally created by
+ * Daniel J. Bernstein and first published in comp.lang.c (1991). The algorithm
+ * computes a non-cryptographic hash using the recurrence hash(i) = hash(i-1) * 33 + c,
+ * where 33 is chosen for its favorable distribution properties. DJB2 is the hash
+ * function used in Bernstein's CDB (constant database) package.
  *
- * Key features:
- * - Compile-time seeding using build date for anti-analysis
- * - Case-insensitive hashing for API name resolution
- * - Both runtime and compile-time hash computation
- * - Support for narrow (CHAR) and wide (WCHAR) strings
+ * This implementation extends the original algorithm with:
+ * - **Build-unique seeding:** The initial hash value is derived from __DATE__ using
+ *   FNV-1a, producing different hash outputs per compilation. This defeats static
+ *   signature matching against known hash constants.
+ * - **Case-insensitive hashing:** Characters are lowercased before hashing, enabling
+ *   Windows API name resolution where export names are case-insensitive.
+ * - **Dual evaluation modes:** Both runtime (`Hash`) and compile-time (`HashCompileTime`)
+ *   variants are provided, allowing compile-time hash precomputation for constant
+ *   expressions used in API resolution comparisons.
+ * - **Wide string support:** Templated on character type to support both CHAR and WCHAR
+ *   inputs with a single implementation.
  *
- * @note The seed is derived from __DATE__ at compile time, making hash values
- * unique per build. This helps evade signature-based detection.
+ * @see DJB2 Hash Function — Daniel J. Bernstein, comp.lang.c (1991)
+ *      https://cr.yp.to/cdb.html
+ * @see IETF Draft — The FNV Non-Cryptographic Hash Algorithm (seed generation)
+ *      https://datatracker.ietf.org/doc/html/draft-eastlake-fnv
  *
  * @ingroup core
  *
@@ -27,62 +37,111 @@
 #include "string.h"
 
 /**
- * @brief Compile-time FNV-1a hash for seed generation
- * @param s Null-terminated string to hash
- * @return Hash value computed at compile time
+ * @brief Compile-time FNV-1a hash for DJB2 seed generation
  *
- * @details Uses FNV-1a algorithm to generate a unique seed from the build date.
- * This function must be consteval to ensure compile-time evaluation.
+ * @details Computes a hash of the given string using the Fowler-Noll-Vo 1a (FNV-1a)
+ * algorithm with 32-bit parameters extended to 64-bit arithmetic:
+ * 1. Initialize hash to the FNV-1 32-bit offset basis (2166136261 / 0x811C9DC5)
+ * 2. For each byte of input: XOR the byte into the hash, then multiply by the
+ *    FNV-1 32-bit prime (16777619 / 0x01000193)
+ * 3. Arithmetic is performed in 64-bit to allow natural overflow accumulation
+ *
+ * This function is invoked with __DATE__ to produce a build-unique seed for
+ * the DJB2 hash, ensuring that hash values differ across compilations. The
+ * consteval qualifier guarantees the computation is fully resolved at compile
+ * time and never appears in the generated binary as a runtime call.
+ *
+ * @param s Null-terminated string to hash (typically __DATE__)
+ * @return FNV-1a hash value computed entirely at compile time
+ *
+ * @see IETF Draft Section 6.2 — FNV-1a algorithm description
+ *      https://datatracker.ietf.org/doc/html/draft-eastlake-fnv#section-6.2
+ * @see IETF Draft Section 7.1 — FNV-1 32-bit parameters (offset basis and prime)
+ *      https://datatracker.ietf.org/doc/html/draft-eastlake-fnv#section-7.1
  */
 consteval UINT64 ct_hash_str_seed(const CHAR *s)
 {
-    UINT64 h = (UINT64)2166136261u;
-    for (UINT64 i = 0; s[i] != '\0'; ++i)
-        h = (h ^ (UINT64)(UINT8)s[i]) * (UINT64)16777619u;
-    return h;
+	UINT64 h = (UINT64)2166136261u; ///< FNV-1 32-bit offset basis (IETF Draft Section 7.1)
+	for (UINT64 i = 0; s[i] != '\0'; ++i)
+		h = (h ^ (UINT64)(UINT8)s[i]) * (UINT64)16777619u; ///< FNV-1 32-bit prime (IETF Draft Section 7.1)
+	return h;
 }
 
 /**
  * @class Djb2
- * @brief DJB2 hash algorithm implementation for string hashing
+ * @brief DJB2 hash algorithm implementation for case-insensitive string hashing
  *
  * @details Provides both runtime and compile-time string hashing using the DJB2
- * algorithm. The hash is case-insensitive, making it ideal for Windows API
- * name resolution where function names are case-insensitive.
- *
- * @par Example Usage:
+ * algorithm by Daniel J. Bernstein. The core recurrence is:
  * @code
- * // Runtime hash computation
- * UINT64 hash = Djb2::Hash("LoadLibraryA");
+ * hash = hash * 33 + c
+ * @endcode
+ * which is computed as `(hash << 5) + hash + c` to avoid multiplication.
+ * The multiplier 33 was chosen by Bernstein for its empirically favorable
+ * distribution properties across typical string inputs.
  *
- * // Compile-time hash computation (for constant expressions)
- * constexpr UINT64 LOADLIBRARY_HASH = Djb2::HashCompileTime("LoadLibraryA");
+ * All hashing is case-insensitive: each character is converted to lowercase
+ * via String::ToLowerCase() before being folded into the hash. This is
+ * essential for Windows PE export name resolution, where DLL export names
+ * may differ in casing across Windows versions.
  *
- * // Compare runtime hash with compile-time hash
- * if (Djb2::Hash(exportName) == LOADLIBRARY_HASH) {
- *     // Found LoadLibraryA
+ * The initial hash value (seed) is not the traditional DJB2 constant 5381,
+ * but is instead derived at compile time from __DATE__ via FNV-1a hashing.
+ * This makes every build produce a unique set of hash values, preventing
+ * signature-based detection of known API hash constants.
+ *
+ * @par Typical usage — API name resolution:
+ * @code
+ * // Precompute hash at compile time
+ * constexpr UINT64 TARGET = Djb2::HashCompileTime("LoadLibraryA");
+ *
+ * // Walk PE export table, compute hash at runtime, compare
+ * if (Djb2::Hash(exportName) == TARGET)
+ * {
+ *     // Resolved LoadLibraryA
  * }
  * @endcode
+ *
+ * @see DJB2 Hash Function — Daniel J. Bernstein, comp.lang.c (1991)
+ *      https://cr.yp.to/cdb.html
  */
 class Djb2
 {
 private:
     /**
-     * @brief Compile-time seed derived from build date
-     * @details Unique per build, provides anti-signature protection.
+     * @brief Compile-time seed derived from __DATE__ via FNV-1a
+     *
+     * @details Replaces the traditional DJB2 initial value of 5381 with a
+     * build-unique value. Because the seed changes on every compilation,
+     * precomputed hash tables from one build cannot be reused to identify
+     * API names in a binary from a different build, defeating static
+     * signature-based detection of hash constants.
+     *
+     * @see ct_hash_str_seed — FNV-1a seed generation function
      */
     static constexpr UINT64 Seed = ct_hash_str_seed(__DATE__);
 
 public:
     /**
-     * @brief Computes DJB2 hash at runtime
+     * @brief Computes a case-insensitive DJB2 hash at runtime
+     *
+     * @details Iterates over a null-terminated string, applying the DJB2 recurrence
+     * for each character:
+     * 1. Convert the character to lowercase via String::ToLowerCase()
+     * 2. Compute hash = (hash << 5) + hash + c, equivalent to hash * 33 + c
+     * 3. Repeat until the null terminator is reached
+     *
+     * The function is marked constexpr so the compiler may evaluate it at compile
+     * time when the input is a constant expression, but unlike HashCompileTime()
+     * it is not required to — it can also be called with runtime string pointers
+     * (e.g., PE export names discovered during module enumeration).
+     *
      * @tparam TChar Character type (CHAR or WCHAR)
      * @param value Null-terminated string to hash
-     * @return Hash value
+     * @return 64-bit DJB2 hash of the lowercased input
      *
-     * @details Case-insensitive hash computation. Each character is converted
-     * to lowercase before hashing. The algorithm uses the formula:
-     * hash = ((hash << 5) + hash) + c, which is equivalent to hash * 33 + c.
+     * @see DJB2 Hash Function — Daniel J. Bernstein, comp.lang.c (1991)
+     *      https://cr.yp.to/cdb.html
      */
     template <typename TChar>
     static constexpr UINT64 Hash(const TChar *value)
@@ -97,17 +156,30 @@ public:
     }
 
     /**
-     * @brief Computes DJB2 hash at compile time
+     * @brief Computes a case-insensitive DJB2 hash at compile time
+     *
+     * @details Applies the same DJB2 recurrence as Hash(), but is declared
+     * consteval to guarantee the computation is fully resolved during
+     * compilation. The result is emitted as an immediate constant in the
+     * instruction stream, never appearing in a data section.
+     *
+     * The template parameter N is deduced from the string literal array
+     * size, restricting the input to compile-time-known string literals
+     * or constexpr arrays. Typical use is to precompute the expected hash
+     * of a target API name, which is then compared against runtime hashes
+     * computed by Hash() during PE export table enumeration:
+     *
+     * @code
+     * constexpr UINT64 ZW_CREATE_FILE = Djb2::HashCompileTime("ZwCreateFile");
+     * @endcode
+     *
      * @tparam TChar Character type (CHAR or WCHAR)
-     * @tparam N Array size (deduced automatically)
-     * @param value String literal to hash
-     * @return Hash value computed at compile time
+     * @tparam N Array size (deduced from the string literal)
+     * @param value String literal or constexpr array to hash
+     * @return 64-bit DJB2 hash computed entirely at compile time
      *
-     * @details Enables compile-time hash computation for string literals.
-     * The result can be used in switch statements, constexpr variables,
-     * and template parameters.
-     *
-     * @note Must be called with a string literal or constexpr array.
+     * @see DJB2 Hash Function — Daniel J. Bernstein, comp.lang.c (1991)
+     *      https://cr.yp.to/cdb.html
      */
     template <typename TChar, UINT64 N>
     static consteval UINT64 HashCompileTime(const TChar (&value)[N])

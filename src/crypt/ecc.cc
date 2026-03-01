@@ -30,7 +30,7 @@ VOID Ecc::VliClear(UINT64 *pVli)
 }
 
 /* Returns 1 if vli == 0, 0 otherwise. */
-INT32 Ecc::VliIsZero(UINT64 *pVli)
+INT32 Ecc::VliIsZero(const UINT64 *pVli)
 {
     UINT64 acc = 0;
     for (UINT32 i = 0; i < this->numEccDigits; ++i)
@@ -39,13 +39,13 @@ INT32 Ecc::VliIsZero(UINT64 *pVli)
 }
 
 /* Returns nonzero if bit bit of vli is set. */
-UINT64 Ecc::VliTestBit(UINT64 *pVli, UINT32 bit)
+UINT64 Ecc::VliTestBit(const UINT64 *pVli, UINT32 bit)
 {
     return (pVli[bit >> 6] & ((UINT64)1 << (bit & 63)));
 }
 
 /* Counts the number of 64-bit "digits" in vli. */
-UINT32 Ecc::VliNumDigits(UINT64 *pVli)
+UINT32 Ecc::VliNumDigits(const UINT64 *pVli)
 {
     INT32 i;
     /* Search from the end until we find a non-zero digit.
@@ -58,7 +58,7 @@ UINT32 Ecc::VliNumDigits(UINT64 *pVli)
 }
 
 /* Counts the number of bits required for vli. */
-UINT32 Ecc::VliNumBits(UINT64 *pVli)
+UINT32 Ecc::VliNumBits(const UINT64 *pVli)
 {
     UINT32 numDigits = this->VliNumDigits(pVli);
     if (numDigits == 0)
@@ -71,14 +71,14 @@ UINT32 Ecc::VliNumBits(UINT64 *pVli)
 }
 
 /* Sets dest = src. */
-VOID Ecc::VliSet(UINT64 *pDest, UINT64 *pSrc)
+VOID Ecc::VliSet(UINT64 *pDest, const UINT64 *pSrc)
 {
     for (UINT32 i = 0; i < this->numEccDigits; ++i)
         pDest[i] = pSrc[i];
 }
 
 /* Returns sign of left - right. */
-INT32 Ecc::VliCmp(UINT64 *pLeft, UINT64 *pRight)
+INT32 Ecc::VliCmp(const UINT64 *pLeft, const UINT64 *pRight)
 {
     INT32 i;
     for (i = this->numEccDigits - 1; i >= 0; --i)
@@ -96,7 +96,7 @@ INT32 Ecc::VliCmp(UINT64 *pLeft, UINT64 *pRight)
 }
 
 /* Computes result = in << c, returning carry. Can modify in place (if result == in). 0 < shift < 64. */
-UINT64 Ecc::VliLShift(UINT64 *pResult, UINT64 *pIn, UINT32 shift)
+UINT64 Ecc::VliLShift(UINT64 *pResult, const UINT64 *pIn, UINT32 shift)
 {
     UINT64 carry = 0;
     UINT32 i;
@@ -126,7 +126,7 @@ VOID Ecc::VliRShift1(UINT64 *pVli)
 }
 
 /* Computes result = left + right, returning carry. Can modify in place. */
-UINT64 Ecc::VliAdd(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight)
+UINT64 Ecc::VliAdd(UINT64 *pResult, const UINT64 *pLeft, const UINT64 *pRight)
 {
     unsigned long long carry = 0;
     for (UINT32 i = 0; i < this->numEccDigits; ++i)
@@ -137,7 +137,7 @@ UINT64 Ecc::VliAdd(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight)
 }
 
 /* Computes result = left - right, returning borrow. Can modify in place. */
-UINT64 Ecc::VliSub(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight)
+UINT64 Ecc::VliSub(UINT64 *pResult, const UINT64 *pLeft, const UINT64 *pRight)
 {
     unsigned long long borrow = 0;
     for (UINT32 i = 0; i < this->numEccDigits; ++i)
@@ -176,7 +176,7 @@ UINT128_ Ecc::Add128_128(UINT128_ a, UINT128_ b)
     return result;
 }
 
-VOID Ecc::VliMult(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight)
+VOID Ecc::VliMult(UINT64 *pResult, const UINT64 *pLeft, const UINT64 *pRight)
 {
     UINT128_ r01 = {0, 0};
     UINT64 r2 = 0;
@@ -202,7 +202,7 @@ VOID Ecc::VliMult(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight)
     pResult[this->numEccDigits * 2 - 1] = r01.low;
 }
 
-VOID Ecc::VliSquare(UINT64 *pResult, UINT64 *pLeft)
+VOID Ecc::VliSquare(UINT64 *pResult, const UINT64 *pLeft)
 {
     UINT128_ r01 = {0, 0};
     UINT64 r2 = 0;
@@ -234,7 +234,7 @@ VOID Ecc::VliSquare(UINT64 *pResult, UINT64 *pLeft)
 
 /* Computes result = (left + right) % mod.
    Assumes that left < mod and right < mod, result != mod. */
-VOID Ecc::VliModAdd(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight, UINT64 *pMod)
+VOID Ecc::VliModAdd(UINT64 *pResult, const UINT64 *pLeft, const UINT64 *pRight, const UINT64 *pMod)
 {
     UINT64 carry = this->VliAdd(pResult, pLeft, pRight);
     if (carry || this->VliCmp(pResult, pMod) >= 0)
@@ -245,7 +245,7 @@ VOID Ecc::VliModAdd(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight, UINT64 *pMod
 
 /* Computes result = (left - right) % mod.
    Assumes that left < mod and right < mod, result != mod. */
-VOID Ecc::VliModSub(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight, UINT64 *pMod)
+VOID Ecc::VliModSub(UINT64 *pResult, const UINT64 *pLeft, const UINT64 *pRight, const UINT64 *pMod)
 {
     UINT64 borrow = this->VliSub(pResult, pLeft, pRight);
     if (borrow)
@@ -257,7 +257,7 @@ VOID Ecc::VliModSub(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight, UINT64 *pMod
 
 /* Computes result = product % curveP
    from http://www.nsa.gov/ia/_files/nist-routines.pdf */
-VOID Ecc::VliMmodFast256(UINT64 *pResult, UINT64 *pProduct)
+VOID Ecc::VliMmodFast256(UINT64 *pResult, const UINT64 *pProduct)
 {
     UINT64 tmp[MAX_NUM_ECC_DIGITS];
     INT64 carry;
@@ -334,7 +334,7 @@ VOID Ecc::VliMmodFast256(UINT64 *pResult, UINT64 *pProduct)
     }
 }
 
-VOID Ecc::OmegaMult384(UINT64 *pResult, UINT64 *pRight)
+VOID Ecc::OmegaMult384(UINT64 *pResult, const UINT64 *pRight)
 {
     UINT64 tmp[MAX_NUM_ECC_DIGITS];
     UINT64 carry, diff;
@@ -407,7 +407,7 @@ VOID Ecc::MmodFast(UINT64 *pResult, UINT64 *pProduct)
 }
 
 /* Computes p_result = (p_left * p_right) % curve_p. */
-VOID Ecc::VliModMultFast(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight)
+VOID Ecc::VliModMultFast(UINT64 *pResult, const UINT64 *pLeft, const UINT64 *pRight)
 {
     UINT64 product[2 * MAX_NUM_ECC_DIGITS];
     this->VliMult(product, pLeft, pRight);
@@ -415,7 +415,7 @@ VOID Ecc::VliModMultFast(UINT64 *pResult, UINT64 *pLeft, UINT64 *pRight)
 }
 
 /* Computes p_result = p_left^2 % curveP. */
-VOID Ecc::VliModSquareFast(UINT64 *pResult, UINT64 *pLeft)
+VOID Ecc::VliModSquareFast(UINT64 *pResult, const UINT64 *pLeft)
 {
     UINT64 product[2 * MAX_NUM_ECC_DIGITS];
     this->VliSquare(product, pLeft);
@@ -425,7 +425,7 @@ VOID Ecc::VliModSquareFast(UINT64 *pResult, UINT64 *pLeft)
 /* Computes p_result = (1 / p_input) % p_mod. All VL== are the same size.
    See "From Euclid's GCD to Montgomery Multiplication to the Great Divide"
    https://labs.oracle.com/techrep/2001/smli_tr-2001-95.pdf */
-VOID Ecc::VliModInv(UINT64 *pResult, UINT64 *pInput, UINT64 *pMod)
+VOID Ecc::VliModInv(UINT64 *pResult, const UINT64 *pInput, const UINT64 *pMod)
 {
     UINT64 a[MAX_NUM_ECC_DIGITS], b[MAX_NUM_ECC_DIGITS], u[MAX_NUM_ECC_DIGITS], v[MAX_NUM_ECC_DIGITS];
     UINT64 carry;
@@ -712,23 +712,23 @@ VOID Ecc::Mult(EccPoint &result, EccPoint &point, UINT64 (&pScalar)[MAX_NUM_ECC_
     this->VliSet(result.y, Ry[0]);
 }
 
-VOID Ecc::Bytes2Native(UINT64 (&pNative)[MAX_NUM_ECC_DIGITS], const UINT8 *pBytes)
+VOID Ecc::Bytes2Native(UINT64 (&pNative)[MAX_NUM_ECC_DIGITS], Span<const UINT8> bytes)
 {
     UINT32 i;
     for (i = 0; i < this->numEccDigits; ++i)
     {
-        const UINT8 *p_digit = pBytes + 8 * (this->numEccDigits - 1 - i);
+        const UINT8 *p_digit = bytes.Data() + 8 * (this->numEccDigits - 1 - i);
         pNative[i] = ((UINT64)p_digit[0] << 56) | ((UINT64)p_digit[1] << 48) | ((UINT64)p_digit[2] << 40) | ((UINT64)p_digit[3] << 32) |
                      ((UINT64)p_digit[4] << 24) | ((UINT64)p_digit[5] << 16) | ((UINT64)p_digit[6] << 8) | (UINT64)p_digit[7];
     }
 }
 
-VOID Ecc::Native2Bytes(UINT8 *pBytes, const UINT64 (&pNative)[MAX_NUM_ECC_DIGITS])
+VOID Ecc::Native2Bytes(Span<UINT8> bytes, const UINT64 (&pNative)[MAX_NUM_ECC_DIGITS])
 {
     UINT32 i;
     for (i = 0; i < this->numEccDigits; ++i)
     {
-        UINT8 *p_digit = pBytes + 8 * (this->numEccDigits - 1 - i);
+        UINT8 *p_digit = bytes.Data() + 8 * (this->numEccDigits - 1 - i);
         p_digit[0] = (UINT8)(pNative[i] >> 56);
         p_digit[1] = (UINT8)(pNative[i] >> 48);
         p_digit[2] = (UINT8)(pNative[i] >> 40);
@@ -761,10 +761,10 @@ VOID Ecc::ModSqrt(UINT64 (&pA)[MAX_NUM_ECC_DIGITS])
     this->VliSet(pA, modResult);
 }
 
-VOID Ecc::PointDecompress(EccPoint &point, const UINT8 *pCompressed)
+VOID Ecc::PointDecompress(EccPoint &point, Span<const UINT8> compressed)
 {
     UINT64 _3[MAX_NUM_ECC_DIGITS] = {3}; /* -a = 3 */
-    this->Bytes2Native(point.x, pCompressed + 1);
+    this->Bytes2Native(point.x, compressed.Subspan(1));
 
     this->VliModSquareFast(point.y, point.x);                      /* y = x^2 */
     this->VliModSub(point.y, point.y, _3, this->curveP);           /* y = x^2 - 3 */
@@ -773,7 +773,7 @@ VOID Ecc::PointDecompress(EccPoint &point, const UINT8 *pCompressed)
 
     this->ModSqrt(point.y);
 
-    if ((point.y[0] & 0x01) != (pCompressed[0] & 0x01))
+    if ((point.y[0] & 0x01) != (compressed[0] & 0x01))
     {
         this->VliSub(point.y, this->curveP, point.y);
     }
@@ -801,12 +801,12 @@ Result<UINT32, Error> Ecc::ComputeSharedSecret(Span<const UINT8> publicKey, Span
     if (!random.GetArray(Span<UINT8>((UINT8 *)randomData, (USIZE)(this->numEccDigits * sizeof(UINT64)))))
         return Result<UINT32, Error>::Err(Error::Ecc_SharedSecretFailed);
 
-    this->Bytes2Native(peerPoint.x, publicKey.Data() + 1);
-    this->Bytes2Native(peerPoint.y, publicKey.Data() + 1 + this->eccBytes);
+    this->Bytes2Native(peerPoint.x, publicKey.Subspan(1, this->eccBytes));
+    this->Bytes2Native(peerPoint.y, publicKey.Subspan(1 + this->eccBytes, this->eccBytes));
 
     EccPoint product;
     this->Mult(product, peerPoint, this->privateKey, randomData);
-    this->Native2Bytes(secret.Data(), product.x);
+    this->Native2Bytes(Span<UINT8>(secret.Data(), this->eccBytes), product.x);
 
     if (this->IsZero(product))
         return Result<UINT32, Error>::Err(Error::Ecc_SharedSecretFailed);
@@ -861,7 +861,7 @@ Result<UINT32, Error> Ecc::ExportPublicKey(Span<UINT8> publicKey)
     if (publicKey.Data() == 0 || publicKey.Size() < this->eccBytes * 2 + 1)
         return Result<UINT32, Error>::Err(Error::Ecc_ExportKeyFailed);
     publicKey[0] = 0x04;
-    this->Native2Bytes(publicKey.Data() + 1, this->publicKey.x);
-    this->Native2Bytes(publicKey.Data() + 1 + this->eccBytes, this->publicKey.y);
+    this->Native2Bytes(publicKey.Subspan(1, this->eccBytes), this->publicKey.x);
+    this->Native2Bytes(publicKey.Subspan(1 + this->eccBytes, this->eccBytes), this->publicKey.y);
     return Result<UINT32, Error>::Ok(this->eccBytes * 2 + 1);
 }
