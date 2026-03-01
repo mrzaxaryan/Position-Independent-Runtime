@@ -12,10 +12,10 @@
 // =============================================================================
 // Cryptography
 // =============================================================================
-#include "crypt/sha2.h"
-#include "crypt/ecc.h"
-#include "crypt/chacha20.h"
-#include "crypt/chacha20_encoder.h"
+#include "crypto/sha2.h"
+#include "crypto/ecc.h"
+#include "crypto/chacha20.h"
+#include "crypto/chacha20_encoder.h"
 
 // =============================================================================
 // Networking

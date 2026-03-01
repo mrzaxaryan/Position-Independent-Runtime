@@ -95,8 +95,9 @@ if(DOXYGEN_FOUND)
     set(DOXYGEN_SOURCE_BROWSER YES)
 
     doxygen_add_docs(docs
-        ${CMAKE_SOURCE_DIR}/include
-        ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/core
+        ${CMAKE_SOURCE_DIR}/platform
+        ${CMAKE_SOURCE_DIR}/runtime
         COMMENT "Generating documentation with Doxygen"
     )
     set(_doxygen_status "Available")

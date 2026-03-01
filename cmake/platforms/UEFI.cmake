@@ -12,7 +12,7 @@ endif()
 pir_get_target_info()
 pir_filter_sources(windows linux macos posix)
 
-list(APPEND PIR_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/include/platform/uefi")
+list(APPEND PIR_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/platform/uefi")
 
 # Architecture-specific compiler flags
 if(PIR_ARCH STREQUAL "x86_64")

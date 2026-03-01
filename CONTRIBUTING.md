@@ -107,11 +107,14 @@ For more information, see the [VSCode WSL documentation](https://code.visualstud
 ## Project Structure
 
 ```
-include/                    # Headers (.h)
-  core/types/embedded/      # EMBEDDED_STRING, EMBEDDED_DOUBLE, EMBEDDED_ARRAY, EMBEDDED_FUNCTION_POINTER
-  algorithms/ crypt/ io/ memory/ network/ platform/ system/
+core/                       # CORE layer: types, memory, string, algorithms, encoding (.h + .cc co-located)
+  types/embedded/           # EMBEDDED_STRING, EMBEDDED_DOUBLE, EMBEDDED_ARRAY, EMBEDDED_FUNCTION_POINTER
+  string/ encoding/ algorithms/
+platform/                   # PLATFORM layer: OS abstraction, service interfaces + per-platform implementations
+  windows/ linux/ macos/ uefi/ posix/
+runtime/                    # RUNTIME layer: crypto, networking, TLS (.h + .cc co-located)
   runtime.h                 # Top-level include (CORE + PLATFORM + RUNTIME)
-src/                        # Implementations (.cc), mirrors include/ layout
+  crypto/ network/
 tests/                      # pir_tests.h (master), tests.h (helpers), *_tests.h (suites), start.cc (entry)
 cmake/                      # CMake modules, linker scripts, function.order
 ```
@@ -373,7 +376,7 @@ PIR has no exceptions. **Every fallible function must return `Result<T, Error>`*
 
 ### The Error Struct
 
-`Error` is a `(Code, Platform)` pair (8 bytes) defined in `include/core/error.h`:
+`Error` is a `(Code, Platform)` pair (8 bytes) defined in `core/error.h`:
 
 - **Runtime codes** (`PlatformKind::Runtime`): named `ErrorCodes` enumerators — `Socket_WriteFailed_Send`, `Tls_OpenFailed_Handshake`, etc.
 - **OS codes**: created via factories — `Error::Windows(ntstatus)`, `Error::Posix(errno)`, `Error::Uefi(efiStatus)`
@@ -407,7 +410,7 @@ if (!r)
 
 ### Platform Conversion Factories
 
-Each platform provides `result::From*` template functions in `include/platform/<platform>/platform_result.h`. These convert a raw OS status into `Ok`/`Err` in one call. Use them in low-level wrappers that only need the OS error code:
+Each platform provides `result::From*` template functions in `platform/<platform>/platform_result.h`. These convert a raw OS status into `Ok`/`Err` in one call. Use them in low-level wrappers that only need the OS error code:
 
 ```cpp
 // Windows (include "platform_result.h"):
@@ -452,7 +455,7 @@ LOG_ERROR("Operation failed (error: %e)", result.Error());
 ### Heap & Stack
 
 - **Avoid heap** unless no alternative. Prefer stack-local variables and fixed-size buffers
-- **`new`/`new[]`/`delete`/`delete[]` are safe** — they are globally overloaded to route through the custom `Allocator` (see `src/memory/allocator.cc`), so all heap allocations use the PIR memory backend
+- **`new`/`new[]`/`delete`/`delete[]` are safe** — they are globally overloaded to route through the custom `Allocator` (see `platform/allocator.cc`), so all heap allocations use the PIR memory backend
 - **Embed by value**, not by pointer: `IPAddress ipAddress;` not `IPAddress *ipAddress;`
 - **Watch stack size**: `EMBEDDED_STRING` temporaries materialize words on stack; avoid deep recursion
 
@@ -608,7 +611,7 @@ C++20 concepts and `requires` clauses enforce type safety. Use Clang builtins, n
 
 ### Platform Dispatch
 
-Two strategies: **conditional compilation** (`#if defined(PLATFORM_*)`) for small differences within one function, and **separate implementation files** (`src/platform/{windows,linux,macos}/`) when implementations diverge entirely. CMake selects the correct files.
+Two strategies: **conditional compilation** (`#if defined(PLATFORM_*)`) for small differences within one function, and **separate implementation files** (`platform/{windows,linux,macos}/`) when implementations diverge entirely. CMake selects the correct files.
 
 ---
 
@@ -617,10 +620,10 @@ Two strategies: **conditional compilation** (`#if defined(PLATFORM_*)`) for smal
 ### Kernel32 / Win32
 
 ```cpp
-// Header: include/platform/windows/kernel32.h
+// Header: platform/windows/kernel32.h
 class Kernel32 { public: [[nodiscard]] static Result<void, Error> MyFunction(UINT32 param1, PVOID param2); };
 
-// Source: src/platform/windows/kernel32.cc
+// Source: platform/windows/kernel32.cc
 Result<void, Error> Kernel32::MyFunction(UINT32 param1, PVOID param2)
 {
     BOOL ok = ((BOOL(STDCALL *)(UINT32, PVOID))

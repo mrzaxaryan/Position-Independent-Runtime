@@ -7,7 +7,7 @@ include_guard(GLOBAL)
 pir_get_target_info()
 pir_filter_sources(linux macos uefi posix)
 
-list(APPEND PIR_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/include/platform/windows")
+list(APPEND PIR_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/platform/windows")
 
 # Debug-specific
 if(PIR_BUILD_TYPE STREQUAL "debug")
