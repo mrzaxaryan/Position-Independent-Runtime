@@ -242,6 +242,24 @@
       "group": "build"
     },
     {
+      "label": "solaris-x86_64-debug",
+      "type": "shell",
+      "command": "cmake --preset solaris-x86_64-debug && cmake --build --preset solaris-x86_64-debug",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "solaris-x86_64-release",
+      "type": "shell",
+      "command": "cmake --preset solaris-x86_64-release && cmake --build --preset solaris-x86_64-release",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
       "label": "Build All Windows",
       "dependsOrder": "parallel",
       "dependsOn": [
@@ -285,6 +303,15 @@
       "problemMatcher": []
     },
     {
+      "label": "Build All Solaris",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "solaris-x86_64-release"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
       "label": "Run UEFI x86_64 (QEMU)",
       "type": "shell",
       "command": "qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -drive file=fat:rw:build/release/uefi/x86_64,format=raw,if=ide,index=0 -m 512 -nographic -nic user,model=e1000 -no-reboot",
@@ -314,7 +341,8 @@
         "Build All Windows",
         "Build All Linux",
         "Build All macOS",
-        "Build All UEFI"
+        "Build All UEFI",
+        "Build All Solaris"
       ],
       "group": {
         "kind": "build",

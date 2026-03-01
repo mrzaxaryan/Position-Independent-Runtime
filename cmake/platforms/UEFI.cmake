@@ -10,7 +10,7 @@ if(NOT PIR_ARCH MATCHES "^(x86_64|aarch64)$")
 endif()
 
 pir_get_target_info()
-pir_filter_sources(windows linux macos posix)
+pir_filter_sources(windows linux macos posix solaris)
 
 list(APPEND PIR_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/src/platform/os/uefi")
 

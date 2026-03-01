@@ -302,6 +302,32 @@
         "BUILD_TYPE": "release",
         "OPTIMIZATION_LEVEL": "Oz"
       }
+    },
+    {
+      "name": "solaris-x86_64-debug",
+      "displayName": "Solaris x86_64 (Debug)",
+      "description": "Solaris/illumos 64-bit x86 debug build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/debug/solaris/x86_64/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "x86_64",
+        "PLATFORM": "solaris",
+        "BUILD_TYPE": "debug",
+        "OPTIMIZATION_LEVEL": "Og"
+      }
+    },
+    {
+      "name": "solaris-x86_64-release",
+      "displayName": "Solaris x86_64 (Release)",
+      "description": "Solaris/illumos 64-bit x86 release build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/release/solaris/x86_64/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "x86_64",
+        "PLATFORM": "solaris",
+        "BUILD_TYPE": "release",
+        "OPTIMIZATION_LEVEL": "Oz"
+      }
     }
   ],
   "buildPresets": [
@@ -392,6 +418,14 @@
     {
       "name": "uefi-aarch64-release",
       "configurePreset": "uefi-aarch64-release"
+    },
+    {
+      "name": "solaris-x86_64-debug",
+      "configurePreset": "solaris-x86_64-debug"
+    },
+    {
+      "name": "solaris-x86_64-release",
+      "configurePreset": "solaris-x86_64-release"
     }
   ],
   "testPresets": [

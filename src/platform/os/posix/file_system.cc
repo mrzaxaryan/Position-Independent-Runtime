@@ -306,7 +306,7 @@ Result<void, Error> DirectoryIterator::Next()
 	if (first || bpos >= nread)
 	{
 		first = false;
-#if defined(PLATFORM_LINUX)
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_SOLARIS)
 		nread = (INT32)System::Call(SYS_GETDENTS64, (USIZE)handle, (USIZE)buffer, sizeof(buffer));
 #elif defined(PLATFORM_MACOS)
 		USIZE basep = 0;
@@ -322,15 +322,22 @@ Result<void, Error> DirectoryIterator::Next()
 
 #if defined(PLATFORM_LINUX)
 	linux_dirent64 *d = (linux_dirent64 *)(buffer + bpos);
+#elif defined(PLATFORM_SOLARIS)
+	solaris_dirent64 *d = (solaris_dirent64 *)(buffer + bpos);
 #elif defined(PLATFORM_MACOS)
 	bsd_dirent64 *d = (bsd_dirent64 *)(buffer + bpos);
 #endif
 
 	StringUtils::Utf8ToWide(Span<const CHAR>(d->d_name, StringUtils::Length(d->d_name)), Span<WCHAR>(currentEntry.Name, 256));
 
+#if defined(PLATFORM_SOLARIS)
+	currentEntry.IsDirectory = false;       // Solaris dirent64 has no d_type; cannot determine without stat
+	currentEntry.Type = 0;                  // DT_UNKNOWN
+#else
 	currentEntry.IsDirectory = (d->d_type == DT_DIR);
-	currentEntry.IsDrive = false;
 	currentEntry.Type = (UINT32)d->d_type;
+#endif
+	currentEntry.IsDrive = false;
 	currentEntry.IsHidden = (d->d_name[0] == '.');
 	currentEntry.IsSystem = false;
 	currentEntry.IsReadOnly = false;

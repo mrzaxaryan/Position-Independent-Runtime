@@ -54,6 +54,8 @@
 #define AF_INET6 23 ///< IPv6 address family — Windows/UEFI value (RFC 8200)
 #elif defined(PLATFORM_MACOS)
 #define AF_INET6 30 ///< IPv6 address family — macOS/BSD value (RFC 8200)
+#elif defined(PLATFORM_SOLARIS)
+#define AF_INET6 26 ///< IPv6 address family — Solaris/illumos value (RFC 8200)
 #else
 #define AF_INET6 10 ///< IPv6 address family — Linux value (RFC 8200)
 #endif
@@ -65,8 +67,13 @@
  *      https://datatracker.ietf.org/doc/html/rfc9293#section-3.1
  * @{
  */
+#if defined(PLATFORM_SOLARIS)
+#define SOCK_STREAM 2 ///< Stream socket — Solaris value (TCP)
+#define SOCK_DGRAM 1  ///< Datagram socket — Solaris value (UDP)
+#else
 #define SOCK_STREAM 1 ///< Stream socket — reliable, ordered, connection-oriented (TCP)
 #define SOCK_DGRAM 2  ///< Datagram socket — unreliable, connectionless (UDP)
+#endif
 /** @} */
 
 /** @name Shutdown Modes

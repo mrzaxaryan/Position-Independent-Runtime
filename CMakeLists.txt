@@ -43,6 +43,7 @@ set(_platform_map_windows Windows)
 set(_platform_map_linux Linux)
 set(_platform_map_macos macOS)
 set(_platform_map_uefi UEFI)
+set(_platform_map_solaris Solaris)
 include(${CMAKE_SOURCE_DIR}/cmake/platforms/${_platform_map_${PIR_PLATFORM}}.cmake)
 
 # Universal target flags (every platform uses -target for both compile and link)

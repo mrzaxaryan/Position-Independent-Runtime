@@ -5,7 +5,7 @@
 include_guard(GLOBAL)
 
 pir_get_target_info()
-pir_filter_sources(linux macos uefi posix)
+pir_filter_sources(linux macos uefi posix solaris)
 
 list(APPEND PIR_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/src/platform/os/windows")
 

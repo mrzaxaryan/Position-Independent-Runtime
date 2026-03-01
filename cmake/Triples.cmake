@@ -19,12 +19,14 @@ set(_triple_macos_x86_64    "x86_64-apple-macos11")
 set(_triple_macos_aarch64   "arm64-apple-macos11")
 set(_triple_uefi_x86_64     "x86_64-pc-windows-gnu")
 set(_triple_uefi_aarch64    "aarch64-pc-windows-gnu")
+set(_triple_solaris_x86_64  "x86_64-pc-solaris2.11")
 
 # Platform extensions
 set(_ext_windows ".exe")
 set(_ext_linux ".elf")
 set(_ext_macos "")
 set(_ext_uefi ".efi")
+set(_ext_solaris ".elf")
 
 # =============================================================================
 # Helper: Get Triple and Extension
