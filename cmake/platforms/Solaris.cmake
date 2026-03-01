@@ -10,7 +10,7 @@ if(NOT PIR_ARCH STREQUAL "x86_64")
 endif()
 
 pir_get_target_info()
-pir_filter_sources(windows linux macos uefi posix)
+pir_filter_sources(windows linux macos uefi)
 
 list(APPEND PIR_INCLUDE_PATHS
     "${CMAKE_SOURCE_DIR}/src/platform/os/solaris"
