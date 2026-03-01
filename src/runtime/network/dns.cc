@@ -381,7 +381,7 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
 	if (!host || output.Size() == 0)
 		return Result<INT32, Error>::Err(Error::Dns_QueryFailed);
 
-	UINT32 hostLen = (UINT32)String::Length(host);
+	UINT32 hostLen = (UINT32)StringUtils::Length(host);
 	// Worst case: hostLen bytes + 1 extra label-length byte + null terminator
 	if ((INT32)(hostLen + 2) > (INT32)output.Size())
 		return Result<INT32, Error>::Err(Error::Dns_QueryFailed);
@@ -515,7 +515,7 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &dnsS
 {
 	// Short-circuit for "localhost" — return loopback without network I/O (RFC 6761 Section 6.3)
 	auto localhost = "localhost"_embed;
-	if (String::Equals<CHAR>(Span<const CHAR>(host, String::Length(host)), localhost))
+	if (StringUtils::Equals<CHAR>(Span<const CHAR>(host, StringUtils::Length(host)), localhost))
 		return Result<IPAddress, Error>::Ok(IPAddress::LocalHost(dnstype == DnsRecordType::AAAA));
 
 	auto tlsResult = TlsClient::Create(dnsServerName, dnsServerIp, 443);
@@ -543,7 +543,7 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &dnsS
 
 	auto writeStr = [&tlsClient](PCCHAR s) -> Result<void, Error>
 	{
-		UINT32 len = String::Length(s);
+		UINT32 len = StringUtils::Length(s);
 		auto r = tlsClient.Write(Span<const CHAR>(s, len));
 		if (!r || r.Value() != len)
 			return Result<void, Error>::Err(Error::Dns_SendFailed);
@@ -551,7 +551,7 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(PCCHAR host, const IPAddress &dnsS
 	};
 
 	CHAR sizeBuf[8];
-	String::UIntToStr(querySize, Span<CHAR>(sizeBuf));
+	StringUtils::UIntToStr(querySize, Span<CHAR>(sizeBuf));
 
 	// Send HTTP/1.1 POST request per RFC 8484 Section 4.1
 	if (!writeStr("POST /dns-query HTTP/1.1\r\nHost: "_embed) ||

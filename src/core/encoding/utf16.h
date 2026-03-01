@@ -48,7 +48,7 @@
  * @code
  * WCHAR wide[] = L"Hello, World!";
  * CHAR utf8[64];
- * USIZE len = UTF16::ToUTF8(wide, String::Length(wide), utf8, sizeof(utf8));
+ * USIZE len = UTF16::ToUTF8(wide, StringUtils::Length(wide), utf8, sizeof(utf8));
  * utf8[len] = '\0';  // Null-terminate
  * @endcode
  */

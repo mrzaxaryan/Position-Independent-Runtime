@@ -62,7 +62,7 @@ Result<void, Error> WebSocketClient::Open()
 
 	auto writeStr = [&](PCCHAR s) -> BOOL
 	{
-		UINT32 len = String::Length(s);
+		UINT32 len = StringUtils::Length(s);
 		auto r = tlsContext.Write(Span<const CHAR>(s, len));
 		return r && r.Value() == len;
 	};

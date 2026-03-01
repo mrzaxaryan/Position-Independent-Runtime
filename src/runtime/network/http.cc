@@ -235,26 +235,26 @@ Result<void, Error> HttpClient::ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&p
     port = 0;
     secure = false;
 
-    USIZE urlLen = String::Length(url);
+    USIZE urlLen = StringUtils::Length(url);
     Span<const CHAR> urlSpan(url, urlLen);
 
     UINT8 schemeLength = 0;
-    if (String::StartsWith<CHAR>(urlSpan, "ws://"_embed))
+    if (StringUtils::StartsWith<CHAR>(urlSpan, "ws://"_embed))
     {
         secure = false;
         schemeLength = 5; // ws://
     }
-    else if (String::StartsWith<CHAR>(urlSpan, "wss://"_embed))
+    else if (StringUtils::StartsWith<CHAR>(urlSpan, "wss://"_embed))
     {
         secure = true;
         schemeLength = 6; // wss://
     }
-    else if (String::StartsWith<CHAR>(urlSpan, "http://"_embed))
+    else if (StringUtils::StartsWith<CHAR>(urlSpan, "http://"_embed))
     {
         secure = false;
         schemeLength = 7; // http://
     }
-    else if (String::StartsWith<CHAR>(urlSpan, "https://"_embed))
+    else if (StringUtils::StartsWith<CHAR>(urlSpan, "https://"_embed))
     {
         secure = true;
         schemeLength = 8; // https://
@@ -267,10 +267,10 @@ Result<void, Error> HttpClient::ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&p
     PCCHAR pHostStart = url + schemeLength;
     USIZE hostPartLen = urlLen - schemeLength;
 
-    SSIZE pathIdx = String::IndexOfChar(Span<const CHAR>(pHostStart, hostPartLen), '/');
+    SSIZE pathIdx = StringUtils::IndexOfChar(Span<const CHAR>(pHostStart, hostPartLen), '/');
     PCCHAR pathStart = (pathIdx >= 0) ? pHostStart + pathIdx : pHostStart + hostPartLen;
 
-    SSIZE portIdx = String::IndexOfChar(Span<const CHAR>(pHostStart, (USIZE)(pathStart - pHostStart)), ':');
+    SSIZE portIdx = StringUtils::IndexOfChar(Span<const CHAR>(pHostStart, (USIZE)(pathStart - pHostStart)), ':');
     PCCHAR portStart = (portIdx >= 0) ? pHostStart + portIdx : nullptr;
 
     if (portStart == nullptr)
@@ -304,7 +304,7 @@ Result<void, Error> HttpClient::ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&p
             if (portBuffer[i] < '0' || portBuffer[i] > '9')
                 return Result<void, Error>::Err(Error::Http_ParseUrlFailed);
 
-        auto pnumResult = String::ParseInt64(portBuffer);
+        auto pnumResult = StringUtils::ParseInt64(portBuffer);
         if (!pnumResult)
             return Result<void, Error>::Err(Error::Http_ParseUrlFailed);
         INT64 pnum = pnumResult.Value();
@@ -321,7 +321,7 @@ Result<void, Error> HttpClient::ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&p
     }
     else
     {
-        USIZE pLen = (USIZE)String::Length(pathStart);
+        USIZE pLen = (USIZE)StringUtils::Length(pathStart);
         if (pLen > 2047)
             return Result<void, Error>::Err(Error::Http_ParseUrlFailed);
         Memory::Copy(path, pathStart, pLen);

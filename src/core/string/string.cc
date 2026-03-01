@@ -5,7 +5,7 @@
 // NUMBER CONVERSION IMPLEMENTATIONS (non-constexpr — use DOUBLE operations)
 // ============================================================================
 
-USIZE String::FloatToStr(DOUBLE value, Span<CHAR> buffer, UINT8 precision) noexcept
+USIZE StringUtils::FloatToStr(DOUBLE value, Span<CHAR> buffer, UINT8 precision) noexcept
 {
 	if (buffer.Size() < 2)
 		return 0;
@@ -71,7 +71,7 @@ USIZE String::FloatToStr(DOUBLE value, Span<CHAR> buffer, UINT8 precision) noexc
 	return pos;
 }
 
-Result<DOUBLE, Error> String::StrToFloat(Span<const CHAR> str) noexcept
+Result<DOUBLE, Error> StringUtils::StrToFloat(Span<const CHAR> str) noexcept
 {
 	if (str.Size() == 0)
 	{
@@ -96,7 +96,7 @@ Result<DOUBLE, Error> String::StrToFloat(Span<const CHAR> str) noexcept
 
 // Converts a UTF-8 string to wide string (UTF-16)
 // Returns the number of wide characters written (excluding null terminator)
-USIZE String::Utf8ToWide(PCCHAR utf8, Span<WCHAR> wide)
+USIZE StringUtils::Utf8ToWide(PCCHAR utf8, Span<WCHAR> wide)
 {
 	if (!utf8 || wide.Size() < 3)
 	{

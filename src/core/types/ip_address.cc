@@ -46,7 +46,7 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 					// Flush accumulated hex digits before :: as a separate group
 					if (hexIndex > 0 && groupIndex < 8)
 					{
-						UINT32 value = String::ParseHex(Span<const CHAR>(hexBuffer, hexIndex));
+						UINT32 value = StringUtils::ParseHex(Span<const CHAR>(hexBuffer, hexIndex));
 						ipv6[groupIndex * 2] = (UINT8)(value >> 8);
 						ipv6[groupIndex * 2 + 1] = (UINT8)(value & 0xFF);
 						groupIndex++;
@@ -63,7 +63,7 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 				else if (hexIndex > 0)
 				{
 					// Process accumulated hex digits
-					UINT32 value = String::ParseHex(Span<const CHAR>(hexBuffer, hexIndex));
+					UINT32 value = StringUtils::ParseHex(Span<const CHAR>(hexBuffer, hexIndex));
 					ipv6[groupIndex * 2] = (UINT8)(value >> 8);
 					ipv6[groupIndex * 2 + 1] = (UINT8)(value & 0xFF);
 					groupIndex++;
@@ -95,7 +95,7 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 		// Process final group if any
 		if (hexIndex > 0 && groupIndex < 8)
 		{
-			UINT32 value = String::ParseHex(Span<const CHAR>(hexBuffer, hexIndex));
+			UINT32 value = StringUtils::ParseHex(Span<const CHAR>(hexBuffer, hexIndex));
 			ipv6[groupIndex * 2] = (UINT8)(value >> 8);
 			ipv6[groupIndex * 2 + 1] = (UINT8)(value & 0xFF);
 			groupIndex++;
@@ -174,7 +174,7 @@ Result<IPAddress, Error> IPAddress::FromString(PCCHAR ipString)
 					return Result<IPAddress, Error>::Err(Error::IpAddress_ParseFailed);
 				}
 
-				auto octetResult = String::ParseInt64(currentOctet);
+				auto octetResult = StringUtils::ParseInt64(currentOctet);
 				if (!octetResult)
 				{
 					return Result<IPAddress, Error>::Err(Error::IpAddress_ParseFailed);
@@ -242,7 +242,7 @@ Result<void, Error> IPAddress::ToString(Span<CHAR> buffer) const
 				buffer[offset++] = '.';
 			}
 			CHAR temp[4];
-			USIZE len = String::WriteDecimal(Span<CHAR>(temp), octets[i]);
+			USIZE len = StringUtils::WriteDecimal(Span<CHAR>(temp), octets[i]);
 			Memory::Copy(&buffer[offset], temp, len);
 			offset += (UINT32)len;
 		}
@@ -268,7 +268,7 @@ Result<void, Error> IPAddress::ToString(Span<CHAR> buffer) const
 
 			// Convert to hex
 			CHAR hexStr[5];
-			USIZE hexLen = String::WriteHex(Span<CHAR>(hexStr), group);
+			USIZE hexLen = StringUtils::WriteHex(Span<CHAR>(hexStr), group);
 			Memory::Copy(&buffer[offset], hexStr, hexLen);
 			offset += (UINT32)hexLen;
 		}

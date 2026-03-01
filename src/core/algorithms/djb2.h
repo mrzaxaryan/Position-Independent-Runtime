@@ -81,7 +81,7 @@ consteval UINT64 ct_hash_str_seed(const CHAR *s)
  * distribution properties across typical string inputs.
  *
  * All hashing is case-insensitive: each character is converted to lowercase
- * via String::ToLowerCase() before being folded into the hash. This is
+ * via StringUtils::ToLowerCase() before being folded into the hash. This is
  * essential for Windows PE export name resolution, where DLL export names
  * may differ in casing across Windows versions.
  *
@@ -127,7 +127,7 @@ public:
 	 *
 	 * @details Iterates over a null-terminated string, applying the DJB2 recurrence
 	 * for each character:
-	 * 1. Convert the character to lowercase via String::ToLowerCase()
+	 * 1. Convert the character to lowercase via StringUtils::ToLowerCase()
 	 * 2. Compute hash = (hash << 5) + hash + c, equivalent to hash * 33 + c
 	 * 3. Repeat until the null terminator is reached
 	 *
@@ -149,7 +149,7 @@ public:
 		UINT64 h = Seed;
 		for (UINT64 i = 0; value[i] != (TChar)0; ++i)
 		{
-			TChar c = String::ToLowerCase(value[i]);
+			TChar c = StringUtils::ToLowerCase(value[i]);
 			h = ((h << 5) + h) + (UINT64)c;
 		}
 		return h;
@@ -187,7 +187,7 @@ public:
 		UINT64 h = Seed;
 		for (UINT64 i = 0; value[i] != (TChar)0; ++i)
 		{
-			TChar c = String::ToLowerCase(value[i]);
+			TChar c = StringUtils::ToLowerCase(value[i]);
 			h = ((h << 5) + h) + (UINT64)c;
 		}
 		return h;

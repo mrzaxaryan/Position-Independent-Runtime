@@ -136,7 +136,7 @@ Result<void, Error> TlsClient::SendClientHello(const CHAR *host)
     INT32 extSizeIndex = sendBuffer.AppendSize(2);
     LOG_DEBUG("Appending ClientHello with extension size index: %d", extSizeIndex);
     AppendU16BE(sendBuffer, EXT_SERVER_NAME);
-    INT32 hostLen = (INT32)String::Length((PCHAR)host);
+    INT32 hostLen = (INT32)StringUtils::Length((PCHAR)host);
     LOG_DEBUG("Appending ClientHello with host: %s, length: %d", host, hostLen);
     AppendU16BE(sendBuffer, hostLen + 5);
     AppendU16BE(sendBuffer, hostLen + 3);

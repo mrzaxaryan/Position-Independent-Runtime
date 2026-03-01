@@ -118,7 +118,7 @@ public:
 	 *   Console::Write<CHAR>("Hello"_embed);      // Narrow string
 	 *
 	 * PERFORMANCE NOTE:
-	 *   Calls String::Length() to find null terminator - O(n) operation.
+	 *   Calls StringUtils::Length() to find null terminator - O(n) operation.
 	 *   If you already know the length, use the length-based overload instead.
 	 */
 	template <TCHAR TChar>
@@ -182,8 +182,8 @@ template <TCHAR TChar>
 UINT32 Console::Write(const TChar *text)
 {
 	// Calculate string length and forward to Span-based overload
-	// String::Length() walks the string until it finds the null terminator
-	return Write(Span<const TChar>(text, String::Length(text)));
+	// StringUtils::Length() walks the string until it finds the null terminator
+	return Write(Span<const TChar>(text, StringUtils::Length(text)));
 }
 
 /**

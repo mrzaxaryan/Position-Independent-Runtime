@@ -25,8 +25,8 @@ public:
     template <TCHAR TChar>
     static constexpr USIZE Combine(const TChar *path1, const TChar *path2, Span<TChar> out)
     {
-        USIZE len1 = String::Length(path1);
-        USIZE len2 = String::Length(path2);
+        USIZE len1 = StringUtils::Length(path1);
+        USIZE len2 = StringUtils::Length(path2);
         BOOL needSep = len1 > 0 && path1[len1 - 1] != (TChar)PATH_SEPARATOR;
         USIZE totalLen = len1 + (needSep ? 1 : 0) + len2;
 
@@ -56,7 +56,7 @@ public:
     template <TCHAR TChar>
     static constexpr USIZE GetFileName(const TChar *fullPath, Span<TChar> out)
     {
-        USIZE len = String::Length(fullPath);
+        USIZE len = StringUtils::Length(fullPath);
         SSIZE lastSeparator = -1;
 
         for (USIZE i = 0; i < len; ++i)
@@ -89,7 +89,7 @@ public:
         if (out.Size() == 0)
             return 0;
 
-        USIZE len = String::Length(fileName);
+        USIZE len = StringUtils::Length(fileName);
         SSIZE lastDot = -1;
 
         for (USIZE i = 0; i < len; ++i)
@@ -126,7 +126,7 @@ public:
         if (out.Size() == 0)
             return 0;
 
-        USIZE len = String::Length(fullPath);
+        USIZE len = StringUtils::Length(fullPath);
         SSIZE lastSeparator = -1;
 
         for (USIZE i = 0; i < len; ++i)
@@ -179,7 +179,7 @@ public:
         if (path == nullptr || out.Size() == 0)
             return 0;
 
-        USIZE len = String::Length(path);
+        USIZE len = StringUtils::Length(path);
         if (len >= out.Size())
             return 0;
 

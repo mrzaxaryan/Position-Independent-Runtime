@@ -299,7 +299,7 @@ Platform-specific OS API wrappers (NTDLL, Kernel32) **must** include Doxygen doc
 | Enum names | `PascalCase` | `ErrorCodes`, `PlatformKind`, `IPVersion`, `CmpOp` |
 | Enum values (scoped `enum class`) | `PascalCase` | `PlatformKind::Runtime`, `IPVersion::IPv4` |
 | Enum values (unscoped) | `PascalCase_Underscore` | `Socket_CreateFailed_Open`, `Tls_OpenFailed_Socket` |
-| Class methods | `PascalCase` | `String::Length()`, `NTDLL::ZwCreateFile()` |
+| Class methods | `PascalCase` | `StringUtils::Length()`, `NTDLL::ZwCreateFile()` |
 | Member variables (private) | `camelCase` | `address`, `offset`, `maxSize`, `bits` |
 | Member variables (in `Result`/`Span`) | `m_` prefix + `camelCase` | `m_data`, `m_size`, `m_value`, `m_isOk` |
 | Struct fields (public) | `PascalCase` | `Error::Code`, `Error::Platform` |
