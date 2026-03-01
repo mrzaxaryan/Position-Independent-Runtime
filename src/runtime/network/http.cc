@@ -239,26 +239,22 @@ Result<void, Error> HttpClient::ParseUrl(PCCHAR url, CHAR (&host)[254], CHAR (&p
     Span<const CHAR> urlSpan(url, urlLen);
 
     UINT8 schemeLength = 0;
-    auto wsScheme = "ws://"_embed;
-    auto wssScheme = "wss://"_embed;
-    auto httpScheme = "http://"_embed;
-    auto httpsScheme = "https://"_embed;
-    if (String::StartsWith(urlSpan, Span<const CHAR>((PCCHAR)wsScheme, wsScheme.Length())))
+    if (String::StartsWith<CHAR>(urlSpan, "ws://"_embed))
     {
         secure = false;
         schemeLength = 5; // ws://
     }
-    else if (String::StartsWith(urlSpan, Span<const CHAR>((PCCHAR)wssScheme, wssScheme.Length())))
+    else if (String::StartsWith<CHAR>(urlSpan, "wss://"_embed))
     {
         secure = true;
         schemeLength = 6; // wss://
     }
-    else if (String::StartsWith(urlSpan, Span<const CHAR>((PCCHAR)httpScheme, httpScheme.Length())))
+    else if (String::StartsWith<CHAR>(urlSpan, "http://"_embed))
     {
         secure = false;
         schemeLength = 7; // http://
     }
-    else if (String::StartsWith(urlSpan, Span<const CHAR>((PCCHAR)httpsScheme, httpsScheme.Length())))
+    else if (String::StartsWith<CHAR>(urlSpan, "https://"_embed))
     {
         secure = true;
         schemeLength = 8; // https://

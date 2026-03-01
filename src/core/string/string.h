@@ -678,10 +678,10 @@ constexpr USIZE String::CopyEmbed(const T &src, Span<CHAR> buffer) noexcept
 	const CHAR *s = src;
 	while (s[len] != '\0' && len < buffer.Size() - 1)
 	{
-		buffer.Data()[len] = s[len];
+		buffer[len] = s[len];
 		len++;
 	}
-	buffer.Data()[len] = '\0';
+	buffer[len] = '\0';
 	return len;
 }
 

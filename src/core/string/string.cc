@@ -43,9 +43,9 @@ USIZE String::IntToStr(INT64 value, Span<CHAR> buffer) noexcept
 	USIZE copyLen = pos < buffer.Size() - 1 ? pos : buffer.Size() - 1;
 	for (USIZE i = 0; i < copyLen; i++)
 	{
-		buffer.Data()[i] = temp[pos - 1 - i];
+		buffer[i] = temp[pos - 1 - i];
 	}
-	buffer.Data()[copyLen] = '\0';
+	buffer[copyLen] = '\0';
 	return copyLen;
 }
 
@@ -73,9 +73,9 @@ USIZE String::UIntToStr(UINT64 value, Span<CHAR> buffer) noexcept
 	USIZE copyLen = pos < buffer.Size() - 1 ? pos : buffer.Size() - 1;
 	for (USIZE i = 0; i < copyLen; i++)
 	{
-		buffer.Data()[i] = temp[pos - 1 - i];
+		buffer[i] = temp[pos - 1 - i];
 	}
-	buffer.Data()[copyLen] = '\0';
+	buffer[copyLen] = '\0';
 	return copyLen;
 }
 
@@ -93,7 +93,7 @@ USIZE String::FloatToStr(DOUBLE value, Span<CHAR> buffer, UINT8 precision) noexc
 	if (value < zero)
 	{
 		if (pos < buffer.Size() - 1)
-			buffer.Data()[pos++] = '-';
+			buffer[pos++] = '-';
 		value = -value;
 	}
 
@@ -117,12 +117,12 @@ USIZE String::FloatToStr(DOUBLE value, Span<CHAR> buffer, UINT8 precision) noexc
 	CHAR intBuf[24];
 	USIZE intLen = UIntToStr(intPart, Span<CHAR>(intBuf));
 	for (USIZE i = 0; i < intLen && pos < buffer.Size() - 1; i++)
-		buffer.Data()[pos++] = intBuf[i];
+		buffer[pos++] = intBuf[i];
 
 	// Fractional part
 	if (precision > 0 && pos < buffer.Size() - 1)
 	{
-		buffer.Data()[pos++] = '.';
+		buffer[pos++] = '.';
 
 		for (UINT8 p = 0; p < precision && pos < buffer.Size() - 1; p++)
 		{
@@ -132,16 +132,16 @@ USIZE String::FloatToStr(DOUBLE value, Span<CHAR> buffer, UINT8 precision) noexc
 				digit = 0;
 			if (digit > 9)
 				digit = 9;
-			buffer.Data()[pos++] = '0' + digit;
+			buffer[pos++] = '0' + digit;
 			fracPart = fracPart - DOUBLE(digit);
 		}
 
 		// Trim trailing zeros
-		while (pos > 2 && buffer.Data()[pos - 1] == '0' && buffer.Data()[pos - 2] != '.')
+		while (pos > 2 && buffer[pos - 1] == '0' && buffer[pos - 2] != '.')
 			pos--;
 	}
 
-	buffer.Data()[pos] = '\0';
+	buffer[pos] = '\0';
 	return pos;
 }
 
@@ -155,17 +155,17 @@ Result<INT64, Error> String::ParseInt64(Span<const CHAR> str) noexcept
 	USIZE i = 0;
 	BOOL negative = false;
 
-	while (i < str.Size() && (str.Data()[i] == ' ' || str.Data()[i] == '\t'))
+	while (i < str.Size() && (str[i] == ' ' || str[i] == '\t'))
 	{
 		i++;
 	}
 
-	if (i < str.Size() && str.Data()[i] == '-')
+	if (i < str.Size() && str[i] == '-')
 	{
 		negative = true;
 		i++;
 	}
-	else if (i < str.Size() && str.Data()[i] == '+')
+	else if (i < str.Size() && str[i] == '+')
 	{
 		i++;
 	}
@@ -176,9 +176,9 @@ Result<INT64, Error> String::ParseInt64(Span<const CHAR> str) noexcept
 	constexpr UINT64 maxNegative = 0x8000000000000000ULL;
 	UINT64 limit = negative ? maxNegative : maxPositive;
 
-	while (i < str.Size() && str.Data()[i] >= '0' && str.Data()[i] <= '9')
+	while (i < str.Size() && str[i] >= '0' && str[i] <= '9')
 	{
-		UINT64 digit = (UINT64)(str.Data()[i] - '0');
+		UINT64 digit = (UINT64)(str[i] - '0');
 		if (value > (limit - digit) / 10)
 			return Result<INT64, Error>::Err(Error::String_ParseIntFailed);
 		value = value * 10 + digit;
@@ -299,7 +299,7 @@ USIZE String::Utf8ToWide(PCCHAR utf8, Span<WCHAR> wide)
 	if (!utf8 || wide.Size() < 3)
 	{
 		if (wide.Size() > 0)
-			wide.Data()[0] = L'\0';
+			wide[0] = L'\0';
 		return 0;
 	}
 
@@ -342,8 +342,8 @@ USIZE String::Utf8ToWide(PCCHAR utf8, Span<WCHAR> wide)
 			if (ch >= 0x10000)
 			{
 				ch -= 0x10000;
-				wide.Data()[wideLen++] = (WCHAR)(0xD800 + (ch >> 10));
-				wide.Data()[wideLen++] = (WCHAR)(0xDC00 + (ch & 0x3FF));
+				wide[wideLen++] = (WCHAR)(0xD800 + (ch >> 10));
+				wide[wideLen++] = (WCHAR)(0xDC00 + (ch & 0x3FF));
 				continue;
 			}
 		}
@@ -352,9 +352,9 @@ USIZE String::Utf8ToWide(PCCHAR utf8, Span<WCHAR> wide)
 			continue; // Invalid UTF-8 byte, skip
 		}
 
-		wide.Data()[wideLen++] = (WCHAR)ch;
+		wide[wideLen++] = (WCHAR)ch;
 	}
 
-	wide.Data()[wideLen] = L'\0';
+	wide[wideLen] = L'\0';
 	return wideLen;
 }
