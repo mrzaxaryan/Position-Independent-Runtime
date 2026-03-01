@@ -40,7 +40,12 @@ NO_RETURN VOID ExitProcess(USIZE code);
 
 // I/O services
 #include "platform/io/console.h"
-#include "platform/io/file_system.h"
+#include "platform/io/file_system/offset_origin.h"
+#include "platform/io/file_system/directory_entry.h"
+#include "platform/io/file_system/file.h"
+#include "platform/io/file_system/directory.h"
+#include "platform/io/file_system/directory_iterator.h"
+#include "platform/io/file_system/path.h"
 #include "platform/io/logger.h"
 
 // Network services

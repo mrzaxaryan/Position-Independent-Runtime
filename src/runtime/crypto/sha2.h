@@ -30,6 +30,11 @@
  *
  * @note All constants are embedded in code to avoid .rdata dependencies.
  *
+ * @see RFC 6234 — US Secure Hash Algorithms (SHA and SHA-based HMAC and HKDF)
+ *      https://datatracker.ietf.org/doc/html/rfc6234
+ * @see RFC 2104 — HMAC: Keyed-Hashing for Message Authentication
+ *      https://datatracker.ietf.org/doc/html/rfc2104
+ *
  * @ingroup crypt
  *
  * @defgroup sha2 SHA-2 Hash Functions

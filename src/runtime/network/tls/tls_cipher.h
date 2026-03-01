@@ -58,32 +58,32 @@ enum class EccGroup : UINT16
 class TlsCipher
 {
 private:
-	INT32 cipherCount;              // Number of supported ciphers
-	UINT64 clientSeqNum;            // Client sequence number
-	UINT64 serverSeqNum;            // Server sequence number
-	ECC *privateEccKeys[ECC_COUNT]; // Private ECC keys
-	TlsBuffer publicKey;            // Public key buffer
-	TlsBuffer decodeBuffer;         // Buffer for decoded data
-	TlsHash handshakeHash;          // Hash for handshake
+	INT32 cipherCount;              ///< Number of supported ciphers
+	UINT64 clientSeqNum;            ///< Client record sequence number (RFC 8446 Section 5.3)
+	UINT64 serverSeqNum;            ///< Server record sequence number (RFC 8446 Section 5.3)
+	ECC *privateEccKeys[ECC_COUNT]; ///< Ephemeral ECDH private keys per supported curve
+	TlsBuffer publicKey;            ///< Serialized public key for key_share extension
+	TlsBuffer decodeBuffer;         ///< Scratch buffer for record decryption
+	TlsHash handshakeHash;          ///< Running transcript hash (RFC 8446 Section 4.4.1)
 
 	union
 	{
 		struct
 		{
-			UINT8 mainSecret[MAX_HASH_LEN];      // Main secret
-			UINT8 handshakeSecret[MAX_HASH_LEN]; // Handshake secret
-			UINT8 pseudoRandomKey[MAX_HASH_LEN]; // Pseudo-random key
+			UINT8 mainSecret[MAX_HASH_LEN];      ///< TLS 1.3 master secret (RFC 8446 Section 7.1)
+			UINT8 handshakeSecret[MAX_HASH_LEN]; ///< Handshake secret (RFC 8446 Section 7.1)
+			UINT8 pseudoRandomKey[MAX_HASH_LEN]; ///< Early secret / PRK for key schedule
 		} data13;
 		struct
 		{
-			UINT8 clientRandom[RAND_SIZE]; // Client random value
-			UINT8 serverRandom[RAND_SIZE]; // Server random value
-			UINT8 masterKey[48];           // Master key
+			UINT8 clientRandom[RAND_SIZE]; ///< Client random value
+			UINT8 serverRandom[RAND_SIZE]; ///< Server random value
+			UINT8 masterKey[48];           ///< Master key
 		} data12;
 	};
-	INT32 cipherIndex;               // Current cipher index
-	ChaCha20Encoder chacha20Context; // ChaCha20 encoder context
-	BOOL isEncoding;                 // Encoding status
+	INT32 cipherIndex;               ///< Index of negotiated cipher suite
+	ChaCha20Encoder chacha20Context; ///< ChaCha20-Poly1305 AEAD context (RFC 8439)
+	BOOL isEncoding;                 ///< Whether record-layer encryption is active
 
 public:
 	// Constructor — trivial, call Reset() before use

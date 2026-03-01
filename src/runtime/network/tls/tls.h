@@ -24,25 +24,26 @@
 #include "runtime/network/tls/tls_cipher.h"
 
 /// TLS connection state tracking content type and handshake type
+/// @see RFC 8446 Section 5.1 — Record Layer
 struct TlsState
 {
-	INT32 ContentType;   // TLS content type
-	INT32 HandshakeType; // TLS handshake type
+	INT32 ContentType;   ///< TLS content type (RFC 8446 Section 5.1)
+	INT32 HandshakeType; ///< TLS handshake type (RFC 8446 Section 4)
 };
 
 class TlsClient final
 {
 private:
-	PCCHAR host;
-	IPAddress ip;
-	Socket context;
-	TlsCipher crypto;
-	BOOL secure;             // Whether to use TLS handshake or plain TCP
-	INT32 stateIndex;        // Current state index
-	TlsBuffer sendBuffer;    // Send buffer
-	TlsBuffer recvBuffer;    // Receive buffer
-	TlsBuffer channelBuffer; // Channel buffer for received data
-	INT32 channelBytesRead;  // Number of bytes read from channel buffer
+	PCCHAR host;             ///< Server hostname (borrowed pointer, must outlive client)
+	IPAddress ip;            ///< Resolved server IP address
+	Socket context;          ///< Underlying TCP socket
+	TlsCipher crypto;        ///< TLS cipher suite and key material
+	BOOL secure;             ///< Whether to use TLS handshake or plain TCP
+	INT32 stateIndex;        ///< Current handshake state index
+	TlsBuffer sendBuffer;    ///< Outgoing data buffer
+	TlsBuffer recvBuffer;    ///< Incoming data buffer
+	TlsBuffer channelBuffer; ///< Decrypted application data channel
+	INT32 channelBytesRead;  ///< Bytes consumed from channel buffer
 	[[nodiscard]] Result<INT32, Error> ReadChannel(Span<CHAR> output);
 	[[nodiscard]] Result<void, Error> ProcessReceive();
 	[[nodiscard]] Result<void, Error> OnPacket(INT32 packetType, INT32 version, TlsBuffer &tlsReader);

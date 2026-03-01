@@ -31,6 +31,13 @@
  *
  * @note Uses big integer arithmetic implemented in VLI (Variable Length Integer) operations.
  *
+ * @see RFC 8446 Section 4.2.8 — Key Share (TLS 1.3 ECDHE key exchange)
+ *      https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.8
+ * @see SEC 1 v2 Section 3.2 — Elliptic Curve Key Pair Generation
+ *      https://www.secg.org/sec1-v2.pdf
+ * @see FIPS 186-4 — Digital Signature Standard (DSS), Appendix D (curve parameters)
+ *      https://csrc.nist.gov/publications/detail/fips/186/4/final
+ *
  * @ingroup crypt
  *
  * @defgroup ecc Elliptic Curve Cryptography
@@ -100,7 +107,7 @@ class ECC
 {
 private:
     UINT32 eccBytes;                       /**< @brief Key size in bytes (32 or 48) */
-    UINT32 numECCDigits;                   /**< @brief Number of 64-bit words per coordinate */
+    UINT32 numEccDigits;                   /**< @brief Number of 64-bit words per coordinate */
     UINT64 curveP[MAX_NUM_ECC_DIGITS];     /**< @brief Prime field modulus p */
     UINT64 curveB[MAX_NUM_ECC_DIGITS];     /**< @brief Curve coefficient b (y^2 = x^3 - 3x + b) */
     ECCPoint curveG;                       /**< @brief Base point (generator) G */
@@ -113,37 +120,37 @@ private:
     // =========================================================================
 
     /** @brief Sets VLI to zero */
-    VOID VliClear(Span<UINT64> pVli);
+    VOID VliClear(Span<UINT64> vli);
 
     /** @brief Tests if VLI is zero */
-    INT32 VliIsZero(Span<const UINT64> pVli);
+    INT32 VliIsZero(Span<const UINT64> vli);
 
     /** @brief Tests specific bit of VLI */
-    UINT64 VliTestBit(Span<const UINT64> pVli, UINT32 p_bit);
+    UINT64 VliTestBit(Span<const UINT64> vli, UINT32 bit);
 
     /** @brief Returns number of significant digits */
-    UINT32 VliNumDigits(Span<const UINT64> pVli);
+    UINT32 VliNumDigits(Span<const UINT64> vli);
 
     /** @brief Returns number of significant bits */
-    UINT32 VliNumBits(Span<const UINT64> pVli);
+    UINT32 VliNumBits(Span<const UINT64> vli);
 
-    /** @brief Copies VLI: pDest = pSrc */
-    VOID VliSet(Span<UINT64> pDest, Span<const UINT64> pSrc);
+    /** @brief Copies VLI: dest = src */
+    VOID VliSet(Span<UINT64> dest, Span<const UINT64> src);
 
     /** @brief Compares two VLIs: returns -1, 0, or 1 */
-    INT32 VliCmp(Span<const UINT64> pLeft, Span<const UINT64> pRight);
+    INT32 VliCmp(Span<const UINT64> left, Span<const UINT64> right);
 
-    /** @brief Left shift: pResult = pIn << shift */
-    UINT64 VliLShift(Span<UINT64> pResult, Span<const UINT64> pIn, UINT32 shift);
+    /** @brief Left shift: result = input << shift */
+    UINT64 VliLShift(Span<UINT64> result, Span<const UINT64> input, UINT32 shift);
 
-    /** @brief Right shift by 1: pVli >>= 1 */
-    VOID VliRShift1(Span<UINT64> pVli);
+    /** @brief Right shift by 1: vli >>= 1 */
+    VOID VliRShift1(Span<UINT64> vli);
 
-    /** @brief Addition: pResult = pLeft + pRight, returns carry */
-    UINT64 VliAdd(Span<UINT64> pResult, Span<const UINT64> pLeft, Span<const UINT64> pRight);
+    /** @brief Addition: result = left + right, returns carry */
+    UINT64 VliAdd(Span<UINT64> result, Span<const UINT64> left, Span<const UINT64> right);
 
-    /** @brief Subtraction: pResult = pLeft - pRight, returns borrow */
-    UINT64 VliSub(Span<UINT64> pResult, Span<const UINT64> pLeft, Span<const UINT64> pRight);
+    /** @brief Subtraction: result = left - right, returns borrow */
+    UINT64 VliSub(Span<UINT64> result, Span<const UINT64> left, Span<const UINT64> right);
 
     /** @brief 64x64 -> 128 bit multiplication */
     constexpr UINT128_ Mul64_64(UINT64 left, UINT64 right);
@@ -151,42 +158,42 @@ private:
     /** @brief 128-bit addition */
     constexpr UINT128_ Add128_128(UINT128_ a, UINT128_ b);
 
-    /** @brief Full multiplication: pResult = pLeft * pRight */
-    VOID VliMult(UINT64 (&pResult)[ECC_PRODUCT_DIGITS], const UINT64 (&pLeft)[MAX_NUM_ECC_DIGITS], const UINT64 (&pRight)[MAX_NUM_ECC_DIGITS]);
+    /** @brief Full multiplication: result = left * right */
+    VOID VliMult(UINT64 (&result)[ECC_PRODUCT_DIGITS], const UINT64 (&left)[MAX_NUM_ECC_DIGITS], const UINT64 (&right)[MAX_NUM_ECC_DIGITS]);
 
-    /** @brief Squaring: pResult = pLeft^2 */
-    VOID VliSquare(UINT64 (&pResult)[ECC_PRODUCT_DIGITS], const UINT64 (&pLeft)[MAX_NUM_ECC_DIGITS]);
+    /** @brief Squaring: result = left^2 */
+    VOID VliSquare(UINT64 (&result)[ECC_PRODUCT_DIGITS], const UINT64 (&left)[MAX_NUM_ECC_DIGITS]);
 
     // =========================================================================
     // Modular Arithmetic
     // =========================================================================
 
-    /** @brief Modular addition: pResult = (pLeft + pRight) mod pMod */
-    VOID VliModAdd(UINT64 (&pResult)[MAX_NUM_ECC_DIGITS], const UINT64 (&pLeft)[MAX_NUM_ECC_DIGITS], const UINT64 (&pRight)[MAX_NUM_ECC_DIGITS], const UINT64 (&pMod)[MAX_NUM_ECC_DIGITS]);
+    /** @brief Modular addition: result = (left + right) mod modulus */
+    VOID VliModAdd(UINT64 (&result)[MAX_NUM_ECC_DIGITS], const UINT64 (&left)[MAX_NUM_ECC_DIGITS], const UINT64 (&right)[MAX_NUM_ECC_DIGITS], const UINT64 (&modulus)[MAX_NUM_ECC_DIGITS]);
 
-    /** @brief Modular subtraction: pResult = (pLeft - pRight) mod pMod */
-    VOID VliModSub(UINT64 (&pResult)[MAX_NUM_ECC_DIGITS], const UINT64 (&pLeft)[MAX_NUM_ECC_DIGITS], const UINT64 (&pRight)[MAX_NUM_ECC_DIGITS], const UINT64 (&pMod)[MAX_NUM_ECC_DIGITS]);
+    /** @brief Modular subtraction: result = (left - right) mod modulus */
+    VOID VliModSub(UINT64 (&result)[MAX_NUM_ECC_DIGITS], const UINT64 (&left)[MAX_NUM_ECC_DIGITS], const UINT64 (&right)[MAX_NUM_ECC_DIGITS], const UINT64 (&modulus)[MAX_NUM_ECC_DIGITS]);
 
     /** @brief Fast reduction mod p for 256-bit curves (P-256) */
-    VOID VliMmodFast256(UINT64 (&pResult)[MAX_NUM_ECC_DIGITS], const UINT64 (&pProduct)[ECC_PRODUCT_DIGITS]);
+    VOID VliMmodFast256(UINT64 (&result)[MAX_NUM_ECC_DIGITS], const UINT64 (&product)[ECC_PRODUCT_DIGITS]);
 
     /** @brief Helper for P-384 reduction */
-    VOID OmegaMult384(UINT64 (&pResult)[ECC_PRODUCT_DIGITS], Span<const UINT64> pRight);
+    VOID OmegaMult384(UINT64 (&result)[ECC_PRODUCT_DIGITS], Span<const UINT64> right);
 
     /** @brief Fast reduction mod p for 384-bit curves (P-384) */
-    VOID VliMmodFast384(UINT64 (&pResult)[MAX_NUM_ECC_DIGITS], UINT64 (&pProduct)[ECC_PRODUCT_DIGITS]);
+    VOID VliMmodFast384(UINT64 (&result)[MAX_NUM_ECC_DIGITS], UINT64 (&product)[ECC_PRODUCT_DIGITS]);
 
     /** @brief Dispatches to curve-specific fast reduction */
-    VOID MmodFast(UINT64 (&pResult)[MAX_NUM_ECC_DIGITS], UINT64 (&pProduct)[ECC_PRODUCT_DIGITS]);
+    VOID MmodFast(UINT64 (&result)[MAX_NUM_ECC_DIGITS], UINT64 (&product)[ECC_PRODUCT_DIGITS]);
 
     /** @brief Fast modular multiplication using curve-specific reduction */
-    VOID VliModMultFast(UINT64 (&pResult)[MAX_NUM_ECC_DIGITS], const UINT64 (&pLeft)[MAX_NUM_ECC_DIGITS], const UINT64 (&pRight)[MAX_NUM_ECC_DIGITS]);
+    VOID VliModMultFast(UINT64 (&result)[MAX_NUM_ECC_DIGITS], const UINT64 (&left)[MAX_NUM_ECC_DIGITS], const UINT64 (&right)[MAX_NUM_ECC_DIGITS]);
 
     /** @brief Fast modular squaring using curve-specific reduction */
-    VOID VliModSquareFast(UINT64 (&pResult)[MAX_NUM_ECC_DIGITS], const UINT64 (&pLeft)[MAX_NUM_ECC_DIGITS]);
+    VOID VliModSquareFast(UINT64 (&result)[MAX_NUM_ECC_DIGITS], const UINT64 (&left)[MAX_NUM_ECC_DIGITS]);
 
-    /** @brief Modular inverse: pResult = pInput^(-1) mod pMod */
-    VOID VliModInv(UINT64 (&pResult)[MAX_NUM_ECC_DIGITS], const UINT64 (&pInput)[MAX_NUM_ECC_DIGITS], const UINT64 (&pMod)[MAX_NUM_ECC_DIGITS]);
+    /** @brief Modular inverse: result = input^(-1) mod modulus */
+    VOID VliModInv(UINT64 (&result)[MAX_NUM_ECC_DIGITS], const UINT64 (&input)[MAX_NUM_ECC_DIGITS], const UINT64 (&modulus)[MAX_NUM_ECC_DIGITS]);
 
     // =========================================================================
     // Elliptic Curve Point Operations
@@ -210,21 +217,21 @@ private:
     /** @brief Co-Z conjugate addition */
     VOID XYcZAddC(UINT64 (&X1)[MAX_NUM_ECC_DIGITS], UINT64 (&Y1)[MAX_NUM_ECC_DIGITS], UINT64 (&X2)[MAX_NUM_ECC_DIGITS], UINT64 (&Y2)[MAX_NUM_ECC_DIGITS]);
 
-    /** @brief Scalar multiplication: result = pScalar * point */
-    VOID Mult(ECCPoint &result, ECCPoint &point, UINT64 (&pScalar)[MAX_NUM_ECC_DIGITS], UINT64 *pInitialZ);
+    /** @brief Scalar multiplication: result = scalar * point */
+    VOID Mult(ECCPoint &result, ECCPoint &point, UINT64 (&scalar)[MAX_NUM_ECC_DIGITS], UINT64 *initialZ);
 
     // =========================================================================
     // Serialization
     // =========================================================================
 
     /** @brief Converts big-endian bytes to native VLI format */
-    VOID Bytes2Native(UINT64 (&pNative)[MAX_NUM_ECC_DIGITS], Span<const UINT8> bytes);
+    VOID Bytes2Native(UINT64 (&native)[MAX_NUM_ECC_DIGITS], Span<const UINT8> bytes);
 
     /** @brief Converts native VLI format to big-endian bytes */
-    VOID Native2Bytes(Span<UINT8> bytes, const UINT64 (&pNative)[MAX_NUM_ECC_DIGITS]);
+    VOID Native2Bytes(Span<UINT8> bytes, const UINT64 (&native)[MAX_NUM_ECC_DIGITS]);
 
     /** @brief Computes modular square root for point decompression */
-    VOID ModSqrt(UINT64 (&pA)[MAX_NUM_ECC_DIGITS]);
+    VOID ModSqrt(UINT64 (&a)[MAX_NUM_ECC_DIGITS]);
 
     /** @brief Decompresses point from compressed format (02/03 || x) */
     VOID PointDecompress(ECCPoint &point, Span<const UINT8> compressed);

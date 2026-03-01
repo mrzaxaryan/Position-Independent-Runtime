@@ -1,11 +1,140 @@
 #include "platform/io/file_system/file.h"
 #include "platform/io/logger.h"
 #include "core/types/primitives.h"
+#include "core/string/string.h"
 #include "platform/os/windows/common/windows_types.h"
 #include "platform/os/windows/common/ntdll.h"
 
 // --- Internal Constructor (trivial — never fails) ---
 File::File(PVOID handle, USIZE size) : fileHandle(handle), fileSize(size) {}
+
+// --- Factory & Static Operations ---
+Result<File, Error> File::Open(PCWCHAR path, INT32 flags)
+{
+	UINT32 dwDesiredAccess = 0;
+	UINT32 dwShareMode = FILE_SHARE_READ;
+	UINT32 dwCreationDisposition = FILE_OPEN;
+	UINT32 ntFlags = 0;
+	UINT32 fileAttributes = FILE_ATTRIBUTE_NORMAL;
+
+	// 1. Map Access Flags
+	if (flags & File::ModeRead)
+		dwDesiredAccess |= GENERIC_READ;
+	if (flags & File::ModeWrite)
+		dwDesiredAccess |= GENERIC_WRITE;
+	if (flags & File::ModeAppend)
+		dwDesiredAccess |= FILE_APPEND_DATA;
+
+	// 2. Map Creation/Truncation Flags
+	if (flags & File::ModeCreate)
+	{
+		if (flags & File::ModeTruncate)
+			dwCreationDisposition = FILE_OVERWRITE_IF;
+		else
+			dwCreationDisposition = FILE_OPEN_IF;
+	}
+	else if (flags & File::ModeTruncate)
+	{
+		dwCreationDisposition = FILE_OVERWRITE;
+	}
+
+	// Synchronous I/O — PIR never uses overlapped file handles
+	ntFlags |= FILE_SYNCHRONOUS_IO_NONALERT | FILE_NON_DIRECTORY_FILE;
+
+	// Always allow waiting and querying attributes
+	dwDesiredAccess |= SYNCHRONIZE | FILE_READ_ATTRIBUTES;
+
+	// Convert DOS path to NT path
+	UNICODE_STRING ntPathU;
+	if (!NTDLL::RtlDosPathNameToNtPathName_U(path, &ntPathU, nullptr, nullptr))
+		return Result<File, Error>::Err(Error::Fs_PathResolveFailed, Error::Fs_OpenFailed);
+
+	OBJECT_ATTRIBUTES objAttr;
+	InitializeObjectAttributes(&objAttr, &ntPathU, 0, nullptr, nullptr);
+
+	IO_STATUS_BLOCK ioStatusBlock;
+	PVOID hFile = nullptr;
+
+	auto createResult = NTDLL::ZwCreateFile(
+		&hFile,
+		dwDesiredAccess,
+		&objAttr,
+		&ioStatusBlock,
+		nullptr,
+		fileAttributes,
+		dwShareMode,
+		dwCreationDisposition,
+		ntFlags,
+		nullptr,
+		0);
+
+	NTDLL::RtlFreeUnicodeString(&ntPathU);
+
+	if (!createResult || hFile == INVALID_HANDLE_VALUE)
+		return Result<File, Error>::Err(createResult, Error::Fs_OpenFailed);
+
+	// Query file size before constructing the File (keeps the constructor trivial)
+	USIZE size = 0;
+	FILE_STANDARD_INFORMATION fileStandardInfo;
+	IO_STATUS_BLOCK sizeIoBlock;
+	Memory::Zero(&fileStandardInfo, sizeof(FILE_STANDARD_INFORMATION));
+	Memory::Zero(&sizeIoBlock, sizeof(IO_STATUS_BLOCK));
+	auto sizeResult = NTDLL::ZwQueryInformationFile(hFile, &sizeIoBlock, &fileStandardInfo, sizeof(fileStandardInfo), FileStandardInformation);
+	if (sizeResult)
+		size = fileStandardInfo.EndOfFile.QuadPart;
+
+	return Result<File, Error>::Ok(File((PVOID)hFile, size));
+}
+
+Result<void, Error> File::Delete(PCWCHAR path)
+{
+	UNICODE_STRING ntName;
+	OBJECT_ATTRIBUTES attr;
+	PVOID hFile = nullptr;
+	IO_STATUS_BLOCK io;
+
+	if (!NTDLL::RtlDosPathNameToNtPathName_U(path, &ntName, nullptr, nullptr))
+		return Result<void, Error>::Err(Error::Fs_PathResolveFailed, Error::Fs_DeleteFailed);
+
+	InitializeObjectAttributes(&attr, &ntName, OBJ_CASE_INSENSITIVE, nullptr, nullptr);
+
+	auto createResult = NTDLL::ZwCreateFile(&hFile, SYNCHRONIZE | DELETE, &attr, &io, nullptr, 0,
+											FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+											FILE_OPEN, FILE_DELETE_ON_CLOSE | FILE_NON_DIRECTORY_FILE, nullptr, 0);
+
+	if (!createResult)
+	{
+		NTDLL::RtlFreeUnicodeString(&ntName);
+		return Result<void, Error>::Err(createResult, Error::Fs_DeleteFailed);
+	}
+
+	(void)NTDLL::ZwClose(hFile);
+	NTDLL::RtlFreeUnicodeString(&ntName);
+	return Result<void, Error>::Ok();
+}
+
+Result<void, Error> File::Exists(PCWCHAR path)
+{
+	OBJECT_ATTRIBUTES objAttr;
+	UNICODE_STRING uniName;
+	FILE_BASIC_INFORMATION fileBasicInfo;
+
+	if (!NTDLL::RtlDosPathNameToNtPathName_U(path, &uniName, nullptr, nullptr))
+		return Result<void, Error>::Err(Error::Fs_PathResolveFailed);
+
+	InitializeObjectAttributes(&objAttr, &uniName, 0, nullptr, nullptr);
+	auto queryResult = NTDLL::ZwQueryAttributesFile(&objAttr, &fileBasicInfo);
+
+	NTDLL::RtlFreeUnicodeString(&uniName);
+
+	if (!queryResult)
+		return Result<void, Error>::Err(queryResult, Error::Fs_OpenFailed);
+
+	if (fileBasicInfo.FileAttributes == 0xFFFFFFFF)
+		return Result<void, Error>::Err(Error::Fs_OpenFailed);
+
+	return Result<void, Error>::Ok();
+}
 
 // --- Move Semantics ---
 File::File(File &&other) noexcept : fileHandle(nullptr), fileSize(0)

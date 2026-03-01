@@ -226,7 +226,7 @@ public:
      *
      * @details Original ChaCha20 IV setup with 64-bit nonce and 64-bit counter.
      */
-    VOID IvSetup(const UINT8 *iv, const UINT8 *counter);
+    VOID IVSetup(const UINT8 *iv, const UINT8 *counter);
 
     /**
      * @brief Sets up IV/nonce for TLS 1.3 (96-bit nonce)
@@ -245,7 +245,7 @@ public:
      *
      * @details Used in TLS 1.3 to derive per-record nonce.
      */
-    VOID IvUpdate(Span<const UINT8, TLS_CHACHA20_IV_LENGTH> iv, Span<const UINT8, 8> aad, const UINT8 *counter);
+    VOID IVUpdate(Span<const UINT8, TLS_CHACHA20_IV_LENGTH> iv, Span<const UINT8, 8> aad, const UINT8 *counter);
 
     /**
      * @brief Encrypts/decrypts data using ChaCha20

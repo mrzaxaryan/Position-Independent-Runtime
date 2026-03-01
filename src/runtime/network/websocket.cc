@@ -515,7 +515,7 @@ Result<WebSocketClient, Error> WebSocketClient::Create(Span<const CHAR> url)
 		LOG_ERROR("Failed to resolve hostname %s", host);
 		return Result<WebSocketClient, Error>::Err(Error::Ws_CreateFailed);
 	}
-	IPAddress ip = dnsResult.Value();
+	auto& ip = dnsResult.Value();
 
 	auto tlsResult = TlsClient::Create(host, ip, port, isSecure);
 

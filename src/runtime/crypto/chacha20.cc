@@ -13,13 +13,13 @@
 #define U8V(v) ((UINT8)(v) & U8C(0xFF))
 #define U32V(v) ((UINT32)(v) & (0xFFFFFFFF))
 
-#define _private_tls_U8TO32_LITTLE(p) \
+#define U8TO32_LITTLE(p) \
     (((UINT32)((p)[0])) |             \
      ((UINT32)((p)[1]) << 8) |        \
      ((UINT32)((p)[2]) << 16) |       \
      ((UINT32)((p)[3]) << 24))
 
-#define _private_tls_U32TO8_LITTLE(p, v) \
+#define U32TO8_LITTLE(p, v) \
     do                                   \
     {                                    \
         (p)[0] = U8V((v));               \
@@ -178,7 +178,7 @@ Result<void, Error> Poly1305::GenerateKey(Span<const UCHAR, POLY1305_KEYLEN> key
     if (nonce.Size() == 8)
     {
         ctr = counter;
-        ctx.IvSetup(nonce.Data(), (PUCHAR)&ctr);
+        ctx.IVSetup(nonce.Data(), (PUCHAR)&ctr);
     }
     else if (nonce.Size() == 12)
     {
@@ -337,10 +337,10 @@ VOID ChaCha20Poly1305::KeySetup(Span<const UINT8> key)
     const UINT8 *k = key.Data();
     UINT32 kbits = (UINT32)key.Size() * 8;
 
-    this->input[4] = _private_tls_U8TO32_LITTLE(k + 0);
-    this->input[5] = _private_tls_U8TO32_LITTLE(k + 4);
-    this->input[6] = _private_tls_U8TO32_LITTLE(k + 8);
-    this->input[7] = _private_tls_U8TO32_LITTLE(k + 12);
+    this->input[4] = U8TO32_LITTLE(k + 0);
+    this->input[5] = U8TO32_LITTLE(k + 4);
+    this->input[6] = U8TO32_LITTLE(k + 8);
+    this->input[7] = U8TO32_LITTLE(k + 12);
     // Declare _embed strings separately to avoid type deduction issues with ternary
     auto constants32 = "expand 32-byte k"_embed;
     auto constants16 = "expand 16-byte k"_embed;
@@ -349,64 +349,64 @@ VOID ChaCha20Poly1305::KeySetup(Span<const UINT8> key)
     { /* recommended */
         k += 16;
     }
-    this->input[8] = _private_tls_U8TO32_LITTLE(k + 0);
-    this->input[9] = _private_tls_U8TO32_LITTLE(k + 4);
-    this->input[10] = _private_tls_U8TO32_LITTLE(k + 8);
-    this->input[11] = _private_tls_U8TO32_LITTLE(k + 12);
-    this->input[0] = _private_tls_U8TO32_LITTLE(constants + 0);
-    this->input[1] = _private_tls_U8TO32_LITTLE(constants + 4);
-    this->input[2] = _private_tls_U8TO32_LITTLE(constants + 8);
-    this->input[3] = _private_tls_U8TO32_LITTLE(constants + 12);
+    this->input[8] = U8TO32_LITTLE(k + 0);
+    this->input[9] = U8TO32_LITTLE(k + 4);
+    this->input[10] = U8TO32_LITTLE(k + 8);
+    this->input[11] = U8TO32_LITTLE(k + 12);
+    this->input[0] = U8TO32_LITTLE(constants + 0);
+    this->input[1] = U8TO32_LITTLE(constants + 4);
+    this->input[2] = U8TO32_LITTLE(constants + 8);
+    this->input[3] = U8TO32_LITTLE(constants + 12);
 }
 
 VOID ChaCha20Poly1305::Key(UINT8 (&k)[32])
 {
-    _private_tls_U32TO8_LITTLE(k, this->input[4]);
-    _private_tls_U32TO8_LITTLE(k + 4, this->input[5]);
-    _private_tls_U32TO8_LITTLE(k + 8, this->input[6]);
-    _private_tls_U32TO8_LITTLE(k + 12, this->input[7]);
+    U32TO8_LITTLE(k, this->input[4]);
+    U32TO8_LITTLE(k + 4, this->input[5]);
+    U32TO8_LITTLE(k + 8, this->input[6]);
+    U32TO8_LITTLE(k + 12, this->input[7]);
 
-    _private_tls_U32TO8_LITTLE(k + 16, this->input[8]);
-    _private_tls_U32TO8_LITTLE(k + 20, this->input[9]);
-    _private_tls_U32TO8_LITTLE(k + 24, this->input[10]);
-    _private_tls_U32TO8_LITTLE(k + 28, this->input[11]);
+    U32TO8_LITTLE(k + 16, this->input[8]);
+    U32TO8_LITTLE(k + 20, this->input[9]);
+    U32TO8_LITTLE(k + 24, this->input[10]);
+    U32TO8_LITTLE(k + 28, this->input[11]);
 }
 
 VOID ChaCha20Poly1305::Nonce(UINT8 (&nonce)[TLS_CHACHA20_IV_LENGTH])
 {
-    _private_tls_U32TO8_LITTLE(nonce + 0, this->input[13]);
-    _private_tls_U32TO8_LITTLE(nonce + 4, this->input[14]);
-    _private_tls_U32TO8_LITTLE(nonce + 8, this->input[15]);
+    U32TO8_LITTLE(nonce + 0, this->input[13]);
+    U32TO8_LITTLE(nonce + 4, this->input[14]);
+    U32TO8_LITTLE(nonce + 8, this->input[15]);
 }
 
-VOID ChaCha20Poly1305::IvSetup(const UINT8 *iv, const UINT8 *counter)
+VOID ChaCha20Poly1305::IVSetup(const UINT8 *iv, const UINT8 *counter)
 {
-    this->input[12] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
-    this->input[13] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 4);
+    this->input[12] = counter == nullptr ? 0 : U8TO32_LITTLE(counter + 0);
+    this->input[13] = counter == nullptr ? 0 : U8TO32_LITTLE(counter + 4);
     if (iv)
     {
-        this->input[14] = _private_tls_U8TO32_LITTLE(iv + 0);
-        this->input[15] = _private_tls_U8TO32_LITTLE(iv + 4);
+        this->input[14] = U8TO32_LITTLE(iv + 0);
+        this->input[15] = U8TO32_LITTLE(iv + 4);
     }
 }
 
 VOID ChaCha20Poly1305::IVSetup96BitNonce(const UINT8 *iv, const UINT8 *counter)
 {
-    this->input[12] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
+    this->input[12] = counter == nullptr ? 0 : U8TO32_LITTLE(counter + 0);
     if (iv)
     {
-        this->input[13] = _private_tls_U8TO32_LITTLE(iv + 0);
-        this->input[14] = _private_tls_U8TO32_LITTLE(iv + 4);
-        this->input[15] = _private_tls_U8TO32_LITTLE(iv + 8);
+        this->input[13] = U8TO32_LITTLE(iv + 0);
+        this->input[14] = U8TO32_LITTLE(iv + 4);
+        this->input[15] = U8TO32_LITTLE(iv + 8);
     }
 }
 
-VOID ChaCha20Poly1305::IvUpdate(Span<const UINT8, TLS_CHACHA20_IV_LENGTH> iv, Span<const UINT8, 8> aad, const UINT8 *counter)
+VOID ChaCha20Poly1305::IVUpdate(Span<const UINT8, TLS_CHACHA20_IV_LENGTH> iv, Span<const UINT8, 8> aad, const UINT8 *counter)
 {
-    this->input[12] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
-    this->input[13] = _private_tls_U8TO32_LITTLE(iv.Data() + 0);
-    this->input[14] = _private_tls_U8TO32_LITTLE(iv.Data() + 4) ^ _private_tls_U8TO32_LITTLE(aad.Data());
-    this->input[15] = _private_tls_U8TO32_LITTLE(iv.Data() + 8) ^ _private_tls_U8TO32_LITTLE(aad.Data() + 4);
+    this->input[12] = counter == nullptr ? 0 : U8TO32_LITTLE(counter + 0);
+    this->input[13] = U8TO32_LITTLE(iv.Data() + 0);
+    this->input[14] = U8TO32_LITTLE(iv.Data() + 4) ^ U8TO32_LITTLE(aad.Data());
+    this->input[15] = U8TO32_LITTLE(iv.Data() + 8) ^ U8TO32_LITTLE(aad.Data() + 4);
 }
 
 VOID ChaCha20Poly1305::EncryptBytes(Span<const UINT8> m_span, Span<UINT8> c_span)
@@ -499,40 +499,40 @@ VOID ChaCha20Poly1305::EncryptBytes(Span<const UINT8> m_span, Span<UINT8> c_span
 
         if (bytes < 64)
         {
-            _private_tls_U32TO8_LITTLE(this->ks + 0, x0);
-            _private_tls_U32TO8_LITTLE(this->ks + 4, x1);
-            _private_tls_U32TO8_LITTLE(this->ks + 8, x2);
-            _private_tls_U32TO8_LITTLE(this->ks + 12, x3);
-            _private_tls_U32TO8_LITTLE(this->ks + 16, x4);
-            _private_tls_U32TO8_LITTLE(this->ks + 20, x5);
-            _private_tls_U32TO8_LITTLE(this->ks + 24, x6);
-            _private_tls_U32TO8_LITTLE(this->ks + 28, x7);
-            _private_tls_U32TO8_LITTLE(this->ks + 32, x8);
-            _private_tls_U32TO8_LITTLE(this->ks + 36, x9);
-            _private_tls_U32TO8_LITTLE(this->ks + 40, x10);
-            _private_tls_U32TO8_LITTLE(this->ks + 44, x11);
-            _private_tls_U32TO8_LITTLE(this->ks + 48, x12);
-            _private_tls_U32TO8_LITTLE(this->ks + 52, x13);
-            _private_tls_U32TO8_LITTLE(this->ks + 56, x14);
-            _private_tls_U32TO8_LITTLE(this->ks + 60, x15);
+            U32TO8_LITTLE(this->ks + 0, x0);
+            U32TO8_LITTLE(this->ks + 4, x1);
+            U32TO8_LITTLE(this->ks + 8, x2);
+            U32TO8_LITTLE(this->ks + 12, x3);
+            U32TO8_LITTLE(this->ks + 16, x4);
+            U32TO8_LITTLE(this->ks + 20, x5);
+            U32TO8_LITTLE(this->ks + 24, x6);
+            U32TO8_LITTLE(this->ks + 28, x7);
+            U32TO8_LITTLE(this->ks + 32, x8);
+            U32TO8_LITTLE(this->ks + 36, x9);
+            U32TO8_LITTLE(this->ks + 40, x10);
+            U32TO8_LITTLE(this->ks + 44, x11);
+            U32TO8_LITTLE(this->ks + 48, x12);
+            U32TO8_LITTLE(this->ks + 52, x13);
+            U32TO8_LITTLE(this->ks + 56, x14);
+            U32TO8_LITTLE(this->ks + 60, x15);
         }
 
-        x0 = XOR(x0, _private_tls_U8TO32_LITTLE(m + 0));
-        x1 = XOR(x1, _private_tls_U8TO32_LITTLE(m + 4));
-        x2 = XOR(x2, _private_tls_U8TO32_LITTLE(m + 8));
-        x3 = XOR(x3, _private_tls_U8TO32_LITTLE(m + 12));
-        x4 = XOR(x4, _private_tls_U8TO32_LITTLE(m + 16));
-        x5 = XOR(x5, _private_tls_U8TO32_LITTLE(m + 20));
-        x6 = XOR(x6, _private_tls_U8TO32_LITTLE(m + 24));
-        x7 = XOR(x7, _private_tls_U8TO32_LITTLE(m + 28));
-        x8 = XOR(x8, _private_tls_U8TO32_LITTLE(m + 32));
-        x9 = XOR(x9, _private_tls_U8TO32_LITTLE(m + 36));
-        x10 = XOR(x10, _private_tls_U8TO32_LITTLE(m + 40));
-        x11 = XOR(x11, _private_tls_U8TO32_LITTLE(m + 44));
-        x12 = XOR(x12, _private_tls_U8TO32_LITTLE(m + 48));
-        x13 = XOR(x13, _private_tls_U8TO32_LITTLE(m + 52));
-        x14 = XOR(x14, _private_tls_U8TO32_LITTLE(m + 56));
-        x15 = XOR(x15, _private_tls_U8TO32_LITTLE(m + 60));
+        x0 = XOR(x0, U8TO32_LITTLE(m + 0));
+        x1 = XOR(x1, U8TO32_LITTLE(m + 4));
+        x2 = XOR(x2, U8TO32_LITTLE(m + 8));
+        x3 = XOR(x3, U8TO32_LITTLE(m + 12));
+        x4 = XOR(x4, U8TO32_LITTLE(m + 16));
+        x5 = XOR(x5, U8TO32_LITTLE(m + 20));
+        x6 = XOR(x6, U8TO32_LITTLE(m + 24));
+        x7 = XOR(x7, U8TO32_LITTLE(m + 28));
+        x8 = XOR(x8, U8TO32_LITTLE(m + 32));
+        x9 = XOR(x9, U8TO32_LITTLE(m + 36));
+        x10 = XOR(x10, U8TO32_LITTLE(m + 40));
+        x11 = XOR(x11, U8TO32_LITTLE(m + 44));
+        x12 = XOR(x12, U8TO32_LITTLE(m + 48));
+        x13 = XOR(x13, U8TO32_LITTLE(m + 52));
+        x14 = XOR(x14, U8TO32_LITTLE(m + 56));
+        x15 = XOR(x15, U8TO32_LITTLE(m + 60));
 
         j12 = PLUSONE(j12);
         if (!j12)
@@ -544,22 +544,22 @@ VOID ChaCha20Poly1305::EncryptBytes(Span<const UINT8> m_span, Span<UINT8> c_span
              */
         }
 
-        _private_tls_U32TO8_LITTLE(c + 0, x0);
-        _private_tls_U32TO8_LITTLE(c + 4, x1);
-        _private_tls_U32TO8_LITTLE(c + 8, x2);
-        _private_tls_U32TO8_LITTLE(c + 12, x3);
-        _private_tls_U32TO8_LITTLE(c + 16, x4);
-        _private_tls_U32TO8_LITTLE(c + 20, x5);
-        _private_tls_U32TO8_LITTLE(c + 24, x6);
-        _private_tls_U32TO8_LITTLE(c + 28, x7);
-        _private_tls_U32TO8_LITTLE(c + 32, x8);
-        _private_tls_U32TO8_LITTLE(c + 36, x9);
-        _private_tls_U32TO8_LITTLE(c + 40, x10);
-        _private_tls_U32TO8_LITTLE(c + 44, x11);
-        _private_tls_U32TO8_LITTLE(c + 48, x12);
-        _private_tls_U32TO8_LITTLE(c + 52, x13);
-        _private_tls_U32TO8_LITTLE(c + 56, x14);
-        _private_tls_U32TO8_LITTLE(c + 60, x15);
+        U32TO8_LITTLE(c + 0, x0);
+        U32TO8_LITTLE(c + 4, x1);
+        U32TO8_LITTLE(c + 8, x2);
+        U32TO8_LITTLE(c + 12, x3);
+        U32TO8_LITTLE(c + 16, x4);
+        U32TO8_LITTLE(c + 20, x5);
+        U32TO8_LITTLE(c + 24, x6);
+        U32TO8_LITTLE(c + 28, x7);
+        U32TO8_LITTLE(c + 32, x8);
+        U32TO8_LITTLE(c + 36, x9);
+        U32TO8_LITTLE(c + 40, x10);
+        U32TO8_LITTLE(c + 44, x11);
+        U32TO8_LITTLE(c + 48, x12);
+        U32TO8_LITTLE(c + 52, x13);
+        U32TO8_LITTLE(c + 56, x14);
+        U32TO8_LITTLE(c + 60, x15);
 
         if (bytes <= 64)
         {
@@ -605,7 +605,7 @@ VOID ChaCha20Poly1305::Block(Span<UCHAR> output)
 
     for (i = 0; i < len; i += 4)
     {
-        _private_tls_U32TO8_LITTLE(c + i, state[i / 4]);
+        U32TO8_LITTLE(c + i, state[i / 4]);
     }
     this->input[12] = PLUSONE(this->input[12]);
 }

@@ -644,9 +644,9 @@ Result<void, Error> TlsClient::ProcessReceive()
 
 		LOG_DEBUG("Processing packet for client: %p, current index: %d, packet size: %d", this, (INT32)headerStart, packetSize);
 
-		TlsBuffer unnamed(Span<CHAR>((PCHAR)reader.Current(), (USIZE)packetSize));
+		TlsBuffer packetReader(Span<CHAR>((PCHAR)reader.Current(), (USIZE)packetSize));
 
-		auto ret = OnPacket(contentType, version, unnamed);
+		auto ret = OnPacket(contentType, version, packetReader);
 		if (!ret)
 		{
 			LOG_DEBUG("Failed to process packet for client: %p, current index: %d, packet size: %d", this, (INT32)headerStart, packetSize);

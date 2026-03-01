@@ -39,13 +39,12 @@ INT32 TlsHkdf::Label(Span<const CHAR> label, Span<const UCHAR> data, Span<UCHAR>
 }
 
 /// @brief Extract the HKDF keying material using the given salt and input keying material (IKM)
-/// @param output The buffer to store the extracted keying material
-/// @param outlen The length of the output keying material
+/// @param output The buffer to store the extracted keying material (size determines output length)
 /// @param salt The salt value
-/// @param saltLen The length of the salt
 /// @param ikm The input keying material
-/// @param ikmLen The length of the input keying material
 /// @return void
+/// @see RFC 5869 Section 2.2 — HKDF-Extract
+///      https://datatracker.ietf.org/doc/html/rfc5869#section-2.2
 
 VOID TlsHkdf::Extract(Span<UCHAR> output, Span<const UCHAR> salt, Span<const UCHAR> ikm)
 {
@@ -58,13 +57,12 @@ VOID TlsHkdf::Extract(Span<UCHAR> output, Span<const UCHAR> salt, Span<const UCH
 }
 
 /// @brief Expand the HKDF keying material using the given secret, info, and output length
-/// @param output The buffer to store the expanded keying material
-/// @param outlen The length of the output keying material
+/// @param output The buffer to store the expanded keying material (size determines output length)
 /// @param secret The secret value
-/// @param secretLen The length of the secret
 /// @param info The info value
-/// @param infoLen The length of the info
 /// @return void
+/// @see RFC 5869 Section 2.3 — HKDF-Expand
+///      https://datatracker.ietf.org/doc/html/rfc5869#section-2.3
 
 VOID TlsHkdf::Expand(Span<UCHAR> output, Span<const UCHAR> secret, Span<const UCHAR> info)
 {
@@ -116,15 +114,13 @@ VOID TlsHkdf::Expand(Span<UCHAR> output, Span<const UCHAR> secret, Span<const UC
 }
 
 /// @brief Expand the HKDF keying material using a label according to TLS 1.3 specification
-/// @param output The buffer to store the expanded keying material
-/// @param outlen The length of the output keying material
+/// @param output The buffer to store the expanded keying material (size determines output length)
 /// @param secret The secret value
-/// @param secretLen The length of the secret
 /// @param label The label to use in the HKDF label
-/// @param labelLen The length of the label
 /// @param data The data to include in the HKDF label
-/// @param dataLen The length of the data
-/// @return void 
+/// @return void
+/// @see RFC 8446 Section 7.1 — Key Schedule (HKDF-Expand-Label)
+///      https://datatracker.ietf.org/doc/html/rfc8446#section-7.1
 
 VOID TlsHkdf::ExpandLabel(Span<UCHAR> output, Span<const UCHAR> secret, Span<const CHAR> label, Span<const UCHAR> data)
 {

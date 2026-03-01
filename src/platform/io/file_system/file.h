@@ -13,10 +13,25 @@ private:
 	PVOID fileHandle; // File handle
 	USIZE fileSize;   // File size
 
-	// Private constructor for FileSystem's use (trivial — never fails)
+	// Private constructor (trivial — never fails)
 	File(PVOID handle, USIZE size);
 
 public:
+	// Open mode flags (prefixed to avoid collision with Read()/Write() methods)
+	static constexpr INT32 ModeRead = 0x0001;
+	static constexpr INT32 ModeWrite = 0x0002;
+	static constexpr INT32 ModeAppend = 0x0004;
+	static constexpr INT32 ModeCreate = 0x0008;
+	static constexpr INT32 ModeTruncate = 0x0010;
+	static constexpr INT32 ModeBinary = 0x0020;
+
+	// Factory — opens a file at the given path with the specified flags
+	[[nodiscard]] static Result<File, Error> Open(PCWCHAR path, INT32 flags = 0);
+
+	// Static file operations
+	[[nodiscard]] static Result<void, Error> Delete(PCWCHAR path);
+	[[nodiscard]] static Result<void, Error> Exists(PCWCHAR path);
+
 	// Default constructor and destructor
 	File() : fileHandle(InvalidFileHandle()), fileSize(0) {}
 
@@ -63,7 +78,4 @@ public:
 	USIZE GetOffset() const;
 	VOID SetOffset(USIZE absoluteOffset);
 	VOID MoveOffset(SSIZE relativeAmount, OffsetOrigin origin = OffsetOrigin::Current);
-
-	// Friend class for FileSystem to access private constructor
-	friend class FileSystem;
 };
