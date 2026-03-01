@@ -187,7 +187,6 @@ Result<void, Error> HttpClient::ParseUrl(Span<const CHAR> url, CHAR (&host)[254]
 	port = 0;
 	secure = false;
 
-	USIZE urlLen = url.Size();
 	Span<const CHAR> urlSpan = url;
 
 	UINT8 schemeLength = 0;
@@ -217,7 +216,7 @@ Result<void, Error> HttpClient::ParseUrl(Span<const CHAR> url, CHAR (&host)[254]
 	}
 
 	PCCHAR pHostStart = url.Data() + schemeLength;
-	USIZE hostPartLen = urlLen - schemeLength;
+	USIZE hostPartLen = url.Size() - schemeLength;
 
 	SSIZE pathIdx = StringUtils::IndexOfChar(Span<const CHAR>(pHostStart, hostPartLen), '/');
 	PCCHAR pathStart = (pathIdx >= 0) ? pHostStart + pathIdx : pHostStart + hostPartLen;

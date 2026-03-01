@@ -42,23 +42,22 @@ Result<void, Error> ChaCha20Encoder::Initialize(Span<const UINT8, POLY1305_KEYLE
 // Encode data using ChaCha20 and Poly1305
 VOID ChaCha20Encoder::Encode(TlsBuffer &out, Span<const CHAR> packet, Span<const UCHAR> aad)
 {
-	INT32 packetSize = (INT32)packet.Size();
 	const UCHAR *sequence = aad.Data() + 5;
 
 	INT32 aadSize = 5;
 	INT32 counter = 1;
-	LOG_DEBUG("Encoding packet with Chacha20 encoder, packet size: %d bytes", packetSize);
-	out.AppendSize(packetSize + POLY1305_TAGLEN);
+	LOG_DEBUG("Encoding packet with Chacha20 encoder, packet size: %d bytes", (INT32)packet.Size());
+	out.AppendSize((INT32)packet.Size() + POLY1305_TAGLEN);
 	UCHAR poly1305_key[POLY1305_KEYLEN];
 	this->localCipher.IVUpdate(this->localNonce, Span<const UINT8, 8>(sequence), (UINT8 *)&counter);
 	LOG_DEBUG("Chacha20 encoder updated IV with sequence: %p, counter: %d", sequence, counter);
 	this->localCipher.Poly1305Key(poly1305_key);
 	LOG_DEBUG("Chacha20 encoder computed Poly1305 key: %p", poly1305_key);
 	(void)this->localCipher.Poly1305Aead(
-		Span<UCHAR>((UINT8 *)packet.Data(), packetSize),
+		Span<UCHAR>((UINT8 *)packet.Data(), packet.Size()),
 		Span<const UCHAR>((UINT8 *)aad.Data(), aadSize),
 		poly1305_key,
-		Span<UCHAR>((UINT8 *)out.GetBuffer() + out.GetSize() - POLY1305_TAGLEN - packetSize, packetSize + POLY1305_TAGLEN));
+		Span<UCHAR>((UINT8 *)out.GetBuffer() + out.GetSize() - POLY1305_TAGLEN - (INT32)packet.Size(), (INT32)packet.Size() + POLY1305_TAGLEN));
 }
 
 // Decode data using ChaCha20 and Poly1305

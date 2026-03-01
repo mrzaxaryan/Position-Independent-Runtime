@@ -758,11 +758,11 @@ VOID ECC::ModSqrt(UINT64 (&a)[MAX_NUM_ECC_DIGITS])
 
 VOID ECC::PointDecompress(ECCPoint &point, Span<const UINT8> compressed)
 {
-	UINT64 _3[MAX_NUM_ECC_DIGITS] = {3}; /* -a = 3 */
+	UINT64 negA[MAX_NUM_ECC_DIGITS] = {3}; /* -a = 3 */
 	this->Bytes2Native(point.x, compressed.Subspan(1));
 
 	this->VliModSquareFast(point.y, point.x);                      /* y = x^2 */
-	this->VliModSub(point.y, point.y, _3, this->curveP);           /* y = x^2 - 3 */
+	this->VliModSub(point.y, point.y, negA, this->curveP);          /* y = x^2 - 3 */
 	this->VliModMultFast(point.y, point.y, point.x);               /* y = x^3 - 3x */
 	this->VliModAdd(point.y, point.y, this->curveB, this->curveP); /* y = x^3 - 3x + b */
 
@@ -853,7 +853,7 @@ Result<void, Error> ECC::Initialize(INT32 curve)
 
 Result<UINT32, Error> ECC::ExportPublicKey(Span<UINT8> publicKey)
 {
-	if (publicKey.Data() == 0 || publicKey.Size() < this->eccBytes * 2 + 1)
+	if (publicKey.Data() == nullptr || publicKey.Size() < this->eccBytes * 2 + 1)
 		return Result<UINT32, Error>::Err(Error::Ecc_ExportKeyFailed);
 	publicKey[0] = 0x04;
 	this->Native2Bytes(publicKey.Subspan(1, this->eccBytes), this->publicKey.x);

@@ -335,7 +335,6 @@ VOID Poly1305::Finish(Span<UCHAR, POLY1305_TAGLEN> mac)
 VOID ChaCha20Poly1305::KeySetup(Span<const UINT8> key)
 {
     const UINT8 *k = key.Data();
-    UINT32 kbits = (UINT32)key.Size() * 8;
 
     this->input[4] = U8TO32_LITTLE(k + 0);
     this->input[5] = U8TO32_LITTLE(k + 4);
@@ -344,8 +343,8 @@ VOID ChaCha20Poly1305::KeySetup(Span<const UINT8> key)
     // Declare _embed strings separately to avoid type deduction issues with ternary
     auto constants32 = "expand 32-byte k"_embed;
     auto constants16 = "expand 16-byte k"_embed;
-    const CHAR *constants = kbits == 256 ? (const CHAR *)constants32 : (const CHAR *)constants16;
-    if (kbits == 256)
+    const CHAR *constants = (UINT32)key.Size() * 8 == 256 ? (const CHAR *)constants32 : (const CHAR *)constants16;
+    if ((UINT32)key.Size() * 8 == 256)
     { /* recommended */
         k += 16;
     }
@@ -582,7 +581,6 @@ VOID ChaCha20Poly1305::EncryptBytes(Span<const UINT8> m_span, Span<UINT8> c_span
 VOID ChaCha20Poly1305::Block(Span<UCHAR> output)
 {
     UINT32 i;
-    UINT32 len = (UINT32)output.Size();
     PUCHAR c = output.Data();
 
     UINT32 state[16];
@@ -603,7 +601,7 @@ VOID ChaCha20Poly1305::Block(Span<UCHAR> output)
     for (i = 0; i < 16; i++)
         state[i] = PLUS(state[i], this->input[i]);
 
-    for (i = 0; i < len; i += 4)
+    for (i = 0; i < (UINT32)output.Size(); i += 4)
     {
         U32TO8_LITTLE(c + i, state[i / 4]);
     }
@@ -645,13 +643,12 @@ static NOINLINE VOID Poly1305PadAndTrail(Poly1305 &poly, Span<const UCHAR> aad, 
 
 Result<void, Error> ChaCha20Poly1305::Poly1305Aead(Span<UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&poly_key)[POLY1305_KEYLEN], Span<UCHAR> out)
 {
-    UINT32 len = (UINT32)pt.Size();
     UINT32 counter = 1;
     this->IVSetup96BitNonce(nullptr, (PUCHAR)&counter);
-    this->EncryptBytes(Span<const UINT8>(pt.Data(), len), Span<UINT8>(out.Data(), len));
+    this->EncryptBytes(Span<const UINT8>(pt.Data(), pt.Size()), Span<UINT8>(out.Data(), pt.Size()));
 
     Poly1305 poly(poly_key);
-    Poly1305PadAndTrail(poly, aad, Span<const UCHAR>(out.Data(), len));
+    Poly1305PadAndTrail(poly, aad, Span<const UCHAR>(out.Data(), pt.Size()));
     poly.Finish(out.Last<POLY1305_TAGLEN>());
 
     return Result<void, Error>::Ok();

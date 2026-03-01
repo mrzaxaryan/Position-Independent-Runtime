@@ -173,7 +173,6 @@ SHABase<Traits>::SHABase()
 template<typename Traits>
 NOINLINE VOID SHABase<Traits>::Transform(SHABase &ctx, Span<const UINT8> message, const Word (&k)[Traits::ROUND_COUNT])
 {
-    UINT64 block_nb = message.Size() >> Traits::BLOCK_SHIFT;
     Word w[Traits::ROUND_COUNT];
     Word wv[8];
     Word t1, t2;
@@ -181,7 +180,7 @@ NOINLINE VOID SHABase<Traits>::Transform(SHABase &ctx, Span<const UINT8> message
     UINT64 i;
     INT32 j;
 
-    for (i = 0; i < block_nb; i++)
+    for (i = 0; i < (message.Size() >> Traits::BLOCK_SHIFT); i++)
     {
         sub_block = message.Data() + (i << Traits::BLOCK_SHIFT);
 
@@ -224,23 +223,22 @@ NOINLINE VOID SHABase<Traits>::Transform(SHABase &ctx, Span<const UINT8> message
 template<typename Traits>
 VOID SHABase<Traits>::Update(Span<const UINT8> message)
 {
-    UINT64 len = (UINT64)message.Size();
     UINT64 block_nb;
     UINT64 new_len, rem_len, tmp_len;
     const UINT8 *shifted_message;
 
     tmp_len = Traits::BLOCK_SIZE - this->len;
-    rem_len = len < tmp_len ? len : tmp_len;
+    rem_len = (UINT64)message.Size() < tmp_len ? (UINT64)message.Size() : tmp_len;
 
     Memory::Copy(&(this->block[this->len]), message.Data(), (USIZE)rem_len);
 
-    if (this->len + len < Traits::BLOCK_SIZE)
+    if (this->len + (UINT64)message.Size() < Traits::BLOCK_SIZE)
     {
-        this->len += len;
+        this->len += (UINT64)message.Size();
         return;
     }
 
-    new_len = len - rem_len;
+    new_len = (UINT64)message.Size() - rem_len;
     block_nb = new_len / Traits::BLOCK_SIZE;
 
     shifted_message = message.Data() + rem_len;
@@ -316,7 +314,6 @@ template class SHABase<SHA384Traits>;
 template<typename SHAType, typename Traits>
 VOID HMACBase<SHAType, Traits>::Init(Span<const UCHAR> key)
 {
-    UINT32 keySize = (UINT32)key.Size();
     UINT32 fill;
     UINT32 num;
 
@@ -324,14 +321,14 @@ VOID HMACBase<SHAType, Traits>::Init(Span<const UCHAR> key)
     UCHAR keyTemp[Traits::DIGEST_SIZE];
     INT32 i;
 
-    if (keySize == Traits::BLOCK_SIZE)
+    if ((UINT32)key.Size() == Traits::BLOCK_SIZE)
     {
         keyUsed = key.Data();
         num = Traits::BLOCK_SIZE;
     }
     else
     {
-        if (keySize > Traits::BLOCK_SIZE)
+        if ((UINT32)key.Size() > Traits::BLOCK_SIZE)
         {
             num = Traits::DIGEST_SIZE;
             SHAType::Hash(Span<const UINT8>(key.Data(), key.Size()), keyTemp);
@@ -340,7 +337,7 @@ VOID HMACBase<SHAType, Traits>::Init(Span<const UCHAR> key)
         else
         {
             keyUsed = key.Data();
-            num = keySize;
+            num = (UINT32)key.Size();
         }
         fill = Traits::BLOCK_SIZE - num;
 

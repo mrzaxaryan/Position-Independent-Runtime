@@ -33,10 +33,15 @@ elseif(PIR_ARCH STREQUAL "aarch64")
 endif()
 
 # Linker configuration (ELF via LLD)
-# Use clang++ as the linker driver with -fuse-ld=lld so it passes the correct
+# Use clang++ as the linker driver so it passes the correct
 # -m elf_{i386,x86_64}_sol2 emulation to LLD, producing proper Solaris ELFs.
 # Direct ld.lld invocation misses the emulation flag and produces Linux-format
 # ELFs that the Solaris kernel refuses to execute (ENOEXEC).
+#
+# Clang's Solaris driver does not accept the '-fuse-ld=lld' shorthand, so we
+# resolve the full path to ld.lld and pass it via -fuse-ld=/path/to/ld.lld.
+find_program(PIR_LLD_PATH ld.lld REQUIRED)
+
 pir_add_link_flags(
     -e,entry_point
     --no-dynamic-linker
@@ -50,4 +55,4 @@ if(PIR_BUILD_TYPE STREQUAL "release")
     pir_add_link_flags(--strip-all --gc-sections)
 endif()
 
-list(APPEND PIR_BASE_LINK_FLAGS -fuse-ld=lld)
+list(APPEND PIR_BASE_LINK_FLAGS "-fuse-ld=${PIR_LLD_PATH}")

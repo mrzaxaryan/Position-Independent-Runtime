@@ -11,6 +11,9 @@
 /// TLS_CHACHA20_POLY1305_SHA256 cipher suite identifier (RFC 8446 Section B.4)
 constexpr UINT16 TLS_CHACHA20_POLY1305_SHA256 = 0x1303;
 
+/// Number of expected handshake states in TLS 1.3 (ServerHello through Finished)
+constexpr INT32 HANDSHAKE_STATE_COUNT = 6;
+
 /// ChangeCipherSpec content type (RFC 5246 Section 6.2.1 — legacy, used in TLS 1.3 middlebox compat)
 constexpr UINT8 CONTENT_CHANGECIPHERSPEC = 0x14;
 /// Alert content type (RFC 8446 Section 5.1)
@@ -288,13 +291,13 @@ Result<void, Error> TlsClient::OnServerHello(TlsBuffer &reader)
 
 	LOG_DEBUG("Processing ServerHello for client: %p", this);
 	reader.ReadU24BE();                        // handshake body size (already bounded by TLS record)
-	UINT16SwapByteOrder(reader.Read<INT16>()); // version
+	(void)reader.Read<INT16>(); // version
 	reader.Read(Span<CHAR>(serverRand, sizeof(serverRand)));
 	INT32 sessionLen = reader.Read<INT8>();
 	LOG_DEBUG("ServerHello session length: %d", sessionLen);
 	reader.AdvanceReadPosition(sessionLen);
-	reader.Read<INT16>(); // cur_cipher
-	reader.Read<INT8>();
+	(void)reader.Read<INT16>(); // cur_cipher
+	(void)reader.Read<INT8>();
 	auto ret = crypto.UpdateServerInfo();
 	if (!ret)
 	{
@@ -598,7 +601,7 @@ Result<void, Error> TlsClient::OnPacket(INT32 packetType, INT32 version, TlsBuff
 		}
 		TlsBuffer reader_sig(Span<CHAR>(tlsReader.GetBuffer() + tlsReader.GetReadPosition(), (USIZE)seg_size));
 
-		TlsState state_seq[6]{};
+		TlsState state_seq[HANDSHAKE_STATE_COUNT]{};
 
 		state_seq[0] = {CONTENT_HANDSHAKE, MSG_SERVER_HELLO};
 		state_seq[1] = {CONTENT_CHANGECIPHERSPEC, MSG_CHANGE_CIPHER_SPEC};
@@ -607,7 +610,7 @@ Result<void, Error> TlsClient::OnPacket(INT32 packetType, INT32 version, TlsBuff
 		state_seq[4] = {CONTENT_HANDSHAKE, MSG_CERTIFICATE_VERIFY};
 		state_seq[5] = {CONTENT_HANDSHAKE, MSG_FINISHED};
 
-		if (stateIndex < 6 && packetType != CONTENT_ALERT)
+		if (stateIndex < HANDSHAKE_STATE_COUNT && packetType != CONTENT_ALERT)
 		{
 			LOG_DEBUG("Checking state sequence for client: %p, state index: %d, packet type: %d, handshake type: %d", this, stateIndex, packetType, reader_sig.GetBuffer()[0]);
 			if (state_seq[stateIndex].ContentType != packetType || state_seq[stateIndex].HandshakeType != reader_sig.GetBuffer()[0])
@@ -774,7 +777,7 @@ Result<void, Error> TlsClient::Open()
 	}
 	LOG_DEBUG("Client Hello sent successfully for client: %p", this);
 
-	while (stateIndex < 6)
+	while (stateIndex < HANDSHAKE_STATE_COUNT)
 	{
 		auto recvResult = ProcessReceive();
 		if (!recvResult)
@@ -831,7 +834,7 @@ Result<UINT32, Error> TlsClient::Write(Span<const CHAR> buffer)
 		return Result<UINT32, Error>::Ok(writeResult.Value());
 	}
 
-	if (stateIndex < 6)
+	if (stateIndex < HANDSHAKE_STATE_COUNT)
 	{
 		LOG_DEBUG("send error, state index is %d", stateIndex);
 		return Result<UINT32, Error>::Err(Error::Tls_WriteFailed_NotReady);
@@ -874,7 +877,7 @@ Result<SSIZE, Error> TlsClient::Read(Span<CHAR> buffer)
 		return Result<SSIZE, Error>::Ok(readResult.Value());
 	}
 
-	if (stateIndex < 6)
+	if (stateIndex < HANDSHAKE_STATE_COUNT)
 	{
 		LOG_DEBUG("recv error, state index is %d", stateIndex);
 		return Result<SSIZE, Error>::Err(Error::Tls_ReadFailed_NotReady);

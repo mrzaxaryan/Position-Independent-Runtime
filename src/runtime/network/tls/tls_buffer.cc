@@ -9,11 +9,10 @@
 
 INT32 TlsBuffer::Append(Span<const CHAR> data)
 {
-	INT32 dataSize = (INT32)data.Size();
-	CheckSize(dataSize);
-	Memory::Copy(buffer + this->size, (PVOID)data.Data(), dataSize);
-	this->size += dataSize;
-	return this->size - dataSize;
+	CheckSize((INT32)data.Size());
+	Memory::Copy(buffer + this->size, (PVOID)data.Data(), data.Size());
+	this->size += (INT32)data.Size();
+	return this->size - (INT32)data.Size();
 }
 
 /// @brief Append a single character to the TLS buffer

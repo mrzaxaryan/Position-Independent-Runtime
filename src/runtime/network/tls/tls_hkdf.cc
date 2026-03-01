@@ -15,23 +15,21 @@
 INT32 TlsHkdf::Label(Span<const CHAR> label, Span<const UCHAR> data, Span<UCHAR> hkdflabel, UINT16 length)
 {
 	auto prefix = "tls13 "_embed;
-	UCHAR labelLen = (UCHAR)label.Size();
-	UCHAR dataLen = (UCHAR)data.Size();
 	INT32 prefixLen = prefix.Length();
 
-	LOG_DEBUG("Creating HKDF label with label_len: %d, data_len: %d, length: %d", labelLen, dataLen, length);
+	LOG_DEBUG("Creating HKDF label with label_len: %d, data_len: %d, length: %d", (UCHAR)label.Size(), (UCHAR)data.Size(), length);
 
 	BinaryWriter writer(Span<UINT8>(hkdflabel.Data(), hkdflabel.Size()));
 
 	writer.WriteU16BE(length);
-	writer.WriteU8((UINT8)(prefixLen + labelLen));
+	writer.WriteU8((UINT8)(prefixLen + (UCHAR)label.Size()));
 	writer.WriteBytes(Span<const CHAR>((PCCHAR)prefix, prefixLen));
 	writer.WriteBytes(label);
-	writer.WriteU8(dataLen);
-	if (dataLen)
+	writer.WriteU8((UCHAR)data.Size());
+	if ((UCHAR)data.Size())
 	{
-		LOG_DEBUG("Copying data to HKDF label, data_len: %d", dataLen);
-		writer.WriteBytes(Span<const CHAR>((PCCHAR)data.Data(), dataLen));
+		LOG_DEBUG("Copying data to HKDF label, data_len: %d", (UCHAR)data.Size());
+		writer.WriteBytes(Span<const CHAR>((PCCHAR)data.Data(), (UCHAR)data.Size()));
 	}
 
 	LOG_DEBUG("HKDF label created with total length: %d bytes", (INT32)writer.GetOffset());
@@ -125,8 +123,7 @@ VOID TlsHkdf::Expand(Span<UCHAR> output, Span<const UCHAR> secret, Span<const UC
 VOID TlsHkdf::ExpandLabel(Span<UCHAR> output, Span<const UCHAR> secret, Span<const CHAR> label, Span<const UCHAR> data)
 {
 	UCHAR hkdfLabel[512];
-	UINT32 outlen = (UINT32)output.Size();
-	INT32 len = TlsHkdf::Label(label, data, Span<UCHAR>(hkdfLabel), outlen);
-	LOG_DEBUG("Expanding HKDF label with output length: %d, secret length: %d, label length: %d, data length: %d", outlen, (UINT32)secret.Size(), (UINT32)label.Size(), (UINT32)data.Size());
+	INT32 len = TlsHkdf::Label(label, data, Span<UCHAR>(hkdfLabel), (UINT32)output.Size());
+	LOG_DEBUG("Expanding HKDF label with output length: %d, secret length: %d, label length: %d, data length: %d", (UINT32)output.Size(), (UINT32)secret.Size(), (UINT32)label.Size(), (UINT32)data.Size());
 	TlsHkdf::Expand(output, secret, Span<const UCHAR>(hkdfLabel, len));
 }

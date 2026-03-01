@@ -317,15 +317,14 @@ VOID TlsCipher::Encode(TlsBuffer &sendbuf, Span<const CHAR> packet, BOOL keepOri
 		sendbuf.Append(packet);
 		return;
 	}
-	INT32 packetSize = (INT32)packet.Size();
-	LOG_DEBUG("Encoding packet with size: %d bytes", packetSize);
+	LOG_DEBUG("Encoding packet with size: %d bytes", (INT32)packet.Size());
 
 	UCHAR aad[13];
 
 	aad[0] = CONTENT_APPLICATION_DATA;
 	aad[1] = sendbuf.GetBuffer()[1];
 	aad[2] = sendbuf.GetBuffer()[2];
-	*((UINT16 *)(aad + 3)) = UINT16SwapByteOrder(ChaCha20Encoder::ComputeSize(packetSize, 0)); //-header_size
+	*((UINT16 *)(aad + 3)) = UINT16SwapByteOrder(ChaCha20Encoder::ComputeSize((INT32)packet.Size(), 0)); //-header_size
 	UINT64 clientSeq = UINT64SwapByteOrder(clientSeqNum++);
 	Memory::Copy(aad + 5, &clientSeq, sizeof(UINT64));
 

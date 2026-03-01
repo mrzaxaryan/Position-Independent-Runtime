@@ -381,14 +381,13 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
 	if (host.Size() == 0 || output.Size() == 0)
 		return Result<INT32, Error>::Err(Error::Dns_QueryFailed);
 
-	UINT32 hostLen = (UINT32)host.Size();
-	// Worst case: hostLen bytes + 1 extra label-length byte + null terminator
-	if ((INT32)(hostLen + 2) > (INT32)output.Size())
+	// Worst case: host.Size() bytes + 1 extra label-length byte + null terminator
+	if ((INT32)(host.Size() + 2) > (INT32)output.Size())
 		return Result<INT32, Error>::Err(Error::Dns_QueryFailed);
 
 	INT32 written = 0;
 	UINT32 i, t = 0;
-	for (i = 0; i < hostLen; i++)
+	for (i = 0; i < (UINT32)host.Size(); i++)
 	{
 		if (host[i] == '.')
 		{
@@ -405,7 +404,7 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
 			t++;
 		}
 	}
-	if (hostLen > 0 && host[hostLen - 1] != '.')
+	if (host.Size() > 0 && host[(UINT32)host.Size() - 1] != '.')
 	{
 		UINT32 labelLen = i - t;
 		if (labelLen == 0)
