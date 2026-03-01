@@ -5,25 +5,8 @@
 #include "windows_types.h"
 #include "ntdll.h"
 
-// --- Internal Constructor ---
-// Translates a Windows HANDLE into our File object
-File::File(PVOID handle) : fileHandle(handle), fileSize(0)
-{
-    if (IsValid())
-    {
-        FILE_STANDARD_INFORMATION fileStandardInfo;
-        IO_STATUS_BLOCK ioStatusBlock;
-        Memory::Zero(&fileStandardInfo, sizeof(FILE_STANDARD_INFORMATION));
-        Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
-
-        auto queryResult = NTDLL::ZwQueryInformationFile(fileHandle, &ioStatusBlock, &fileStandardInfo, sizeof(fileStandardInfo), FileStandardInformation);
-
-        if (queryResult)
-        {
-            fileSize = fileStandardInfo.EndOfFile.QuadPart;
-        }
-    }
-}
+// --- Internal Constructor (trivial — never fails) ---
+File::File(PVOID handle, USIZE size) : fileHandle(handle), fileSize(size) {}
 
 // --- Move Semantics ---
 File::File(File &&other) noexcept : fileHandle(nullptr), fileSize(0)
@@ -243,7 +226,17 @@ Result<File, Error> FileSystem::Open(PCWCHAR path, INT32 flags)
     if (!createResult || hFile == INVALID_HANDLE_VALUE)
         return Result<File, Error>::Err(createResult, Error::Fs_OpenFailed);
 
-    return Result<File, Error>::Ok(File((PVOID)hFile));
+    // Query file size before constructing the File (keeps the constructor trivial)
+    USIZE size = 0;
+    FILE_STANDARD_INFORMATION fileStandardInfo;
+    IO_STATUS_BLOCK sizeIoBlock;
+    Memory::Zero(&fileStandardInfo, sizeof(FILE_STANDARD_INFORMATION));
+    Memory::Zero(&sizeIoBlock, sizeof(IO_STATUS_BLOCK));
+    auto sizeResult = NTDLL::ZwQueryInformationFile(hFile, &sizeIoBlock, &fileStandardInfo, sizeof(fileStandardInfo), FileStandardInformation);
+    if (sizeResult)
+        size = fileStandardInfo.EndOfFile.QuadPart;
+
+    return Result<File, Error>::Ok(File((PVOID)hFile, size));
 }
 
 // Delete a file at the specified path

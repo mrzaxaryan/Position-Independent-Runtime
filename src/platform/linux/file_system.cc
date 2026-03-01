@@ -8,10 +8,8 @@
 
 // --- File Implementation ---
 
-File::File(PVOID handle) : fileHandle(handle), fileSize(0)
-{
-    // TODO: Get file size using fstat if needed
-}
+// --- Internal Constructor (trivial — never fails) ---
+File::File(PVOID handle, USIZE size) : fileHandle(handle), fileSize(size) {}
 
 File::File(File &&other) noexcept : fileHandle(nullptr), fileSize(0)
 {
@@ -142,7 +140,7 @@ Result<File, Error> FileSystem::Open(PCWCHAR path, INT32 flags)
     if (fd < 0)
         return Result<File, Error>::Err(Error::Posix((UINT32)(-fd)), Error::Fs_OpenFailed);
 
-    return Result<File, Error>::Ok(File((PVOID)fd));
+    return Result<File, Error>::Ok(File((PVOID)fd, 0));
 }
 
 Result<void, Error> FileSystem::Delete(PCWCHAR path)

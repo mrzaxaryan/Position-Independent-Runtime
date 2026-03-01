@@ -38,8 +38,8 @@ private:
     PVOID fileHandle; // File handle
     USIZE fileSize;   // File size
 
-    // Private constructor for FileSystem's use
-    File(PVOID handle);
+    // Private constructor for FileSystem's use (trivial — never fails)
+    File(PVOID handle, USIZE size);
 
 public:
     // Default constructor and destructor

@@ -161,7 +161,45 @@ Result<File, Error> FileSystem::Open(PCWCHAR path, INT32 flags)
 		}
 	}
 
-	return Result<File, Error>::Ok(File((PVOID)FileHandle));
+	// Query file size before constructing the File (keeps the constructor trivial)
+	USIZE size = 0;
+	{
+		EFI_FILE_PROTOCOL *fp = FileHandle;
+
+		EFI_GUID FileInfoId;
+		FileInfoId.Data1 = 0x09576E92;
+		FileInfoId.Data2 = 0x6D3F;
+		FileInfoId.Data3 = 0x11D2;
+		FileInfoId.Data4[0] = 0x8E;
+		FileInfoId.Data4[1] = 0x39;
+		FileInfoId.Data4[2] = 0x00;
+		FileInfoId.Data4[3] = 0xA0;
+		FileInfoId.Data4[4] = 0xC9;
+		FileInfoId.Data4[5] = 0x69;
+		FileInfoId.Data4[6] = 0x72;
+		FileInfoId.Data4[7] = 0x3B;
+
+		USIZE InfoSize = 0;
+		fp->GetInfo(fp, &FileInfoId, &InfoSize, nullptr);
+
+		if (InfoSize > 0)
+		{
+			EFI_CONTEXT *ctx = GetEfiContext();
+			EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
+
+			EFI_FILE_INFO *FileInfo = nullptr;
+			if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, InfoSize, (PVOID *)&FileInfo)))
+			{
+				if (!EFI_ERROR_CHECK(fp->GetInfo(fp, &FileInfoId, &InfoSize, FileInfo)))
+				{
+					size = FileInfo->FileSize;
+				}
+				bs->FreePool(FileInfo);
+			}
+		}
+	}
+
+	return Result<File, Error>::Ok(File((PVOID)FileHandle, size));
 }
 
 Result<void, Error> FileSystem::Delete(PCWCHAR path)
@@ -249,48 +287,8 @@ Result<void, Error> FileSystem::DeleteDirectory(PCWCHAR path)
 // File Class Implementation
 // =============================================================================
 
-File::File(PVOID handle)
-	: fileHandle(handle), fileSize(0)
-{
-	if (handle != nullptr)
-	{
-		// Get file size using GetInfo
-		EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)handle;
-
-		// EFI_FILE_INFO_ID {09576E92-6D3F-11D2-8E39-00A0C969723B}
-		EFI_GUID FileInfoId;
-		FileInfoId.Data1 = 0x09576E92;
-		FileInfoId.Data2 = 0x6D3F;
-		FileInfoId.Data3 = 0x11D2;
-		FileInfoId.Data4[0] = 0x8E;
-		FileInfoId.Data4[1] = 0x39;
-		FileInfoId.Data4[2] = 0x00;
-		FileInfoId.Data4[3] = 0xA0;
-		FileInfoId.Data4[4] = 0xC9;
-		FileInfoId.Data4[5] = 0x69;
-		FileInfoId.Data4[6] = 0x72;
-		FileInfoId.Data4[7] = 0x3B;
-
-		USIZE InfoSize = 0;
-		fp->GetInfo(fp, &FileInfoId, &InfoSize, nullptr);
-
-		if (InfoSize > 0)
-		{
-			EFI_CONTEXT *ctx = GetEfiContext();
-			EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
-
-			EFI_FILE_INFO *FileInfo = nullptr;
-			if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, InfoSize, (PVOID *)&FileInfo)))
-			{
-				if (!EFI_ERROR_CHECK(fp->GetInfo(fp, &FileInfoId, &InfoSize, FileInfo)))
-				{
-					fileSize = FileInfo->FileSize;
-				}
-				bs->FreePool(FileInfo);
-			}
-		}
-	}
-}
+// --- Internal Constructor (trivial — never fails) ---
+File::File(PVOID handle, USIZE size) : fileHandle(handle), fileSize(size) {}
 
 BOOL File::IsValid() const
 {

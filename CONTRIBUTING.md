@@ -247,6 +247,11 @@ Use preprocessor guards:
 
 PIR has no exceptions. **Every fallible function must return `Result<T, Error>`** (or `Result<void, Error>` when there is no value to return). Do not use raw `BOOL`, `NTSTATUS`, or `SSIZE` as return types for success/failure.
 
+**Exceptions — these do NOT use `Result`:**
+- **Low-level primitives** (`System::Call`, `Memory::Copy`, etc.) — these return raw OS types (`NTSTATUS`, `SSIZE`) or operate infallibly. Higher-level wrappers (e.g., `NTDLL::Zw*`, `result::FromNTSTATUS`) are responsible for converting raw returns into `Result`.
+- **Best-effort output** (`Console::Write`, logging callbacks) — failures are non-actionable; forcing `Result` through the entire logging chain would add code bloat for zero benefit.
+- **Infallible functions** (getters, pure computations, operators) — return their value directly.
+
 ### The Error Struct
 
 `Error` is a `(Code, Platform)` pair (8 bytes) defined in `include/core/error.h`:
