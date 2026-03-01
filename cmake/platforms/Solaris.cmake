@@ -46,13 +46,8 @@ if(PIR_BUILD_TYPE STREQUAL "release")
     pir_add_link_flags(--strip-all --gc-sections)
 endif()
 
-# Clang's Solaris driver has no -fuse-ld=lld support; use Linux triple for
-# the link step since the output is freestanding ELF (same format as Linux).
-if(PIR_ARCH STREQUAL "x86_64")
-    set(PIR_LINK_TRIPLE "x86_64-unknown-linux-gnu")
-elseif(PIR_ARCH STREQUAL "i386")
-    set(PIR_LINK_TRIPLE "i386-unknown-linux-gnu")
-elseif(PIR_ARCH STREQUAL "aarch64")
-    set(PIR_LINK_TRIPLE "aarch64-unknown-linux-gnu")
-endif()
-list(APPEND PIR_BASE_LINK_FLAGS -fuse-ld=lld)
+# Clang's Solaris driver has no -fuse-ld=lld support; use --ld-path to specify
+# LLD directly while keeping the native Solaris triple for correct ELF output.
+# Using Linux triples for linking produces Linux ELFs that the Solaris kernel
+# refuses to execute (ENOEXEC).
+list(APPEND PIR_BASE_LINK_FLAGS --ld-path=ld.lld)
