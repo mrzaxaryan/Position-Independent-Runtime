@@ -10,8 +10,8 @@
  *   - General division: O(n) where n is bit width (64 bits)
  *   - Optimized for common cases (zero, power-of-2, small divisors)
  *
- * GCC libgcc Runtime Reference:
- *   https://gcc.gnu.org/onlinedocs/gccint/Integer-library-routines.html
+ * @see GCC libgcc Integer Library Routines
+ *      https://gcc.gnu.org/onlinedocs/gccint/Integer-library-routines.html
  *
  * Part of CORE (Core Abstraction Layer) - Core runtime support.
  */
@@ -26,9 +26,9 @@
 // =============================================================================
 
 /**
- * Internal 64-bit unsigned division with quotient and remainder
+ * @brief Internal 64-bit unsigned division with quotient and remainder
  *
- * Algorithm: Binary long division with optimizations:
+ * @details Algorithm: Binary long division with optimizations:
  *   1. Power-of-2 fast path using BSF/TZCNT instruction
  *   2. Skip leading zeros in numerator for better performance
  *   3. Branch prediction hints for common cases
@@ -36,11 +36,10 @@
  *
  * Performance: O(1) for power-of-2, O(n) for general case where n = significant bits
  *
- * Note: Force inline for maximum performance in critical path
+ * @note Force inlined for maximum performance in critical path
  */
-__attribute__((always_inline))
-static inline void udiv64_internal(UINT64 numerator, UINT64 denominator,
-                                   UINT64 *quotient, UINT64 *remainder)
+static FORCE_INLINE void udiv64_internal(UINT64 numerator, UINT64 denominator,
+                                         UINT64 *quotient, UINT64 *remainder)
 {
     // Division by zero: return 0 quotient, numerator as remainder
     if (__builtin_expect(denominator == 0, 0))
@@ -140,9 +139,9 @@ extern "C"
     // =========================================================================
 
     /**
-     * Unified signed 64-bit division helper
+     * @brief Unified signed 64-bit division helper
      *
-     * Handles both division and modulo operations with sign handling.
+     * @details Handles both division and modulo operations with sign handling.
      * Uses XOR for efficient sign calculation: (a < 0) != (b < 0) means opposite signs.
      *
      * Sign rules (per C standard):
@@ -151,11 +150,10 @@ extern "C"
      *
      * Performance: Adds minimal overhead (~3-4 instructions) over unsigned division
      *
-     * Note: Force inline for maximum performance in critical path
+     * @note Force inlined for maximum performance in critical path
      */
-    __attribute__((always_inline))
-    static inline void idiv64_internal(INT64 numerator, INT64 denominator,
-                                       INT64 *quotient, INT64 *remainder)
+    static FORCE_INLINE void idiv64_internal(INT64 numerator, INT64 denominator,
+                                             INT64 *quotient, INT64 *remainder)
     {
         if (__builtin_expect(denominator == 0, 0))
         {

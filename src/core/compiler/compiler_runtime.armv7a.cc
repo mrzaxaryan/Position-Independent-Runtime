@@ -26,18 +26,18 @@
 // =============================================================================
 
 /**
- * Internal 32-bit unsigned division with optional remainder
+ * @brief Internal 32-bit unsigned division with optional remainder
  *
- * Algorithm: Binary long division with optimizations:
+ * @details Algorithm: Binary long division with optimizations:
  *   1. Power-of-2 fast path using CLZ instruction
  *   2. Skip leading zeros in numerator for better performance
  *   3. Branch prediction hints for common cases
  *
  * Performance: O(1) for power-of-2, O(n) for general case where n = significant bits
  *
- * Note: Force inline for maximum performance in critical path
+ * @note Force inlined for maximum performance in critical path
  */
-__attribute__((always_inline)) static inline UINT32 udiv32_internal(UINT32 numerator, UINT32 denominator, UINT32 *remainder)
+static FORCE_INLINE UINT32 udiv32_internal(UINT32 numerator, UINT32 denominator, UINT32 *remainder)
 {
     // Division by zero: return 0 quotient, numerator as remainder
     if (__builtin_expect(denominator == 0, 0))
@@ -91,9 +91,9 @@ __attribute__((always_inline)) static inline UINT32 udiv32_internal(UINT32 numer
 // =============================================================================
 
 /**
- * Internal 64-bit unsigned division with quotient and remainder
+ * @brief Internal 64-bit unsigned division with quotient and remainder
  *
- * Algorithm: Binary long division with optimizations:
+ * @details Algorithm: Binary long division with optimizations:
  *   1. Power-of-2 fast path using CLZLL instruction
  *   2. Skip leading zeros in numerator for better performance
  *   3. Branch prediction hints for common cases
@@ -196,9 +196,9 @@ extern "C"
     }
 
     /**
-     * Unified signed 32-bit division helper
+     * @brief Unified signed 32-bit division helper
      *
-     * Handles both division-only and divmod operations with sign handling.
+     * @details Handles both division-only and divmod operations with sign handling.
      * Uses XOR for efficient sign calculation: (a < 0) != (b < 0) means opposite signs.
      *
      * Sign rules (per ARM EABI and C standard):
@@ -207,9 +207,9 @@ extern "C"
      *
      * Performance: Adds minimal overhead (~3-4 instructions) over unsigned division
      *
-     * Note: Force inline for maximum performance in critical path
+     * @note Force inlined for maximum performance in critical path
      */
-    __attribute__((always_inline)) static inline INT64 idiv32_internal(INT32 numerator, INT32 denominator, BOOL wantRemainder)
+    static FORCE_INLINE INT64 idiv32_internal(INT32 numerator, INT32 denominator, BOOL wantRemainder)
     {
         if (__builtin_expect(denominator == 0, 0))
             return wantRemainder ? (((INT64)numerator << 32) | 0) : 0;
@@ -272,21 +272,22 @@ extern "C"
     // =========================================================================
 
     /**
-     * Unified 64-bit division helper for both signed and unsigned operations
+     * @brief Unified 64-bit division helper for both signed and unsigned operations
      *
-     * Called by inline assembly in __aeabi_uldivmod and __aeabi_ldivmod.
+     * @details Called by inline assembly in __aeabi_uldivmod and __aeabi_ldivmod.
      * This unified approach reduces code size while maintaining performance.
      *
-     * Parameters:
-     *   numerator, denominator: 64-bit operands
-     *   quotient, remainder: Output pointers for results
-     *   is_signed: true for signed division, false for unsigned
+     * @param numerator 64-bit numerator
+     * @param denominator 64-bit denominator
+     * @param quotient Output pointer for quotient result
+     * @param remainder Output pointer for remainder result
+     * @param isSigned true for signed division, false for unsigned
      *
-     * Sign rules (when is_signed=true):
+     * Sign rules (when isSigned=true):
      *   - Quotient is negative if operands have opposite signs
      *   - Remainder always takes the sign of the numerator
      *
-     * Note: __attribute__((used)) is required because the compiler cannot detect
+     * @note __attribute__((used)) is required because the compiler cannot detect
      * the reference from inline assembly, preventing "unused function" warnings.
      */
     __attribute__((used)) static void divmod64_helper(INT64 numerator, INT64 denominator,

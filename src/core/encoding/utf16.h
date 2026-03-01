@@ -46,9 +46,9 @@
  *
  * @par Example Usage:
  * @code
- * WCHAR wide[] = L"Hello, World!";
+ * auto wide = L"Hello, World!"_embed;
  * CHAR utf8[64];
- * USIZE len = UTF16::ToUTF8(wide, StringUtils::Length(wide), utf8, sizeof(utf8));
+ * USIZE len = UTF16::ToUTF8(Span<const WCHAR>(wide, 13), Span<CHAR>(utf8, sizeof(utf8)));
  * utf8[len] = '\0';  // Null-terminate
  * @endcode
  */
@@ -57,9 +57,8 @@ class UTF16
 public:
 	/**
 	 * @brief Convert a single UTF-16 code unit (or surrogate pair) to UTF-8
-	 * @param input Pointer to UTF-16 input string
-	 * @param inputLength Total length of input string in code units
-	 * @param inputIndex Current index into input (updated on return)
+	 * @param input UTF-16 input span
+	 * @param inputIndex Current index into input (advanced past consumed code units on return)
 	 * @param output Buffer to receive UTF-8 bytes (must be at least 4 bytes)
 	 * @return Number of UTF-8 bytes written (1-4), or 0 if no input available
 	 *
@@ -148,10 +147,8 @@ public:
 
 	/**
 	 * @brief Convert UTF-16 string to UTF-8
-	 * @param input Pointer to UTF-16 input string
-	 * @param inputLength Length of input string in code units (not bytes)
+	 * @param input UTF-16 input span
 	 * @param output Buffer to receive UTF-8 output
-	 * @param outputSize Size of output buffer in bytes
 	 * @return Total number of UTF-8 bytes written (excluding null terminator)
 	 *
 	 * @details Converts an entire UTF-16 string to UTF-8. Properly handles
