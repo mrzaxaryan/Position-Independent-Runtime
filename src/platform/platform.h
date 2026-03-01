@@ -45,7 +45,6 @@ NO_RETURN VOID ExitProcess(USIZE code);
 
 // Network services
 #include "platform/network/socket.h"
-#include "platform/io/path.h"
 
 // Process management
 #include "platform/system/process.h"

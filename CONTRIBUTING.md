@@ -139,6 +139,7 @@ src/                        # Source layers
       posix/                # Shared POSIX code (Linux/macOS)
   runtime/                  # RUNTIME layer (.h + .cc co-located)
     runtime.h               # Aggregate header (CORE + PLATFORM + RUNTIME)
+    entry_point.cc          # Program entry point (no CRT)
     crypto/                 # SHA2, ECC, ChaCha20
     network/                # DNS, HTTP, WebSocket
       tls/                  # TLS 1.3 implementation
@@ -300,11 +301,11 @@ Platform-specific OS API wrappers (NTDLL, Kernel32) **must** include Doxygen doc
 
 | Kind | Convention | Examples |
 |------|-----------|----------|
-| Primitive typedefs | `UPPER_CASE` | `UINT32`, `INT64`, `WCHAR`, `PVOID`, `BOOL` |
+| Primitive typedefs | `UPPER_CASE` | `UINT32`, `INT64`, `WCHAR`, `PVOID`, `BOOL`, `DOUBLE` |
 | Pointer typedefs | `P` prefix (`PP` double, `PC` const) | `PCHAR`, `PWCHAR`, `PPVOID`, `PCCHAR` |
-| Classes | `PascalCase`; all-caps for acronym names | `Socket`, `HttpClient`, `TlsBuffer`, `NTDLL` |
+| Classes | `PascalCase`; all-caps for acronym names | `Socket`, `HttpClient`, `TlsBuffer`, `NTDLL`, `ECC`, `DNS` |
 | Structs (Windows-style) | `_NAME` with typedef | `typedef struct _OBJECT_ATTRIBUTES { ... } OBJECT_ATTRIBUTES;` |
-| Template utility types | `UPPER_CASE` | `EMBEDDED_STRING<...>`, `VOID_TO_TAG<T>` |
+| Template utility types | `UPPER_CASE` | `EMBEDDED_STRING<...>`, `EMBEDDED_ARRAY<...>`, `VOID_TO_TAG<T>` |
 | Template classes | `PascalCase` | `Result<T, E>`, `Span<T>`, `SHABase<Traits>` |
 | Enum names | `PascalCase` | `ErrorCodes`, `PlatformKind`, `IPVersion`, `CmpOp` |
 | Enum values (scoped `enum class`) | `PascalCase` | `PlatformKind::Runtime`, `IPVersion::IPv4` |

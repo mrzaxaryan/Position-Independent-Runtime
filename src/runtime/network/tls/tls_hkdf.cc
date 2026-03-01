@@ -12,7 +12,7 @@
 /// @param length Length of the output keying material (OKM) that will be derived using this label
 /// @return The total length of the created HKDF label
 
-INT32 TlsHKDF::Label(Span<const CHAR> label, Span<const UCHAR> data, Span<UCHAR> hkdflabel, UINT16 length)
+INT32 TlsHkdf::Label(Span<const CHAR> label, Span<const UCHAR> data, Span<UCHAR> hkdflabel, UINT16 length)
 {
 	auto prefix = "tls13 "_embed;
 	UCHAR labelLen = (UCHAR)label.Size();
@@ -47,7 +47,7 @@ INT32 TlsHKDF::Label(Span<const CHAR> label, Span<const UCHAR> data, Span<UCHAR>
 /// @param ikmLen The length of the input keying material
 /// @return void
 
-VOID TlsHKDF::Extract(Span<UCHAR> output, Span<const UCHAR> salt, Span<const UCHAR> ikm)
+VOID TlsHkdf::Extract(Span<UCHAR> output, Span<const UCHAR> salt, Span<const UCHAR> ikm)
 {
 	HMAC_SHA256 hmac;
 	hmac.Init(salt);
@@ -66,7 +66,7 @@ VOID TlsHKDF::Extract(Span<UCHAR> output, Span<const UCHAR> salt, Span<const UCH
 /// @param infoLen The length of the info
 /// @return void
 
-VOID TlsHKDF::Expand(Span<UCHAR> output, Span<const UCHAR> secret, Span<const UCHAR> info)
+VOID TlsHkdf::Expand(Span<UCHAR> output, Span<const UCHAR> secret, Span<const UCHAR> info)
 {
 	UCHAR digestOut[SHA256_DIGEST_SIZE];
 	UINT32 idx = 0;
@@ -126,11 +126,11 @@ VOID TlsHKDF::Expand(Span<UCHAR> output, Span<const UCHAR> secret, Span<const UC
 /// @param dataLen The length of the data
 /// @return void 
 
-VOID TlsHKDF::ExpandLabel(Span<UCHAR> output, Span<const UCHAR> secret, Span<const CHAR> label, Span<const UCHAR> data)
+VOID TlsHkdf::ExpandLabel(Span<UCHAR> output, Span<const UCHAR> secret, Span<const CHAR> label, Span<const UCHAR> data)
 {
 	UCHAR hkdfLabel[512];
 	UINT32 outlen = (UINT32)output.Size();
-	INT32 len = TlsHKDF::Label(label, data, Span<UCHAR>(hkdfLabel), outlen);
+	INT32 len = TlsHkdf::Label(label, data, Span<UCHAR>(hkdfLabel), outlen);
 	LOG_DEBUG("Expanding HKDF label with output length: %d, secret length: %d, label length: %d, data length: %d", outlen, (UINT32)secret.Size(), (UINT32)label.Size(), (UINT32)data.Size());
-	TlsHKDF::Expand(output, secret, Span<const UCHAR>(hkdfLabel, len));
+	TlsHkdf::Expand(output, secret, Span<const UCHAR>(hkdfLabel, len));
 }

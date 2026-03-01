@@ -58,7 +58,7 @@
 #include "ecc_tests.h"
 #include "dns_tests.h"
 #include "websocket_tests.h"
-#include "filesystem_tests.h"
+#include "file_system_tests.h"
 #include "result_tests.h"
 #include "binary_io_tests.h"
 #include "span_tests.h"

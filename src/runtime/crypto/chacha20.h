@@ -144,7 +144,7 @@ public:
 };
 
 /**
- * @class ChaChaPoly1305
+ * @class ChaCha20Poly1305
  * @brief ChaCha20-Poly1305 Authenticated Encryption
  *
  * @details Implements the ChaCha20-Poly1305 AEAD cipher as specified in RFC 7539.
@@ -159,7 +159,7 @@ public:
  *
  * @par TLS 1.3 Usage:
  * @code
- * ChaChaPoly1305 cipher;
+ * ChaCha20Poly1305 cipher;
  * cipher.KeySetup(key, 256);
  * cipher.IVSetup96BitNonce(nonce, counter);
  *
@@ -171,7 +171,7 @@ public:
  * cipher.Poly1305Aead(plaintext, ptLen, aad, aadLen, polyKey, ciphertext);
  * @endcode
  */
-class ChaChaPoly1305
+class ChaCha20Poly1305
 {
 private:
     UINT32 input[16];              /**< @brief ChaCha20 state matrix (16 x 32-bit words) */
@@ -182,20 +182,20 @@ public:
     /**
      * @brief Default constructor - initializes state
      */
-    ChaChaPoly1305();
+    ChaCha20Poly1305();
 
     /**
      * @brief Destructor - securely clears key material
      */
-    ~ChaChaPoly1305();
+    ~ChaCha20Poly1305();
 
     // Non-copyable: prevents accidental key material duplication
-    ChaChaPoly1305(const ChaChaPoly1305 &) = delete;
-    ChaChaPoly1305 &operator=(const ChaChaPoly1305 &) = delete;
+    ChaCha20Poly1305(const ChaCha20Poly1305 &) = delete;
+    ChaCha20Poly1305 &operator=(const ChaCha20Poly1305 &) = delete;
 
     // Movable: transfers ownership and zeroes source
-    ChaChaPoly1305(ChaChaPoly1305 &&other) noexcept;
-    ChaChaPoly1305 &operator=(ChaChaPoly1305 &&other) noexcept;
+    ChaCha20Poly1305(ChaCha20Poly1305 &&other) noexcept;
+    ChaCha20Poly1305 &operator=(ChaCha20Poly1305 &&other) noexcept;
 
     /**
      * @brief Sets up the encryption key

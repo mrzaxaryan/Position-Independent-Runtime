@@ -60,8 +60,8 @@ typedef struct ChaCha20Encoder ChaCha20Encoder;
 struct ChaCha20Encoder
 {
 private:
-    ChaChaPoly1305 remoteCipher;               /**< @brief Cipher for decrypting remote data */
-    ChaChaPoly1305 localCipher;                /**< @brief Cipher for encrypting local data */
+    ChaCha20Poly1305 remoteCipher;               /**< @brief Cipher for decrypting remote data */
+    ChaCha20Poly1305 localCipher;                /**< @brief Cipher for encrypting local data */
     INT32 ivLength;                            /**< @brief IV length in bytes (12 for TLS 1.3) */
     UCHAR remoteNonce[TLS_CHACHA20_IV_LENGTH]; /**< @brief Base IV for remote (server) direction */
     UCHAR localNonce[TLS_CHACHA20_IV_LENGTH];  /**< @brief Base IV for local (client) direction */
@@ -87,7 +87,7 @@ public:
     VOID operator delete(VOID *) = delete;
 
     ChaCha20Encoder(ChaCha20Encoder &&other) noexcept
-        : remoteCipher(static_cast<ChaChaPoly1305 &&>(other.remoteCipher)), localCipher(static_cast<ChaChaPoly1305 &&>(other.localCipher)), ivLength(other.ivLength), initialized(other.initialized)
+        : remoteCipher(static_cast<ChaCha20Poly1305 &&>(other.remoteCipher)), localCipher(static_cast<ChaCha20Poly1305 &&>(other.localCipher)), ivLength(other.ivLength), initialized(other.initialized)
     {
         Memory::Copy(remoteNonce, other.remoteNonce, TLS_CHACHA20_IV_LENGTH);
         Memory::Copy(localNonce, other.localNonce, TLS_CHACHA20_IV_LENGTH);
@@ -101,8 +101,8 @@ public:
     {
         if (this != &other)
         {
-            remoteCipher = static_cast<ChaChaPoly1305 &&>(other.remoteCipher);
-            localCipher = static_cast<ChaChaPoly1305 &&>(other.localCipher);
+            remoteCipher = static_cast<ChaCha20Poly1305 &&>(other.remoteCipher);
+            localCipher = static_cast<ChaCha20Poly1305 &&>(other.localCipher);
             ivLength = other.ivLength;
             initialized = other.initialized;
             Memory::Copy(remoteNonce, other.remoteNonce, TLS_CHACHA20_IV_LENGTH);

@@ -10,7 +10,6 @@
 #pragma once
 #include "core/types/primitives.h"
 #include "core/string/string.h"
-#include "platform/platform.h"
 
 #if defined(PLATFORM_WINDOWS) || defined(PLATFORM_UEFI)
 constexpr CHAR PATH_SEPARATOR = '\\';

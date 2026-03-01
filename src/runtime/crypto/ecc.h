@@ -17,7 +17,7 @@
  *
  * @par TLS 1.3 Key Exchange:
  * @code
- * Ecc ecdh;
+ * ECC ecdh;
  * ecdh.Initialize(32);  // P-256
  *
  * // Export public key for key_share extension
@@ -62,7 +62,7 @@ typedef struct
 } UINT128_;
 
 /**
- * @struct EccPoint
+ * @struct ECCPoint
  * @brief Elliptic curve point in affine coordinates
  *
  * @details Represents a point (x, y) on the elliptic curve.
@@ -73,10 +73,10 @@ typedef struct
 {
     UINT64 x[MAX_NUM_ECC_DIGITS]; /**< @brief X coordinate */
     UINT64 y[MAX_NUM_ECC_DIGITS]; /**< @brief Y coordinate */
-} EccPoint;
+} ECCPoint;
 
 /**
- * @class Ecc
+ * @class ECC
  * @brief Elliptic Curve Diffie-Hellman (ECDH) Key Exchange
  *
  * @details Implements ECDH key exchange for TLS 1.3 using NIST prime curves.
@@ -96,17 +96,17 @@ typedef struct
  * - Point validation is performed on imported public keys
  * - Shared secret computation is constant-time
  */
-class Ecc
+class ECC
 {
 private:
     UINT32 eccBytes;                       /**< @brief Key size in bytes (32 or 48) */
-    UINT32 numEccDigits;                   /**< @brief Number of 64-bit words per coordinate */
+    UINT32 numECCDigits;                   /**< @brief Number of 64-bit words per coordinate */
     UINT64 curveP[MAX_NUM_ECC_DIGITS];     /**< @brief Prime field modulus p */
     UINT64 curveB[MAX_NUM_ECC_DIGITS];     /**< @brief Curve coefficient b (y^2 = x^3 - 3x + b) */
-    EccPoint curveG;                       /**< @brief Base point (generator) G */
+    ECCPoint curveG;                       /**< @brief Base point (generator) G */
     UINT64 curveN[MAX_NUM_ECC_DIGITS];     /**< @brief Order of base point n */
     UINT64 privateKey[MAX_NUM_ECC_DIGITS]; /**< @brief Private key d (random scalar) */
-    EccPoint publicKey;                    /**< @brief Public key Q = d * G */
+    ECCPoint publicKey;                    /**< @brief Public key Q = d * G */
 
     // =========================================================================
     // Variable Length Integer (VLI) Operations
@@ -193,7 +193,7 @@ private:
     // =========================================================================
 
     /** @brief Tests if point is at infinity */
-    INT32 IsZero(const EccPoint &point);
+    INT32 IsZero(const ECCPoint &point);
 
     /** @brief Point doubling in Jacobian coordinates */
     VOID DoubleJacobian(UINT64 (&X1)[MAX_NUM_ECC_DIGITS], UINT64 (&Y1)[MAX_NUM_ECC_DIGITS], UINT64 (&Z1)[MAX_NUM_ECC_DIGITS]);
@@ -211,7 +211,7 @@ private:
     VOID XYcZAddC(UINT64 (&X1)[MAX_NUM_ECC_DIGITS], UINT64 (&Y1)[MAX_NUM_ECC_DIGITS], UINT64 (&X2)[MAX_NUM_ECC_DIGITS], UINT64 (&Y2)[MAX_NUM_ECC_DIGITS]);
 
     /** @brief Scalar multiplication: result = pScalar * point */
-    VOID Mult(EccPoint &result, EccPoint &point, UINT64 (&pScalar)[MAX_NUM_ECC_DIGITS], UINT64 *pInitialZ);
+    VOID Mult(ECCPoint &result, ECCPoint &point, UINT64 (&pScalar)[MAX_NUM_ECC_DIGITS], UINT64 *pInitialZ);
 
     // =========================================================================
     // Serialization
@@ -227,27 +227,27 @@ private:
     VOID ModSqrt(UINT64 (&pA)[MAX_NUM_ECC_DIGITS]);
 
     /** @brief Decompresses point from compressed format (02/03 || x) */
-    VOID PointDecompress(EccPoint &point, Span<const UINT8> compressed);
+    VOID PointDecompress(ECCPoint &point, Span<const UINT8> compressed);
 
 public:
     /**
      * @brief Default constructor
      * @details Initializes internal state. Must call Initialize() before use.
      */
-    Ecc();
+    ECC();
 
     /**
      * @brief Destructor - securely clears private key material
      */
-    ~Ecc();
+    ~ECC();
 
     // Non-copyable -- prevent duplication of private key material
-    Ecc(const Ecc &) = delete;
-    Ecc &operator=(const Ecc &) = delete;
+    ECC(const ECC &) = delete;
+    ECC &operator=(const ECC &) = delete;
 
-    // Non-movable -- Ecc objects are heap-allocated and managed through pointers
-    Ecc(Ecc &&) = delete;
-    Ecc &operator=(Ecc &&) = delete;
+    // Non-movable -- ECC objects are heap-allocated and managed through pointers
+    ECC(ECC &&) = delete;
+    ECC &operator=(ECC &&) = delete;
 
     /**
      * @brief Checks if the ECC instance is initialized with a valid curve
@@ -258,7 +258,7 @@ public:
     /**
      * @brief Initializes ECC with specified curve
      * @param bytes Key size in bytes: 32 for P-256, 48 for P-384
-     * @return Ok on success, Err(Ecc_InitFailed) on error
+     * @return Ok on success, Err(ECC_InitFailed) on error
      *
      * @details Loads curve parameters and generates ephemeral key pair.
      * The private key is generated randomly; public key is computed as Q = d * G.
@@ -268,7 +268,7 @@ public:
     /**
      * @brief Exports public key in uncompressed format
      * @param publicKey Output span for public key (must be >= 2*eccBytes + 1)
-     * @return Ok(bytesWritten) on success, Err(Ecc_ExportKeyFailed) on error
+     * @return Ok(bytesWritten) on success, Err(ECC_ExportKeyFailed) on error
      *
      * @details Exports public key as: 0x04 || x || y (uncompressed point format)
      * For P-256: 65 bytes (1 + 32 + 32)
@@ -280,7 +280,7 @@ public:
      * @brief Computes ECDH shared secret
      * @param publicKey Span of peer's public key (uncompressed or compressed)
      * @param secret Output buffer for shared secret (x-coordinate)
-     * @return Ok(bytesWritten) on success, Err(Ecc_SharedSecretFailed) on error
+     * @return Ok(bytesWritten) on success, Err(ECC_SharedSecretFailed) on error
      *
      * @details Computes shared secret as x-coordinate of d * Q where:
      * - d is this instance's private key

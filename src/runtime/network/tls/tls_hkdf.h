@@ -17,7 +17,7 @@
 #include "core/core.h"
 
 /// HKDF key derivation for TLS 1.3 key schedule
-class TlsHKDF
+class TlsHkdf
 {
 private:
 	static INT32 Label(Span<const CHAR> label, Span<const UCHAR> data, Span<UCHAR> hkdflabel, UINT16 length);

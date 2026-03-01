@@ -171,7 +171,7 @@ VOID Poly1305::ProcessBlocks(Span<const UCHAR> data)
 
 Result<void, Error> Poly1305::GenerateKey(Span<const UCHAR, POLY1305_KEYLEN> key256, Span<const UCHAR> nonce, Span<UCHAR, POLY1305_KEYLEN> poly_key, UINT32 counter)
 {
-    ChaChaPoly1305 ctx;
+    ChaCha20Poly1305 ctx;
     UINT64 ctr;
     ctx.KeySetup(key256);
 
@@ -332,7 +332,7 @@ VOID Poly1305::Finish(Span<UCHAR, POLY1305_TAGLEN> mac)
 //========== ChaCha20 from D. J. Bernstein ========= //
 // Source available at https://cr.yp.to/chacha.html  //
 
-VOID ChaChaPoly1305::KeySetup(Span<const UINT8> key)
+VOID ChaCha20Poly1305::KeySetup(Span<const UINT8> key)
 {
     const UINT8 *k = key.Data();
     UINT32 kbits = (UINT32)key.Size() * 8;
@@ -359,7 +359,7 @@ VOID ChaChaPoly1305::KeySetup(Span<const UINT8> key)
     this->input[3] = _private_tls_U8TO32_LITTLE(constants + 12);
 }
 
-VOID ChaChaPoly1305::Key(UINT8 (&k)[32])
+VOID ChaCha20Poly1305::Key(UINT8 (&k)[32])
 {
     _private_tls_U32TO8_LITTLE(k, this->input[4]);
     _private_tls_U32TO8_LITTLE(k + 4, this->input[5]);
@@ -372,14 +372,14 @@ VOID ChaChaPoly1305::Key(UINT8 (&k)[32])
     _private_tls_U32TO8_LITTLE(k + 28, this->input[11]);
 }
 
-VOID ChaChaPoly1305::Nonce(UINT8 (&nonce)[TLS_CHACHA20_IV_LENGTH])
+VOID ChaCha20Poly1305::Nonce(UINT8 (&nonce)[TLS_CHACHA20_IV_LENGTH])
 {
     _private_tls_U32TO8_LITTLE(nonce + 0, this->input[13]);
     _private_tls_U32TO8_LITTLE(nonce + 4, this->input[14]);
     _private_tls_U32TO8_LITTLE(nonce + 8, this->input[15]);
 }
 
-VOID ChaChaPoly1305::IvSetup(const UINT8 *iv, const UINT8 *counter)
+VOID ChaCha20Poly1305::IvSetup(const UINT8 *iv, const UINT8 *counter)
 {
     this->input[12] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
     this->input[13] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 4);
@@ -390,7 +390,7 @@ VOID ChaChaPoly1305::IvSetup(const UINT8 *iv, const UINT8 *counter)
     }
 }
 
-VOID ChaChaPoly1305::IVSetup96BitNonce(const UINT8 *iv, const UINT8 *counter)
+VOID ChaCha20Poly1305::IVSetup96BitNonce(const UINT8 *iv, const UINT8 *counter)
 {
     this->input[12] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
     if (iv)
@@ -401,7 +401,7 @@ VOID ChaChaPoly1305::IVSetup96BitNonce(const UINT8 *iv, const UINT8 *counter)
     }
 }
 
-VOID ChaChaPoly1305::IvUpdate(Span<const UINT8, TLS_CHACHA20_IV_LENGTH> iv, Span<const UINT8, 8> aad, const UINT8 *counter)
+VOID ChaCha20Poly1305::IvUpdate(Span<const UINT8, TLS_CHACHA20_IV_LENGTH> iv, Span<const UINT8, 8> aad, const UINT8 *counter)
 {
     this->input[12] = counter == nullptr ? 0 : _private_tls_U8TO32_LITTLE(counter + 0);
     this->input[13] = _private_tls_U8TO32_LITTLE(iv.Data() + 0);
@@ -409,7 +409,7 @@ VOID ChaChaPoly1305::IvUpdate(Span<const UINT8, TLS_CHACHA20_IV_LENGTH> iv, Span
     this->input[15] = _private_tls_U8TO32_LITTLE(iv.Data() + 8) ^ _private_tls_U8TO32_LITTLE(aad.Data() + 4);
 }
 
-VOID ChaChaPoly1305::EncryptBytes(Span<const UINT8> m_span, Span<UINT8> c_span)
+VOID ChaCha20Poly1305::EncryptBytes(Span<const UINT8> m_span, Span<UINT8> c_span)
 {
     const UINT8 *m = m_span.Data();
     UINT8 *c = c_span.Data();
@@ -579,7 +579,7 @@ VOID ChaChaPoly1305::EncryptBytes(Span<const UINT8> m_span, Span<UINT8> c_span)
     }
 }
 
-VOID ChaChaPoly1305::Block(Span<UCHAR> output)
+VOID ChaCha20Poly1305::Block(Span<UCHAR> output)
 {
     UINT32 i;
     UINT32 len = (UINT32)output.Size();
@@ -610,7 +610,7 @@ VOID ChaChaPoly1305::Block(Span<UCHAR> output)
     this->input[12] = PLUSONE(this->input[12]);
 }
 
-Result<void, Error> ChaChaPoly1305::Poly1305Aead(Span<UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&poly_key)[POLY1305_KEYLEN], Span<UCHAR> out)
+Result<void, Error> ChaCha20Poly1305::Poly1305Aead(Span<UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&poly_key)[POLY1305_KEYLEN], Span<UCHAR> out)
 {
     UCHAR zeropad[15];
     Memory::Zero(zeropad, sizeof(zeropad));
@@ -641,7 +641,7 @@ Result<void, Error> ChaChaPoly1305::Poly1305Aead(Span<UCHAR> pt, Span<const UCHA
     return Result<void, Error>::Ok();
 }
 
-Result<INT32, Error> ChaChaPoly1305::Poly1305Decode(Span<UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&poly_key)[POLY1305_KEYLEN], Span<UCHAR> out)
+Result<INT32, Error> ChaCha20Poly1305::Poly1305Decode(Span<UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&poly_key)[POLY1305_KEYLEN], Span<UCHAR> out)
 {
     if (pt.Size() < POLY1305_TAGLEN)
         return Result<INT32, Error>::Err(Error::ChaCha20_DecodeFailed);
@@ -678,7 +678,7 @@ Result<INT32, Error> ChaChaPoly1305::Poly1305Decode(Span<UCHAR> pt, Span<const U
 
     if (diff != 0)
     {
-        LOG_ERROR("ChaChaPoly1305::Poly1305Decode: Authentication tag mismatch");
+        LOG_ERROR("ChaCha20Poly1305::Poly1305Decode: Authentication tag mismatch");
         return Result<INT32, Error>::Err(Error::ChaCha20_DecodeFailed);
     }
 
@@ -688,7 +688,7 @@ Result<INT32, Error> ChaChaPoly1305::Poly1305Decode(Span<UCHAR> pt, Span<const U
     return Result<INT32, Error>::Ok((INT32)len);
 }
 
-VOID ChaChaPoly1305::Poly1305Key(Span<UCHAR, POLY1305_KEYLEN> poly1305_key)
+VOID ChaCha20Poly1305::Poly1305Key(Span<UCHAR, POLY1305_KEYLEN> poly1305_key)
 {
     UCHAR key[32];
     UCHAR nonce[12];
@@ -697,21 +697,21 @@ VOID ChaChaPoly1305::Poly1305Key(Span<UCHAR, POLY1305_KEYLEN> poly1305_key)
     (void)Poly1305::GenerateKey(key, nonce, poly1305_key, 0);
 }
 
-ChaChaPoly1305::ChaChaPoly1305()
+ChaCha20Poly1305::ChaCha20Poly1305()
 {
     Memory::Zero(&this->input, sizeof(this->input));
     Memory::Zero(&this->ks, sizeof(this->ks));
     this->unused = 0;
 }
 
-ChaChaPoly1305::~ChaChaPoly1305()
+ChaCha20Poly1305::~ChaCha20Poly1305()
 {
     Memory::Zero(&this->input, sizeof(this->input));
     Memory::Zero(&this->ks, sizeof(this->ks));
     this->unused = 0;
 }
 
-ChaChaPoly1305::ChaChaPoly1305(ChaChaPoly1305 &&other) noexcept
+ChaCha20Poly1305::ChaCha20Poly1305(ChaCha20Poly1305 &&other) noexcept
 {
     Memory::Copy(&this->input, &other.input, sizeof(this->input));
     Memory::Copy(&this->ks, &other.ks, sizeof(this->ks));
@@ -721,7 +721,7 @@ ChaChaPoly1305::ChaChaPoly1305(ChaChaPoly1305 &&other) noexcept
     other.unused = 0;
 }
 
-ChaChaPoly1305 &ChaChaPoly1305::operator=(ChaChaPoly1305 &&other) noexcept
+ChaCha20Poly1305 &ChaCha20Poly1305::operator=(ChaCha20Poly1305 &&other) noexcept
 {
     if (this != &other)
     {

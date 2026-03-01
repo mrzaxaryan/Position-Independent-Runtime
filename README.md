@@ -551,7 +551,7 @@ All functionality is implemented using low-level native interfaces to avoid exte
 
 ## Practical Use Cases
 
-Position-Indepenedent Runtime is designed for execution environments where traditional runtime assumptions do not apply. Its architecture makes it particularly suitable for the following domains:
+Position-Independent Runtime is designed for execution environments where traditional runtime assumptions do not apply. Its architecture makes it particularly suitable for the following domains:
 - **Authorized penetration testing** with written scope and client approval
 - **Security research** with proper disclosure practices
 - Shellcode and loaderless code execution
@@ -568,8 +568,8 @@ This project is still a work in progress. Below is a list of remaining tasks and
 
 ## Conclusion
 
-Position-Independent Runtime is not merely a library—it is a proof of concept that challenges long-held assumptions about C++, binary formats, and position-independent execution across multiple platforms. This project compiles into a PE file on Windows, an ELF file on Linux, or a Mach-O file on macOS, supporting i386, x86_64, armv7a, and aarch64 architectures. The resulting binary can run both as a standalone executable and as shellcode after extracting the `.text` section. By eliminating `.rdata`, CRT dependencies, relocations, and static API references, Position-Independent Runtime enables a new class of C++ programs capable of running in environments where traditional C++ has never been viable.
+Position-Independent Runtime is not merely a library—it is a proof of concept that challenges long-held assumptions about C++, binary formats, and position-independent execution across multiple platforms. This project compiles into a PE file on Windows, an ELF file on Linux and Solaris, a Mach-O file on macOS, or a UEFI application, supporting i386, x86_64, armv7a, and aarch64 architectures. The resulting binary can run both as a standalone executable and as shellcode after extracting the `.text` section. By eliminating `.rdata`, CRT dependencies, relocations, and static API references, Position-Independent Runtime enables a new class of C++ programs capable of running in environments where traditional C++ has never been viable.
 
-The platform abstraction layer demonstrates that the same high-level C++23 codebase can target fundamentally different operating systems—Windows with its PEB walking and NTAPI interfaces, Linux with its direct syscall approach, and macOS with its BSD syscall interface—while maintaining identical position-independence guarantees. As demonstrated throughout this work, modern C++23 compile-time features and carefully selected compiler intrinsics play a key role in achieving these guarantees, allowing expressive high-level code while preserving strict low-level control.
+The platform abstraction layer demonstrates that the same high-level C++23 codebase can target fundamentally different operating systems—Windows with its PEB walking and NTAPI interfaces, Linux and Solaris with their direct syscall approaches, macOS with its BSD syscall interface, and UEFI with its boot/runtime services—while maintaining identical position-independence guarantees. As demonstrated throughout this work, modern C++23 compile-time features and carefully selected compiler intrinsics play a key role in achieving these guarantees, allowing expressive high-level code while preserving strict low-level control.
 
 This project is intended for researchers, systems programmers, and security engineers who are willing to work beneath high-level abstractions and take full control of the machine. Any unauthorized or malicious use of this software is strictly prohibited and falls outside the scope of the project's design goals.

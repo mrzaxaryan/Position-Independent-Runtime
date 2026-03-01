@@ -98,7 +98,7 @@ Result<void, Error> TlsCipher::ComputePublicKey(INT32 eccIndex, TlsBuffer &out)
 	if (privateEccKeys[eccIndex] == nullptr)
 	{
 		LOG_DEBUG("Allocating memory for private ECC key at index %d", eccIndex);
-		privateEccKeys[eccIndex] = new Ecc();
+		privateEccKeys[eccIndex] = new ECC();
 		INT32 ecc_size_list[2];
 		ecc_size_list[0] = 32;
 		ecc_size_list[1] = 48;
@@ -206,8 +206,8 @@ Result<void, Error> TlsCipher::ComputeKey(EccGroup ecc, Span<const CHAR> serverK
 	{
 		LOG_DEBUG("Using EccGroup::None for TLS key computation");
 
-		TlsHKDF::ExpandLabel(Span<UCHAR>(salt, hashLen), Span<const UCHAR>((UINT8 *)data13.pseudoRandomKey, hashLen), Span<const CHAR>("derived"_embed, 7), Span<const UCHAR>(hash, hashLen));
-		TlsHKDF::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(salt, hashLen), Span<const UCHAR>(earlysecret, hashLen));
+		TlsHkdf::ExpandLabel(Span<UCHAR>(salt, hashLen), Span<const UCHAR>((UINT8 *)data13.pseudoRandomKey, hashLen), Span<const CHAR>("derived"_embed, 7), Span<const UCHAR>(hash, hashLen));
+		TlsHkdf::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(salt, hashLen), Span<const UCHAR>(earlysecret, hashLen));
 
 		if (finishedHash.Data())
 		{
@@ -230,22 +230,22 @@ Result<void, Error> TlsCipher::ComputeKey(EccGroup ecc, Span<const CHAR> serverK
 		UCHAR zeroSalt[MAX_HASH_LEN];
 		Memory::Zero(zeroSalt, hashLen);
 
-		TlsHKDF::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(zeroSalt, hashLen), Span<const UCHAR>(earlysecret, hashLen));
-		TlsHKDF::ExpandLabel(Span<UCHAR>(salt, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>("derived"_embed, 7), Span<const UCHAR>(hash, hashLen));
-		TlsHKDF::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(salt, hashLen), Span<const UCHAR>((UINT8 *)premaster_key.GetBuffer(), premaster_key.GetSize()));
+		TlsHkdf::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(zeroSalt, hashLen), Span<const UCHAR>(earlysecret, hashLen));
+		TlsHkdf::ExpandLabel(Span<UCHAR>(salt, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>("derived"_embed, 7), Span<const UCHAR>(hash, hashLen));
+		TlsHkdf::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(salt, hashLen), Span<const UCHAR>((UINT8 *)premaster_key.GetBuffer(), premaster_key.GetSize()));
 
 		GetHash(Span<CHAR>((CHAR *)hash, CIPHER_HASH_SIZE));
 	}
 
-	TlsHKDF::ExpandLabel(Span<UCHAR>(data13.handshakeSecret, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(client_key, 12), Span<const UCHAR>(hash, hashLen));
+	TlsHkdf::ExpandLabel(Span<UCHAR>(data13.handshakeSecret, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(client_key, 12), Span<const UCHAR>(hash, hashLen));
 
-	TlsHKDF::ExpandLabel(Span<UCHAR>(localKeyBuffer, keyLen), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>("key"_embed, 3), Span<const UCHAR>());
-	TlsHKDF::ExpandLabel(Span<UCHAR>(localIvBuffer, chacha20Context.GetIvLength()), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>("iv"_embed, 2), Span<const UCHAR>());
+	TlsHkdf::ExpandLabel(Span<UCHAR>(localKeyBuffer, keyLen), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>("key"_embed, 3), Span<const UCHAR>());
+	TlsHkdf::ExpandLabel(Span<UCHAR>(localIvBuffer, chacha20Context.GetIvLength()), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>("iv"_embed, 2), Span<const UCHAR>());
 
-	TlsHKDF::ExpandLabel(Span<UCHAR>(data13.mainSecret, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(server_key, 12), Span<const UCHAR>(hash, hashLen));
+	TlsHkdf::ExpandLabel(Span<UCHAR>(data13.mainSecret, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(server_key, 12), Span<const UCHAR>(hash, hashLen));
 
-	TlsHKDF::ExpandLabel(Span<UCHAR>(remoteKeyBuffer, keyLen), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>("key"_embed, 3), Span<const UCHAR>());
-	TlsHKDF::ExpandLabel(Span<UCHAR>(remoteIvBuffer, chacha20Context.GetIvLength()), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>("iv"_embed, 2), Span<const UCHAR>());
+	TlsHkdf::ExpandLabel(Span<UCHAR>(remoteKeyBuffer, keyLen), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>("key"_embed, 3), Span<const UCHAR>());
+	TlsHkdf::ExpandLabel(Span<UCHAR>(remoteIvBuffer, chacha20Context.GetIvLength()), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>("iv"_embed, 2), Span<const UCHAR>());
 
 	auto initResult = chacha20Context.Initialize(Span<const UINT8, POLY1305_KEYLEN>(localKeyBuffer), Span<const UINT8, POLY1305_KEYLEN>(remoteKeyBuffer), localIvBuffer, remoteIvBuffer);
 	if (!initResult)
@@ -281,12 +281,12 @@ VOID TlsCipher::ComputeVerify(TlsBuffer &out, INT32 verifySize, INT32 localOrRem
 	if (localOrRemote)
 	{
 		LOG_DEBUG("tls_cipher_compute_verify: Using server finished key");
-		TlsHKDF::ExpandLabel(Span<UCHAR>(finished_key, hashLen), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>(finishedLabel, 8), Span<const UCHAR>());
+		TlsHkdf::ExpandLabel(Span<UCHAR>(finished_key, hashLen), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>(finishedLabel, 8), Span<const UCHAR>());
 	}
 	else
 	{
 		LOG_DEBUG("tls_cipher_compute_verify: Using client finished key");
-		TlsHKDF::ExpandLabel(Span<UCHAR>(finished_key, hashLen), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>(finishedLabel, 8), Span<const UCHAR>());
+		TlsHkdf::ExpandLabel(Span<UCHAR>(finished_key, hashLen), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>(finishedLabel, 8), Span<const UCHAR>());
 	}
 	out.SetSize(verifySize);
 	LOG_DEBUG("tls_cipher_compute_verify: Calculating HMAC for verify, verify_size=%d", verifySize);

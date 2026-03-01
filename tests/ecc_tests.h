@@ -35,7 +35,7 @@ private:
 	// Test 1: Basic ECC initialization
 	static BOOL TestEccInitialization()
 	{
-		Ecc ecc;
+		ECC ecc;
 		// Test successful initialization with secp256r1 (32 bytes)
 		auto result = ecc.Initialize(32);
 		if (!result)
@@ -49,7 +49,7 @@ private:
 	// Test 2: secp256r1 curve (32 bytes)
 	static BOOL TestEccSecp256r1()
 	{
-		Ecc ecc;
+		ECC ecc;
 		auto initResult = ecc.Initialize(32);
 		if (!initResult)
 		{
@@ -77,7 +77,7 @@ private:
 	// Test 5: secp384r1 curve (48 bytes)
 	static BOOL TestEccSecp384r1()
 	{
-		Ecc ecc;
+		ECC ecc;
 		auto initResult = ecc.Initialize(48);
 		if (!initResult)
 		{
@@ -105,7 +105,7 @@ private:
 	// Test 6: Public key export functionality
 	static BOOL TestPublicKeyExport()
 	{
-		Ecc ecc;
+		ECC ecc;
 		(void)ecc.Initialize(32); // secp256r1
 
 		UINT8 publicKey[32 * 2 + 1];
@@ -131,7 +131,7 @@ private:
 	// Test 7: Public key format validation
 	static BOOL TestPublicKeyFormat()
 	{
-		Ecc ecc;
+		ECC ecc;
 		(void)ecc.Initialize(32); // secp256r1
 
 		UINT8 publicKey[32 * 2 + 1];
@@ -160,7 +160,7 @@ private:
 	static BOOL TestSharedSecretComputation()
 	{
 		// Create two ECC instances (Alice and Bob)
-		Ecc alice, bob;
+		ECC alice, bob;
 
 		(void)alice.Initialize(32); // secp256r1
 		(void)bob.Initialize(32);
@@ -202,7 +202,7 @@ private:
 	// Test 9: Invalid curve size handling
 	static BOOL TestInvalidCurveSize()
 	{
-		Ecc ecc;
+		ECC ecc;
 
 		// Try to initialize with invalid size (should fail)
 		auto result = ecc.Initialize(64); // Invalid size
@@ -219,7 +219,7 @@ private:
 	// Test 10: Export buffer size validation
 	static BOOL TestExportBufferSizeValidation()
 	{
-		Ecc ecc;
+		ECC ecc;
 		(void)ecc.Initialize(32);
 
 		UINT8 tooSmallBuffer[32]; // Too small for secp256r1 (needs 65 bytes)
@@ -237,7 +237,7 @@ private:
 	// Test 11: Invalid public key handling
 	static BOOL TestInvalidPublicKey()
 	{
-		Ecc ecc;
+		ECC ecc;
 		(void)ecc.Initialize(32);
 
 		// Create an invalid public key (wrong format byte)
@@ -260,7 +260,7 @@ private:
 	// Test 12: Sequential key generation produces different keys
 	static BOOL TestMultipleKeyGeneration()
 	{
-		Ecc ecc1;
+		ECC ecc1;
 		(void)ecc1.Initialize(32);
 
 		UINT8 pubKey1[32 * 2 + 1];
@@ -268,7 +268,7 @@ private:
 
 		// Generate second key - should be different because Initialize()
 		// uses random bytes which advances the RNG state
-		Ecc ecc2;
+		ECC ecc2;
 		(void)ecc2.Initialize(32);
 
 		UINT8 pubKey2[32 * 2 + 1];

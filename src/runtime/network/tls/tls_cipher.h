@@ -61,7 +61,7 @@ private:
 	INT32 cipherCount;              // Number of supported ciphers
 	UINT64 clientSeqNum;            // Client sequence number
 	UINT64 serverSeqNum;            // Server sequence number
-	Ecc *privateEccKeys[ECC_COUNT]; // Private ECC keys
+	ECC *privateEccKeys[ECC_COUNT]; // Private ECC keys
 	TlsBuffer publicKey;            // Public key buffer
 	TlsBuffer decodeBuffer;         // Buffer for decoded data
 	TlsHash handshakeHash;          // Hash for handshake
