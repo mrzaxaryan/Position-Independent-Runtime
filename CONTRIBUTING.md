@@ -107,14 +107,29 @@ For more information, see the [VSCode WSL documentation](https://code.visualstud
 ## Project Structure
 
 ```
-core/                       # CORE layer: types, memory, string, algorithms, encoding (.h + .cc co-located)
-  types/embedded/           # EMBEDDED_STRING, EMBEDDED_DOUBLE, EMBEDDED_ARRAY, EMBEDDED_FUNCTION_POINTER
-  string/ encoding/ algorithms/
-platform/                   # PLATFORM layer: OS abstraction, service interfaces + per-platform implementations
-  windows/ linux/ macos/ uefi/ posix/
-runtime/                    # RUNTIME layer: crypto, networking, TLS (.h + .cc co-located)
-  runtime.h                 # Top-level include (CORE + PLATFORM + RUNTIME)
-  crypto/ network/
+core/                       # CORE layer (.h + .cc co-located)
+  core.h                    # Aggregate header for CORE layer
+  compiler/                 # Compiler abstractions (FORCE_INLINE, NOINLINE, compiler runtime)
+  memory/                   # Memory operations (Copy, Set, Compare, Zero)
+  math/                     # Math utilities, bit operations, byte order
+  io/                       # Binary reader/writer
+  types/                    # Primitives, Span, Result, Error, Double, IP address
+    embedded/               # EMBEDDED_STRING, EMBEDDED_DOUBLE, EMBEDDED_ARRAY, EMBEDDED_FUNCTION_POINTER
+  string/                   # String utilities and formatting
+  algorithms/               # DJB2 hashing, Base64
+  encoding/                 # UTF-16
+platform/                   # PLATFORM layer
+  platform.h                # Aggregate header for PLATFORM layer
+  memory/                   # Allocator (heap management)
+  io/                       # Console, Logger, FileSystem, Path
+  system/                   # DateTime, Environment, Process, Random
+  network/                  # Socket
+  windows/ linux/ macos/ uefi/ posix/   # Per-OS implementations
+runtime/                    # RUNTIME layer (.h + .cc co-located)
+  runtime.h                 # Aggregate header (CORE + PLATFORM + RUNTIME)
+  crypto/                   # SHA2, ECC, ChaCha20
+  network/                  # DNS, HTTP, WebSocket
+    tls/                    # TLS 1.3 implementation
 tests/                      # pir_tests.h (master), tests.h (helpers), *_tests.h (suites), start.cc (entry)
 cmake/                      # CMake modules, linker scripts, function.order
 ```

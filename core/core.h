@@ -23,8 +23,8 @@
  * @note All components in the Core layer are designed to be position-independent
  * and do not generate .rdata section dependencies.
  *
- * @see compiler.h For compiler-specific macros
- * @see memory.h For memory operations
+ * @see compiler/compiler.h For compiler-specific macros
+ * @see memory/memory.h For memory operations
  * @see types/primitives.h For base type definitions
  *
  * @defgroup core Core Abstraction Layer
@@ -35,11 +35,11 @@
 
 /// @name Core Utilities
 /// @{
-#include "core/compiler.h"
-#include "core/memory.h"
-#include "core/math.h"
-#include "core/byteorder.h"
-#include "core/bitops.h"
+#include "core/compiler/compiler.h"
+#include "core/memory/memory.h"
+#include "core/math/math.h"
+#include "core/math/byteorder.h"
+#include "core/math/bitops.h"
 /// @}
 
 /// @name Base Types
@@ -48,7 +48,7 @@
 #include "types/span.h"
 /// @}
 /// @{
-#include "core/error.h"
+#include "core/types/error.h"
 /// @}
 
 /// @name Result Type
@@ -93,8 +93,8 @@
 
 /// @name Binary I/O
 /// @{
-#include "binary_reader.h"
-#include "binary_writer.h"
+#include "core/io/binary_reader.h"
+#include "core/io/binary_writer.h"
 /// @}
 
 /** @} */ // end of core group

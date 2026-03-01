@@ -32,20 +32,20 @@ NO_RETURN VOID ExitProcess(USIZE code);
 // =============================================================================
 
 // Memory management
-#include "allocator.h"
+#include "platform/memory/allocator.h"
 
 // System utilities (must come before logger.h since it uses DateTime)
-#include "date_time.h"
-#include "random.h"
+#include "platform/system/date_time.h"
+#include "platform/system/random.h"
 
 // I/O services
-#include "console.h"
-#include "file_system.h"
-#include "logger.h"
+#include "platform/io/console.h"
+#include "platform/io/file_system.h"
+#include "platform/io/logger.h"
 
 // Network services
-#include "socket.h"
-#include "path.h"
+#include "platform/network/socket.h"
+#include "platform/io/path.h"
 
 // Process management
-#include "process.h"
+#include "platform/system/process.h"
