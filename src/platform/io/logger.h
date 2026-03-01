@@ -81,6 +81,9 @@ public:
 	 *
 	 * Use for: Normal operation events, status updates, confirmations
 	 * Color: Green (ANSI: \033[0;32m)
+	 *
+	 * @tparam TChar Character type (CHAR or WCHAR)
+	 * @tparam Args Variadic format arguments (deduced automatically)
 	 */
 	template <TCHAR TChar, typename... Args>
 	static VOID Info(const TChar *format, Args... args)
@@ -99,6 +102,9 @@ public:
 	 *
 	 * Use for: Failures, exceptions, critical issues
 	 * Color: Red (ANSI: \033[0;31m)
+	 *
+	 * @tparam TChar Character type (CHAR or WCHAR)
+	 * @tparam Args Variadic format arguments (deduced automatically)
 	 */
 	template <TCHAR TChar, typename... Args>
 	static VOID Error(const TChar *format, Args... args)
@@ -117,6 +123,9 @@ public:
 	 *
 	 * Use for: Non-critical issues, deprecation notices, potential problems
 	 * Color: Yellow (ANSI: \033[0;33m)
+	 *
+	 * @tparam TChar Character type (CHAR or WCHAR)
+	 * @tparam Args Variadic format arguments (deduced automatically)
 	 */
 	template <TCHAR TChar, typename... Args>
 	static VOID Warning(const TChar *format, Args... args)
@@ -135,6 +144,9 @@ public:
 	 *
 	 * Use for: Detailed diagnostic information, variable dumps, trace logs
 	 * Color: Yellow (ANSI: \033[0;33m)
+	 *
+	 * @tparam TChar Character type (CHAR or WCHAR)
+	 * @tparam Args Variadic format arguments (deduced automatically)
 	 */
 	template <TCHAR TChar, typename... Args>
 	static VOID Debug(const TChar *format, Args... args)

@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @file system.x86_64.h
  * @brief x86_64 Windows indirect syscall overloads — included inside class System { }.

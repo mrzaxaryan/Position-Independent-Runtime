@@ -333,7 +333,7 @@ private:
 	 * @see RFC 9293 Section 3.1 — Header Format (local port assignment)
 	 *      https://datatracker.ietf.org/doc/html/rfc9293#section-3.1
 	 */
-	[[nodiscard]] Result<void, Error> Bind(SockAddr &socketAddress, INT32 shareType);
+	[[nodiscard]] Result<void, Error> Bind(const SockAddr &socketAddress, INT32 shareType);
 
 	/**
 	 * @brief Private constructor for factory use

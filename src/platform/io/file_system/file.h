@@ -34,6 +34,9 @@ public:
 
 	/**
 	 * @brief Opens a file at the given path with the specified mode flags.
+	 * @details On Windows, uses NtCreateFile via indirect syscall. On POSIX, uses
+	 * the open() syscall with translated flags. On UEFI, uses EFI_FILE_PROTOCOL::Open.
+	 * The returned File owns the handle and closes it on destruction (RAII).
 	 * @param path Null-terminated wide string file path.
 	 * @param flags Bitmask of ModeRead, ModeWrite, ModeAppend, ModeCreate, ModeTruncate, ModeBinary.
 	 * @return File handle on success, or an Error on failure.
@@ -42,6 +45,8 @@ public:
 
 	/**
 	 * @brief Deletes a file at the given path.
+	 * @details On Windows, uses NtSetInformationFile with FileDispositionInformation.
+	 * On POSIX, uses the unlink() syscall. On UEFI, uses EFI_FILE_PROTOCOL::Delete.
 	 * @param path Null-terminated wide string file path.
 	 * @return Void on success, or an Error on failure.
 	 */
@@ -49,6 +54,8 @@ public:
 
 	/**
 	 * @brief Checks whether a file exists at the given path.
+	 * @details On Windows, uses NtQueryAttributesFile. On POSIX, uses the stat() or
+	 * access() syscall. On UEFI, attempts to open and immediately close the file.
 	 * @param path Null-terminated wide string file path.
 	 * @return Void on success (file exists), or an Error if the file does not exist.
 	 */
@@ -98,6 +105,9 @@ public:
 
 	/**
 	 * @brief Reads data from the file into the provided buffer.
+	 * @details Reads up to buffer.Size() bytes from the current file position.
+	 * On Windows, uses NtReadFile. On POSIX, uses the read() syscall.
+	 * On UEFI, uses EFI_FILE_PROTOCOL::Read.
 	 * @param buffer Writable span to receive the data.
 	 * @return Number of bytes actually read, or an Error on failure.
 	 */
@@ -105,6 +115,9 @@ public:
 
 	/**
 	 * @brief Writes data from the provided buffer to the file.
+	 * @details Writes buffer.Size() bytes at the current file position.
+	 * On Windows, uses NtWriteFile. On POSIX, uses the write() syscall.
+	 * On UEFI, uses EFI_FILE_PROTOCOL::Write.
 	 * @param buffer Read-only span containing the data to write.
 	 * @return Number of bytes actually written, or an Error on failure.
 	 */

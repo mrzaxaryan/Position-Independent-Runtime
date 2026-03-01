@@ -84,7 +84,7 @@ typedef struct AfdSocketParams
 // Returns STATUS_TIMEOUT if timed out (Status is NOT updated in that case).
 // Returns the wait status on success; if ZwWaitForSingleObject itself fails,
 // propagates its failure NTSTATUS so callers see a non-timeout, non-success result.
-static Result<NTSTATUS, Error> AfdWait(PVOID SockEvent, IO_STATUS_BLOCK &IOSB, NTSTATUS &Status, LARGE_INTEGER *Timeout)
+static Result<NTSTATUS, Error> AfdWait(PVOID SockEvent, PIO_STATUS_BLOCK IOSB, NTSTATUS *Status, LARGE_INTEGER *Timeout)
 {
 	auto waitResult = NTDLL::ZwWaitForSingleObject(SockEvent, 0, Timeout);
 	if (!waitResult)
@@ -95,11 +95,11 @@ static Result<NTSTATUS, Error> AfdWait(PVOID SockEvent, IO_STATUS_BLOCK &IOSB, N
 	}
 	NTSTATUS waitStatus = waitResult.Value();
 	if (waitStatus != (NTSTATUS)STATUS_TIMEOUT)
-		Status = IOSB.Status;
+		*Status = IOSB->Status;
 	return Result<NTSTATUS, Error>::Ok(waitStatus);
 }
 
-Result<void, Error> Socket::Bind(SockAddr &socketAddress, INT32 shareType)
+Result<void, Error> Socket::Bind(const SockAddr &socketAddress, INT32 shareType)
 {
 	LOG_DEBUG("Bind(handle: 0x%p, family: %d, shareType: %d)\n", handle, socketAddress.SinFamily, shareType);
 
@@ -120,7 +120,7 @@ Result<void, Error> Socket::Bind(SockAddr &socketAddress, INT32 shareType)
 		AfdBindData6 BindConfig;
 		Memory::Zero(&BindConfig, sizeof(BindConfig));
 		BindConfig.ShareType = shareType;
-		BindConfig.Address   = (SockAddr6 &)socketAddress;
+		BindConfig.Address   = (const SockAddr6 &)socketAddress;
 
 		auto ioResult = NTDLL::ZwDeviceIoControlFile(handle, SockEvent, nullptr, nullptr, &IOSB,
 		                                             IOCTL_AFD_BIND,
@@ -154,7 +154,7 @@ Result<void, Error> Socket::Bind(SockAddr &socketAddress, INT32 shareType)
 
 	if (Status == (NTSTATUS)STATUS_PENDING)
 	{
-		auto waitResult = AfdWait(SockEvent, IOSB, Status, nullptr);
+		auto waitResult = AfdWait(SockEvent, &IOSB, &Status, nullptr);
 		if (!waitResult)
 		{
 			(void)NTDLL::ZwClose(SockEvent);
@@ -249,7 +249,7 @@ Result<void, Error> Socket::Open()
 		LARGE_INTEGER ConnectTimeout;
 		ConnectTimeout.QuadPart = -5LL * 1000 * 10000;
 
-		auto waitResult = AfdWait(SockEvent, IOSB, Status, &ConnectTimeout);
+		auto waitResult = AfdWait(SockEvent, &IOSB, &Status, &ConnectTimeout);
 		if (!waitResult)
 		{
 			(void)NTDLL::ZwClose(SockEvent);
@@ -329,7 +329,7 @@ Result<SSIZE, Error> Socket::Read(Span<CHAR> buffer)
 		LARGE_INTEGER Timeout;
 		Timeout.QuadPart = 5 * 60 * 1000 * -10000LL;
 
-		auto waitResult = AfdWait(SockEvent, IOSB, Status, &Timeout);
+		auto waitResult = AfdWait(SockEvent, &IOSB, &Status, &Timeout);
 		if (!waitResult)
 		{
 			(void)NTDLL::ZwClose(SockEvent);
@@ -397,7 +397,7 @@ Result<UINT32, Error> Socket::Write(Span<const CHAR> buffer)
 			LARGE_INTEGER Timeout;
 			Timeout.QuadPart = 1 * 60 * 1000 * -10000LL;
 
-			auto waitResult = AfdWait(SockEvent, IOSB, Status, &Timeout);
+			auto waitResult = AfdWait(SockEvent, &IOSB, &Status, &Timeout);
 			if (!waitResult)
 			{
 				(void)NTDLL::ZwClose(SockEvent);

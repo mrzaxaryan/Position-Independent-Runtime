@@ -18,7 +18,7 @@
 // =============================================================================
 
 DirectoryIterator::DirectoryIterator()
-	: handle((PVOID)INVALID_FD), first(false), nread(0), bpos(0)
+	: handle((PVOID)INVALID_FD), isFirst(false), bytesRead(0), bufferPosition(0)
 {}
 
 Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
@@ -49,12 +49,12 @@ Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 	}
 
 	iter.handle = (PVOID)fd;
-	iter.first = true;
+	iter.isFirst = true;
 	return Result<DirectoryIterator, Error>::Ok(static_cast<DirectoryIterator &&>(iter));
 }
 
 DirectoryIterator::DirectoryIterator(DirectoryIterator &&other) noexcept
-	: handle(other.handle), currentEntry(other.currentEntry), first(other.first), nread(other.nread), bpos(other.bpos)
+	: handle(other.handle), currentEntry(other.currentEntry), isFirst(other.isFirst), bytesRead(other.bytesRead), bufferPosition(other.bufferPosition)
 {
 	Memory::Copy(buffer, other.buffer, sizeof(buffer));
 	other.handle = (PVOID)INVALID_FD;
@@ -68,9 +68,9 @@ DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexc
 			System::Call(SYS_CLOSE, (USIZE)handle);
 		handle = other.handle;
 		currentEntry = other.currentEntry;
-		first = other.first;
-		nread = other.nread;
-		bpos = other.bpos;
+		isFirst = other.isFirst;
+		bytesRead = other.bytesRead;
+		bufferPosition = other.bufferPosition;
 		Memory::Copy(buffer, other.buffer, sizeof(buffer));
 		other.handle = (PVOID)INVALID_FD;
 	}
@@ -91,29 +91,29 @@ Result<void, Error> DirectoryIterator::Next()
 	if (!IsValid())
 		return Result<void, Error>::Err(Error::Fs_ReadFailed);
 
-	if (first || bpos >= nread)
+	if (isFirst || bufferPosition >= bytesRead)
 	{
-		first = false;
+		isFirst = false;
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_SOLARIS)
-		nread = (INT32)System::Call(SYS_GETDENTS64, (USIZE)handle, (USIZE)buffer, sizeof(buffer));
+		bytesRead = (INT32)System::Call(SYS_GETDENTS64, (USIZE)handle, (USIZE)buffer, sizeof(buffer));
 #elif defined(PLATFORM_MACOS)
 		USIZE basep = 0;
-		nread = (INT32)System::Call(SYS_GETDIRENTRIES64, (USIZE)handle, (USIZE)buffer, sizeof(buffer), (USIZE)&basep);
+		bytesRead = (INT32)System::Call(SYS_GETDIRENTRIES64, (USIZE)handle, (USIZE)buffer, sizeof(buffer), (USIZE)&basep);
 #endif
 
-		if (nread < 0)
-			return Result<void, Error>::Err(Error::Posix((UINT32)(-nread)), Error::Fs_ReadFailed);
-		if (nread == 0)
+		if (bytesRead < 0)
+			return Result<void, Error>::Err(Error::Posix((UINT32)(-bytesRead)), Error::Fs_ReadFailed);
+		if (bytesRead == 0)
 			return Result<void, Error>::Err(Error::Fs_ReadFailed);
-		bpos = 0;
+		bufferPosition = 0;
 	}
 
 #if defined(PLATFORM_LINUX)
-	LinuxDirent64 *d = (LinuxDirent64 *)(buffer + bpos);
+	LinuxDirent64 *d = (LinuxDirent64 *)(buffer + bufferPosition);
 #elif defined(PLATFORM_SOLARIS)
-	SolarisDirent64 *d = (SolarisDirent64 *)(buffer + bpos);
+	SolarisDirent64 *d = (SolarisDirent64 *)(buffer + bufferPosition);
 #elif defined(PLATFORM_MACOS)
-	BsdDirent64 *d = (BsdDirent64 *)(buffer + bpos);
+	BsdDirent64 *d = (BsdDirent64 *)(buffer + bufferPosition);
 #endif
 
 	StringUtils::Utf8ToWide(Span<const CHAR>(d->Name, StringUtils::Length(d->Name)), Span<WCHAR>(currentEntry.Name, 256));
@@ -133,7 +133,7 @@ Result<void, Error> DirectoryIterator::Next()
 	currentEntry.CreationTime = 0;
 	currentEntry.LastModifiedTime = 0;
 
-	bpos += d->Reclen;
+	bufferPosition += d->Reclen;
 
 	return Result<void, Error>::Ok();
 }

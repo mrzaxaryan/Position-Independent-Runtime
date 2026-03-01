@@ -96,11 +96,9 @@ public:
 	 * Convenience wrapper that automatically calculates string length.
 	 * Ideal for use with embedded strings.
 	 *
+	 * @tparam TChar Character type (CHAR or WCHAR), automatically deduced from argument
 	 * @param text - Null-terminated string (CHAR* or WCHAR*)
 	 * @return Number of characters written
-	 *
-	 * TEMPLATE PARAMETER:
-	 *   TChar - Automatically deduced from argument (CHAR or WCHAR)
 	 *
 	 * USAGE:
 	 *   Console::Write<WCHAR>(L"Hello"_embed);    // Wide string
@@ -129,13 +127,11 @@ public:
 	 *   %ls   - Wide string (WCHAR*)
 	 *   %p    - Pointer (hexadecimal)
 	 *
+	 * @tparam TChar Character type for format string (CHAR or WCHAR)
+	 * @tparam Args Variadic template arguments (deduced automatically)
 	 * @param format - Format string with embedded specifiers
 	 * @param args   - Variable arguments matching format specifiers (supports custom types!)
 	 * @return Number of characters written
-	 *
-	 * TEMPLATE PARAMETERS:
-	 *   TChar - Character type for format string (CHAR or WCHAR)
-	 *   Args  - Variadic template arguments (deduced automatically)
 	 *
 	 * USAGE:
 	 *   Console::WriteFormatted<WCHAR>(

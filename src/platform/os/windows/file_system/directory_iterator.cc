@@ -40,7 +40,7 @@ static VOID FillEntry(DirectoryEntry &entry, const FILE_BOTH_DIR_INFORMATION &da
 }
 
 DirectoryIterator::DirectoryIterator()
-		: handle((PVOID)-1), first(true)
+		: handle((PVOID)-1), isFirst(true)
 		{
 
 		}
@@ -69,7 +69,7 @@ Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 		{
 			// Store the mask in the pointer itself
 			iter.handle = (PVOID)(USIZE)ProcessDeviceMapInfo.Query.DriveMap;
-			iter.first = true; // Flag to indicate we are in "Drive Mode"
+			iter.isFirst = true; // Flag to indicate we are in "Drive Mode"
 			iter.isBitMaskMode = true;
 		}
 		return Result<DirectoryIterator, Error>::Ok(static_cast<DirectoryIterator &&>(iter));
@@ -101,7 +101,7 @@ Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 		return Result<DirectoryIterator, Error>::Err(openResult, Error::Fs_OpenFailed);
 	}
 
-	// Query the first entry
+	// Query the isFirst entry
 	alignas(alignof(FILE_BOTH_DIR_INFORMATION)) UINT8 buffer[sizeof(FILE_BOTH_DIR_INFORMATION) + 260 * sizeof(WCHAR)];
 	Memory::Zero(buffer, sizeof(buffer));
 
@@ -139,7 +139,7 @@ Result<void, Error> DirectoryIterator::Next()
 
 	IO_STATUS_BLOCK ioStatusBlock;
 
-	// --- MODE 1: Drive Bitmask Mode (first is true and handle is small) ---
+	// --- MODE 1: Drive Bitmask Mode (isFirst is true and handle is small) ---
 	// We treat handles < 0x1000000 as bitmasks (drives)
 	if (isBitMaskMode)
 	{
@@ -181,7 +181,7 @@ Result<void, Error> DirectoryIterator::Next()
 				// Update mask for next time (remove the bit we just processed)
 				mask &= ~(1 << i);
 				handle = (PVOID)mask;
-				first = false;
+				isFirst = false;
 
 				return Result<void, Error>::Ok();
 			}
@@ -191,9 +191,9 @@ Result<void, Error> DirectoryIterator::Next()
 	}
 
 	// --- NORMAL MODE ---
-	if (first)
+	if (isFirst)
 	{
-		first = false;
+		isFirst = false;
 		return Result<void, Error>::Ok();
 	}
 
@@ -225,7 +225,7 @@ Result<void, Error> DirectoryIterator::Next()
 
 // Move constructor
 DirectoryIterator::DirectoryIterator(DirectoryIterator &&other) noexcept
-	: handle(other.handle), currentEntry(other.currentEntry), first(other.first), isBitMaskMode(other.isBitMaskMode)
+	: handle(other.handle), currentEntry(other.currentEntry), isFirst(other.isFirst), isBitMaskMode(other.isBitMaskMode)
 {
 	other.handle = (PVOID)-1;
 }
@@ -238,7 +238,7 @@ DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexc
 			(void)NTDLL::ZwClose(handle);
 		handle = other.handle;
 		currentEntry = other.currentEntry;
-		first = other.first;
+		isFirst = other.isFirst;
 		isBitMaskMode = other.isBitMaskMode;
 		other.handle = (PVOID)-1;
 	}

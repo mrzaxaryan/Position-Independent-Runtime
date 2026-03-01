@@ -13,13 +13,13 @@
 // =============================================================================
 
 DirectoryIterator::DirectoryIterator()
-	: handle(nullptr), currentEntry{}, first(true)
+	: handle(nullptr), currentEntry{}, isFirst(true)
 {}
 
 Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 {
 	DirectoryIterator iter;
-	(VOID) iter.first; // Suppress unused warning - UEFI uses Read to iterate
+	(VOID) iter.isFirst; // Suppress unused warning - UEFI uses Read to iterate
 
 	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
 	if (Root == nullptr)
@@ -45,7 +45,7 @@ Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 }
 
 DirectoryIterator::DirectoryIterator(DirectoryIterator &&other) noexcept
-	: handle(other.handle), currentEntry(other.currentEntry), first(other.first)
+	: handle(other.handle), currentEntry(other.currentEntry), isFirst(other.isFirst)
 {
 	other.handle = nullptr;
 }
@@ -61,7 +61,7 @@ DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexc
 		}
 		handle = other.handle;
 		currentEntry = other.currentEntry;
-		first = other.first;
+		isFirst = other.isFirst;
 		other.handle = nullptr;
 	}
 	return *this;

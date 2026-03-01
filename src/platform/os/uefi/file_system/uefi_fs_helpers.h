@@ -1,3 +1,11 @@
+/**
+ * @file uefi_fs_helpers.h
+ * @brief UEFI filesystem helper functions
+ *
+ * @details Provides utilities for locating and opening files through
+ * the EFI_SIMPLE_FILE_SYSTEM_PROTOCOL. All GUID construction is done
+ * on the stack to avoid .rdata dependencies.
+ */
 #pragma once
 
 #include "platform/os/uefi/common/efi_context.h"

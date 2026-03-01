@@ -20,15 +20,15 @@ class DirectoryIterator
 private:
 	PVOID handle;                ///< Platform handle to the directory (or drive bitmask on Windows)
 	DirectoryEntry currentEntry; ///< Most recently read directory entry
-	BOOL first;                  ///< TRUE before the first call to Next()
+	BOOL isFirst;                ///< TRUE before the first call to Next()
 #ifdef PLATFORM_WINDOWS
 	BOOL isBitMaskMode = false;  ///< TRUE when enumerating logical drives via bitmask on Windows
 #endif
 
 #if defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS) || defined(PLATFORM_SOLARIS)
 	CHAR buffer[1024]; ///< Kernel entry buffer for getdents64/getdirentries64
-	INT32 nread;       ///< Number of bytes returned by the last syscall
-	INT32 bpos;        ///< Current byte position within the buffer
+	INT32 bytesRead;       ///< Number of bytes returned by the last syscall
+	INT32 bufferPosition;  ///< Current byte position within the buffer
 #endif
 
 	/// Private constructor for factory use only.

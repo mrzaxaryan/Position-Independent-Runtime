@@ -1,3 +1,10 @@
+/**
+ * @file posix_path.h
+ * @brief POSIX path normalization utilities
+ *
+ * @details Provides helpers for converting wide-character paths to UTF-8
+ * null-terminated strings suitable for POSIX syscalls (open, stat, etc.).
+ */
 #pragma once
 
 #include "core/types/primitives.h"

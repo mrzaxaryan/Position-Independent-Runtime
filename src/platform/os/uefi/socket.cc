@@ -683,7 +683,7 @@ Result<void, Error> Socket::Close()
 // Bind (not used on UEFI - TCP protocol handles addressing via Configure)
 // =============================================================================
 
-Result<void, Error> Socket::Bind(SockAddr &socketAddress, INT32 shareType)
+Result<void, Error> Socket::Bind(const SockAddr &socketAddress, INT32 shareType)
 {
 	(VOID)socketAddress;
 	(VOID)shareType;

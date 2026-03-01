@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @file system.i386.h
  * @brief i386 Windows indirect syscall overloads — included inside class System { }.

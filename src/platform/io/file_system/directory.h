@@ -16,6 +16,9 @@ class Directory
 public:
 	/**
 	 * @brief Creates a directory at the given path.
+	 * @details On Windows, uses NtCreateFile with FILE_DIRECTORY_FILE. On POSIX,
+	 * uses the mkdir() syscall. On UEFI, uses EFI_FILE_PROTOCOL::Open with
+	 * EFI_FILE_MODE_CREATE and the directory attribute.
 	 * @param path Null-terminated wide string directory path.
 	 * @return Void on success, or an Error on failure.
 	 */
@@ -23,6 +26,9 @@ public:
 
 	/**
 	 * @brief Deletes a directory at the given path.
+	 * @details On Windows, uses NtSetInformationFile with FileDispositionInformation.
+	 * On POSIX, uses the rmdir() syscall. On UEFI, opens the directory and calls
+	 * EFI_FILE_PROTOCOL::Delete. The directory must be empty.
 	 * @param path Null-terminated wide string directory path.
 	 * @return Void on success, or an Error on failure.
 	 */

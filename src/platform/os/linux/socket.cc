@@ -56,13 +56,13 @@ static SSIZE LinuxRecv(SSIZE sockfd, VOID *buf, USIZE len, INT32 flags)
 #endif
 }
 
-static SSIZE LinuxGetsockopt(SSIZE sockfd, INT32 level, INT32 optname, PVOID optval, UINT32 &optlen)
+static SSIZE LinuxGetsockopt(SSIZE sockfd, INT32 level, INT32 optname, PVOID optval, UINT32 *optlen)
 {
 #if defined(ARCHITECTURE_I386)
-	USIZE args[5] = {(USIZE)sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)&optlen};
+	USIZE args[5] = {(USIZE)sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)optlen};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_GETSOCKOPT, (USIZE)args);
 #else
-	return System::Call(SYS_GETSOCKOPT, sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)&optlen);
+	return System::Call(SYS_GETSOCKOPT, sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)optlen);
 #endif
 }
 
@@ -90,7 +90,7 @@ Result<Socket, Error> Socket::Create(const IPAddress &ipAddress, UINT16 port)
 	return Result<Socket, Error>::Ok(static_cast<Socket &&>(sock));
 }
 
-Result<void, Error> Socket::Bind(SockAddr &socketAddress, INT32 shareType)
+Result<void, Error> Socket::Bind(const SockAddr &socketAddress, INT32 shareType)
 {
 	(VOID)shareType; // not used on Linux
 
@@ -162,7 +162,7 @@ Result<void, Error> Socket::Open()
 		// Check for connection error
 		INT32 sockError = 0;
 		UINT32 optLen = sizeof(sockError);
-		(void)LinuxGetsockopt(sockfd, SOL_SOCKET, SO_ERROR, &sockError, optLen);
+		(void)LinuxGetsockopt(sockfd, SOL_SOCKET, SO_ERROR, &sockError, &optLen);
 		if (sockError != 0)
 		{
 			(void)LinuxFcntl(sockfd, F_SETFL, flags);

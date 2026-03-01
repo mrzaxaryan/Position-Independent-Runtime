@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * @file system.aarch64.h
  * @brief AArch64 Windows indirect syscall overloads — included inside class System { }.
