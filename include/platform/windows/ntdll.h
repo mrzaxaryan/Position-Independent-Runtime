@@ -236,6 +236,10 @@ public:
 	 *
 	 * @return Result<void, Error> Ok() on success, Err(Ntdll_RtlPathResolveFailed) on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional [desktop apps only]
+	 * Minimum supported server: Windows 2000 Server
+	 *
 	 * @see RtlDosPathNameToNtPathName_U_WithStatus (documented variant)
 	 *      https://learn.microsoft.com/en-us/windows/win32/devnotes/rtldospathnametontpathname_u_withstatus
 	 */
@@ -249,6 +253,10 @@ public:
 	 * After this call, the UNICODE_STRING fields are zeroed.
 	 *
 	 * @param UnicodeString Pointer to the UNICODE_STRING to free.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional
+	 * Minimum supported server: Windows 2000 Server
 	 *
 	 * @see RtlFreeUnicodeString
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-rtlfreeunicodestring
@@ -269,6 +277,10 @@ public:
 	 * @param InitialState TRUE if the event should be created in the signaled state.
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows XP
+	 * Minimum supported server: Windows Server 2003
 	 *
 	 * @see ZwCreateEvent
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-zwcreateevent
@@ -296,6 +308,10 @@ public:
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS (including STATUS_PENDING), Err on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional [desktop apps only]
+	 * Minimum supported server: Windows 2000 Server
+	 *
 	 * @see ZwDeviceIoControlFile
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-zwdeviceiocontrolfile
 	 */
@@ -314,6 +330,10 @@ public:
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS (including STATUS_TIMEOUT), Err on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional [desktop apps only]
+	 * Minimum supported server: Windows 2000 Server
+	 *
 	 * @see ZwWaitForSingleObject
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-zwwaitforsingleobject
 	 */
@@ -329,6 +349,10 @@ public:
 	 * @param Handle The object handle to close.
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional
+	 * Minimum supported server: Windows 2000 Server
 	 *
 	 * @see ZwClose
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-zwclose
@@ -357,6 +381,10 @@ public:
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional [desktop apps | UWP apps]
+	 * Minimum supported server: Windows 2000 Server
+	 *
 	 * @see ZwCreateFile
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-zwcreatefile
 	 */
@@ -378,6 +406,10 @@ public:
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows XP
+	 * Minimum supported server: Windows Server 2003
+	 *
 	 * @see ZwAllocateVirtualMemory
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-zwallocatevirtualmemory
 	 */
@@ -397,6 +429,10 @@ public:
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows XP
+	 * Minimum supported server: Windows Server 2003
+	 *
 	 * @see ZwFreeVirtualMemory
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-zwfreevirtualmemory
 	 */
@@ -413,6 +449,11 @@ public:
 	 * @param ExitStatus Exit code to report for the process.
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
+	 *
+	 * @par Requirements
+	 * Target platform: Universal
+	 * Minimum supported client: Windows XP
+	 * Minimum supported server: Windows Server 2003
 	 *
 	 * @see ZwTerminateProcess
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/nf-ntddk-zwterminateprocess
@@ -433,6 +474,10 @@ public:
 	 * @param FileInformationClass Identifies which information structure to return.
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional [desktop apps | UWP apps]
+	 * Minimum supported server: Windows 2000 Server
 	 *
 	 * @see ZwQueryInformationFile
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-zwqueryinformationfile
@@ -458,6 +503,10 @@ public:
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional [desktop apps | UWP apps]
+	 * Minimum supported server: Windows 2000 Server
+	 *
 	 * @see ZwReadFile
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-zwreadfile
 	 */
@@ -482,6 +531,10 @@ public:
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional [desktop apps | UWP apps]
+	 * Minimum supported server: Windows 2000 Server
+	 *
 	 * @see ZwWriteFile
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-zwwritefile
 	 */
@@ -502,6 +555,10 @@ public:
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional [desktop apps | UWP apps]
+	 * Minimum supported server: Windows 2000 Server
+	 *
 	 * @see ZwSetInformationFile
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-zwsetinformationfile
 	 */
@@ -517,6 +574,10 @@ public:
 	 * @param FileName Pointer to OBJECT_ATTRIBUTES describing the file to delete.
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows XP [desktop apps | UWP apps]
+	 * Minimum supported server: Windows Server 2003
 	 *
 	 * @see ZwDeleteFile
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-zwdeletefile
@@ -534,6 +595,10 @@ public:
 	 * @param FileInformation Receives the FILE_BASIC_INFORMATION for the file.
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional
+	 * Minimum supported server: Windows 2000 Server
 	 *
 	 * @see NtQueryAttributesFile
 	 *      https://learn.microsoft.com/en-us/windows/win32/devnotes/ntqueryattributesfile
@@ -556,6 +621,10 @@ public:
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional [desktop apps | UWP apps]
+	 * Minimum supported server: Windows 2000 Server
+	 *
 	 * @see ZwOpenFile
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-zwopenfile
 	 */
@@ -575,6 +644,10 @@ public:
 	 * @param FsInformationClass Identifies which volume information structure to return.
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows XP [desktop apps | UWP apps]
+	 * Minimum supported server: Windows Server 2003
 	 *
 	 * @see ZwQueryVolumeInformationFile
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/nf-ntddk-zwqueryvolumeinformationfile
@@ -596,6 +669,10 @@ public:
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows XP [desktop apps | UWP apps]
+	 * Minimum supported server: Windows Server 2003
+	 *
 	 * @see ZwQueryInformationProcess
 	 *      https://learn.microsoft.com/en-us/windows/win32/procthread/zwqueryinformationprocess
 	 */
@@ -610,6 +687,10 @@ public:
 	 *
 	 * @return Pseudo-handle representing the current process.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional
+	 * Minimum supported server: Windows 2000 Server
+	 *
 	 * @see ZwCurrentProcess
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/zwcurrentprocess
 	 */
@@ -623,6 +704,10 @@ public:
 	 * not need to be closed.
 	 *
 	 * @return Pseudo-handle representing the current thread.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional
+	 * Minimum supported server: Windows 2000 Server
 	 *
 	 * @see ZwCurrentThread
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/zwcurrentthread
@@ -653,6 +738,10 @@ public:
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional
+	 * Minimum supported server: Windows 2000 Server
+	 *
 	 * @see NtCreateNamedPipeFile
 	 *      https://learn.microsoft.com/en-us/windows/win32/devnotes/nt-create-named-pipe-file
 	 */
@@ -671,6 +760,10 @@ public:
 	 * @param ObjectInformationLength Size of ObjectInformation buffer in bytes.
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional
+	 * Minimum supported server: Windows 2000 Server
 	 *
 	 * @note This function is undocumented by Microsoft. Behavior may vary across
 	 * Windows versions.
@@ -698,6 +791,10 @@ public:
 	 * @param AttributeList Process/thread attribute list.
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows Vista
+	 * Minimum supported server: Windows Server 2008
 	 *
 	 * @note This function is undocumented by Microsoft. Behavior may vary across
 	 * Windows versions.
@@ -728,6 +825,10 @@ public:
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
 	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows Vista
+	 * Minimum supported server: Windows Server 2008
+	 *
 	 * @note This function is undocumented by Microsoft. Behavior may vary across
 	 * Windows versions.
 	 *
@@ -745,6 +846,10 @@ public:
 	 * @param ProcessParameters Pointer to the parameters block to free.
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional
+	 * Minimum supported server: Windows 2000 Server
 	 *
 	 * @note This function is undocumented by Microsoft. Behavior may vary across
 	 * Windows versions.
@@ -775,6 +880,10 @@ public:
 	 * @param RestartScan TRUE to restart enumeration from the beginning.
 	 *
 	 * @return Result<NTSTATUS, Error> Ok(status) on NT_SUCCESS, Err on failure.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows XP [desktop apps | UWP apps]
+	 * Minimum supported server: Windows Server 2003
 	 *
 	 * @see ZwQueryDirectoryFile
 	 *      https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-zwquerydirectoryfile
