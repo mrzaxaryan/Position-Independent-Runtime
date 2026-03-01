@@ -170,7 +170,7 @@ UINT32 val = embedded[0];                        // Unpacked at runtime
 |------|-----------|----------|
 | Primitive typedefs | `UPPER_CASE` | `UINT32`, `INT64`, `WCHAR`, `PVOID`, `BOOL` |
 | Pointer typedefs | `P` prefix (`PP` double, `PC` const) | `PCHAR`, `PWCHAR`, `PPVOID`, `PCCHAR` |
-| Classes | `PascalCase` or `UPPER_CASE` | `String`, `Allocator`, `NTDLL` |
+| Classes | `PascalCase`; all-caps for acronym names | `Socket`, `HttpClient`, `TlsBuffer`, `NTDLL` |
 | Structs (Windows-style) | `_NAME` with typedef | `typedef struct _OBJECT_ATTRIBUTES { ... } OBJECT_ATTRIBUTES;` |
 | Template types | `UPPER_CASE` | `EMBEDDED_STRING<...>` |
 | Enums | `UPPER_CASE` | `EVENT_TYPE` |
@@ -328,6 +328,7 @@ LOG_ERROR("Operation failed (error: %e)", result.Error());
 ### Heap & Stack
 
 - **Avoid heap** unless no alternative. Prefer stack-local variables and fixed-size buffers
+- **`new`/`new[]`/`delete`/`delete[]` are safe** — they are globally overloaded to route through the custom `Allocator` (see `src/memory/allocator.cc`), so all heap allocations use the PIR memory backend
 - **Embed by value**, not by pointer: `IPAddress ipAddress;` not `IPAddress *ipAddress;`
 - **Watch stack size**: `EMBEDDED_STRING` temporaries materialize words on stack; avoid deep recursion
 
