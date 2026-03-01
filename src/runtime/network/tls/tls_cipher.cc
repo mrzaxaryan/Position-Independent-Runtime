@@ -173,6 +173,8 @@ Result<void, Error> TlsCipher::ComputePreKey(EccGroup ecc, Span<const CHAR> serv
 /// @param serverKeyLen Server key length in bytes
 /// @param finishedHash Pointer to the buffer where the computed finished hash will be stored
 /// @return Result<void, Error>::Ok() if the TLS key was successfully computed
+/// @see RFC 8446 Section 7.1 — Key Schedule
+///      https://datatracker.ietf.org/doc/html/rfc8446#section-7.1
 
 Result<void, Error> TlsCipher::ComputeKey(EccGroup ecc, Span<const CHAR> serverKey, Span<CHAR> finishedHash)
 {
@@ -263,6 +265,8 @@ Result<void, Error> TlsCipher::ComputeKey(EccGroup ecc, Span<const CHAR> serverK
 /// @param verifySize Size of the verify data to compute
 /// @param localOrRemote Indicates whether to use the local or remote finished key
 /// @return void
+/// @see RFC 8446 Section 4.4.4 — Finished
+///      https://datatracker.ietf.org/doc/html/rfc8446#section-4.4.4
 
 VOID TlsCipher::ComputeVerify(TlsBuffer &out, INT32 verifySize, INT32 localOrRemote)
 {

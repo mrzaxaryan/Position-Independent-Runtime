@@ -68,9 +68,19 @@ public:
 		return *this;
 	}
 
-	// Write operations
+	/**
+	 * @brief Appends raw byte data to the buffer
+	 * @param data Span of data to append
+	 * @return Offset in the buffer where the data was written
+	 */
 	INT32 Append(Span<const CHAR> data);
 
+	/**
+	 * @brief Appends a typed value to the buffer in native byte order
+	 * @tparam T The type of value to append
+	 * @param data The value to append
+	 * @return Offset in the buffer where the value was written
+	 */
 	template <typename T>
 	INT32 Append(T data)
 	{
@@ -80,18 +90,48 @@ public:
 		return this->size - sizeof(T);
 	}
 
+	/**
+	 * @brief Reserves space in the buffer without writing data
+	 * @param size Number of bytes to reserve
+	 * @return Offset where the reserved space begins
+	 */
 	INT32 AppendSize(INT32 size);
-	// Setting operation
+
+	/**
+	 * @brief Sets the logical size of the buffer
+	 * @param size New size in bytes
+	 */
 	VOID SetSize(INT32 size);
-	// Clean up for buffers
+
+	/**
+	 * @brief Frees the buffer memory and resets state
+	 */
 	VOID Clear();
-	// Ensure there is enough capacity to append data
+
+	/**
+	 * @brief Ensures the buffer has capacity for additional data
+	 * @param appendSize Number of additional bytes needed
+	 */
 	VOID CheckSize(INT32 appendSize);
 
-	// Read operations
+	/**
+	 * @brief Reads a typed value from the buffer at the current read position
+	 * @tparam T The type of value to read
+	 * @return The value read from the buffer
+	 */
 	template <typename T>
 	T Read();
+
+	/**
+	 * @brief Reads raw bytes from the buffer into the provided span
+	 * @param buf Output span to read into
+	 */
 	VOID Read(Span<CHAR> buf);
+
+	/**
+	 * @brief Reads a 24-bit big-endian unsigned integer from the buffer
+	 * @return The 24-bit value as a UINT32
+	 */
 	UINT32 ReadU24BE();
 
 	// Accessors

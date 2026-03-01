@@ -24,23 +24,23 @@
 #include "runtime/crypto/chacha20_encoder.h"
 
 /// Number of supported ECC curves
-#define ECC_COUNT 2
+constexpr INT32 ECC_COUNT = 2;
 /// Size of random nonce in bytes (RFC 8446 Section 4.1.2)
-#define RAND_SIZE 32
+constexpr INT32 RAND_SIZE = 32;
 /// Maximum hash output length in bytes (SHA-384 = 48, with padding)
-#define MAX_HASH_LEN 64
+constexpr INT32 MAX_HASH_LEN = 64;
 /// Maximum public key buffer size in bytes
-#define MAX_PUBKEY_SIZE 2048
+constexpr INT32 MAX_PUBKEY_SIZE = 2048;
 /// Maximum symmetric key size in bytes
-#define MAX_KEY_SIZE 32
+constexpr INT32 MAX_KEY_SIZE = 32;
 /// Maximum IV (nonce) size in bytes (RFC 8446 Section 5.3)
-#define MAX_IV_SIZE 12
+constexpr INT32 MAX_IV_SIZE = 12;
 /// ChaCha20-Poly1305 key size in bytes (RFC 8439 Section 2.3)
-#define CIPHER_KEY_SIZE 32
+constexpr INT32 CIPHER_KEY_SIZE = 32;
 /// ChaCha20-Poly1305 authentication tag size in bytes (RFC 8439 Section 2.5)
-#define CIPHER_HASH_SIZE 32
+constexpr INT32 CIPHER_HASH_SIZE = 32;
 /// TLS content type for application data (RFC 8446 Section 5.1)
-#define CONTENT_APPLICATION_DATA 0x17
+constexpr UINT8 CONTENT_APPLICATION_DATA = 0x17;
 
 /// @brief Supported elliptic curve groups for TLS key exchange
 /// @see RFC 8422 Section 5.1.1 — Supported Elliptic Curves Extension

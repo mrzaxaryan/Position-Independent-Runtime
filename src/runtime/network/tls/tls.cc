@@ -9,34 +9,34 @@
 #include "core/math/math.h"
 
 /// TLS_CHACHA20_POLY1305_SHA256 cipher suite identifier (RFC 8446 Section B.4)
-#define TLS_CHACHA20_POLY1305_SHA256 0x1303
+constexpr UINT16 TLS_CHACHA20_POLY1305_SHA256 = 0x1303;
 
 /// ChangeCipherSpec content type (RFC 5246 Section 6.2.1 — legacy, used in TLS 1.3 middlebox compat)
-#define CONTENT_CHANGECIPHERSPEC 0x14
+constexpr UINT8 CONTENT_CHANGECIPHERSPEC = 0x14;
 /// Alert content type (RFC 8446 Section 5.1)
-#define CONTENT_ALERT 0x15
+constexpr UINT8 CONTENT_ALERT = 0x15;
 /// Handshake content type (RFC 8446 Section 5.1)
-#define CONTENT_HANDSHAKE 0x16
+constexpr UINT8 CONTENT_HANDSHAKE = 0x16;
 
 /// ClientHello handshake message type (RFC 8446 Section 4.1.2)
-#define MSG_CLIENT_HELLO 0x01
+constexpr UINT8 MSG_CLIENT_HELLO = 0x01;
 /// ServerHello handshake message type (RFC 8446 Section 4.1.3)
-#define MSG_SERVER_HELLO 0x02
+constexpr UINT8 MSG_SERVER_HELLO = 0x02;
 /// EncryptedExtensions handshake message type (RFC 8446 Section 4.3.1)
-#define MSG_ENCRYPTED_EXTENSIONS 0x08
+constexpr UINT8 MSG_ENCRYPTED_EXTENSIONS = 0x08;
 /// Certificate handshake message type (RFC 8446 Section 4.4.2)
-#define MSG_CERTIFICATE 0x0B
+constexpr UINT8 MSG_CERTIFICATE = 0x0B;
 /// ServerHelloDone handshake message type (legacy TLS 1.2, RFC 5246 Section 7.4.5)
-#define MSG_SERVER_HELLO_DONE 0x0E
+constexpr UINT8 MSG_SERVER_HELLO_DONE = 0x0E;
 /// CertificateVerify handshake message type (RFC 8446 Section 4.4.3)
-#define MSG_CERTIFICATE_VERIFY 0x0F
+constexpr UINT8 MSG_CERTIFICATE_VERIFY = 0x0F;
 /// ClientKeyExchange handshake message type (legacy TLS 1.2, RFC 5246 Section 7.4.7)
-#define MSG_CLIENT_KEY_EXCHANGE 0x10
+constexpr UINT8 MSG_CLIENT_KEY_EXCHANGE = 0x10;
 /// Finished handshake message type (RFC 8446 Section 4.4.4)
-#define MSG_FINISHED 0x14
+constexpr UINT8 MSG_FINISHED = 0x14;
 
 /// ChangeCipherSpec message value (RFC 5246 Section 7.1 — legacy compatibility)
-#define MSG_CHANGE_CIPHER_SPEC 0x01
+constexpr UINT8 MSG_CHANGE_CIPHER_SPEC = 0x01;
 
 /// @brief TLS extension type identifiers
 /// @see https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml
@@ -109,6 +109,8 @@ Result<void, Error> TlsClient::SendPacket(INT32 packetType, INT32 ver, TlsBuffer
 /// @brief Sent a ClientHello message to initiate the TLS handshake with the server
 /// @param host The hostname of the server to connect to
 /// @return Result indicating success or Tls_ClientHelloFailed error
+/// @see RFC 8446 Section 4.1.2 — Client Hello
+///      https://datatracker.ietf.org/doc/html/rfc8446#section-4.1.2
 
 Result<void, Error> TlsClient::SendClientHello(const CHAR *host)
 {
@@ -221,6 +223,8 @@ Result<void, Error> TlsClient::SendClientHello(const CHAR *host)
 
 /// @brief Send a Client Finished message to complete the TLS handshake
 /// @return Result indicating success or Tls_ClientFinishedFailed error
+/// @see RFC 8446 Section 4.4.4 — Finished
+///      https://datatracker.ietf.org/doc/html/rfc8446#section-4.4.4
 
 Result<void, Error> TlsClient::SendClientFinished()
 {
@@ -275,6 +279,8 @@ Result<void, Error> TlsClient::SendChangeCipherSpec()
 /// @brief Process the ServerHello message from the server and advances the TLS handshake state
 /// @param reader Buffer containing the ServerHello message data
 /// @return Result indicating success or Tls_ServerHelloFailed error
+/// @see RFC 8446 Section 4.1.3 — Server Hello
+///      https://datatracker.ietf.org/doc/html/rfc8446#section-4.1.3
 
 Result<void, Error> TlsClient::OnServerHello(TlsBuffer &reader)
 {
@@ -396,6 +402,8 @@ Result<void, Error> TlsClient::OnServerHelloDone()
 /// @brief Verify the Finished message from the server by comparing the verify data with the expected value computed from the handshake messages
 /// @param reader Buffer containing the Finished message data from the server
 /// @return Result indicating success or Tls_VerifyFinishedFailed error
+/// @see RFC 8446 Section 4.4.4 — Finished
+///      https://datatracker.ietf.org/doc/html/rfc8446#section-4.4.4
 
 Result<void, Error> TlsClient::VerifyFinished(TlsBuffer &reader)
 {
