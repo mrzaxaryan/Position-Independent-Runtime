@@ -25,7 +25,9 @@
             "${workspaceFolder}/src/runtime/crypto",
             "${workspaceFolder}/src/runtime/network",
             "${workspaceFolder}/src/runtime/network/dns",
+            "${workspaceFolder}/src/runtime/network/http",
             "${workspaceFolder}/src/runtime/network/tls",
+            "${workspaceFolder}/src/runtime/network/websocket",
             "${workspaceFolder}/tests"
         ]
     },

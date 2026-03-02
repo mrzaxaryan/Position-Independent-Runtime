@@ -1,6 +1,6 @@
 #include "runtime/network/dns/dns.h"
 #include "core/io/binary_reader.h"
-#include "runtime/network/http.h"
+#include "runtime/network/http/http.h"
 #include "platform/io/logger.h"
 #include "core/memory/memory.h"
 #include "core/string/string.h"

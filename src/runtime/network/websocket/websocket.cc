@@ -1,10 +1,10 @@
-#include "runtime/network/websocket.h"
+#include "runtime/network/websocket/websocket.h"
 #include "core/memory/memory.h"
 #include "core/string/string.h"
 #include "platform/system/random.h"
 #include "platform/io/logger.h"
 #include "runtime/network/dns/dns.h"
-#include "runtime/network/http.h"
+#include "runtime/network/http/http.h"
 #include "core/types/embedded/embedded_string.h"
 
 /**
