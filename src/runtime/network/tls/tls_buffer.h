@@ -24,6 +24,11 @@ private:
 	BOOL ownsMemory;
 
 public:
+	// Stack-only — placement new required by Result
+	VOID *operator new(USIZE) = delete;
+	VOID operator delete(VOID *) = delete;
+	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+
 	// Default constructor - owns memory, write mode
 	constexpr TlsBuffer() : buffer(nullptr), capacity(0), size(0), readPos(0), ownsMemory(true) {}
 
@@ -84,7 +89,8 @@ public:
 	template <typename T>
 	INT32 Append(T value)
 	{
-		if (!CheckSize(sizeof(T)))
+		auto r = CheckSize(sizeof(T));
+		if (!r)
 			return -1;
 		Memory::Copy(buffer + size, &value, sizeof(T));
 		size += sizeof(T);
@@ -101,8 +107,9 @@ public:
 	/**
 	 * @brief Sets the logical size of the buffer
 	 * @param newSize New size in bytes
+	 * @return Result<void, Error>::Ok() on success, or TlsBuffer_AllocationFailed on failure
 	 */
-	VOID SetSize(INT32 newSize);
+	[[nodiscard]] Result<void, Error> SetSize(INT32 newSize);
 
 	/**
 	 * @brief Frees the buffer memory and resets state
@@ -112,9 +119,9 @@ public:
 	/**
 	 * @brief Ensures the buffer has capacity for additional data
 	 * @param appendSize Number of additional bytes needed
-	 * @return true if capacity is sufficient (or was grown), false on allocation failure
+	 * @return Result<void, Error>::Ok() on success, or TlsBuffer_AllocationFailed on failure
 	 */
-	[[nodiscard]] BOOL CheckSize(INT32 appendSize);
+	[[nodiscard]] Result<void, Error> CheckSize(INT32 appendSize);
 
 	/**
 	 * @brief Reads a typed value from the buffer at the current read position

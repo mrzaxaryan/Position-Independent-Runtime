@@ -79,7 +79,7 @@ VOID TlsHkdf::Expand(Span<UCHAR> output, Span<const UCHAR> secret, Span<const UC
 			hmac.Update(Span<const UCHAR>(digestOut, hashLen));
 		}
 
-		if (info.Data() && info.Size())
+		if (info.Size() > 0)
 		{
 			LOG_DEBUG("Updating HMAC with info, info length: %d", (UINT32)info.Size());
 			hmac.Update(info);

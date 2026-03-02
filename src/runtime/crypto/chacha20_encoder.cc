@@ -67,8 +67,9 @@ VOID ChaCha20Encoder::Encode(TlsBuffer &out, Span<const CHAR> packet, Span<const
 
 Result<void, Error> ChaCha20Encoder::Decode(TlsBuffer &in, TlsBuffer &out, Span<const UCHAR> aad)
 {
-	if (!out.CheckSize(in.GetSize()))
-		return Result<void, Error>::Err(Error::ChaCha20_DecodeFailed);
+	auto checkResult = out.CheckSize(in.GetSize());
+	if (!checkResult)
+		return Result<void, Error>::Err(checkResult, Error::ChaCha20_DecodeFailed);
 
 	const UCHAR *sequence = aad.Data() + TLS_RECORD_HEADER_SIZE;
 
@@ -91,7 +92,9 @@ Result<void, Error> ChaCha20Encoder::Decode(TlsBuffer &in, TlsBuffer &out, Span<
 		return Result<void, Error>::Err(Error::ChaCha20_DecodeFailed);
 	}
 	auto& size = decodeResult.Value();
-	out.SetSize(size);
+	auto setSizeResult = out.SetSize(size);
+	if (!setSizeResult)
+		return Result<void, Error>::Err(setSizeResult, Error::ChaCha20_DecodeFailed);
 	return Result<void, Error>::Ok();
 }
 

@@ -8,7 +8,8 @@
 
 INT32 TlsBuffer::Append(Span<const CHAR> data)
 {
-	if (!CheckSize((INT32)data.Size()))
+	auto r = CheckSize((INT32)data.Size());
+	if (!r)
 		return -1;
 	Memory::Copy(buffer + size, data.Data(), data.Size());
 	size += (INT32)data.Size();
@@ -21,7 +22,8 @@ INT32 TlsBuffer::Append(Span<const CHAR> data)
 
 INT32 TlsBuffer::AppendSize(INT32 count)
 {
-	if (!CheckSize(count))
+	auto r = CheckSize(count);
+	if (!r)
 		return -1;
 	size += count;
 	return size - count;
@@ -29,12 +31,16 @@ INT32 TlsBuffer::AppendSize(INT32 count)
 
 /// @brief Set the logical size of the TLS buffer
 /// @param newSize The new size of the buffer
+/// @return Result<void, Error>::Ok() on success, or TlsBuffer_AllocationFailed on failure
 
-VOID TlsBuffer::SetSize(INT32 newSize)
+Result<void, Error> TlsBuffer::SetSize(INT32 newSize)
 {
 	size = 0;
-	(void)CheckSize(newSize);
+	auto r = CheckSize(newSize);
+	if (!r)
+		return Result<void, Error>::Err(r.Error());
 	size = newSize;
+	return Result<void, Error>::Ok();
 }
 
 /// @brief Clean up the TLS buffer by zeroing and freeing memory if owned, resetting size and capacity
@@ -54,14 +60,14 @@ VOID TlsBuffer::Clear()
 
 /// @brief Ensure there is enough capacity in the TLS buffer to append additional data
 /// @param appendSize The size of the data to be appended
-/// @return true if capacity is sufficient, false on allocation failure
+/// @return Result<void, Error>::Ok() on success, or TlsBuffer_AllocationFailed on failure
 
-BOOL TlsBuffer::CheckSize(INT32 appendSize)
+Result<void, Error> TlsBuffer::CheckSize(INT32 appendSize)
 {
 	if (size + appendSize <= capacity)
 	{
-		LOG_DEBUG("Buffer size is sufficient: %d + %d <= %d\n", size, appendSize, capacity);
-		return true;
+		LOG_DEBUG("Buffer size is sufficient: %d + %d <= %d", size, appendSize, capacity);
+		return Result<void, Error>::Ok();
 	}
 
 	PCHAR oldBuffer = buffer;
@@ -71,14 +77,14 @@ BOOL TlsBuffer::CheckSize(INT32 appendSize)
 		newLen = 256;
 	}
 
-	PCHAR newBuffer = (PCHAR) new CHAR[newLen];
+	PCHAR newBuffer = (PCHAR)new CHAR[newLen];
 	if (!newBuffer)
 	{
-		return false;
+		return Result<void, Error>::Err(Error::TlsBuffer_AllocationFailed);
 	}
 	if (size > 0)
 	{
-		LOG_DEBUG("Resizing buffer from %d to %d bytes\n", capacity, newLen);
+		LOG_DEBUG("Resizing buffer from %d to %d bytes", capacity, newLen);
 		Memory::Copy(newBuffer, oldBuffer, size);
 	}
 	if (oldBuffer && ownsMemory)
@@ -90,7 +96,7 @@ BOOL TlsBuffer::CheckSize(INT32 appendSize)
 	buffer = newBuffer;
 	capacity = newLen;
 	ownsMemory = true;
-	return true;
+	return Result<void, Error>::Ok();
 }
 
 /// @brief Read a block of data from the TLS buffer into the provided span

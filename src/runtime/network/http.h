@@ -26,18 +26,14 @@
 class HttpClient
 {
 private:
-	CHAR hostName[254]; // RFC 1035: max 253 chars + null
-	CHAR path[2048];    // De facto max URL path length
 	IPAddress ipAddress;
 	UINT16 port;
 	TlsClient tlsContext;
 
 	// Private constructor — only used by Create()
-	HttpClient(const CHAR (&host)[254], const CHAR (&parsedPath)[2048], const IPAddress &ip, UINT16 portNum, TlsClient &&tls)
+	HttpClient(const IPAddress &ip, UINT16 portNum, TlsClient &&tls)
 		: ipAddress(ip), port(portNum), tlsContext(static_cast<TlsClient &&>(tls))
 	{
-		Memory::Copy(hostName, host, sizeof(hostName));
-		Memory::Copy(path, parsedPath, sizeof(path));
 	}
 
 public:
@@ -59,8 +55,6 @@ public:
 		: ipAddress(other.ipAddress), port(other.port),
 		  tlsContext(static_cast<TlsClient &&>(other.tlsContext))
 	{
-		Memory::Copy(hostName, other.hostName, sizeof(hostName));
-		Memory::Copy(path, other.path, sizeof(path));
 		other.port = 0;
 	}
 
@@ -70,8 +64,6 @@ public:
 		{
 			if (IsValid())
 				(void)Close();
-			Memory::Copy(hostName, other.hostName, sizeof(hostName));
-			Memory::Copy(path, other.path, sizeof(path));
 			ipAddress = other.ipAddress;
 			port = other.port;
 			tlsContext = static_cast<TlsClient &&>(other.tlsContext);
@@ -114,16 +106,20 @@ public:
 	[[nodiscard]] Result<UINT32, Error> Write(Span<const CHAR> buffer);
 
 	/**
-	 * @brief Send an HTTP GET request using the stored host and path
+	 * @brief Send an HTTP GET request with the given host and path
+	 * @param host Null-terminated hostname for the Host header
+	 * @param path Null-terminated request-URI path component
 	 * @return Ok on success, or an error if the write fails
 	 */
-	[[nodiscard]] Result<void, Error> SendGetRequest();
+	[[nodiscard]] Result<void, Error> SendGetRequest(PCCHAR host, PCCHAR path);
 	/**
 	 * @brief Send an HTTP POST request with the given body data
+	 * @param host Null-terminated hostname for the Host header
+	 * @param path Null-terminated request-URI path component
 	 * @param data The request body to send
 	 * @return Ok on success, or an error if the write fails
 	 */
-	[[nodiscard]] Result<void, Error> SendPostRequest(Span<const CHAR> data);
+	[[nodiscard]] Result<void, Error> SendPostRequest(PCCHAR host, PCCHAR path, Span<const CHAR> data);
 	/**
 	 * @brief Parse a URL into its components and validate the format
 	 * @param url The URL string to parse

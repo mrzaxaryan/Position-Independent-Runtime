@@ -6,6 +6,13 @@
 #include "runtime/network/tls/tls_hkdf.h"
 #include "core/math/math.h"
 
+/// ECC key size for secp256r1 (NIST P-256) in bytes
+constexpr INT32 SECP256R1_KEY_SIZE = 32;
+/// ECC key size for secp384r1 (NIST P-384) in bytes
+constexpr INT32 SECP384R1_KEY_SIZE = 48;
+/// Length of TLS 1.3 traffic label strings (e.g., "s hs traffic", "c ap traffic")
+constexpr INT32 TRAFFIC_LABEL_LEN = 12;
+
 /// @brief Reset the TlsCipher object to its initial state
 
 VOID TlsCipher::Reset()
@@ -51,7 +58,7 @@ Span<const UINT8> TlsCipher::CreateClientRand()
 	Random random;
 
 	LOG_DEBUG("Creating client random data for cipher: %p", this);
-	for (UINT64 i = 0; i < (UINT64)sizeof(data12.clientRandom); i++)
+	for (USIZE i = 0; i < sizeof(data12.clientRandom); i++)
 	{
 		data12.clientRandom[i] = random.Get() & 0xff;
 	}
@@ -103,8 +110,8 @@ Result<void, Error> TlsCipher::ComputePublicKey(INT32 eccIndex, TlsBuffer &out)
 		LOG_DEBUG("Allocating memory for private ECC key at index %d", eccIndex);
 		privateEccKeys[eccIndex] = new ECC();
 		INT32 eccSizeList[2];
-		eccSizeList[0] = 32;
-		eccSizeList[1] = 48;
+		eccSizeList[0] = SECP256R1_KEY_SIZE;
+		eccSizeList[1] = SECP384R1_KEY_SIZE;
 
 		auto initResult = privateEccKeys[eccIndex]->Initialize(eccSizeList[eccIndex]);
 		if (!initResult)
@@ -114,13 +121,16 @@ Result<void, Error> TlsCipher::ComputePublicKey(INT32 eccIndex, TlsBuffer &out)
 		}
 	}
 
-	if (!out.CheckSize(MAX_PUBKEY_SIZE))
-		return Result<void, Error>::Err(Error::TlsCipher_ComputePublicKeyFailed);
+	auto checkResult = out.CheckSize(MAX_PUBKEY_SIZE);
+	if (!checkResult)
+		return Result<void, Error>::Err(checkResult, Error::TlsCipher_ComputePublicKeyFailed);
 
 	auto exportResult = privateEccKeys[eccIndex]->ExportPublicKey(Span<UINT8>((UINT8 *)out.GetBuffer() + out.GetSize(), MAX_PUBKEY_SIZE));
 	if (!exportResult)
 		return Result<void, Error>::Err(exportResult, Error::TlsCipher_ComputePublicKeyFailed);
-	out.SetSize(out.GetSize() + exportResult.Value());
+	auto setSizeResult = out.SetSize(out.GetSize() + exportResult.Value());
+	if (!setSizeResult)
+		return Result<void, Error>::Err(setSizeResult, Error::TlsCipher_ComputePublicKeyFailed);
 
 	return Result<void, Error>::Ok();
 }
@@ -141,12 +151,12 @@ Result<void, Error> TlsCipher::ComputePreKey(EccGroup ecc, Span<const CHAR> serv
 	// Replace loop with two if statements
 	if (ecc == EccGroup::Secp256r1)
 	{
-		eccSize = 32;
+		eccSize = SECP256R1_KEY_SIZE;
 		eccIndex = 0;
 	}
 	else if (ecc == EccGroup::Secp384r1)
 	{
-		eccSize = 48;
+		eccSize = SECP384R1_KEY_SIZE;
 		eccIndex = 1;
 	}
 	else
@@ -160,7 +170,9 @@ Result<void, Error> TlsCipher::ComputePreKey(EccGroup ecc, Span<const CHAR> serv
 		return Result<void, Error>::Err(pubKeyResult, Error::TlsCipher_ComputePreKeyFailed);
 	}
 
-	premasterKey.SetSize(eccSize);
+	auto setSizeResult = premasterKey.SetSize(eccSize);
+	if (!setSizeResult)
+		return Result<void, Error>::Err(setSizeResult, Error::TlsCipher_ComputePreKeyFailed);
 
 	auto secretResult = privateEccKeys[eccIndex]->ComputeSharedSecret(Span<const UINT8>((UINT8 *)serverKey.Data(), serverKey.Size()), Span<UINT8>((UINT8 *)premasterKey.GetBuffer(), eccSize));
 	if (!secretResult)
@@ -202,8 +214,11 @@ Result<void, Error> TlsCipher::ComputeKey(EccGroup ecc, Span<const CHAR> serverK
 	auto serverKeyHs = "s hs traffic"_embed;
 	auto clientKeyApp = "c ap traffic"_embed;
 	auto clientKeyHs = "c hs traffic"_embed;
-	const CHAR *serverLabel = ecc == EccGroup::None ? (const CHAR *)serverKeyApp : (const CHAR *)serverKeyHs;
-	const CHAR *clientLabel = ecc == EccGroup::None ? (const CHAR *)clientKeyApp : (const CHAR *)clientKeyHs;
+	PCCHAR serverLabel = ecc == EccGroup::None ? (PCCHAR)serverKeyApp : (PCCHAR)serverKeyHs;
+	PCCHAR clientLabel = ecc == EccGroup::None ? (PCCHAR)clientKeyApp : (PCCHAR)clientKeyHs;
+	auto derivedLabel = "derived"_embed;
+	auto keyLabel = "key"_embed;
+	auto ivLabel = "iv"_embed;
 	TlsHash hash2;
 	hash2.GetHash(Span<CHAR>((CHAR *)hash, hashLen));
 	Memory::Zero(earlysecret, sizeof(earlysecret));
@@ -212,7 +227,7 @@ Result<void, Error> TlsCipher::ComputeKey(EccGroup ecc, Span<const CHAR> serverK
 	{
 		LOG_DEBUG("Using EccGroup::None for TLS key computation");
 
-		TlsHkdf::ExpandLabel(Span<UCHAR>(salt, hashLen), Span<const UCHAR>((UINT8 *)data13.pseudoRandomKey, hashLen), Span<const CHAR>("derived"_embed, 7), Span<const UCHAR>(hash, hashLen));
+		TlsHkdf::ExpandLabel(Span<UCHAR>(salt, hashLen), Span<const UCHAR>((UINT8 *)data13.pseudoRandomKey, hashLen), Span<const CHAR>(derivedLabel, derivedLabel.Length()), Span<const UCHAR>(hash, hashLen));
 		TlsHkdf::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(salt, hashLen), Span<const UCHAR>(earlysecret, hashLen));
 
 		if (finishedHash.Data())
@@ -237,21 +252,21 @@ Result<void, Error> TlsCipher::ComputeKey(EccGroup ecc, Span<const CHAR> serverK
 		Memory::Zero(zeroSalt, hashLen);
 
 		TlsHkdf::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(zeroSalt, hashLen), Span<const UCHAR>(earlysecret, hashLen));
-		TlsHkdf::ExpandLabel(Span<UCHAR>(salt, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>("derived"_embed, 7), Span<const UCHAR>(hash, hashLen));
+		TlsHkdf::ExpandLabel(Span<UCHAR>(salt, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(derivedLabel, derivedLabel.Length()), Span<const UCHAR>(hash, hashLen));
 		TlsHkdf::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(salt, hashLen), Span<const UCHAR>((UINT8 *)premasterKey.GetBuffer(), premasterKey.GetSize()));
 
 		GetHash(Span<CHAR>((CHAR *)hash, CIPHER_HASH_SIZE));
 	}
 
-	TlsHkdf::ExpandLabel(Span<UCHAR>(data13.handshakeSecret, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(clientLabel, 12), Span<const UCHAR>(hash, hashLen));
+	TlsHkdf::ExpandLabel(Span<UCHAR>(data13.handshakeSecret, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(clientLabel, TRAFFIC_LABEL_LEN), Span<const UCHAR>(hash, hashLen));
 
-	TlsHkdf::ExpandLabel(Span<UCHAR>(localKeyBuffer, keyLen), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>("key"_embed, 3), Span<const UCHAR>());
-	TlsHkdf::ExpandLabel(Span<UCHAR>(localIvBuffer, chacha20Context.GetIvLength()), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>("iv"_embed, 2), Span<const UCHAR>());
+	TlsHkdf::ExpandLabel(Span<UCHAR>(localKeyBuffer, keyLen), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>(keyLabel, keyLabel.Length()), Span<const UCHAR>());
+	TlsHkdf::ExpandLabel(Span<UCHAR>(localIvBuffer, chacha20Context.GetIvLength()), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>(ivLabel, ivLabel.Length()), Span<const UCHAR>());
 
-	TlsHkdf::ExpandLabel(Span<UCHAR>(data13.mainSecret, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(serverLabel, 12), Span<const UCHAR>(hash, hashLen));
+	TlsHkdf::ExpandLabel(Span<UCHAR>(data13.mainSecret, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(serverLabel, TRAFFIC_LABEL_LEN), Span<const UCHAR>(hash, hashLen));
 
-	TlsHkdf::ExpandLabel(Span<UCHAR>(remoteKeyBuffer, keyLen), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>("key"_embed, 3), Span<const UCHAR>());
-	TlsHkdf::ExpandLabel(Span<UCHAR>(remoteIvBuffer, chacha20Context.GetIvLength()), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>("iv"_embed, 2), Span<const UCHAR>());
+	TlsHkdf::ExpandLabel(Span<UCHAR>(remoteKeyBuffer, keyLen), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>(keyLabel, keyLabel.Length()), Span<const UCHAR>());
+	TlsHkdf::ExpandLabel(Span<UCHAR>(remoteIvBuffer, chacha20Context.GetIvLength()), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>(ivLabel, ivLabel.Length()), Span<const UCHAR>());
 
 	auto initResult = chacha20Context.Initialize(Span<const UINT8, POLY1305_KEYLEN>(localKeyBuffer), Span<const UINT8, POLY1305_KEYLEN>(remoteKeyBuffer), localIvBuffer, remoteIvBuffer);
 	if (!initResult)
@@ -289,14 +304,16 @@ Result<void, Error> TlsCipher::ComputeVerify(TlsBuffer &out, INT32 verifySize, I
 	if (localOrRemote)
 	{
 		LOG_DEBUG("Using server finished key");
-		TlsHkdf::ExpandLabel(Span<UCHAR>(finishedKey, hashLen), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>(finishedLabel, 8), Span<const UCHAR>());
+		TlsHkdf::ExpandLabel(Span<UCHAR>(finishedKey, hashLen), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>(finishedLabel, finishedLabel.Length()), Span<const UCHAR>());
 	}
 	else
 	{
 		LOG_DEBUG("Using client finished key");
-		TlsHkdf::ExpandLabel(Span<UCHAR>(finishedKey, hashLen), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>(finishedLabel, 8), Span<const UCHAR>());
+		TlsHkdf::ExpandLabel(Span<UCHAR>(finishedKey, hashLen), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>(finishedLabel, finishedLabel.Length()), Span<const UCHAR>());
 	}
-	out.SetSize(verifySize);
+	auto setSizeResult = out.SetSize(verifySize);
+	if (!setSizeResult)
+		return Result<void, Error>::Err(setSizeResult, Error::TlsCipher_ComputeVerifyFailed);
 	LOG_DEBUG("Calculating HMAC for verify, verifySize=%d", verifySize);
 	HMAC_SHA256 hmac;
 	hmac.Init(Span<const UCHAR>(finishedKey, hashLen));
@@ -370,7 +387,9 @@ Result<void, Error> TlsCipher::Decode(TlsBuffer &inout, INT32 version)
 		return Result<void, Error>::Err(decodeResult, Error::TlsCipher_DecodeFailed);
 	}
 	inout.SetBuffer(decodeBuffer.GetBuffer());
-	inout.SetSize(decodeBuffer.GetSize());
+	auto setSizeResult = inout.SetSize(decodeBuffer.GetSize());
+	if (!setSizeResult)
+		return Result<void, Error>::Err(setSizeResult, Error::TlsCipher_DecodeFailed);
 
 	return Result<void, Error>::Ok();
 }

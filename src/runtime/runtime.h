@@ -1,8 +1,10 @@
 /**
- * runtime.h - Runtime Abstraction Layer
+ * @file runtime.h
+ * @brief Runtime Abstraction Layer
  *
- * Application-level features.
- * Depends on CORE and PLATFORM.
+ * @details Aggregate header for the RUNTIME layer. Includes CORE + PLATFORM
+ * (via platform.h) plus all runtime-level features: cryptography, networking,
+ * and TLS 1.3.
  */
 
 #pragma once

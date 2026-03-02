@@ -157,6 +157,11 @@ struct Error
 		TlsCipher_ComputeVerifyFailed    = 86, // verify data computation failed
 
 		// -------------------------
+		// TlsBuffer errors (87)
+		// -------------------------
+		TlsBuffer_AllocationFailed = 87, // buffer growth allocation failed
+
+		// -------------------------
 		// TLS internal errors (74–84)
 		// -------------------------
 		Tls_SendPacketFailed       = 74, // packet send to socket failed

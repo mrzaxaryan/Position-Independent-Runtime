@@ -51,7 +51,7 @@ Result<HttpClient, Error> HttpClient::Create(Span<const CHAR> url)
 	if (!tlsResult)
 		return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
 
-	HttpClient client(host, parsedPath, ip, port, static_cast<TlsClient &&>(tlsResult.Value()));
+	HttpClient client(ip, port, static_cast<TlsClient &&>(tlsResult.Value()));
 	return Result<HttpClient, Error>::Ok(static_cast<HttpClient &&>(client));
 }
 
@@ -106,7 +106,7 @@ Result<UINT32, Error> HttpClient::Write(Span<const CHAR> buffer)
 /// @brief Send an HTTP GET request to the server
 /// @return Ok on success, or Err with Http_SendGetFailed on failure
 
-Result<void, Error> HttpClient::SendGetRequest()
+Result<void, Error> HttpClient::SendGetRequest(PCCHAR host, PCCHAR path)
 {
 	// Build GET request: "GET <path> HTTP/1.1\r\nHost: <host>\r\nConnection: close\r\n\r\n"
 	CHAR request[2048];
@@ -115,7 +115,7 @@ Result<void, Error> HttpClient::SendGetRequest()
 	pos = AppendStr(request, pos, 2000, "GET "_embed);
 	pos = AppendStr(request, pos, 2000, path);
 	pos = AppendStr(request, pos, 2000, " HTTP/1.1\r\nHost: "_embed);
-	pos = AppendStr(request, pos, 2000, hostName);
+	pos = AppendStr(request, pos, 2000, host);
 	pos = AppendStr(request, pos, 2000, "\r\nConnection: close\r\n\r\n"_embed);
 
 	request[pos] = '\0';
@@ -131,7 +131,7 @@ Result<void, Error> HttpClient::SendGetRequest()
 /// @param dataLength Length of the data to be sent in bytes
 /// @return Ok on success, or Err with Http_SendPostFailed on failure
 
-Result<void, Error> HttpClient::SendPostRequest(Span<const CHAR> data)
+Result<void, Error> HttpClient::SendPostRequest(PCCHAR host, PCCHAR path, Span<const CHAR> data)
 {
 	// Build POST request with Content-Length
 	CHAR request[2048];
@@ -140,7 +140,7 @@ Result<void, Error> HttpClient::SendPostRequest(Span<const CHAR> data)
 	pos = AppendStr(request, pos, 1900, "POST "_embed);
 	pos = AppendStr(request, pos, 1900, path);
 	pos = AppendStr(request, pos, 1900, " HTTP/1.1\r\nHost: "_embed);
-	pos = AppendStr(request, pos, 1900, hostName);
+	pos = AppendStr(request, pos, 1900, host);
 	pos = AppendStr(request, pos, 1900, "\r\nContent-Length: "_embed);
 
 	// Convert data.Size() to string
