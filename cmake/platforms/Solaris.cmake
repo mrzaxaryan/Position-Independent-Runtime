@@ -40,8 +40,10 @@ endif()
 #
 # To work around this, invoke ld.lld directly instead of going through the
 # clang driver. Standard ELF emulations are used (elf_i386, elf_x86_64,
-# aarch64elf); these produce ELFOSABI_NONE which Solaris/illumos kernels
-# accept alongside ELFOSABI_SOLARIS.
+# aarch64elf) because LLD does not support Solaris-specific _sol2 emulation
+# variants. These produce ELFOSABI_NONE, which Solaris kernels reject with
+# "Exec format error". A post-build step patches EI_OSABI to
+# ELFOSABI_SOLARIS (6) — see PIR_ELF_OSABI below.
 find_program(PIR_LLD_PATH ld.lld REQUIRED)
 set(PIR_DIRECT_LINKER TRUE)
 
@@ -83,3 +85,7 @@ list(APPEND PIR_BASE_LINK_FLAGS
 if(PIR_BUILD_TYPE STREQUAL "release")
     list(APPEND PIR_BASE_LINK_FLAGS --strip-all --gc-sections)
 endif()
+
+# ELFOSABI patch — LLD produces ELFOSABI_NONE; Solaris requires
+# ELFOSABI_SOLARIS (6). PostBuild.cmake patches this after linking.
+set(PIR_ELF_OSABI 6)
