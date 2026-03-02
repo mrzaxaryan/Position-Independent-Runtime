@@ -21,6 +21,7 @@
  *   WebSocketTests         - WebSocket client implementation tests (ws:// and wss://)
  *   ResultTests            - Result<T,E> type tests
  *   IPAddressTests         - IPAddress constexpr and runtime tests
+ *   SizeReportTests        - Object sizeof report (sorted large to small)
  *
  * USAGE:
  *   #include "tests.h"
@@ -63,6 +64,7 @@
 #include "binary_io_tests.h"
 #include "span_tests.h"
 #include "ip_address_tests.h"
+#include "size_report_tests.h"
 
 static BOOL RunPIRTests()
 {
@@ -101,6 +103,8 @@ static BOOL RunPIRTests()
 	RunTestSuite<DnsTests>(allPassed);
 	RunTestSuite<WebSocketTests>(allPassed);
 
+	// Size Report always runs last since it's just informational and doesn't test functionality
+	RunTestSuite<SizeReportTests>(allPassed);
 	// Final summary
 	LOG_INFO("=== Test Suite Complete ===");
 	if (allPassed)

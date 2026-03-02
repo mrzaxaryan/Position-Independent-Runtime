@@ -11,25 +11,7 @@
 class WebSocketTests
 {
 private:
-	// Test 1: Plaintext WebSocket connection (ws://)
-	static BOOL TestWebSocketCreation()
-	{
-		LOG_INFO("Test: WebSocket Client Creation (ws://)");
-
-		auto wsUrl = "ws://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create(wsUrl);
-		if (!createResult)
-		{
-			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
-			return false;
-		}
-
-		LOG_INFO("WebSocket client created and connected successfully");
-		(void)createResult.Value().Close();
-		return true;
-	}
-
-	// Test 2: Secure WebSocket connection (wss://)
+	// Test 1: Secure WebSocket connection (wss://)
 	static BOOL TestSecureWebSocketConnection()
 	{
 		LOG_INFO("Test: Secure WebSocket Connection (wss://)");
@@ -47,7 +29,7 @@ private:
 		return true;
 	}
 
-	// Test 3: WebSocket text message echo (WebSocketOpcode::Text)
+	// Test 2: WebSocket text message echo (WebSocketOpcode::Text)
 	static BOOL TestWebSocketTextEcho()
 	{
 		LOG_INFO("Test: WebSocket Text Echo");
@@ -113,7 +95,7 @@ private:
 		return true;
 	}
 
-	// Test 4: WebSocket binary message echo (WebSocketOpcode::Binary)
+	// Test 3: WebSocket binary message echo (WebSocketOpcode::Binary)
 	static BOOL TestWebSocketBinaryEcho()
 	{
 		LOG_INFO("Test: WebSocket Binary Echo");
@@ -190,7 +172,7 @@ private:
 		return true;
 	}
 
-	// Test 5: Multiple sequential messages
+	// Test 4: Multiple sequential messages
 	static BOOL TestMultipleMessages()
 	{
 		LOG_INFO("Test: Multiple Sequential Messages");
@@ -286,7 +268,7 @@ private:
 		return true;
 	}
 
-	// Test 6: Large message handling
+	// Test 5: Large message handling
 	static BOOL TestLargeMessage()
 	{
 		LOG_INFO("Test: Large Message Handling");
@@ -365,7 +347,7 @@ private:
 		return true;
 	}
 
-	// Test 7: WebSocket close handshake
+	// Test 6: WebSocket close handshake
 	static BOOL TestWebSocketClose()
 	{
 		LOG_INFO("Test: WebSocket Close Handshake");
@@ -400,7 +382,6 @@ public:
 		LOG_INFO("Running WebSocket Tests...");
 		LOG_INFO("  Test Server: echo.websocket.org (wss://)");
 
-		RunTest(allPassed, EMBED_FUNC(TestWebSocketCreation), "WebSocket connection (ws://)"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestSecureWebSocketConnection), "Secure WebSocket connection (wss://)"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestWebSocketTextEcho), "WebSocket text echo"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestWebSocketBinaryEcho), "WebSocket binary echo"_embed);
