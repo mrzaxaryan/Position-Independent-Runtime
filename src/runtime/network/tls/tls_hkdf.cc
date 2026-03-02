@@ -17,19 +17,19 @@ INT32 TlsHkdf::Label(Span<const CHAR> label, Span<const UCHAR> data, Span<UCHAR>
 	auto prefix = "tls13 "_embed;
 	INT32 prefixLen = prefix.Length();
 
-	LOG_DEBUG("Creating HKDF label with label_len: %d, data_len: %d, length: %d", (UCHAR)label.Size(), (UCHAR)data.Size(), length);
+	LOG_DEBUG("Creating HKDF label with label_len: %d, data_len: %d, length: %d", (UINT32)label.Size(), (UINT32)data.Size(), length);
 
 	BinaryWriter writer(Span<UINT8>(hkdflabel.Data(), hkdflabel.Size()));
 
 	writer.WriteU16BE(length);
-	writer.WriteU8((UINT8)(prefixLen + (UCHAR)label.Size()));
+	writer.WriteU8((UINT8)(prefixLen + label.Size()));
 	writer.WriteBytes(Span<const CHAR>((PCCHAR)prefix, prefixLen));
 	writer.WriteBytes(label);
-	writer.WriteU8((UCHAR)data.Size());
-	if ((UCHAR)data.Size())
+	writer.WriteU8((UINT8)data.Size());
+	if (data.Size() > 0)
 	{
-		LOG_DEBUG("Copying data to HKDF label, data_len: %d", (UCHAR)data.Size());
-		writer.WriteBytes(Span<const CHAR>((PCCHAR)data.Data(), (UCHAR)data.Size()));
+		LOG_DEBUG("Copying data to HKDF label, data_len: %d", (UINT32)data.Size());
+		writer.WriteBytes(Span<const CHAR>((PCCHAR)data.Data(), data.Size()));
 	}
 
 	LOG_DEBUG("HKDF label created with total length: %d bytes", (INT32)writer.GetOffset());
@@ -40,7 +40,6 @@ INT32 TlsHkdf::Label(Span<const CHAR> label, Span<const UCHAR> data, Span<UCHAR>
 /// @param output The buffer to store the extracted keying material (size determines output length)
 /// @param salt The salt value
 /// @param ikm The input keying material
-/// @return void
 /// @see RFC 5869 Section 2.2 — HKDF-Extract
 ///      https://datatracker.ietf.org/doc/html/rfc5869#section-2.2
 
@@ -58,7 +57,6 @@ VOID TlsHkdf::Extract(Span<UCHAR> output, Span<const UCHAR> salt, Span<const UCH
 /// @param output The buffer to store the expanded keying material (size determines output length)
 /// @param secret The secret value
 /// @param info The info value
-/// @return void
 /// @see RFC 5869 Section 2.3 — HKDF-Expand
 ///      https://datatracker.ietf.org/doc/html/rfc5869#section-2.3
 
@@ -67,11 +65,11 @@ VOID TlsHkdf::Expand(Span<UCHAR> output, Span<const UCHAR> secret, Span<const UC
 	UCHAR digestOut[SHA256_DIGEST_SIZE];
 	UINT32 idx = 0;
 	UCHAR i2 = 0;
-	UINT32 outlen = (UINT32)output.Size();
+	UINT32 outLen = (UINT32)output.Size();
 
-	LOG_DEBUG("Expanding HKDF with output length: %d, secret length: %d, info length: %d", outlen, (UINT32)secret.Size(), (UINT32)info.Size());
+	LOG_DEBUG("Expanding HKDF with output length: %d, secret length: %d, info length: %d", outLen, (UINT32)secret.Size(), (UINT32)info.Size());
 	constexpr UINT32 hashLen = SHA256_DIGEST_SIZE;
-	while (outlen)
+	while (outLen)
 	{
 		HMAC_SHA256 hmac;
 		hmac.Init(secret);
@@ -90,20 +88,20 @@ VOID TlsHkdf::Expand(Span<UCHAR> output, Span<const UCHAR> secret, Span<const UC
 		hmac.Update(Span<const UCHAR>(&i2, 1));
 		hmac.Final(Span<UCHAR>(digestOut, hashLen));
 
-		UINT32 copylen = outlen;
-		if (copylen > hashLen)
+		UINT32 copyLen = outLen;
+		if (copyLen > hashLen)
 		{
 			LOG_DEBUG("Copying %d bytes from digestOut to output", hashLen);
-			copylen = (UINT32)hashLen;
+			copyLen = (UINT32)hashLen;
 		}
 
-		for (UINT32 i = 0; i < copylen; i++)
+		for (UINT32 i = 0; i < copyLen; i++)
 		{
 			output[idx++] = digestOut[i];
-			outlen--;
+			outLen--;
 		}
 
-		if (!outlen)
+		if (!outLen)
 		{
 			LOG_DEBUG("Finished HKDF expansion, no more output needed");
 			break;
@@ -116,7 +114,6 @@ VOID TlsHkdf::Expand(Span<UCHAR> output, Span<const UCHAR> secret, Span<const UC
 /// @param secret The secret value
 /// @param label The label to use in the HKDF label
 /// @param data The data to include in the HKDF label
-/// @return void
 /// @see RFC 8446 Section 7.1 — Key Schedule (HKDF-Expand-Label)
 ///      https://datatracker.ietf.org/doc/html/rfc8446#section-7.1
 

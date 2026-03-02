@@ -198,11 +198,6 @@ public:
 	 */
 	constexpr INT32 GetIvLength() const { return ivLength; }
 
-	/**
-	 * @brief Checks if encoder is initialized and valid
-	 * @return true if initialized, false otherwise
-	 */
-	constexpr BOOL IsValid() const { return initialized; }
 };
 
 /** @} */ // end of chacha20_encoder group

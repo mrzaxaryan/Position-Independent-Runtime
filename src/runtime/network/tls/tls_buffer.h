@@ -71,37 +71,38 @@ public:
 	/**
 	 * @brief Appends raw byte data to the buffer
 	 * @param data Span of data to append
-	 * @return Offset in the buffer where the data was written
+	 * @return Offset in the buffer where the data was written, or -1 on allocation failure
 	 */
 	INT32 Append(Span<const CHAR> data);
 
 	/**
 	 * @brief Appends a typed value to the buffer in native byte order
 	 * @tparam T The type of value to append
-	 * @param data The value to append
-	 * @return Offset in the buffer where the value was written
+	 * @param value The value to append
+	 * @return Offset in the buffer where the value was written, or -1 on allocation failure
 	 */
 	template <typename T>
-	INT32 Append(T data)
+	INT32 Append(T value)
 	{
-		CheckSize(sizeof(T));
-		*(T *)(buffer + this->size) = data;
-		this->size += sizeof(T);
-		return this->size - sizeof(T);
+		if (!CheckSize(sizeof(T)))
+			return -1;
+		Memory::Copy(buffer + size, &value, sizeof(T));
+		size += sizeof(T);
+		return size - sizeof(T);
 	}
 
 	/**
 	 * @brief Reserves space in the buffer without writing data
-	 * @param size Number of bytes to reserve
-	 * @return Offset where the reserved space begins
+	 * @param count Number of bytes to reserve
+	 * @return Offset where the reserved space begins, or -1 on allocation failure
 	 */
-	INT32 AppendSize(INT32 size);
+	INT32 AppendSize(INT32 count);
 
 	/**
 	 * @brief Sets the logical size of the buffer
-	 * @param size New size in bytes
+	 * @param newSize New size in bytes
 	 */
-	VOID SetSize(INT32 size);
+	VOID SetSize(INT32 newSize);
 
 	/**
 	 * @brief Frees the buffer memory and resets state
@@ -111,8 +112,9 @@ public:
 	/**
 	 * @brief Ensures the buffer has capacity for additional data
 	 * @param appendSize Number of additional bytes needed
+	 * @return true if capacity is sufficient (or was grown), false on allocation failure
 	 */
-	VOID CheckSize(INT32 appendSize);
+	[[nodiscard]] BOOL CheckSize(INT32 appendSize);
 
 	/**
 	 * @brief Reads a typed value from the buffer at the current read position
@@ -120,7 +122,13 @@ public:
 	 * @return The value read from the buffer
 	 */
 	template <typename T>
-	T Read();
+	T Read()
+	{
+		T value;
+		Memory::Copy(&value, buffer + readPos, sizeof(T));
+		readPos += sizeof(T);
+		return value;
+	}
 
 	/**
 	 * @brief Reads raw bytes from the buffer into the provided span
@@ -134,16 +142,72 @@ public:
 	 */
 	UINT32 ReadU24BE();
 
-	// Accessors
+	/**
+	 * @brief Writes a 16-bit value in big-endian byte order at the specified offset
+	 * @param offset Byte offset within the buffer to write at
+	 * @param value The 16-bit value to write
+	 *
+	 * @details Uses byte-by-byte writes to avoid unaligned access faults on ARM.
+	 */
+	constexpr VOID PatchU16BE(INT32 offset, UINT16 value)
+	{
+		PUCHAR p = (PUCHAR)(buffer + offset);
+		p[0] = (UINT8)(value >> 8);
+		p[1] = (UINT8)(value & 0xFF);
+	}
+
+	/**
+	 * @brief Writes a 24-bit value in big-endian byte order at the specified offset
+	 * @param offset Byte offset within the buffer to write at
+	 * @param value The value to write (lower 24 bits used)
+	 *
+	 * @details Uses byte-by-byte writes to avoid unaligned access faults on ARM.
+	 */
+	constexpr VOID PatchU24BE(INT32 offset, UINT32 value)
+	{
+		PUCHAR p = (PUCHAR)(buffer + offset);
+		p[0] = (UINT8)((value >> 16) & 0xFF);
+		p[1] = (UINT8)((value >> 8) & 0xFF);
+		p[2] = (UINT8)(value & 0xFF);
+	}
+
+	/**
+	 * @brief Returns the buffer contents as a read-only span
+	 * @return Span wrapping [GetBuffer(), GetSize())
+	 */
+	constexpr Span<const CHAR> AsSpan() const { return Span<const CHAR>(buffer, (USIZE)size); }
+
+	/**
+	 * @brief Returns the buffer contents as a writable span
+	 * @return Span wrapping [GetBuffer(), GetSize())
+	 */
+	constexpr Span<CHAR> AsWritableSpan() { return Span<CHAR>(buffer, (USIZE)size); }
+
+	/// @name Accessors
+	/// @{
+
+	/** @brief Get the current logical size in bytes */
 	constexpr INT32 GetSize() const { return size; }
+
+	/** @brief Get the underlying buffer pointer */
 	constexpr PCHAR GetBuffer() const { return buffer; }
+
+	/** @brief Set the underlying buffer pointer (non-owned buffers only) */
 	constexpr VOID SetBuffer(PCHAR buf)
 	{
 		buffer = buf;
 		if (!ownsMemory)
 			size = 0;
 	}
+
+	/** @brief Get the current read position */
 	constexpr INT32 GetReadPosition() const { return readPos; }
+
+	/** @brief Advance the read position by the specified number of bytes */
 	constexpr VOID AdvanceReadPosition(INT32 sz) { readPos += sz; }
+
+	/** @brief Reset the read position to the start of the buffer */
 	constexpr VOID ResetReadPos() { readPos = 0; }
+
+	/// @}
 };

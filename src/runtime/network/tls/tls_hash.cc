@@ -3,26 +3,22 @@
 #include "runtime/crypto/sha2.h"
 
 /// @brief Reset the hash cache by clearing the underlying buffer
-/// @return void
 
 VOID TlsHash::Reset()
 {
 	cache.Clear();
 }
 
-/// @brief Append data to the hash cache by adding it to the underlying buffer
+/// @brief Append handshake message data to the transcript hash accumulator
 /// @param buffer The data to append
-/// @param size The size of the data to append
-/// @return void
 
 VOID TlsHash::Append(Span<const CHAR> buffer)
 {
 	cache.Append(buffer);
 }
 
-/// @brief Get the hash value from the cache by computing SHA-256 (out.Size()==32) or SHA-384 (out.Size()==48)
-/// @param out Output span; size determines which hash algorithm is used
-/// @return void
+/// @brief Compute the transcript hash from accumulated data using SHA-256 or SHA-384
+/// @param out Output span; size selects the hash algorithm (32 = SHA-256, 48 = SHA-384)
 
 VOID TlsHash::GetHash(Span<CHAR> out)
 {

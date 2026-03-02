@@ -14,7 +14,7 @@
  * Falls back to IPv4 if the initial IPv6 connection attempt fails.
  * @see https://datatracker.ietf.org/doc/html/rfc6455#section-4
  */
-Result<void, Error> WebSocketClient::Open()
+Result<void, Error> WebSocketClient::Open(PCCHAR path)
 {
 	BOOL isSecure = tlsContext.IsSecure();
 	LOG_DEBUG("Opening WebSocket client to %s:%u%s (secure: %s)", hostName, port, path, isSecure ? "true"_embed : "false"_embed);
@@ -111,7 +111,7 @@ Result<void, Error> WebSocketClient::Close()
 
 	isConnected = false;
 	(void)tlsContext.Close();
-	LOG_DEBUG("WebSocket client to %s:%u%s closed", hostName, port, path);
+	LOG_DEBUG("WebSocket client to %s:%u closed", hostName, port);
 	return Result<void, Error>::Ok();
 }
 
@@ -136,7 +136,7 @@ Result<UINT32, Error> WebSocketClient::Write(Span<const CHAR> buffer, WebSocketO
 	UINT32 headerLength;
 
 	// RFC 6455 Section 5.2: byte 0 = FIN (bit 7) | opcode (bits 0-3)
-	header[0] = (UINT8)((INT8)opcode | 0x80);
+	header[0] = (UINT8)((UINT8)opcode | 0x80);
 
 	// Generate masking key from a single random value
 	Random random;
@@ -197,12 +197,12 @@ Result<UINT32, Error> WebSocketClient::Write(Span<const CHAR> buffer, WebSocketO
 	}
 
 	PUINT8 src = (PUINT8)buffer.Data();
-	UINT32 offset = 0;
-	UINT32 remaining = (UINT32)buffer.Size();
+	USIZE offset = 0;
+	USIZE remaining = buffer.Size();
 
 	while (remaining > 0)
 	{
-		UINT32 chunkSize = (remaining < (UINT32)sizeof(chunk)) ? remaining : (UINT32)sizeof(chunk);
+		UINT32 chunkSize = (UINT32)((remaining < sizeof(chunk)) ? remaining : sizeof(chunk));
 		for (UINT32 i = 0; i < chunkSize; i++)
 			chunk[i] = src[offset + i] ^ maskKey[(offset + i) & 3];
 
@@ -227,20 +227,20 @@ Result<UINT32, Error> WebSocketClient::Write(Span<const CHAR> buffer, WebSocketO
  */
 Result<void, Error> WebSocketClient::ReceiveRestrict(Span<CHAR> buffer)
 {
-	UINT32 totalBytesRead = 0;
-	while (totalBytesRead < (UINT32)buffer.Size())
+	USIZE totalBytesRead = 0;
+	while (totalBytesRead < buffer.Size())
 	{
 		auto readResult = tlsContext.Read(Span<CHAR>(buffer.Data() + totalBytesRead, buffer.Size() - totalBytesRead));
 		if (!readResult || readResult.Value() <= 0)
 			return Result<void, Error>::Err(readResult, Error::Ws_ReceiveFailed);
-		totalBytesRead += (UINT32)readResult.Value();
+		totalBytesRead += readResult.Value();
 	}
 	return Result<void, Error>::Ok();
 }
 
 /**
  * @brief Applies the RFC 6455 Section 5.3 XOR masking transformation in-place
- * @details Iterates over frame.data applying: data[i] ^= maskKey[i % 4].
+ * @details Iterates over frame.Data applying: data[i] ^= maskKey[i % 4].
  * Processes 4 bytes per iteration in the main loop, then handles 0–3 trailing bytes.
  * The same function both masks and unmasks since XOR is self-inverse.
  * @see https://datatracker.ietf.org/doc/html/rfc6455#section-5.3
@@ -248,8 +248,8 @@ Result<void, Error> WebSocketClient::ReceiveRestrict(Span<CHAR> buffer)
 VOID WebSocketClient::MaskFrame(WebSocketFrame &frame, UINT32 maskKey)
 {
 	PUINT8 mask = (PUINT8)&maskKey;
-	PUINT8 d = (PUINT8)frame.data;
-	UINT32 len = (UINT32)frame.length;
+	PUINT8 d = (PUINT8)frame.Data;
+	UINT32 len = (UINT32)frame.Length;
 
 	// Process 4 bytes at a time (unrolled, no modulo in main loop)
 	UINT32 i = 0;
@@ -289,15 +289,15 @@ Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 	UINT8 b1 = header[0];
 	UINT8 b2 = header[1];
 
-	frame.fin = (b1 >> 7) & 1;
-	frame.rsv1 = (b1 >> 6) & 1;
-	frame.rsv2 = (b1 >> 5) & 1;
-	frame.rsv3 = (b1 >> 4) & 1;
-	frame.opcode = (WebSocketOpcode)(b1 & 0x0F);
-	frame.mask = (b2 >> 7) & 1;
+	frame.Fin = (b1 >> 7) & 1;
+	frame.Rsv1 = (b1 >> 6) & 1;
+	frame.Rsv2 = (b1 >> 5) & 1;
+	frame.Rsv3 = (b1 >> 4) & 1;
+	frame.Opcode = (WebSocketOpcode)(b1 & 0x0F);
+	frame.Mask = (b2 >> 7) & 1;
 
 	// RFC 6455 Section 5.2: RSV1-3 MUST be 0 unless an extension defining their meaning is negotiated
-	if (frame.rsv1 || frame.rsv2 || frame.rsv3)
+	if (frame.Rsv1 || frame.Rsv2 || frame.Rsv3)
 		return Result<void, Error>::Err(Error::Ws_InvalidFrame);
 
 	UINT8 lengthBits = b2 & 0x7F;
@@ -308,7 +308,7 @@ Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 		auto lenResult = ReceiveRestrict(Span<CHAR>((PCHAR)&len16, sizeof(len16)));
 		if (!lenResult)
 			return Result<void, Error>::Err(lenResult, Error::Ws_ReceiveFailed);
-		frame.length = UINT16SwapByteOrder(len16);
+		frame.Length = UINT16SwapByteOrder(len16);
 	}
 	else if (lengthBits == 127)
 	{
@@ -316,42 +316,42 @@ Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 		auto lenResult = ReceiveRestrict(Span<CHAR>((PCHAR)&len64, sizeof(len64)));
 		if (!lenResult)
 			return Result<void, Error>::Err(lenResult, Error::Ws_ReceiveFailed);
-		frame.length = UINT64SwapByteOrder(len64);
+		frame.Length = UINT64SwapByteOrder(len64);
 	}
 	else
 	{
-		frame.length = lengthBits;
+		frame.Length = lengthBits;
 	}
 
 	// Reject frames that would require an absurd allocation (>64 MB)
-	if (frame.length > 0x4000000)
+	if (frame.Length > 0x4000000)
 		return Result<void, Error>::Err(Error::Ws_FrameTooLarge);
 
 	UINT32 frameMask = 0;
-	if (frame.mask)
+	if (frame.Mask)
 	{
 		auto maskResult = ReceiveRestrict(Span<CHAR>((PCHAR)&frameMask, sizeof(frameMask)));
 		if (!maskResult)
 			return Result<void, Error>::Err(maskResult, Error::Ws_ReceiveFailed);
 	}
 
-	frame.data = nullptr;
-	if (frame.length > 0)
+	frame.Data = nullptr;
+	if (frame.Length > 0)
 	{
-		frame.data = new CHAR[(USIZE)frame.length];
-		if (!frame.data)
+		frame.Data = new CHAR[(USIZE)frame.Length];
+		if (!frame.Data)
 			return Result<void, Error>::Err(Error::Ws_AllocFailed);
 
-		auto dataResult = ReceiveRestrict(Span<CHAR>(frame.data, (USIZE)frame.length));
+		auto dataResult = ReceiveRestrict(Span<CHAR>(frame.Data, (USIZE)frame.Length));
 		if (!dataResult)
 		{
-			delete[] frame.data;
-			frame.data = nullptr;
+			delete[] frame.Data;
+			frame.Data = nullptr;
 			return Result<void, Error>::Err(dataResult, Error::Ws_ReceiveFailed);
 		}
 	}
 
-	if (frame.mask && frame.data)
+	if (frame.Mask && frame.Data)
 		MaskFrame(frame, frameMask);
 
 	return Result<void, Error>::Ok();
@@ -386,92 +386,92 @@ Result<WebSocketMessage, Error> WebSocketClient::Read()
 
 	while (isConnected)
 	{
-		Memory::Zero(&frame, sizeof(frame));
+		frame = WebSocketFrame();
 		auto frameResult = ReceiveFrame(frame);
 		if (!frameResult)
 			break;
 
-		if (frame.opcode == WebSocketOpcode::Text || frame.opcode == WebSocketOpcode::Binary || frame.opcode == WebSocketOpcode::Continue)
+		if (frame.Opcode == WebSocketOpcode::Text || frame.Opcode == WebSocketOpcode::Binary || frame.Opcode == WebSocketOpcode::Continue)
 		{
-			if (frame.opcode == WebSocketOpcode::Continue && message.data == nullptr)
+			if (frame.Opcode == WebSocketOpcode::Continue && message.Data == nullptr)
 			{
-				delete[] frame.data;
-				frame.data = nullptr;
+				delete[] frame.Data;
+				frame.Data = nullptr;
 				break;
 			}
 
 			// Capture opcode from the initial (non-continuation) frame
-			if (frame.opcode != WebSocketOpcode::Continue)
-				message.opcode = frame.opcode;
+			if (frame.Opcode != WebSocketOpcode::Continue)
+				message.Opcode = frame.Opcode;
 
-			if (frame.length > 0)
+			if (frame.Length > 0)
 			{
-				if (message.data)
+				if (message.Data)
 				{
-					UINT32 newLength = message.length + (UINT32)frame.length;
-					if (newLength < message.length)
+					USIZE newLength = message.Length + (USIZE)frame.Length;
+					if (newLength < message.Length)
 					{
-						delete[] frame.data;
-						frame.data = nullptr;
-						delete[] message.data;
-						message.data = nullptr;
+						delete[] frame.Data;
+						frame.Data = nullptr;
+						delete[] message.Data;
+						message.Data = nullptr;
 						break;
 					}
 					PCHAR tempBuffer = new CHAR[newLength];
 					if (!tempBuffer)
 					{
-						delete[] frame.data;
-						frame.data = nullptr;
-						delete[] message.data;
-						message.data = nullptr;
+						delete[] frame.Data;
+						frame.Data = nullptr;
+						delete[] message.Data;
+						message.Data = nullptr;
 						break;
 					}
-					Memory::Copy(tempBuffer, message.data, message.length);
-					Memory::Copy(tempBuffer + message.length, frame.data, (UINT32)frame.length);
-					delete[] message.data;
-					message.data = tempBuffer;
-					message.length = newLength;
-					delete[] frame.data;
-					frame.data = nullptr;
+					Memory::Copy(tempBuffer, message.Data, message.Length);
+					Memory::Copy(tempBuffer + message.Length, frame.Data, (USIZE)frame.Length);
+					delete[] message.Data;
+					message.Data = tempBuffer;
+					message.Length = newLength;
+					delete[] frame.Data;
+					frame.Data = nullptr;
 				}
 				else
 				{
-					message.data = frame.data;
-					frame.data = nullptr;
-					message.length = (UINT32)frame.length;
+					message.Data = frame.Data;
+					frame.Data = nullptr;
+					message.Length = (USIZE)frame.Length;
 				}
 			}
 
-			if (frame.fin)
+			if (frame.Fin)
 			{
 				messageComplete = true;
 				break;
 			}
 		}
-		else if (frame.opcode == WebSocketOpcode::Close)
+		else if (frame.Opcode == WebSocketOpcode::Close)
 		{
 			// RFC 6455 Section 5.5.1: echo the 2-byte status code back in the Close response
-			(void)Write(Span<const CHAR>(frame.data, (frame.length >= 2) ? 2 : 0), WebSocketOpcode::Close);
-			delete[] frame.data;
-			frame.data = nullptr;
+			(void)Write(Span<const CHAR>(frame.Data, (frame.Length >= 2) ? 2 : 0), WebSocketOpcode::Close);
+			delete[] frame.Data;
+			frame.Data = nullptr;
 			isConnected = false;
 			return Result<WebSocketMessage, Error>::Err(Error::Ws_ConnectionClosed);
 		}
-		else if (frame.opcode == WebSocketOpcode::Ping)
+		else if (frame.Opcode == WebSocketOpcode::Ping)
 		{
-			(void)Write(Span<const CHAR>(frame.data, (UINT32)frame.length), WebSocketOpcode::Pong);
-			delete[] frame.data;
-			frame.data = nullptr;
+			(void)Write(Span<const CHAR>(frame.Data, (UINT32)frame.Length), WebSocketOpcode::Pong);
+			delete[] frame.Data;
+			frame.Data = nullptr;
 		}
-		else if (frame.opcode == WebSocketOpcode::Pong)
+		else if (frame.Opcode == WebSocketOpcode::Pong)
 		{
-			delete[] frame.data;
-			frame.data = nullptr;
+			delete[] frame.Data;
+			frame.Data = nullptr;
 		}
 		else
 		{
-			delete[] frame.data;
-			frame.data = nullptr;
+			delete[] frame.Data;
+			frame.Data = nullptr;
 			break;
 		}
 	}
@@ -485,18 +485,21 @@ Result<WebSocketMessage, Error> WebSocketClient::Read()
 }
 
 /**
- * @brief Factory method — creates a WebSocketClient from a ws:// or wss:// URL
+ * @brief Factory method — creates and connects a WebSocketClient from a ws:// or wss:// URL
  * @param url WebSocket URL (ws:// or wss://)
- * @return Ok(WebSocketClient) ready for Open(), or Err(Ws_CreateFailed) on failure
+ * @return Ok(WebSocketClient) in the OPEN state, or Err on parse/DNS/TLS/handshake failure
  *
- * @details Performs three setup steps:
+ * @details Performs the full connection sequence:
  *   1. Parses the URL into host, path, port, and secure flag via HttpClient::ParseUrl
  *   2. Resolves the hostname to an IP address via DNS::Resolve (AAAA first, A fallback)
  *   3. Creates the TLS transport via TlsClient::Create (with IPv4 fallback on IPv6 failure)
+ *   4. Performs the WebSocket opening handshake (RFC 6455 Section 4)
  *
- * The returned client is in the CLOSED state — call Open() to initiate the
- * opening handshake defined in RFC 6455 Section 4.
+ * The path component lives only on this function's stack frame and is not stored
+ * in the returned client, keeping the object size small.
+ *
  * @see https://datatracker.ietf.org/doc/html/rfc6455#section-3
+ * @see https://datatracker.ietf.org/doc/html/rfc6455#section-4
  */
 Result<WebSocketClient, Error> WebSocketClient::Create(Span<const CHAR> url)
 {
@@ -533,6 +536,11 @@ Result<WebSocketClient, Error> WebSocketClient::Create(Span<const CHAR> url)
 	if (!tlsResult)
 		return Result<WebSocketClient, Error>::Err(Error::Ws_CreateFailed);
 
-	WebSocketClient client(host, parsedPath, ip, port, static_cast<TlsClient &&>(tlsResult.Value()));
+	WebSocketClient client(host, ip, port, static_cast<TlsClient &&>(tlsResult.Value()));
+
+	auto openResult = client.Open(parsedPath);
+	if (!openResult)
+		return Result<WebSocketClient, Error>::Err(openResult, Error::Ws_CreateFailed);
+
 	return Result<WebSocketClient, Error>::Ok(static_cast<WebSocketClient &&>(client));
 }

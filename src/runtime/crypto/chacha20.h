@@ -93,6 +93,22 @@ private:
 	 */
 	VOID ProcessBlocks(Span<const UCHAR> data);
 
+	/**
+	 * @brief Converts 4 bytes to 32-bit word (little-endian)
+	 * @param p Pointer to 4 bytes
+	 * @return 32-bit word
+	 */
+	static constexpr UINT32 U8To32(const UCHAR *p);
+
+	/**
+	 * @brief Converts 32-bit word to 4 bytes (little-endian)
+	 * @param p Output buffer for 4 bytes
+	 * @param v 32-bit word to convert
+	 */
+	static constexpr VOID U32To8(PUCHAR p, UINT32 v);
+
+	friend class ChaCha20Poly1305;
+
 public:
 	/**
 	 * @brief Constructs Poly1305 context with one-time key
@@ -112,6 +128,10 @@ public:
 	Poly1305(const Poly1305 &) = delete;
 	Poly1305 &operator=(const Poly1305 &) = delete;
 
+	// Non-movable: one-time authenticator bound to single computation
+	Poly1305(Poly1305 &&) = delete;
+	Poly1305 &operator=(Poly1305 &&) = delete;
+
 	// Stack-only
 	VOID *operator new(USIZE) = delete;
 	VOID operator delete(VOID *) = delete;
@@ -129,20 +149,6 @@ public:
 	 * @param mac Output buffer for 16-byte authentication tag
 	 */
 	VOID Finish(Span<UCHAR, POLY1305_TAGLEN> mac);
-
-	/**
-	 * @brief Converts 4 bytes to 32-bit word (little-endian)
-	 * @param p Pointer to 4 bytes
-	 * @return 32-bit word
-	 */
-	static constexpr UINT32 U8To32(const UCHAR *p);
-
-	/**
-	 * @brief Converts 32-bit word to 4 bytes (little-endian)
-	 * @param p Output buffer for 4 bytes
-	 * @param v 32-bit word to convert
-	 */
-	static constexpr VOID U32To8(PUCHAR p, UINT32 v);
 
 	/**
 	 * @brief Generates Poly1305 key from ChaCha20 keystream
@@ -232,6 +238,7 @@ public:
 	/**
 	 * @brief Sets up the encryption key
 	 * @param key Span of key bytes (16 or 32 bytes)
+	 * @return Ok on success, Err(ChaCha20_KeySetupFailed) if key size is invalid
 	 *
 	 * @details Initializes the ChaCha20 state with the provided key.
 	 * For 128-bit keys, the key is duplicated to fill 256 bits.
@@ -239,7 +246,7 @@ public:
 	 * @see RFC 8439 Section 2.3 — The ChaCha20 Block Function
 	 *      https://datatracker.ietf.org/doc/html/rfc8439#section-2.3
 	 */
-	VOID KeySetup(Span<const UINT8> key);
+	[[nodiscard]] Result<void, Error> KeySetup(Span<const UINT8> key);
 
 	/**
 	 * @brief Extracts current key from state

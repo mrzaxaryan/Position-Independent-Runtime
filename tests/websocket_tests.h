@@ -11,10 +11,10 @@
 class WebSocketTests
 {
 private:
-	// Test 1: WebSocket client creation and URL parsing
+	// Test 1: Plaintext WebSocket connection (ws://)
 	static BOOL TestWebSocketCreation()
 	{
-		LOG_INFO("Test: WebSocket Client Creation");
+		LOG_INFO("Test: WebSocket Client Creation (ws://)");
 
 		auto wsUrl = "ws://echo.websocket.org/"_embed;
 		auto createResult = WebSocketClient::Create(wsUrl);
@@ -24,37 +24,30 @@ private:
 			return false;
 		}
 
-		LOG_INFO("WebSocket client created successfully");
+		LOG_INFO("WebSocket client created and connected successfully");
+		(void)createResult.Value().Close();
 		return true;
 	}
 
-	// Test 2: Basic secure WebSocket connection and handshake (wss://)
+	// Test 2: Secure WebSocket connection (wss://)
 	static BOOL TestSecureWebSocketConnection()
 	{
-		LOG_INFO("Test: Basic Secure WebSocket Connection (wss://)");
+		LOG_INFO("Test: Secure WebSocket Connection (wss://)");
 
 		auto wssUrl = "wss://echo.websocket.org/"_embed;
 		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
-			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
-			return false;
-		}
-		WebSocketClient &wsClient = createResult.Value();
-
-		auto openResult = wsClient.Open();
-		if (!openResult)
-		{
-			LOG_ERROR("Secure WebSocket handshake failed (error: %e)", openResult.Error());
+			LOG_ERROR("Secure WebSocket connection failed (error: %e)", createResult.Error());
 			return false;
 		}
 
 		LOG_INFO("Secure WebSocket connection established successfully");
-		(void)wsClient.Close();
+		(void)createResult.Value().Close();
 		return true;
 	}
 
-	// Test 4: WebSocket text message echo (WebSocketOpcode::Text)
+	// Test 3: WebSocket text message echo (WebSocketOpcode::Text)
 	static BOOL TestWebSocketTextEcho()
 	{
 		LOG_INFO("Test: WebSocket Text Echo");
@@ -63,23 +56,16 @@ private:
 		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
-			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
+			LOG_ERROR("WebSocket connection failed (error: %e)", createResult.Error());
 			return false;
 		}
 		WebSocketClient &wsClient = createResult.Value();
-
-		auto openResult = wsClient.Open();
-		if (!openResult)
-		{
-			LOG_ERROR("WebSocket connection failed (error: %e)", openResult.Error());
-			return false;
-		}
 
 		// Note: echo.websocket.org sends an initial "Request served by..." message
 		// We need to read and discard it before sending our test data
 		auto initialMsg = wsClient.Read();
 		if (initialMsg)
-			LOG_INFO("Received initial server message (%d bytes), discarding", initialMsg.Value().length);
+			LOG_INFO("Received initial server message (%d bytes), discarding", initialMsg.Value().Length);
 
 		// Send text message
 		auto testMessage = "Hello, WebSocket!"_embed;
@@ -104,16 +90,16 @@ private:
 
 		WebSocketMessage &response = readResult.Value();
 
-		if (response.opcode != WebSocketOpcode::Text)
+		if (response.Opcode != WebSocketOpcode::Text)
 		{
-			LOG_ERROR("Unexpected opcode: expected %d (TEXT), got %d", (INT8)WebSocketOpcode::Text, (INT8)response.opcode);
+			LOG_ERROR("Unexpected opcode: expected %d (TEXT), got %d", (UINT8)WebSocketOpcode::Text, (UINT8)response.Opcode);
 			(void)wsClient.Close();
 			return false;
 		}
 
 		// Verify echo matches sent message
-		BOOL matches = (response.length == testMessage.Length()) &&
-					   (Memory::Compare(response.data, (PCVOID)(PCCHAR)testMessage, testMessage.Length()) == 0);
+		BOOL matches = (response.Length == testMessage.Length()) &&
+					   (Memory::Compare(response.Data, (PCVOID)(PCCHAR)testMessage, testMessage.Length()) == 0);
 
 		(void)wsClient.Close();
 
@@ -127,7 +113,7 @@ private:
 		return true;
 	}
 
-	// Test 5: WebSocket binary message echo (WebSocketOpcode::Binary)
+	// Test 4: WebSocket binary message echo (WebSocketOpcode::Binary)
 	static BOOL TestWebSocketBinaryEcho()
 	{
 		LOG_INFO("Test: WebSocket Binary Echo");
@@ -136,17 +122,10 @@ private:
 		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
-			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
+			LOG_ERROR("WebSocket connection failed (error: %e)", createResult.Error());
 			return false;
 		}
 		WebSocketClient &wsClient = createResult.Value();
-
-		auto openResult = wsClient.Open();
-		if (!openResult)
-		{
-			LOG_ERROR("WebSocket connection failed (error: %e)", openResult.Error());
-			return false;
-		}
 
 		// Discard initial server message
 		(void)wsClient.Read();
@@ -186,18 +165,18 @@ private:
 
 		WebSocketMessage &response = readResult.Value();
 
-		if (response.opcode != WebSocketOpcode::Binary)
+		if (response.Opcode != WebSocketOpcode::Binary)
 		{
-			LOG_ERROR("Unexpected opcode: expected %d (BINARY), got %d", (INT8)WebSocketOpcode::Binary, (INT8)response.opcode);
+			LOG_ERROR("Unexpected opcode: expected %d (BINARY), got %d", (UINT8)WebSocketOpcode::Binary, (UINT8)response.Opcode);
 			(void)wsClient.Close();
 			return false;
 		}
 
-		LOG_INFO("Received binary echo (opcode: %d, length: %d)", (INT8)response.opcode, response.length);
+		LOG_INFO("Received binary echo (opcode: %d, length: %d)", (UINT8)response.Opcode, response.Length);
 
 		// Verify echo matches sent data
-		BOOL matches = (response.length == dataLength) &&
-					   (Memory::Compare(response.data, (PCVOID)binaryData, dataLength) == 0);
+		BOOL matches = (response.Length == dataLength) &&
+					   (Memory::Compare(response.Data, (PCVOID)binaryData, dataLength) == 0);
 
 		(void)wsClient.Close();
 
@@ -211,7 +190,7 @@ private:
 		return true;
 	}
 
-	// Test 6: Multiple sequential messages
+	// Test 5: Multiple sequential messages
 	static BOOL TestMultipleMessages()
 	{
 		LOG_INFO("Test: Multiple Sequential Messages");
@@ -220,17 +199,10 @@ private:
 		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
-			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
+			LOG_ERROR("WebSocket connection failed (error: %e)", createResult.Error());
 			return false;
 		}
 		WebSocketClient &wsClient = createResult.Value();
-
-		auto openResult = wsClient.Open();
-		if (!openResult)
-		{
-			LOG_ERROR("WebSocket connection failed (error: %e)", openResult.Error());
-			return false;
-		}
 
 		// Discard initial server message
 		(void)wsClient.Read();
@@ -256,9 +228,9 @@ private:
 			(void)wsClient.Close();
 			return false;
 		}
-		if (read1.Value().length != msg1.Length())
+		if (read1.Value().Length != msg1.Length())
 		{
-			LOG_ERROR("Echo length mismatch for message 1: expected %d, got %d", msg1.Length(), read1.Value().length);
+			LOG_ERROR("Echo length mismatch for message 1: expected %d, got %d", msg1.Length(), read1.Value().Length);
 			(void)wsClient.Close();
 			return false;
 		}
@@ -279,9 +251,9 @@ private:
 			(void)wsClient.Close();
 			return false;
 		}
-		if (read2.Value().length != msg2.Length())
+		if (read2.Value().Length != msg2.Length())
 		{
-			LOG_ERROR("Echo length mismatch for message 2: expected %d, got %d", msg2.Length(), read2.Value().length);
+			LOG_ERROR("Echo length mismatch for message 2: expected %d, got %d", msg2.Length(), read2.Value().Length);
 			(void)wsClient.Close();
 			return false;
 		}
@@ -302,9 +274,9 @@ private:
 			(void)wsClient.Close();
 			return false;
 		}
-		if (read3.Value().length != msg3.Length())
+		if (read3.Value().Length != msg3.Length())
 		{
-			LOG_ERROR("Echo length mismatch for message 3: expected %d, got %d", msg3.Length(), read3.Value().length);
+			LOG_ERROR("Echo length mismatch for message 3: expected %d, got %d", msg3.Length(), read3.Value().Length);
 			(void)wsClient.Close();
 			return false;
 		}
@@ -314,7 +286,7 @@ private:
 		return true;
 	}
 
-	// Test 7: Large message handling
+	// Test 6: Large message handling
 	static BOOL TestLargeMessage()
 	{
 		LOG_INFO("Test: Large Message Handling");
@@ -323,17 +295,10 @@ private:
 		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
-			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
+			LOG_ERROR("WebSocket connection failed (error: %e)", createResult.Error());
 			return false;
 		}
 		WebSocketClient &wsClient = createResult.Value();
-
-		auto openResult = wsClient.Open();
-		if (!openResult)
-		{
-			LOG_ERROR("WebSocket connection failed (error: %e)", openResult.Error());
-			return false;
-		}
 
 		// Discard initial server message
 		(void)wsClient.Read();
@@ -381,11 +346,11 @@ private:
 
 		WebSocketMessage &response = readResult.Value();
 
-		LOG_INFO("Received large echo response (opcode: %d, length: %d)", (INT8)response.opcode, response.length);
+		LOG_INFO("Received large echo response (opcode: %d, length: %d)", (UINT8)response.Opcode, response.Length);
 
 		// Verify echo matches sent message
-		BOOL matches = (response.length == largeMessageSize) &&
-					   (Memory::Compare(response.data, (PCVOID)largeMessage, largeMessageSize) == 0);
+		BOOL matches = (response.Length == largeMessageSize) &&
+					   (Memory::Compare(response.Data, (PCVOID)largeMessage, largeMessageSize) == 0);
 
 		delete[] largeMessage;
 		(void)wsClient.Close();
@@ -400,7 +365,7 @@ private:
 		return true;
 	}
 
-	// Test 8: WebSocket close handshake
+	// Test 7: WebSocket close handshake
 	static BOOL TestWebSocketClose()
 	{
 		LOG_INFO("Test: WebSocket Close Handshake");
@@ -409,17 +374,10 @@ private:
 		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
-			LOG_ERROR("WebSocket client creation failed (error: %e)", createResult.Error());
+			LOG_ERROR("WebSocket connection failed (error: %e)", createResult.Error());
 			return false;
 		}
 		WebSocketClient &wsClient = createResult.Value();
-
-		auto openResult = wsClient.Open();
-		if (!openResult)
-		{
-			LOG_ERROR("WebSocket connection failed (error: %e)", openResult.Error());
-			return false;
-		}
 
 		LOG_INFO("WebSocket connected, initiating close handshake");
 
@@ -442,8 +400,8 @@ public:
 		LOG_INFO("Running WebSocket Tests...");
 		LOG_INFO("  Test Server: echo.websocket.org (wss://)");
 
-		RunTest(allPassed, EMBED_FUNC(TestWebSocketCreation), "WebSocket client creation"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestSecureWebSocketConnection), "Secure WebSocket connection"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestWebSocketCreation), "WebSocket connection (ws://)"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestSecureWebSocketConnection), "Secure WebSocket connection (wss://)"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestWebSocketTextEcho), "WebSocket text echo"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestWebSocketBinaryEcho), "WebSocket binary echo"_embed);
 		RunTest(allPassed, EMBED_FUNC(TestMultipleMessages), "Multiple messages"_embed);

@@ -1,4 +1,17 @@
 #pragma once
+
+/**
+ * @file websocket.h
+ * @brief WebSocket Protocol Client (RFC 6455)
+ *
+ * @details Implements the WebSocket Protocol including the opening handshake,
+ * base framing protocol, client-to-server masking, message fragmentation and
+ * reassembly, control frame handling, and the closing handshake.
+ *
+ * @see RFC 6455 — The WebSocket Protocol
+ *      https://datatracker.ietf.org/doc/html/rfc6455
+ */
+
 #include "platform/platform.h"
 #include "runtime/network/tls/tls.h"
 
@@ -10,7 +23,7 @@
  * @see RFC 6455 Section 11.8 — WebSocket Opcode Registry
  *      https://datatracker.ietf.org/doc/html/rfc6455#section-11.8
  */
-enum class WebSocketOpcode : INT8
+enum class WebSocketOpcode : UINT8
 {
 	Continue = 0x0, ///< Continuation frame (RFC 6455 Section 5.4)
 	Text     = 0x1, ///< Text data frame — payload is UTF-8 (RFC 6455 Section 5.6)
@@ -30,23 +43,23 @@ enum class WebSocketOpcode : INT8
  */
 struct WebSocketFrame
 {
-	PCHAR data;            ///< Pointer to the payload data (heap-allocated by ReceiveFrame)
-	UINT64 length;         ///< Payload length in bytes (decoded from 7-bit, 16-bit, or 64-bit encoding)
-	WebSocketOpcode opcode;///< Frame opcode (RFC 6455 Section 5.2, bits [4:7] of byte 0)
-	UINT8 fin;             ///< FIN bit — 1 if this is the final fragment of a message (bit 0 of byte 0)
-	UINT8 mask;            ///< MASK bit — 1 if payload is masked with a 32-bit key (bit 0 of byte 1)
-	UINT8 rsv1;            ///< RSV1 extension bit — must be 0 unless an extension is negotiated
-	UINT8 rsv2;            ///< RSV2 extension bit — must be 0 unless an extension is negotiated
-	UINT8 rsv3;            ///< RSV3 extension bit — must be 0 unless an extension is negotiated
+	PCHAR Data;             ///< Pointer to the payload data (heap-allocated by ReceiveFrame)
+	UINT64 Length;          ///< Payload length in bytes (decoded from 7-bit, 16-bit, or 64-bit encoding)
+	WebSocketOpcode Opcode; ///< Frame opcode (RFC 6455 Section 5.2, bits [4:7] of byte 0)
+	UINT8 Fin;              ///< FIN bit — 1 if this is the final fragment of a message (bit 0 of byte 0)
+	UINT8 Mask;             ///< MASK bit — 1 if payload is masked with a 32-bit key (bit 0 of byte 1)
+	UINT8 Rsv1;             ///< RSV1 extension bit — must be 0 unless an extension is negotiated
+	UINT8 Rsv2;             ///< RSV2 extension bit — must be 0 unless an extension is negotiated
+	UINT8 Rsv3;             ///< RSV3 extension bit — must be 0 unless an extension is negotiated
 
-	WebSocketFrame() : data(nullptr), length(0), opcode(WebSocketOpcode::Continue), fin(0), mask(0), rsv1(0), rsv2(0), rsv3(0) {}
+	WebSocketFrame() : Data(nullptr), Length(0), Opcode(WebSocketOpcode::Continue), Fin(0), Mask(0), Rsv1(0), Rsv2(0), Rsv3(0) {}
 
 	~WebSocketFrame()
 	{
-		if (data)
+		if (Data)
 		{
-			delete[] data;
-			data = nullptr;
+			delete[] Data;
+			Data = nullptr;
 		}
 	}
 
@@ -54,29 +67,29 @@ struct WebSocketFrame
 	WebSocketFrame &operator=(const WebSocketFrame &) = delete;
 
 	WebSocketFrame(WebSocketFrame &&other) noexcept
-		: data(other.data), length(other.length), opcode(other.opcode),
-		  fin(other.fin), mask(other.mask), rsv1(other.rsv1), rsv2(other.rsv2), rsv3(other.rsv3)
+		: Data(other.Data), Length(other.Length), Opcode(other.Opcode),
+		  Fin(other.Fin), Mask(other.Mask), Rsv1(other.Rsv1), Rsv2(other.Rsv2), Rsv3(other.Rsv3)
 	{
-		other.data = nullptr;
-		other.length = 0;
+		other.Data = nullptr;
+		other.Length = 0;
 	}
 
 	WebSocketFrame &operator=(WebSocketFrame &&other) noexcept
 	{
 		if (this != &other)
 		{
-			if (data)
-				delete[] data;
-			data = other.data;
-			length = other.length;
-			opcode = other.opcode;
-			fin = other.fin;
-			mask = other.mask;
-			rsv1 = other.rsv1;
-			rsv2 = other.rsv2;
-			rsv3 = other.rsv3;
-			other.data = nullptr;
-			other.length = 0;
+			if (Data)
+				delete[] Data;
+			Data = other.Data;
+			Length = other.Length;
+			Opcode = other.Opcode;
+			Fin = other.Fin;
+			Mask = other.Mask;
+			Rsv1 = other.Rsv1;
+			Rsv2 = other.Rsv2;
+			Rsv3 = other.Rsv3;
+			other.Data = nullptr;
+			other.Length = 0;
 		}
 		return *this;
 	}
@@ -92,18 +105,18 @@ struct WebSocketFrame
  */
 struct WebSocketMessage
 {
-	PCHAR data;            ///< Pointer to the reassembled message payload (heap-allocated)
-	USIZE length;          ///< Total message payload length in bytes
-	WebSocketOpcode opcode;///< Message type captured from the first (non-continuation) frame
+	PCHAR Data;             ///< Pointer to the reassembled message payload (heap-allocated)
+	USIZE Length;           ///< Total message payload length in bytes
+	WebSocketOpcode Opcode; ///< Message type captured from the first (non-continuation) frame
 
-	WebSocketMessage() : data(nullptr), length(0), opcode(WebSocketOpcode::Binary) {}
+	WebSocketMessage() : Data(nullptr), Length(0), Opcode(WebSocketOpcode::Binary) {}
 
 	~WebSocketMessage()
 	{
-		if (data)
+		if (Data)
 		{
-			delete[] data;
-			data = nullptr;
+			delete[] Data;
+			Data = nullptr;
 		}
 	}
 
@@ -111,23 +124,23 @@ struct WebSocketMessage
 	WebSocketMessage &operator=(const WebSocketMessage &) = delete;
 
 	WebSocketMessage(WebSocketMessage &&other) noexcept
-		: data(other.data), length(other.length), opcode(other.opcode)
+		: Data(other.Data), Length(other.Length), Opcode(other.Opcode)
 	{
-		other.data = nullptr;
-		other.length = 0;
+		other.Data = nullptr;
+		other.Length = 0;
 	}
 
 	WebSocketMessage &operator=(WebSocketMessage &&other) noexcept
 	{
 		if (this != &other)
 		{
-			if (data)
-				delete[] data;
-			data = other.data;
-			length = other.length;
-			opcode = other.opcode;
-			other.data = nullptr;
-			other.length = 0;
+			if (Data)
+				delete[] Data;
+			Data = other.Data;
+			Length = other.Length;
+			Opcode = other.Opcode;
+			other.Data = nullptr;
+			other.Length = 0;
 		}
 		return *this;
 	}
@@ -149,11 +162,31 @@ class WebSocketClient
 {
 private:
 	CHAR hostName[254];  ///< Server hostname (RFC 1035: max 253 chars + null terminator)
-	CHAR path[2048];     ///< Request-URI path component
 	IPAddress ipAddress; ///< Resolved server IP address
 	UINT16 port;         ///< Server port number
 	TlsClient tlsContext;///< Underlying TLS/plaintext transport
 	BOOL isConnected;    ///< Whether the WebSocket connection is in the OPEN state
+
+	/**
+	 * @brief Performs the WebSocket opening handshake
+	 * @param path Request-URI path component for the GET request
+	 * @return Ok on successful handshake, Err on transport/write/handshake failure
+	 *
+	 * @details Implements the client-side opening handshake defined in RFC 6455 Section 4:
+	 *   1. Opens the underlying TLS/TCP transport (with IPv4 fallback on IPv6 failure)
+	 *   2. Generates a random 16-byte Sec-WebSocket-Key and Base64-encodes it (Section 4.1)
+	 *   3. Sends the HTTP Upgrade request with required headers:
+	 *      - GET <path> HTTP/1.1
+	 *      - Host, Upgrade: websocket, Connection: Upgrade
+	 *      - Sec-WebSocket-Key, Sec-WebSocket-Version: 13, Origin
+	 *   4. Validates the server returns HTTP 101 Switching Protocols (Section 4.2.2)
+	 *
+	 * @see RFC 6455 Section 4 — Opening Handshake
+	 *      https://datatracker.ietf.org/doc/html/rfc6455#section-4
+	 * @see RFC 6455 Section 4.1 — Client Requirements
+	 *      https://datatracker.ietf.org/doc/html/rfc6455#section-4.1
+	 */
+	[[nodiscard]] Result<void, Error> Open(PCCHAR path);
 
 	/**
 	 * @brief Reads exactly buffer.Size() bytes from the TLS transport
@@ -179,8 +212,6 @@ private:
 	 * Rejects frames with non-zero RSV bits (no extensions negotiated) per Section 5.2.
 	 * Rejects frames with payload length > 64 MB to prevent excessive allocation.
 	 *
-	 * @warning The caller is responsible for freeing frame.data with delete[].
-	 *
 	 * @see RFC 6455 Section 5.2 — Base Framing Protocol
 	 *      https://datatracker.ietf.org/doc/html/rfc6455#section-5.2
 	 */
@@ -204,11 +235,10 @@ private:
 	static VOID MaskFrame(WebSocketFrame &frame, UINT32 maskKey);
 
 	// Private constructor — only used by Create()
-	WebSocketClient(const CHAR (&host)[254], const CHAR (&parsedPath)[2048], const IPAddress &ip, UINT16 portNum, TlsClient &&tls)
+	WebSocketClient(const CHAR (&host)[254], const IPAddress &ip, UINT16 portNum, TlsClient &&tls)
 		: ipAddress(ip), port(portNum), tlsContext(static_cast<TlsClient &&>(tls)), isConnected(false)
 	{
 		Memory::Copy(hostName, host, sizeof(hostName));
-		Memory::Copy(path, parsedPath, sizeof(path));
 	}
 
 public:
@@ -228,7 +258,6 @@ public:
 		  isConnected(other.isConnected)
 	{
 		Memory::Copy(hostName, other.hostName, sizeof(hostName));
-		Memory::Copy(path, other.path, sizeof(path));
 		other.port = 0;
 		other.isConnected = false;
 	}
@@ -240,7 +269,6 @@ public:
 			if (IsValid())
 				(void)Close();
 			Memory::Copy(hostName, other.hostName, sizeof(hostName));
-			Memory::Copy(path, other.path, sizeof(path));
 			ipAddress = other.ipAddress;
 			port = other.port;
 			tlsContext = static_cast<TlsClient &&>(other.tlsContext);
@@ -252,15 +280,23 @@ public:
 	}
 
 	/**
-	 * @brief Factory method — creates a WebSocketClient from a ws:// or wss:// URL
+	 * @brief Factory method — creates and connects a WebSocketClient from a ws:// or wss:// URL
 	 * @param url WebSocket URL (e.g., "wss://example.com/path")
-	 * @return Ok(WebSocketClient) ready for Open(), or Err(Ws_CreateFailed) on parse/DNS/TLS failure
+	 * @return Ok(WebSocketClient) in the OPEN state, or Err on parse/DNS/TLS/handshake failure
 	 *
-	 * @details Performs URL parsing via HttpClient::ParseUrl, DNS resolution via DNS::Resolve,
-	 * and TLS transport creation via TlsClient::Create. Falls back to IPv4 if IPv6 socket
-	 * creation fails (e.g., on UEFI platforms without IPv6 support).
+	 * @details Performs the full connection sequence:
+	 *   1. Parses the URL into host, path, port, and secure flag via HttpClient::ParseUrl
+	 *   2. Resolves the hostname via DNS::Resolve (AAAA first, A fallback)
+	 *   3. Creates the TLS transport via TlsClient::Create (with IPv4 fallback)
+	 *   4. Performs the WebSocket opening handshake (RFC 6455 Section 4)
 	 *
-	 * The returned client is in the CLOSED state — call Open() to perform the handshake.
+	 * The path component is only needed during the handshake and is not stored in the client,
+	 * keeping the object size small.
+	 *
+	 * @see RFC 6455 Section 3 — WebSocket URIs
+	 *      https://datatracker.ietf.org/doc/html/rfc6455#section-3
+	 * @see RFC 6455 Section 4 — Opening Handshake
+	 *      https://datatracker.ietf.org/doc/html/rfc6455#section-4
 	 */
 	[[nodiscard]] static Result<WebSocketClient, Error> Create(Span<const CHAR> url);
 
@@ -270,26 +306,6 @@ public:
 	constexpr BOOL IsSecure() const { return tlsContext.IsSecure(); }
 	/** @brief Returns true if the WebSocket connection is in the OPEN state */
 	constexpr BOOL IsConnected() const { return isConnected; }
-
-	/**
-	 * @brief Performs the WebSocket opening handshake
-	 * @return Ok on successful handshake, Err on transport/write/handshake failure
-	 *
-	 * @details Implements the client-side opening handshake defined in RFC 6455 Section 4:
-	 *   1. Opens the underlying TLS/TCP transport (with IPv4 fallback on IPv6 failure)
-	 *   2. Generates a random 16-byte Sec-WebSocket-Key and Base64-encodes it (Section 4.1)
-	 *   3. Sends the HTTP Upgrade request with required headers:
-	 *      - GET <path> HTTP/1.1
-	 *      - Host, Upgrade: websocket, Connection: Upgrade
-	 *      - Sec-WebSocket-Key, Sec-WebSocket-Version: 13, Origin
-	 *   4. Validates the server returns HTTP 101 Switching Protocols (Section 4.2.2)
-	 *
-	 * @see RFC 6455 Section 4 — Opening Handshake
-	 *      https://datatracker.ietf.org/doc/html/rfc6455#section-4
-	 * @see RFC 6455 Section 4.1 — Client Requirements
-	 *      https://datatracker.ietf.org/doc/html/rfc6455#section-4.1
-	 */
-	[[nodiscard]] Result<void, Error> Open();
 
 	/**
 	 * @brief Performs the WebSocket closing handshake and shuts down the transport

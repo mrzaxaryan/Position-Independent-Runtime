@@ -144,32 +144,148 @@ public:
 		return *this;
 	}
 
-	// Reset function
+	/**
+	 * @brief Resets the cipher to its initial state, freeing ECC keys and zeroing secrets
+	 */
 	VOID Reset();
-	// Destroy function to clean up resources
+
+	/**
+	 * @brief Destroys the cipher, releasing all resources and zeroing key material
+	 */
 	VOID Destroy();
-	PINT8 CreateClientRand();
-	// Function to update server information
+
+	/**
+	 * @brief Generates and returns the client random value for the ClientHello message
+	 * @return Span wrapping the generated client random data (RAND_SIZE bytes)
+	 *
+	 * @see RFC 8446 Section 4.1.2 — Client Hello (client random field)
+	 *      https://datatracker.ietf.org/doc/html/rfc8446#section-4.1.2
+	 */
+	Span<const UINT8> CreateClientRand();
+
+	/**
+	 * @brief Updates server information after receiving the ServerHello cipher suite
+	 * @return Result<void, Error>::Ok() if the update was successful
+	 */
 	[[nodiscard]] Result<void, Error> UpdateServerInfo();
-	// Function to get and update the current handshake hash
+
+	/**
+	 * @brief Gets the current transcript hash and stores it in the provided output span
+	 * @param out Output span; size determines which hash algorithm is used
+	 *            (32 = SHA-256, 48 = SHA-384)
+	 *
+	 * @see RFC 8446 Section 4.4.1 — Transcript Hash
+	 *      https://datatracker.ietf.org/doc/html/rfc8446#section-4.4.1
+	 */
 	VOID GetHash(Span<CHAR> out);
+
+	/**
+	 * @brief Updates the running transcript hash with new handshake data
+	 * @param in Input data to be added to the transcript hash
+	 *
+	 * @see RFC 8446 Section 4.4.1 — Transcript Hash
+	 *      https://datatracker.ietf.org/doc/html/rfc8446#section-4.4.1
+	 */
 	VOID UpdateHash(Span<const CHAR> in);
-	// Key computation functions
+
+	/**
+	 * @brief Computes the ephemeral ECDH public key for the key_share extension
+	 * @param eccIndex Index of the ECC key to use (0 = secp256r1, 1 = secp384r1)
+	 * @param out Buffer where the computed public key will be appended
+	 * @return Result<void, Error>::Ok() if the public key was successfully computed
+	 *
+	 * @see RFC 8446 Section 4.2.8 — Key Share
+	 *      https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.8
+	 */
 	[[nodiscard]] Result<void, Error> ComputePublicKey(INT32 eccIndex, TlsBuffer &out);
+
+	/**
+	 * @brief Computes the pre-master key using ECDH shared secret derivation
+	 * @param ecc Specified ECC group to use for key computation
+	 * @param serverKey Server's public key for pre-master key computation
+	 * @param premasterKey Buffer where the computed pre-master key will be stored
+	 * @return Result<void, Error>::Ok() if the pre-master key was successfully computed
+	 *
+	 * @see RFC 8446 Section 7.4 — (EC)DHE Shared Secret
+	 *      https://datatracker.ietf.org/doc/html/rfc8446#section-7.4
+	 */
 	[[nodiscard]] Result<void, Error> ComputePreKey(EccGroup ecc, Span<const CHAR> serverKey, TlsBuffer &premasterKey);
+
+	/**
+	 * @brief Derives handshake or application traffic keys from the key schedule
+	 * @param ecc Specified ECC group (None for application keys derivation)
+	 * @param serverKey Server's public key for TLS key computation
+	 * @param finishedHash Transcript hash at the point of Finished message
+	 * @return Result<void, Error>::Ok() if the TLS key was successfully computed
+	 *
+	 * @see RFC 8446 Section 7.1 — Key Schedule
+	 *      https://datatracker.ietf.org/doc/html/rfc8446#section-7.1
+	 */
 	[[nodiscard]] Result<void, Error> ComputeKey(EccGroup ecc, Span<const CHAR> serverKey, Span<CHAR> finishedHash);
-	VOID ComputeVerify(TlsBuffer &out, INT32 verifySize, INT32 localOrRemote);
-	// Functions for encoding and decoding TLS records
+
+	/**
+	 * @brief Computes the verify data for the TLS Finished message
+	 * @param out Buffer where the computed verify data will be stored
+	 * @param verifySize Size of the verify data to compute
+	 * @param localOrRemote 0 for client finished key, 1 for server finished key
+	 * @return Result<void, Error>::Ok() if the verify data was successfully computed
+	 *
+	 * @see RFC 8446 Section 4.4.4 — Finished
+	 *      https://datatracker.ietf.org/doc/html/rfc8446#section-4.4.4
+	 */
+	[[nodiscard]] Result<void, Error> ComputeVerify(TlsBuffer &out, INT32 verifySize, INT32 localOrRemote);
+
+	/**
+	 * @brief Encodes a TLS record using ChaCha20-Poly1305 AEAD encryption
+	 * @param sendbuf Buffer where the encoded TLS record will be appended
+	 * @param packet TLS record data to encode
+	 * @param keepOriginal If true, appends data without encryption
+	 *
+	 * @see RFC 8446 Section 5.2 — Record Payload Protection
+	 *      https://datatracker.ietf.org/doc/html/rfc8446#section-5.2
+	 */
 	VOID Encode(TlsBuffer &sendbuf, Span<const CHAR> packet, BOOL keepOriginal);
+
+	/**
+	 * @brief Decodes a TLS record using ChaCha20-Poly1305 AEAD decryption
+	 * @param inout Buffer containing the TLS record; updated with decoded data
+	 * @param version TLS version of the record to decode
+	 * @return Result<void, Error>::Ok() if the TLS record was successfully decoded
+	 *
+	 * @see RFC 8446 Section 5.2 — Record Payload Protection
+	 *      https://datatracker.ietf.org/doc/html/rfc8446#section-5.2
+	 */
 	[[nodiscard]] Result<void, Error> Decode(TlsBuffer &inout, INT32 version);
+
+	/**
+	 * @brief Sets whether record-layer encryption is active
+	 * @param encoding true to enable encryption, false to disable
+	 */
 	constexpr VOID SetEncoding(BOOL encoding) { isEncoding = encoding; }
-	// Function to reset sequence numbers
+
+	/**
+	 * @brief Resets both client and server record sequence numbers to zero
+	 *
+	 * @see RFC 8446 Section 5.3 — Per-Record Nonce
+	 *      https://datatracker.ietf.org/doc/html/rfc8446#section-5.3
+	 */
 	constexpr VOID ResetSequenceNumber() { clientSeqNum = 0; serverSeqNum = 0; }
-	// Check if the cipher is in a valid state
+
+	/** @brief Returns true if the cipher has been initialized with at least one cipher suite */
 	constexpr BOOL IsValid() const { return cipherCount > 0; }
-	// Accessor functions
+
+	/** @brief Returns true if record-layer encryption is currently active */
 	constexpr BOOL GetEncoding() const { return isEncoding; }
+
+	/** @brief Returns the number of supported cipher suites */
 	constexpr INT32 GetCipherCount() const { return cipherCount; }
+
+	/** @brief Returns a reference to the serialized public key buffer */
 	TlsBuffer &GetPubKey() { return publicKey; }
+
+	/**
+	 * @brief Sets the number of supported cipher suites
+	 * @param count Number of cipher suites
+	 */
 	constexpr VOID SetCipherCount(INT32 count) { cipherCount = count; }
 };

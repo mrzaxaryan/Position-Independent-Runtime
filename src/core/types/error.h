@@ -145,6 +145,7 @@ struct Error
 		Ecc_SharedSecretFailed = 62, // invalid key format or point at infinity
 		ChaCha20_DecodeFailed      = 63, // Poly1305 authentication failed
 		ChaCha20_GenerateKeyFailed = 64, // invalid nonce size in Poly1305 key generation
+		ChaCha20_KeySetupFailed    = 65, // invalid key size (must be 128 or 256 bits)
 
 		// -------------------------
 		// TlsCipher errors (70–73)
@@ -153,6 +154,7 @@ struct Error
 		TlsCipher_ComputePreKeyFailed    = 71, // premaster key computation failed
 		TlsCipher_ComputeKeyFailed       = 72, // key derivation failed
 		TlsCipher_DecodeFailed           = 73, // record decryption failed
+		TlsCipher_ComputeVerifyFailed    = 86, // verify data computation failed
 
 		// -------------------------
 		// TLS internal errors (74–84)

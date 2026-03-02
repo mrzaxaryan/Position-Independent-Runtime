@@ -1,11 +1,21 @@
+/**
+ * @file chacha20.cc
+ * @brief ChaCha20-Poly1305 AEAD cipher implementation
+ *
+ * @details Position-independent implementation of the ChaCha20 stream cipher
+ * and Poly1305 message authentication code, as specified in RFC 8439.
+ *
+ * @note Original ChaCha20 implementation by D. J. Bernstein, public domain.
+ *
+ * @see RFC 8439 — ChaCha20 and Poly1305 for IETF Protocols
+ *      https://datatracker.ietf.org/doc/html/rfc8439
+ */
+
 #include "runtime/crypto/chacha20.h"
 #include "core/memory/memory.h"
 #include "platform/platform.h"
 #include "platform/io/logger.h"
 #include "core/math/bitops.h"
-
-// ChaCha20 implementation by D. J. Bernstein
-// Public domain.
 
 static constexpr FORCE_INLINE UINT32 U8To32Little(const UINT8 *p)
 {
@@ -33,22 +43,21 @@ static constexpr FORCE_INLINE VOID QuarterRound(UINT32 &a, UINT32 &b, UINT32 &c,
 	c = Plus(c, d); b = BitOps::Rotl32(b ^ c, 7);
 }
 
-//========== Poly1305 Class Implementation ========= //
+// --- Poly1305 Implementation ---
 
-/* interpret four 8 bit unsigned integers as a 32 bit unsigned integer in little endian */
 Poly1305::Poly1305(const UCHAR (&key)[32])
 {
-	/* r &= 0xffffffc0ffffffc0ffffffc0fffffff */
+	/// r &= 0xffffffc0ffffffc0ffffffc0fffffff (RFC 8439 Section 2.5)
 	r[0] = (U8To32(&key[0])) & 0x3ffffff;
 	r[1] = (U8To32(&key[3]) >> 2) & 0x3ffff03;
 	r[2] = (U8To32(&key[6]) >> 4) & 0x3ffc0ff;
 	r[3] = (U8To32(&key[9]) >> 6) & 0x3f03fff;
 	r[4] = (U8To32(&key[12]) >> 8) & 0x00fffff;
 
-	/* h = 0 */
+	/// h = 0
 	Memory::Zero(h, sizeof(h));
 
-	/* save pad for later */
+	/// Save pad for later
 	pad[0] = U8To32(&key[16]);
 	pad[1] = U8To32(&key[20]);
 	pad[2] = U8To32(&key[24]);
@@ -60,7 +69,7 @@ Poly1305::Poly1305(const UCHAR (&key)[32])
 
 Poly1305::~Poly1305()
 {
-	/* zero out sensitive state */
+	/// Zero out sensitive state
 	Memory::Zero(h, sizeof(h));
 	Memory::Zero(r, sizeof(r));
 	Memory::Zero(pad, sizeof(pad));
@@ -77,7 +86,7 @@ constexpr UINT32 Poly1305::U8To32(const UCHAR *p)
 			((UINT32)(p[3] & 0xff) << 24));
 }
 
-/* store a 32 bit unsigned integer as four 8 bit unsigned integers in little endian */
+/// Stores a 32-bit unsigned integer as four 8-bit unsigned integers in little endian
 constexpr VOID Poly1305::U32To8(PUCHAR p, UINT32 v)
 {
 	p[0] = (v) & 0xff;
@@ -88,7 +97,7 @@ constexpr VOID Poly1305::U32To8(PUCHAR p, UINT32 v)
 
 VOID Poly1305::ProcessBlocks(Span<const UCHAR> data)
 {
-	const UINT32 hibit = (finished) ? 0 : (1UL << 24); /* 1 << 128 */
+	const UINT32 hibit = (finished) ? 0 : (1UL << 24); /// 1 << 128
 	UINT32 r0, r1, r2, r3, r4;
 	UINT32 s1, s2, s3, s4;
 	UINT32 h0, h1, h2, h3, h4;
@@ -117,21 +126,21 @@ VOID Poly1305::ProcessBlocks(Span<const UCHAR> data)
 
 	while (bytes >= POLY1305_BLOCK_SIZE)
 	{
-		/* h += m[i] */
+		/// h += m[i]
 		h0 += (U8To32(p + 0)) & 0x3ffffff;
 		h1 += (U8To32(p + 3) >> 2) & 0x3ffffff;
 		h2 += (U8To32(p + 6) >> 4) & 0x3ffffff;
 		h3 += (U8To32(p + 9) >> 6) & 0x3ffffff;
 		h4 += (U8To32(p + 12) >> 8) | hibit;
 
-		/* h *= r */
+		/// h *= r
 		d0 = ((UINT64)h0 * r0) + ((UINT64)h1 * s4) + ((UINT64)h2 * s3) + ((UINT64)h3 * s2) + ((UINT64)h4 * s1);
 		d1 = ((UINT64)h0 * r1) + ((UINT64)h1 * r0) + ((UINT64)h2 * s4) + ((UINT64)h3 * s3) + ((UINT64)h4 * s2);
 		d2 = ((UINT64)h0 * r2) + ((UINT64)h1 * r1) + ((UINT64)h2 * r0) + ((UINT64)h3 * s4) + ((UINT64)h4 * s3);
 		d3 = ((UINT64)h0 * r3) + ((UINT64)h1 * r2) + ((UINT64)h2 * r1) + ((UINT64)h3 * r0) + ((UINT64)h4 * s4);
 		d4 = ((UINT64)h0 * r4) + ((UINT64)h1 * r3) + ((UINT64)h2 * r2) + ((UINT64)h3 * r1) + ((UINT64)h4 * r0);
 
-		/* (partial) h %= p */
+		/// (partial) h %= p
 		c = (UINT32)(d0 >> 26);
 		h0 = (UINT32)d0 & 0x3ffffff;
 		d1 += c;
@@ -166,7 +175,9 @@ Result<void, Error> Poly1305::GenerateKey(Span<const UCHAR, POLY1305_KEYLEN> key
 {
 	ChaCha20Poly1305 ctx;
 	UINT64 ctr;
-	ctx.KeySetup(key256);
+	auto keyResult = ctx.KeySetup(key256);
+	if (!keyResult)
+		return Result<void, Error>::Err(keyResult, Error::ChaCha20_GenerateKeyFailed);
 
 	if (nonce.Size() == 8)
 	{
@@ -190,7 +201,7 @@ VOID Poly1305::Update(Span<const UCHAR> data)
 {
 	const UCHAR *p = data.Data();
 	USIZE bytes = data.Size();
-	/* handle leftover */
+	/// Handle leftover
 	if (leftover)
 	{
 		USIZE want = (POLY1305_BLOCK_SIZE - leftover);
@@ -206,7 +217,7 @@ VOID Poly1305::Update(Span<const UCHAR> data)
 		leftover = 0;
 	}
 
-	/* process full blocks */
+	/// Process full blocks
 	if (bytes >= POLY1305_BLOCK_SIZE)
 	{
 		USIZE want = (bytes & ~(POLY1305_BLOCK_SIZE - 1));
@@ -215,7 +226,7 @@ VOID Poly1305::Update(Span<const UCHAR> data)
 		bytes -= want;
 	}
 
-	/* store leftover */
+	/// Store leftover
 	if (bytes)
 	{
 		Memory::Copy(buffer + leftover, p, bytes);
@@ -230,7 +241,7 @@ VOID Poly1305::Finish(Span<UCHAR, POLY1305_TAGLEN> mac)
 	UINT64 f;
 	UINT32 mask;
 
-	/* process the remaining block */
+	/// Process the remaining block
 	if (leftover)
 	{
 		USIZE i = leftover;
@@ -240,7 +251,7 @@ VOID Poly1305::Finish(Span<UCHAR, POLY1305_TAGLEN> mac)
 		ProcessBlocks(Span<const UCHAR>(buffer, POLY1305_BLOCK_SIZE));
 	}
 
-	/* fully carry h */
+	/// Fully carry h
 	h0 = this->h[0];
 	h1 = this->h[1];
 	h2 = this->h[2];
@@ -263,7 +274,7 @@ VOID Poly1305::Finish(Span<UCHAR, POLY1305_TAGLEN> mac)
 	h0 = h0 & 0x3ffffff;
 	h1 += c;
 
-	/* compute h + -p */
+	/// Compute h + -p
 	g0 = h0 + 5;
 	c = g0 >> 26;
 	g0 &= 0x3ffffff;
@@ -278,7 +289,7 @@ VOID Poly1305::Finish(Span<UCHAR, POLY1305_TAGLEN> mac)
 	g3 &= 0x3ffffff;
 	g4 = h4 + c - (1UL << 26);
 
-	/* select h if h < p, or h + -p if h >= p */
+	/// Select h if h < p, or h + -p if h >= p
 	mask = (g4 >> ((sizeof(UINT32) * 8) - 1)) - 1;
 	g0 &= mask;
 	g1 &= mask;
@@ -292,13 +303,13 @@ VOID Poly1305::Finish(Span<UCHAR, POLY1305_TAGLEN> mac)
 	h3 = (h3 & mask) | g3;
 	h4 = (h4 & mask) | g4;
 
-	/* h = h % (2^128) */
+	/// h = h % (2^128)
 	h0 = ((h0) | (h1 << 26)) & 0xffffffff;
 	h1 = ((h1 >> 6) | (h2 << 20)) & 0xffffffff;
 	h2 = ((h2 >> 12) | (h3 << 14)) & 0xffffffff;
 	h3 = ((h3 >> 18) | (h4 << 8)) & 0xffffffff;
 
-	/* mac = (h + pad) % (2^128) */
+	/// mac = (h + pad) % (2^128)
 	f = (UINT64)h0 + pad[0];
 	h0 = (UINT32)f;
 	f = (UINT64)h1 + pad[1] + (f >> 32);
@@ -313,17 +324,20 @@ VOID Poly1305::Finish(Span<UCHAR, POLY1305_TAGLEN> mac)
 	U32To8(mac.Data() + 8, h2);
 	U32To8(mac.Data() + 12, h3);
 
-	/* zero out the state */
+	/// Zero out the state
 	Memory::Zero(this->h, sizeof(this->h));
 	Memory::Zero(this->r, sizeof(this->r));
 	Memory::Zero(this->pad, sizeof(this->pad));
 }
 
-//========== ChaCha20 from D. J. Bernstein ========= //
-// Source available at https://cr.yp.to/chacha.html  //
+// --- ChaCha20 Implementation (D. J. Bernstein, https://cr.yp.to/chacha.html) ---
 
-VOID ChaCha20Poly1305::KeySetup(Span<const UINT8> key)
+Result<void, Error> ChaCha20Poly1305::KeySetup(Span<const UINT8> key)
 {
+	UINT32 keyBits = (UINT32)key.Size() * 8;
+	if (keyBits != 128 && keyBits != 256)
+		return Result<void, Error>::Err(Error::ChaCha20_KeySetupFailed);
+
 	const UINT8 *k = key.Data();
 
 	this->state[4] = U8To32Little(k + 0);
@@ -333,9 +347,10 @@ VOID ChaCha20Poly1305::KeySetup(Span<const UINT8> key)
 	// Declare _embed strings separately to avoid type deduction issues with ternary
 	auto constants32 = "expand 32-byte k"_embed;
 	auto constants16 = "expand 16-byte k"_embed;
-	const CHAR *constants = (UINT32)key.Size() * 8 == 256 ? (const CHAR *)constants32 : (const CHAR *)constants16;
-	if ((UINT32)key.Size() * 8 == 256)
-	{ /* recommended */
+	const CHAR *constants = keyBits == 256 ? (const CHAR *)constants32 : (const CHAR *)constants16;
+	if (keyBits == 256)
+	{
+		/// 256-bit key recommended (RFC 8439 Section 2.3)
 		k += 16;
 	}
 	this->state[8] = U8To32Little(k + 0);
@@ -346,6 +361,7 @@ VOID ChaCha20Poly1305::KeySetup(Span<const UINT8> key)
 	this->state[1] = U8To32Little((const UINT8 *)constants + 4);
 	this->state[2] = U8To32Little((const UINT8 *)constants + 8);
 	this->state[3] = U8To32Little((const UINT8 *)constants + 12);
+	return Result<void, Error>::Ok();
 }
 
 VOID ChaCha20Poly1305::Key(UINT8 (&k)[32])
@@ -526,10 +542,7 @@ VOID ChaCha20Poly1305::EncryptBytes(Span<const UINT8> plaintext, Span<UINT8> out
 		if (!j12)
 		{
 			j13 = Plus(j13, 1);
-			/*
-			 * Stopping at 2^70 bytes per nonce is the user's
-			 * responsibility.
-			 */
+			/// Stopping at 2^70 bytes per nonce is the user's responsibility
 		}
 
 		U32To8Little(c + 0, x0);

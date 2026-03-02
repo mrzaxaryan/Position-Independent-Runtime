@@ -57,7 +57,7 @@ private:
 	[[nodiscard]] Result<void, Error> SendChangeCipherSpec();
 	[[nodiscard]] Result<void, Error> SendClientExchange();
 	[[nodiscard]] Result<void, Error> SendClientFinished();
-	[[nodiscard]] Result<void, Error> SendClientHello(const CHAR *host);
+	[[nodiscard]] Result<void, Error> SendClientHello(PCCHAR host);
 	[[nodiscard]] Result<void, Error> SendPacket(INT32 packetType, INT32 ver, TlsBuffer &TlsBuffer);
 
 	// Private trivial constructor — only used by Create()

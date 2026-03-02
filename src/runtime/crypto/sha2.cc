@@ -1,32 +1,16 @@
-/*
- * FIPS 180-2 SHA-256/384 implementation
+/**
+ * @file sha2.cc
+ * @brief FIPS 180-2 SHA-256/384 and HMAC implementation
  *
- * Copyright (C) 2005-2023 Olivier Gay <olivier.gay@a3.epfl.ch>
- * All rights reserved.
+ * @details SHA-2 compression, padding, and HMAC construction.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the project nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * @copyright Copyright (C) 2005-2023 Olivier Gay <olivier.gay@a3.epfl.ch>
+ * All rights reserved. BSD 3-clause license.
  *
- * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ * @see RFC 6234 — US Secure Hash Algorithms (SHA and SHA-based HMAC and HKDF)
+ *      https://datatracker.ietf.org/doc/html/rfc6234
+ * @see RFC 2104 — HMAC: Keyed-Hashing for Message Authentication
+ *      https://datatracker.ietf.org/doc/html/rfc2104
  */
 
 #include "runtime/crypto/sha2.h"
@@ -315,6 +299,15 @@ VOID SHABase<Traits>::Hash(Span<const UINT8> message, Span<UINT8, Traits::Digest
 	ctx.Final(digest);
 }
 
+template<typename Traits>
+VOID SHABase<Traits>::CopyStateFrom(const SHABase &src)
+{
+	this->totLen = src.totLen;
+	this->len = src.len;
+	Memory::Copy(this->block, src.block, sizeof(this->block));
+	Memory::Copy(this->h, src.h, sizeof(this->h));
+}
+
 template class SHABase<SHA256Traits>;
 template class SHABase<SHA384Traits>;
 
@@ -368,15 +361,15 @@ VOID HMACBase<SHAType, Traits>::Init(Span<const UCHAR> key)
 	this->ctxInside.Update(Span<const UINT8>(this->blockIpad, Traits::BlockSize));
 	this->ctxOutside.Update(Span<const UINT8>(this->blockOpad, Traits::BlockSize));
 
-	Memory::Copy(&this->ctxInsideReinit, &this->ctxInside, sizeof(SHAType));
-	Memory::Copy(&this->ctxOutsideReinit, &this->ctxOutside, sizeof(SHAType));
+	this->ctxInsideReinit.CopyStateFrom(this->ctxInside);
+	this->ctxOutsideReinit.CopyStateFrom(this->ctxOutside);
 }
 
 template<typename SHAType, typename Traits>
 VOID HMACBase<SHAType, Traits>::Reinit()
 {
-	Memory::Copy(&this->ctxInside, &this->ctxInsideReinit, sizeof(SHAType));
-	Memory::Copy(&this->ctxOutside, &this->ctxOutsideReinit, sizeof(SHAType));
+	this->ctxInside.CopyStateFrom(this->ctxInsideReinit);
+	this->ctxOutside.CopyStateFrom(this->ctxOutsideReinit);
 }
 
 template<typename SHAType, typename Traits>

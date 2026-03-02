@@ -230,6 +230,17 @@ private:
 	UINT8 block[2 * Traits::BlockSize];    /**< @brief Message block buffer */
 	Word h[8];                             /**< @brief Hash state (intermediate hash values) */
 
+	/**
+	 * @brief Copies hash state from another context
+	 * @param src Source context to copy from
+	 *
+	 * @details Formal mechanism for duplicating SHA state, used by HMAC
+	 * to snapshot contexts after key setup for efficient reinit.
+	 */
+	VOID CopyStateFrom(const SHABase &src);
+
+	template<typename, typename> friend class HMACBase;
+
 public:
 	/**
 	 * @brief Default constructor - initializes hash state

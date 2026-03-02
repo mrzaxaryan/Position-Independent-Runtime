@@ -117,6 +117,11 @@ private:
 
 	// =========================================================================
 	// Variable Length Integer (VLI) Operations
+	//
+	// Parameter style: fixed-size VLI parameters use array references
+	// (e.g., UINT64 (&result)[MAX_NUM_ECC_DIGITS]) for compile-time size
+	// guarantees. Variable-length sub-arrays (e.g., OmegaMult384's right
+	// operand) use Span<const UINT64> since the caller may pass a slice.
 	// =========================================================================
 
 	/** @brief Tests if VLI is even (lowest bit is 0) */

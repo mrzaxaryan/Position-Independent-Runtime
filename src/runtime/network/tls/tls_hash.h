@@ -36,10 +36,27 @@ public:
 	VOID *operator new(USIZE) = delete;
 	VOID operator delete(VOID *) = delete;
 
-	// Reset the hash cache
+	/**
+	 * @brief Clears the accumulated handshake data, resetting the transcript hash
+	 */
 	VOID Reset();
-	// Append data to the hash cache
+
+	/**
+	 * @brief Appends handshake message data to the transcript hash accumulator
+	 * @param buffer Data to append
+	 *
+	 * @see RFC 8446 Section 4.4.1 — Transcript Hash
+	 *      https://datatracker.ietf.org/doc/html/rfc8446#section-4.4.1
+	 */
 	VOID Append(Span<const CHAR> buffer);
-	// Get the hash value from the cache; dispatch on out.Size() (32 = SHA-256, 48 = SHA-384)
+
+	/**
+	 * @brief Computes the transcript hash from accumulated data
+	 * @param out Output span; size selects the hash algorithm
+	 *            (32 = SHA-256, 48 = SHA-384)
+	 *
+	 * @see RFC 8446 Section 4.4.1 — Transcript Hash
+	 *      https://datatracker.ietf.org/doc/html/rfc8446#section-4.4.1
+	 */
 	VOID GetHash(Span<CHAR> out);
 };

@@ -1,3 +1,11 @@
+/**
+ * @file chacha20_encoder.cc
+ * @brief TLS 1.3 ChaCha20-Poly1305 record layer encoder implementation
+ *
+ * @details Bidirectional encryption/decryption for TLS 1.3 record layer
+ * using ChaCha20-Poly1305 AEAD cipher with per-record nonce derivation.
+ */
+
 #include "runtime/crypto/chacha20_encoder.h"
 #include "platform/io/logger.h"
 #include "core/memory/memory.h"
@@ -25,8 +33,12 @@ Result<void, Error> ChaCha20Encoder::Initialize(Span<const UINT8, POLY1305_KEYLE
 	UINT32 counter = 1;
 	this->ivLength = TLS_CHACHA20_IV_LENGTH;
 	LOG_DEBUG("Initializing ChaCha20 encoder with key length: %d bits", (INT32)localKey.Size() * 8);
-	this->localCipher.KeySetup(localKey);
-	this->remoteCipher.KeySetup(remoteKey);
+	auto localSetup = this->localCipher.KeySetup(localKey);
+	if (!localSetup)
+		return Result<void, Error>::Err(localSetup, Error::ChaCha20_KeySetupFailed);
+	auto remoteSetup = this->remoteCipher.KeySetup(remoteKey);
+	if (!remoteSetup)
+		return Result<void, Error>::Err(remoteSetup, Error::ChaCha20_KeySetupFailed);
 	this->localCipher.IVSetup96BitNonce(localIv, (PUCHAR)&counter);
 	Memory::Copy(this->localNonce, localIv, sizeof(localIv));
 	this->remoteCipher.IVSetup96BitNonce(remoteIv, (PUCHAR)&counter);
@@ -55,7 +67,8 @@ VOID ChaCha20Encoder::Encode(TlsBuffer &out, Span<const CHAR> packet, Span<const
 
 Result<void, Error> ChaCha20Encoder::Decode(TlsBuffer &in, TlsBuffer &out, Span<const UCHAR> aad)
 {
-	out.CheckSize(in.GetSize());
+	if (!out.CheckSize(in.GetSize()))
+		return Result<void, Error>::Err(Error::ChaCha20_DecodeFailed);
 
 	const UCHAR *sequence = aad.Data() + TLS_RECORD_HEADER_SIZE;
 
