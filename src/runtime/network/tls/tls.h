@@ -40,7 +40,6 @@ private:
 	TlsCipher crypto;        ///< TLS cipher suite and key material
 	BOOL secure;             ///< Whether to use TLS handshake or plain TCP
 	INT32 stateIndex;        ///< Current handshake state index
-	TlsBuffer sendBuffer;    ///< Outgoing data buffer
 	TlsBuffer recvBuffer;    ///< Incoming data buffer
 	INT32 decryptedPos;      ///< Consumption cursor into current decrypted record
 	INT32 decryptedSize;     ///< Size of current decrypted record (0 = none available)
@@ -58,7 +57,7 @@ private:
 	[[nodiscard]] Result<void, Error> SendClientExchange();
 	[[nodiscard]] Result<void, Error> SendClientFinished();
 	[[nodiscard]] Result<void, Error> SendClientHello(PCCHAR host);
-	[[nodiscard]] Result<void, Error> SendPacket(INT32 packetType, INT32 ver, TlsBuffer &TlsBuffer);
+	[[nodiscard]] Result<void, Error> SendPacket(INT32 packetType, INT32 ver, Span<const CHAR> data);
 
 	// Private trivial constructor — only used by Create()
 	TlsClient(PCCHAR host, const IPAddress &ipAddress, Socket &&socket, BOOL secure)
@@ -84,7 +83,7 @@ public:
 	TlsClient &operator=(const TlsClient &) = delete;
 
 	TlsClient(TlsClient &&other) noexcept
-		: host(other.host), ip(other.ip), context(static_cast<Socket &&>(other.context)), crypto(static_cast<TlsCipher &&>(other.crypto)), secure(other.secure), stateIndex(other.stateIndex), sendBuffer(static_cast<TlsBuffer &&>(other.sendBuffer)), recvBuffer(static_cast<TlsBuffer &&>(other.recvBuffer)), decryptedPos(other.decryptedPos), decryptedSize(other.decryptedSize)
+		: host(other.host), ip(other.ip), context(static_cast<Socket &&>(other.context)), crypto(static_cast<TlsCipher &&>(other.crypto)), secure(other.secure), stateIndex(other.stateIndex), recvBuffer(static_cast<TlsBuffer &&>(other.recvBuffer)), decryptedPos(other.decryptedPos), decryptedSize(other.decryptedSize)
 	{
 		other.host = nullptr;
 		other.secure = true;
@@ -104,7 +103,6 @@ public:
 			crypto = static_cast<TlsCipher &&>(other.crypto);
 			secure = other.secure;
 			stateIndex = other.stateIndex;
-			sendBuffer = static_cast<TlsBuffer &&>(other.sendBuffer);
 			recvBuffer = static_cast<TlsBuffer &&>(other.recvBuffer);
 			decryptedPos = other.decryptedPos;
 			decryptedSize = other.decryptedSize;
