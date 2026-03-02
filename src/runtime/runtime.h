@@ -22,7 +22,7 @@
 // =============================================================================
 // Networking
 // =============================================================================
-#include "runtime/network/dns.h"
+#include "runtime/network/dns/dns.h"
 #include "runtime/network/http.h"
 #include "runtime/network/websocket.h"
 

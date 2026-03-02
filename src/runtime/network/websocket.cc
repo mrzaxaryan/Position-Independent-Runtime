@@ -3,7 +3,7 @@
 #include "core/string/string.h"
 #include "platform/system/random.h"
 #include "platform/io/logger.h"
-#include "runtime/network/dns.h"
+#include "runtime/network/dns/dns.h"
 #include "runtime/network/http.h"
 #include "core/types/embedded/embedded_string.h"
 
