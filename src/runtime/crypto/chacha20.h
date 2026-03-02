@@ -39,19 +39,19 @@
 #include "core/core.h"
 
 /** @brief ChaCha20 block size in bytes (512 bits) */
-#define CHACHA_BLOCKLEN 64
+constexpr USIZE CHACHA_BLOCKLEN = 64;
 
 /** @brief TLS 1.3 ChaCha20 IV/nonce length in bytes (96 bits) */
-#define TLS_CHACHA20_IV_LENGTH 12
+constexpr USIZE TLS_CHACHA20_IV_LENGTH = 12;
 
 /** @brief Poly1305 key length in bytes (256 bits) */
-#define POLY1305_KEYLEN 32
+constexpr USIZE POLY1305_KEYLEN = 32;
 
 /** @brief Poly1305 authentication tag length in bytes (128 bits) */
-#define POLY1305_TAGLEN 16
+constexpr USIZE POLY1305_TAGLEN = 16;
 
 /** @brief Poly1305 block size in bytes (128 bits) */
-#define POLY1305_BLOCK_SIZE 16
+constexpr USIZE POLY1305_BLOCK_SIZE = 16;
 
 /**
  * @class Poly1305
@@ -329,7 +329,7 @@ public:
 	 * @see RFC 8439 Section 2.8 — AEAD Construction
 	 *      https://datatracker.ietf.org/doc/html/rfc8439#section-2.8
 	 */
-	VOID Poly1305Aead(Span<UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&polyKey)[POLY1305_KEYLEN], Span<UCHAR> out);
+	VOID Poly1305Aead(Span<const UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&polyKey)[POLY1305_KEYLEN], Span<UCHAR> out);
 
 	/**
 	 * @brief Performs AEAD decryption with Poly1305 verification
@@ -345,7 +345,7 @@ public:
 	 * @see RFC 8439 Section 2.8 — AEAD Construction
 	 *      https://datatracker.ietf.org/doc/html/rfc8439#section-2.8
 	 */
-	[[nodiscard]] Result<INT32, Error> Poly1305Decode(Span<UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&polyKey)[POLY1305_KEYLEN], Span<UCHAR> out);
+	[[nodiscard]] Result<INT32, Error> Poly1305Decode(Span<const UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&polyKey)[POLY1305_KEYLEN], Span<UCHAR> out);
 };
 
 /** @} */ // end of chacha20 group

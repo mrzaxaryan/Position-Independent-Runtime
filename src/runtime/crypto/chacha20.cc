@@ -7,41 +7,31 @@
 // ChaCha20 implementation by D. J. Bernstein
 // Public domain.
 
-// Constants
-#define U8C(v) (v##U)
+static constexpr FORCE_INLINE UINT32 U8TO32Little(const UINT8 *p)
+{
+	return ((UINT32)(p[0])) | ((UINT32)(p[1]) << 8) | ((UINT32)(p[2]) << 16) | ((UINT32)(p[3]) << 24);
+}
 
-#define U8V(v) ((UINT8)(v) & U8C(0xFF))
-#define U32V(v) ((UINT32)(v) & (0xFFFFFFFF))
+static constexpr FORCE_INLINE VOID U32TO8Little(UINT8 *p, UINT32 v)
+{
+	p[0] = (UINT8)(v & 0xFF);
+	p[1] = (UINT8)((v >> 8) & 0xFF);
+	p[2] = (UINT8)((v >> 16) & 0xFF);
+	p[3] = (UINT8)((v >> 24) & 0xFF);
+}
 
-#define U8TO32_LITTLE(p) \
-	(((UINT32)((p)[0])) |             \
-	 ((UINT32)((p)[1]) << 8) |        \
-	 ((UINT32)((p)[2]) << 16) |       \
-	 ((UINT32)((p)[3]) << 24))
+static constexpr FORCE_INLINE UINT32 Plus(UINT32 v, UINT32 w)
+{
+	return (UINT32)((v) + (w)) & 0xFFFFFFFF;
+}
 
-#define U32TO8_LITTLE(p, v) \
-	do                                   \
-	{                                    \
-		(p)[0] = U8V((v));               \
-		(p)[1] = U8V((v) >> 8);          \
-		(p)[2] = U8V((v) >> 16);         \
-		(p)[3] = U8V((v) >> 24);         \
-	} while (0)
-
-#define ROTATE(v, c) (BitOps::Rotl32(v, c))
-#define XOR(v, w) ((v) ^ (w))
-#define PLUS(v, w) (U32V((v) + (w)))
-#define PLUSONE(v) (PLUS((v), 1))
-
-#define QUARTERROUND(a, b, c, d) \
-	a = PLUS(a, b);              \
-	d = ROTATE(XOR(d, a), 16);   \
-	c = PLUS(c, d);              \
-	b = ROTATE(XOR(b, c), 12);   \
-	a = PLUS(a, b);              \
-	d = ROTATE(XOR(d, a), 8);    \
-	c = PLUS(c, d);              \
-	b = ROTATE(XOR(b, c), 7);
+static constexpr FORCE_INLINE VOID QuarterRound(UINT32 &a, UINT32 &b, UINT32 &c, UINT32 &d)
+{
+	a = Plus(a, b); d = BitOps::Rotl32(d ^ a, 16);
+	c = Plus(c, d); b = BitOps::Rotl32(b ^ c, 12);
+	a = Plus(a, b); d = BitOps::Rotl32(d ^ a, 8);
+	c = Plus(c, d); b = BitOps::Rotl32(b ^ c, 7);
+}
 
 //========== Poly1305 Class Implementation ========= //
 
@@ -74,6 +64,9 @@ Poly1305::~Poly1305()
 	Memory::Zero(h, sizeof(h));
 	Memory::Zero(r, sizeof(r));
 	Memory::Zero(pad, sizeof(pad));
+	Memory::Zero(buffer, sizeof(buffer));
+	leftover = 0;
+	finished = 0;
 }
 
 constexpr UINT32 Poly1305::U8TO32(const UCHAR *p)
@@ -197,15 +190,13 @@ VOID Poly1305::Update(Span<const UCHAR> data)
 {
 	const UCHAR *p = data.Data();
 	USIZE bytes = data.Size();
-	USIZE i;
 	/* handle leftover */
 	if (leftover)
 	{
 		USIZE want = (POLY1305_BLOCK_SIZE - leftover);
 		if (want > bytes)
 			want = bytes;
-		for (i = 0; i < want; i++)
-			buffer[leftover + i] = p[i];
+		Memory::Copy(buffer + leftover, p, want);
 		bytes -= want;
 		p += want;
 		leftover += want;
@@ -227,8 +218,7 @@ VOID Poly1305::Update(Span<const UCHAR> data)
 	/* store leftover */
 	if (bytes)
 	{
-		for (i = 0; i < bytes; i++)
-			buffer[leftover + i] = p[i];
+		Memory::Copy(buffer + leftover, p, bytes);
 		leftover += bytes;
 	}
 }
@@ -336,10 +326,10 @@ VOID ChaCha20Poly1305::KeySetup(Span<const UINT8> key)
 {
 	const UINT8 *k = key.Data();
 
-	this->state[4] = U8TO32_LITTLE(k + 0);
-	this->state[5] = U8TO32_LITTLE(k + 4);
-	this->state[6] = U8TO32_LITTLE(k + 8);
-	this->state[7] = U8TO32_LITTLE(k + 12);
+	this->state[4] = U8TO32Little(k + 0);
+	this->state[5] = U8TO32Little(k + 4);
+	this->state[6] = U8TO32Little(k + 8);
+	this->state[7] = U8TO32Little(k + 12);
 	// Declare _embed strings separately to avoid type deduction issues with ternary
 	auto constants32 = "expand 32-byte k"_embed;
 	auto constants16 = "expand 16-byte k"_embed;
@@ -348,64 +338,64 @@ VOID ChaCha20Poly1305::KeySetup(Span<const UINT8> key)
 	{ /* recommended */
 		k += 16;
 	}
-	this->state[8] = U8TO32_LITTLE(k + 0);
-	this->state[9] = U8TO32_LITTLE(k + 4);
-	this->state[10] = U8TO32_LITTLE(k + 8);
-	this->state[11] = U8TO32_LITTLE(k + 12);
-	this->state[0] = U8TO32_LITTLE(constants + 0);
-	this->state[1] = U8TO32_LITTLE(constants + 4);
-	this->state[2] = U8TO32_LITTLE(constants + 8);
-	this->state[3] = U8TO32_LITTLE(constants + 12);
+	this->state[8] = U8TO32Little(k + 0);
+	this->state[9] = U8TO32Little(k + 4);
+	this->state[10] = U8TO32Little(k + 8);
+	this->state[11] = U8TO32Little(k + 12);
+	this->state[0] = U8TO32Little((const UINT8 *)constants + 0);
+	this->state[1] = U8TO32Little((const UINT8 *)constants + 4);
+	this->state[2] = U8TO32Little((const UINT8 *)constants + 8);
+	this->state[3] = U8TO32Little((const UINT8 *)constants + 12);
 }
 
 VOID ChaCha20Poly1305::Key(UINT8 (&k)[32])
 {
-	U32TO8_LITTLE(k, this->state[4]);
-	U32TO8_LITTLE(k + 4, this->state[5]);
-	U32TO8_LITTLE(k + 8, this->state[6]);
-	U32TO8_LITTLE(k + 12, this->state[7]);
+	U32TO8Little(k, this->state[4]);
+	U32TO8Little(k + 4, this->state[5]);
+	U32TO8Little(k + 8, this->state[6]);
+	U32TO8Little(k + 12, this->state[7]);
 
-	U32TO8_LITTLE(k + 16, this->state[8]);
-	U32TO8_LITTLE(k + 20, this->state[9]);
-	U32TO8_LITTLE(k + 24, this->state[10]);
-	U32TO8_LITTLE(k + 28, this->state[11]);
+	U32TO8Little(k + 16, this->state[8]);
+	U32TO8Little(k + 20, this->state[9]);
+	U32TO8Little(k + 24, this->state[10]);
+	U32TO8Little(k + 28, this->state[11]);
 }
 
 VOID ChaCha20Poly1305::Nonce(UINT8 (&nonce)[TLS_CHACHA20_IV_LENGTH])
 {
-	U32TO8_LITTLE(nonce + 0, this->state[13]);
-	U32TO8_LITTLE(nonce + 4, this->state[14]);
-	U32TO8_LITTLE(nonce + 8, this->state[15]);
+	U32TO8Little(nonce + 0, this->state[13]);
+	U32TO8Little(nonce + 4, this->state[14]);
+	U32TO8Little(nonce + 8, this->state[15]);
 }
 
 VOID ChaCha20Poly1305::IVSetup(const UINT8 *iv, const UINT8 *counter)
 {
-	this->state[12] = counter == nullptr ? 0 : U8TO32_LITTLE(counter + 0);
-	this->state[13] = counter == nullptr ? 0 : U8TO32_LITTLE(counter + 4);
+	this->state[12] = counter == nullptr ? 0 : U8TO32Little(counter + 0);
+	this->state[13] = counter == nullptr ? 0 : U8TO32Little(counter + 4);
 	if (iv)
 	{
-		this->state[14] = U8TO32_LITTLE(iv + 0);
-		this->state[15] = U8TO32_LITTLE(iv + 4);
+		this->state[14] = U8TO32Little(iv + 0);
+		this->state[15] = U8TO32Little(iv + 4);
 	}
 }
 
 VOID ChaCha20Poly1305::IVSetup96BitNonce(const UINT8 *iv, const UINT8 *counter)
 {
-	this->state[12] = counter == nullptr ? 0 : U8TO32_LITTLE(counter + 0);
+	this->state[12] = counter == nullptr ? 0 : U8TO32Little(counter + 0);
 	if (iv)
 	{
-		this->state[13] = U8TO32_LITTLE(iv + 0);
-		this->state[14] = U8TO32_LITTLE(iv + 4);
-		this->state[15] = U8TO32_LITTLE(iv + 8);
+		this->state[13] = U8TO32Little(iv + 0);
+		this->state[14] = U8TO32Little(iv + 4);
+		this->state[15] = U8TO32Little(iv + 8);
 	}
 }
 
 VOID ChaCha20Poly1305::IVUpdate(Span<const UINT8, TLS_CHACHA20_IV_LENGTH> iv, Span<const UINT8, 8> aad, const UINT8 *counter)
 {
-	this->state[12] = counter == nullptr ? 0 : U8TO32_LITTLE(counter + 0);
-	this->state[13] = U8TO32_LITTLE(iv.Data() + 0);
-	this->state[14] = U8TO32_LITTLE(iv.Data() + 4) ^ U8TO32_LITTLE(aad.Data());
-	this->state[15] = U8TO32_LITTLE(iv.Data() + 8) ^ U8TO32_LITTLE(aad.Data() + 4);
+	this->state[12] = counter == nullptr ? 0 : U8TO32Little(counter + 0);
+	this->state[13] = U8TO32Little(iv.Data() + 0);
+	this->state[14] = U8TO32Little(iv.Data() + 4) ^ U8TO32Little(aad.Data());
+	this->state[15] = U8TO32Little(iv.Data() + 8) ^ U8TO32Little(aad.Data() + 4);
 }
 
 VOID ChaCha20Poly1305::EncryptBytes(Span<const UINT8> plaintext, Span<UINT8> output)
@@ -444,10 +434,9 @@ VOID ChaCha20Poly1305::EncryptBytes(Span<const UINT8> plaintext, Span<UINT8> out
 
 	for (;;)
 	{
-		if (bytes < 64)
+		if (bytes < CHACHA_BLOCKLEN)
 		{
-			for (i = 0; i < bytes; ++i)
-				tmp[i] = m[i];
+			Memory::Copy(tmp, m, bytes);
 			m = tmp;
 			ctarget = c;
 			c = tmp;
@@ -470,111 +459,110 @@ VOID ChaCha20Poly1305::EncryptBytes(Span<const UINT8> plaintext, Span<UINT8> out
 		x15 = j15;
 		for (i = 20; i > 0; i -= 2)
 		{
-			QUARTERROUND(x0, x4, x8, x12)
-			QUARTERROUND(x1, x5, x9, x13)
-			QUARTERROUND(x2, x6, x10, x14)
-			QUARTERROUND(x3, x7, x11, x15)
-			QUARTERROUND(x0, x5, x10, x15)
-			QUARTERROUND(x1, x6, x11, x12)
-			QUARTERROUND(x2, x7, x8, x13)
-			QUARTERROUND(x3, x4, x9, x14)
+			QuarterRound(x0, x4, x8, x12);
+			QuarterRound(x1, x5, x9, x13);
+			QuarterRound(x2, x6, x10, x14);
+			QuarterRound(x3, x7, x11, x15);
+			QuarterRound(x0, x5, x10, x15);
+			QuarterRound(x1, x6, x11, x12);
+			QuarterRound(x2, x7, x8, x13);
+			QuarterRound(x3, x4, x9, x14);
 		}
-		x0 = PLUS(x0, j0);
-		x1 = PLUS(x1, j1);
-		x2 = PLUS(x2, j2);
-		x3 = PLUS(x3, j3);
-		x4 = PLUS(x4, j4);
-		x5 = PLUS(x5, j5);
-		x6 = PLUS(x6, j6);
-		x7 = PLUS(x7, j7);
-		x8 = PLUS(x8, j8);
-		x9 = PLUS(x9, j9);
-		x10 = PLUS(x10, j10);
-		x11 = PLUS(x11, j11);
-		x12 = PLUS(x12, j12);
-		x13 = PLUS(x13, j13);
-		x14 = PLUS(x14, j14);
-		x15 = PLUS(x15, j15);
+		x0 = Plus(x0, j0);
+		x1 = Plus(x1, j1);
+		x2 = Plus(x2, j2);
+		x3 = Plus(x3, j3);
+		x4 = Plus(x4, j4);
+		x5 = Plus(x5, j5);
+		x6 = Plus(x6, j6);
+		x7 = Plus(x7, j7);
+		x8 = Plus(x8, j8);
+		x9 = Plus(x9, j9);
+		x10 = Plus(x10, j10);
+		x11 = Plus(x11, j11);
+		x12 = Plus(x12, j12);
+		x13 = Plus(x13, j13);
+		x14 = Plus(x14, j14);
+		x15 = Plus(x15, j15);
 
-		if (bytes < 64)
+		if (bytes < CHACHA_BLOCKLEN)
 		{
-			U32TO8_LITTLE(this->ks + 0, x0);
-			U32TO8_LITTLE(this->ks + 4, x1);
-			U32TO8_LITTLE(this->ks + 8, x2);
-			U32TO8_LITTLE(this->ks + 12, x3);
-			U32TO8_LITTLE(this->ks + 16, x4);
-			U32TO8_LITTLE(this->ks + 20, x5);
-			U32TO8_LITTLE(this->ks + 24, x6);
-			U32TO8_LITTLE(this->ks + 28, x7);
-			U32TO8_LITTLE(this->ks + 32, x8);
-			U32TO8_LITTLE(this->ks + 36, x9);
-			U32TO8_LITTLE(this->ks + 40, x10);
-			U32TO8_LITTLE(this->ks + 44, x11);
-			U32TO8_LITTLE(this->ks + 48, x12);
-			U32TO8_LITTLE(this->ks + 52, x13);
-			U32TO8_LITTLE(this->ks + 56, x14);
-			U32TO8_LITTLE(this->ks + 60, x15);
+			U32TO8Little(this->ks + 0, x0);
+			U32TO8Little(this->ks + 4, x1);
+			U32TO8Little(this->ks + 8, x2);
+			U32TO8Little(this->ks + 12, x3);
+			U32TO8Little(this->ks + 16, x4);
+			U32TO8Little(this->ks + 20, x5);
+			U32TO8Little(this->ks + 24, x6);
+			U32TO8Little(this->ks + 28, x7);
+			U32TO8Little(this->ks + 32, x8);
+			U32TO8Little(this->ks + 36, x9);
+			U32TO8Little(this->ks + 40, x10);
+			U32TO8Little(this->ks + 44, x11);
+			U32TO8Little(this->ks + 48, x12);
+			U32TO8Little(this->ks + 52, x13);
+			U32TO8Little(this->ks + 56, x14);
+			U32TO8Little(this->ks + 60, x15);
 		}
 
-		x0 = XOR(x0, U8TO32_LITTLE(m + 0));
-		x1 = XOR(x1, U8TO32_LITTLE(m + 4));
-		x2 = XOR(x2, U8TO32_LITTLE(m + 8));
-		x3 = XOR(x3, U8TO32_LITTLE(m + 12));
-		x4 = XOR(x4, U8TO32_LITTLE(m + 16));
-		x5 = XOR(x5, U8TO32_LITTLE(m + 20));
-		x6 = XOR(x6, U8TO32_LITTLE(m + 24));
-		x7 = XOR(x7, U8TO32_LITTLE(m + 28));
-		x8 = XOR(x8, U8TO32_LITTLE(m + 32));
-		x9 = XOR(x9, U8TO32_LITTLE(m + 36));
-		x10 = XOR(x10, U8TO32_LITTLE(m + 40));
-		x11 = XOR(x11, U8TO32_LITTLE(m + 44));
-		x12 = XOR(x12, U8TO32_LITTLE(m + 48));
-		x13 = XOR(x13, U8TO32_LITTLE(m + 52));
-		x14 = XOR(x14, U8TO32_LITTLE(m + 56));
-		x15 = XOR(x15, U8TO32_LITTLE(m + 60));
+		x0 ^= U8TO32Little(m + 0);
+		x1 ^= U8TO32Little(m + 4);
+		x2 ^= U8TO32Little(m + 8);
+		x3 ^= U8TO32Little(m + 12);
+		x4 ^= U8TO32Little(m + 16);
+		x5 ^= U8TO32Little(m + 20);
+		x6 ^= U8TO32Little(m + 24);
+		x7 ^= U8TO32Little(m + 28);
+		x8 ^= U8TO32Little(m + 32);
+		x9 ^= U8TO32Little(m + 36);
+		x10 ^= U8TO32Little(m + 40);
+		x11 ^= U8TO32Little(m + 44);
+		x12 ^= U8TO32Little(m + 48);
+		x13 ^= U8TO32Little(m + 52);
+		x14 ^= U8TO32Little(m + 56);
+		x15 ^= U8TO32Little(m + 60);
 
-		j12 = PLUSONE(j12);
+		j12 = Plus(j12, 1);
 		if (!j12)
 		{
-			j13 = PLUSONE(j13);
+			j13 = Plus(j13, 1);
 			/*
 			 * Stopping at 2^70 bytes per nonce is the user's
 			 * responsibility.
 			 */
 		}
 
-		U32TO8_LITTLE(c + 0, x0);
-		U32TO8_LITTLE(c + 4, x1);
-		U32TO8_LITTLE(c + 8, x2);
-		U32TO8_LITTLE(c + 12, x3);
-		U32TO8_LITTLE(c + 16, x4);
-		U32TO8_LITTLE(c + 20, x5);
-		U32TO8_LITTLE(c + 24, x6);
-		U32TO8_LITTLE(c + 28, x7);
-		U32TO8_LITTLE(c + 32, x8);
-		U32TO8_LITTLE(c + 36, x9);
-		U32TO8_LITTLE(c + 40, x10);
-		U32TO8_LITTLE(c + 44, x11);
-		U32TO8_LITTLE(c + 48, x12);
-		U32TO8_LITTLE(c + 52, x13);
-		U32TO8_LITTLE(c + 56, x14);
-		U32TO8_LITTLE(c + 60, x15);
+		U32TO8Little(c + 0, x0);
+		U32TO8Little(c + 4, x1);
+		U32TO8Little(c + 8, x2);
+		U32TO8Little(c + 12, x3);
+		U32TO8Little(c + 16, x4);
+		U32TO8Little(c + 20, x5);
+		U32TO8Little(c + 24, x6);
+		U32TO8Little(c + 28, x7);
+		U32TO8Little(c + 32, x8);
+		U32TO8Little(c + 36, x9);
+		U32TO8Little(c + 40, x10);
+		U32TO8Little(c + 44, x11);
+		U32TO8Little(c + 48, x12);
+		U32TO8Little(c + 52, x13);
+		U32TO8Little(c + 56, x14);
+		U32TO8Little(c + 60, x15);
 
-		if (bytes <= 64)
+		if (bytes <= CHACHA_BLOCKLEN)
 		{
-			if (bytes < 64)
+			if (bytes < CHACHA_BLOCKLEN)
 			{
-				for (i = 0; i < bytes; ++i)
-					ctarget[i] = c[i];
+				Memory::Copy(ctarget, c, bytes);
 			}
 			this->state[12] = j12;
 			this->state[13] = j13;
-			this->unused = 64 - bytes;
+			this->unused = CHACHA_BLOCKLEN - bytes;
 			return;
 		}
-		bytes -= 64;
-		c += 64;
-		m += 64;
+		bytes -= CHACHA_BLOCKLEN;
+		c += CHACHA_BLOCKLEN;
+		m += CHACHA_BLOCKLEN;
 	}
 }
 
@@ -588,24 +576,24 @@ VOID ChaCha20Poly1305::Block(Span<UCHAR> output)
 		blkState[i] = this->state[i];
 	for (i = 20; i > 0; i -= 2)
 	{
-		QUARTERROUND(blkState[0], blkState[4], blkState[8], blkState[12])
-		QUARTERROUND(blkState[1], blkState[5], blkState[9], blkState[13])
-		QUARTERROUND(blkState[2], blkState[6], blkState[10], blkState[14])
-		QUARTERROUND(blkState[3], blkState[7], blkState[11], blkState[15])
-		QUARTERROUND(blkState[0], blkState[5], blkState[10], blkState[15])
-		QUARTERROUND(blkState[1], blkState[6], blkState[11], blkState[12])
-		QUARTERROUND(blkState[2], blkState[7], blkState[8], blkState[13])
-		QUARTERROUND(blkState[3], blkState[4], blkState[9], blkState[14])
+		QuarterRound(blkState[0], blkState[4], blkState[8], blkState[12]);
+		QuarterRound(blkState[1], blkState[5], blkState[9], blkState[13]);
+		QuarterRound(blkState[2], blkState[6], blkState[10], blkState[14]);
+		QuarterRound(blkState[3], blkState[7], blkState[11], blkState[15]);
+		QuarterRound(blkState[0], blkState[5], blkState[10], blkState[15]);
+		QuarterRound(blkState[1], blkState[6], blkState[11], blkState[12]);
+		QuarterRound(blkState[2], blkState[7], blkState[8], blkState[13]);
+		QuarterRound(blkState[3], blkState[4], blkState[9], blkState[14]);
 	}
 
 	for (i = 0; i < 16; i++)
-		blkState[i] = PLUS(blkState[i], this->state[i]);
+		blkState[i] = Plus(blkState[i], this->state[i]);
 
 	for (i = 0; i < (UINT32)output.Size(); i += 4)
 	{
-		U32TO8_LITTLE(c + i, blkState[i / 4]);
+		U32TO8Little(c + i, blkState[i / 4]);
 	}
-	this->state[12] = PLUSONE(this->state[12]);
+	this->state[12] = Plus(this->state[12], 1);
 }
 
 NOINLINE VOID ChaCha20Poly1305::Poly1305PadAndTrail(Poly1305 &poly, Span<const UCHAR> aad, Span<const UCHAR> ciphertext)
@@ -630,7 +618,7 @@ NOINLINE VOID ChaCha20Poly1305::Poly1305PadAndTrail(Poly1305 &poly, Span<const U
 	poly.Update(Span<const UCHAR>(trail));
 }
 
-VOID ChaCha20Poly1305::Poly1305Aead(Span<UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&polyKey)[POLY1305_KEYLEN], Span<UCHAR> out)
+VOID ChaCha20Poly1305::Poly1305Aead(Span<const UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&polyKey)[POLY1305_KEYLEN], Span<UCHAR> out)
 {
 	UINT32 counter = 1;
 	this->IVSetup96BitNonce(nullptr, (PUCHAR)&counter);
@@ -641,7 +629,7 @@ VOID ChaCha20Poly1305::Poly1305Aead(Span<UCHAR> pt, Span<const UCHAR> aad, const
 	poly.Finish(out.Last<POLY1305_TAGLEN>());
 }
 
-Result<INT32, Error> ChaCha20Poly1305::Poly1305Decode(Span<UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&polyKey)[POLY1305_KEYLEN], Span<UCHAR> out)
+Result<INT32, Error> ChaCha20Poly1305::Poly1305Decode(Span<const UCHAR> pt, Span<const UCHAR> aad, const UCHAR (&polyKey)[POLY1305_KEYLEN], Span<UCHAR> out)
 {
 	if (pt.Size() < POLY1305_TAGLEN)
 		return Result<INT32, Error>::Err(Error::ChaCha20_DecodeFailed);

@@ -48,16 +48,16 @@
 #include "core/math/bitops.h"
 
 /** @brief SHA-256 digest size in bytes (256 bits) */
-#define SHA256_DIGEST_SIZE (256 / 8)
+constexpr USIZE SHA256_DIGEST_SIZE = 256 / 8;
 
 /** @brief SHA-384 digest size in bytes (384 bits) */
-#define SHA384_DIGEST_SIZE (384 / 8)
+constexpr USIZE SHA384_DIGEST_SIZE = 384 / 8;
 
 /** @brief SHA-256 block size in bytes (512 bits) */
-#define SHA256_BLOCK_SIZE  (512 / 8)
+constexpr USIZE SHA256_BLOCK_SIZE = 512 / 8;
 
 /** @brief SHA-384 block size in bytes (1024 bits) */
-#define SHA384_BLOCK_SIZE  (1024 / 8)
+constexpr USIZE SHA384_BLOCK_SIZE = 1024 / 8;
 
 struct SHA256Traits;
 struct SHA384Traits;
@@ -212,6 +212,12 @@ class SHABase
 public:
 	using Word = typename Traits::Word;  /**< @brief Word type from traits */
 
+	// Non-copyable, non-movable: prevents duplication of sensitive hash state
+	SHABase(const SHABase &) = delete;
+	SHABase &operator=(const SHABase &) = delete;
+	SHABase(SHABase &&) = delete;
+	SHABase &operator=(SHABase &&) = delete;
+
 	// Stack-only
 	VOID *operator new(USIZE) = delete;
 	VOID operator delete(VOID *) = delete;
@@ -316,6 +322,14 @@ template<typename SHAType, typename Traits>
 class HMACBase
 {
 public:
+	HMACBase() = default;
+
+	// Non-copyable, non-movable: prevents duplication of sensitive key material
+	HMACBase(const HMACBase &) = delete;
+	HMACBase &operator=(const HMACBase &) = delete;
+	HMACBase(HMACBase &&) = delete;
+	HMACBase &operator=(HMACBase &&) = delete;
+
 	// Stack-only
 	VOID *operator new(USIZE) = delete;
 	VOID operator delete(VOID *) = delete;
