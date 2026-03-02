@@ -44,7 +44,7 @@ private:
 
 	static BOOL TestPrintSortedSizes()
 	{
-		constexpr INT32 MAX_ENTRIES = 40;
+		constexpr INT32 MAX_ENTRIES = 55;
 		SizeEntry entries[MAX_ENTRIES];
 		INT32 count = 0;
 
@@ -55,6 +55,7 @@ private:
 		{ auto n = "Prng"_embed;            CopyName(entries[count++], (PCCHAR)n, sizeof(Prng)); }
 		{ auto n = "BinaryReader"_embed;    CopyName(entries[count++], (PCCHAR)n, sizeof(BinaryReader)); }
 		{ auto n = "BinaryWriter"_embed;    CopyName(entries[count++], (PCCHAR)n, sizeof(BinaryWriter)); }
+		{ auto n = "StringFormatter::Arg"_embed; CopyName(entries[count++], (PCCHAR)n, sizeof(StringFormatter::Argument)); }
 
 		// ── PLATFORM layer ──
 		{ auto n = "SockAddr"_embed;        CopyName(entries[count++], (PCCHAR)n, sizeof(SockAddr)); }
@@ -90,8 +91,17 @@ private:
 		{ auto n = "HttpClient"_embed;      CopyName(entries[count++], (PCCHAR)n, sizeof(HttpClient)); }
 
 		// ── Common template instantiations ──
-		{ auto n = "Result<void,Error>"_embed; CopyName(entries[count++], (PCCHAR)n, sizeof(Result<void, Error>)); }
-		{ auto n = "Span<UINT8>"_embed;     CopyName(entries[count++], (PCCHAR)n, sizeof(Span<UINT8>)); }
+		{ auto n = "Span<UINT8>"_embed;                CopyName(entries[count++], (PCCHAR)n, sizeof(Span<UINT8>)); }
+		{ auto n = "Result<void,Error>"_embed;         CopyName(entries[count++], (PCCHAR)n, sizeof(Result<void, Error>)); }
+		{ auto n = "Result<SSIZE,Error>"_embed;        CopyName(entries[count++], (PCCHAR)n, sizeof(Result<SSIZE, Error>)); }
+		{ auto n = "Result<UINT32,Error>"_embed;       CopyName(entries[count++], (PCCHAR)n, sizeof(Result<UINT32, Error>)); }
+		{ auto n = "Result<INT64,Error>"_embed;        CopyName(entries[count++], (PCCHAR)n, sizeof(Result<INT64, Error>)); }
+		{ auto n = "Result<IPAddress,Error>"_embed;    CopyName(entries[count++], (PCCHAR)n, sizeof(Result<IPAddress, Error>)); }
+		{ auto n = "Result<Socket,Error>"_embed;       CopyName(entries[count++], (PCCHAR)n, sizeof(Result<Socket, Error>)); }
+		{ auto n = "Result<File,Error>"_embed;         CopyName(entries[count++], (PCCHAR)n, sizeof(Result<File, Error>)); }
+		{ auto n = "Result<TlsClient,Error>"_embed;    CopyName(entries[count++], (PCCHAR)n, sizeof(Result<TlsClient, Error>)); }
+		{ auto n = "Result<HttpClient,Error>"_embed;   CopyName(entries[count++], (PCCHAR)n, sizeof(Result<HttpClient, Error>)); }
+		{ auto n = "Result<WsClient,Error>"_embed;     CopyName(entries[count++], (PCCHAR)n, sizeof(Result<WebSocketClient, Error>)); }
 
 		// Bubble sort descending by size
 		for (INT32 i = 0; i < count - 1; i++)
@@ -119,8 +129,13 @@ private:
 			LOG_INFO("  %2d. %-27s  %u bytes", i + 1, entries[i].name, (UINT32)entries[i].size);
 		}
 
+		// Compute total bytes
+		UINT32 totalBytes = 0;
+		for (INT32 i = 0; i < count; i++)
+			totalBytes += (UINT32)entries[i].size;
+
 		LOG_INFO("");
-		LOG_INFO("  Total types: %d", count);
+		LOG_INFO("  Total types: %d, combined size: %u bytes", count, totalBytes);
 
 		return true;
 	}
