@@ -9,35 +9,35 @@ include_guard(GLOBAL)
 # =============================================================================
 # Auto-discover include paths (all subdirs containing headers)
 file(GLOB_RECURSE _all_headers CONFIGURE_DEPENDS
-    "${CMAKE_SOURCE_DIR}/src/core/*.h"
-    "${CMAKE_SOURCE_DIR}/src/platform/*.h"
-    "${CMAKE_SOURCE_DIR}/src/runtime/*.h"
+    "${PIR_ROOT_DIR}/src/core/*.h"
+    "${PIR_ROOT_DIR}/src/platform/*.h"
+    "${PIR_ROOT_DIR}/src/runtime/*.h"
 )
-set(PIR_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/src")
+set(PIR_INCLUDE_PATHS "${PIR_ROOT_DIR}/src")
 foreach(_hdr ${_all_headers})
     get_filename_component(_dir "${_hdr}" DIRECTORY)
     list(APPEND PIR_INCLUDE_PATHS "${_dir}")
 endforeach()
 
 file(GLOB_RECURSE PIR_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_SOURCE_DIR}/src/core/*.cc"
-    "${CMAKE_SOURCE_DIR}/src/platform/*.cc"
-    "${CMAKE_SOURCE_DIR}/src/runtime/*.cc"
+    "${PIR_ROOT_DIR}/src/core/*.cc"
+    "${PIR_ROOT_DIR}/src/platform/*.cc"
+    "${PIR_ROOT_DIR}/src/runtime/*.cc"
 )
 file(GLOB_RECURSE PIR_HEADERS CONFIGURE_DEPENDS
-    "${CMAKE_SOURCE_DIR}/src/core/*.h"
-    "${CMAKE_SOURCE_DIR}/src/platform/*.h"
-    "${CMAKE_SOURCE_DIR}/src/runtime/*.h"
+    "${PIR_ROOT_DIR}/src/core/*.h"
+    "${PIR_ROOT_DIR}/src/platform/*.h"
+    "${PIR_ROOT_DIR}/src/runtime/*.h"
 )
 
-# Append START_DIR sources if provided
-if(PIR_APP_DIR)
-    list(APPEND PIR_INCLUDE_PATHS "${PIR_APP_DIR}")
-    file(GLOB_RECURSE _start_sources CONFIGURE_DEPENDS "${PIR_APP_DIR}/*.cc")
-    file(GLOB_RECURSE _start_headers CONFIGURE_DEPENDS "${PIR_APP_DIR}/*.h")
-    list(APPEND PIR_SOURCES ${_start_sources})
-    list(APPEND PIR_HEADERS ${_start_headers})
-endif()
+# Append APP_DIR sources if provided (supports multiple directories)
+foreach(_app_dir IN LISTS PIR_APP_DIR)
+    list(APPEND PIR_INCLUDE_PATHS "${_app_dir}")
+    file(GLOB_RECURSE _app_sources CONFIGURE_DEPENDS "${_app_dir}/*.cc")
+    file(GLOB_RECURSE _app_headers CONFIGURE_DEPENDS "${_app_dir}/*.h")
+    list(APPEND PIR_SOURCES ${_app_sources})
+    list(APPEND PIR_HEADERS ${_app_headers})
+endforeach()
 
 list(REMOVE_DUPLICATES PIR_INCLUDE_PATHS)
 

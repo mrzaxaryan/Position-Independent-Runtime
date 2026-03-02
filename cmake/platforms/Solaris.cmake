@@ -13,7 +13,7 @@ pir_get_target_info()
 pir_filter_sources(windows linux macos uefi)
 
 list(APPEND PIR_INCLUDE_PATHS
-    "${CMAKE_SOURCE_DIR}/src/platform/common/solaris")
+    "${PIR_ROOT_DIR}/src/platform/common/solaris")
 
 # Architecture-specific compiler flags
 if(PIR_ARCH STREQUAL "x86_64")
@@ -45,7 +45,7 @@ pir_add_link_flags(
     -e,entry_point
     --no-dynamic-linker
     --no-pie
-    --symbol-ordering-file=${CMAKE_SOURCE_DIR}/cmake/data/function.order.solaris
+    --symbol-ordering-file=${PIR_ROOT_DIR}/cmake/data/function.order.solaris
     --build-id=none
     -Map,${PIR_MAP_FILE}
 )

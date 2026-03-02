@@ -13,7 +13,7 @@ pir_get_target_info()
 pir_filter_sources(windows linux macos posix solaris)
 
 list(APPEND PIR_INCLUDE_PATHS
-    "${CMAKE_SOURCE_DIR}/src/platform/common/uefi")
+    "${PIR_ROOT_DIR}/src/platform/common/uefi")
 
 # Architecture-specific compiler flags
 if(PIR_ARCH STREQUAL "x86_64")
@@ -27,7 +27,7 @@ pir_add_link_flags(
     /Entry:entry_point
     /SUBSYSTEM:EFI_APPLICATION
     /NODEFAULTLIB
-    /ORDER:@${CMAKE_SOURCE_DIR}/cmake/data/function.order.uefi
+    /ORDER:@${PIR_ROOT_DIR}/cmake/data/function.order.uefi
     /MAP:${PIR_MAP_FILE}
 )
 

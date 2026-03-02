@@ -16,14 +16,14 @@ function(pir_add_postbuild target_name)
         COMMAND ${CMAKE_COMMAND}
             -DINPUT_FILE="${_out}${PIR_EXT}"
             -DOUTPUT_DIR="${PIR_OUTPUT_DIR}"
-            -P "${CMAKE_SOURCE_DIR}/cmake/scripts/ExtractBinary.cmake"
+            -P "${PIR_ROOT_DIR}/cmake/scripts/ExtractBinary.cmake"
         COMMAND ${CMAKE_COMMAND}
             -DPIC_FILE="${_out}.bin"
             -DBASE64_FILE="${_out}.b64.txt"
-            -P "${CMAKE_SOURCE_DIR}/cmake/scripts/Base64Encode.cmake"
+            -P "${PIR_ROOT_DIR}/cmake/scripts/Base64Encode.cmake"
         COMMAND ${CMAKE_COMMAND}
             -DMAP_FILE="${PIR_MAP_FILE}"
-            -P "${CMAKE_SOURCE_DIR}/cmake/scripts/VerifyPICMode.cmake"
+            -P "${PIR_ROOT_DIR}/cmake/scripts/VerifyPICMode.cmake"
         COMMENT "Generating PIC artifacts..."
     )
 endfunction()

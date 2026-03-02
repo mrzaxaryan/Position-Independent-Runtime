@@ -13,7 +13,7 @@ pir_get_target_info()
 pir_filter_sources(windows linux uefi solaris)
 
 list(APPEND PIR_INCLUDE_PATHS
-    "${CMAKE_SOURCE_DIR}/src/platform/common/macos")
+    "${PIR_ROOT_DIR}/src/platform/common/macos")
 
 # macOS-specific compiler flags
 list(APPEND PIR_BASE_FLAGS -fno-stack-protector)
@@ -64,7 +64,7 @@ endif()
 pir_add_link_flags(
     -e,_entry_point
     -no_compact_unwind
-    -order_file,${CMAKE_SOURCE_DIR}/cmake/data/function.order.macos
+    -order_file,${PIR_ROOT_DIR}/cmake/data/function.order.macos
     -map,${PIR_MAP_FILE}
 )
 
@@ -105,7 +105,7 @@ endif()
 # which is inherently position-independent.
 if(PIR_BUILD_TYPE STREQUAL "release")
     set_source_files_properties(
-        "${CMAKE_SOURCE_DIR}/src/runtime/entry_point.cc"
+        "${PIR_ROOT_DIR}/src/runtime/entry_point.cc"
         PROPERTIES
         COMPILE_FLAGS "-fno-lto"
     )

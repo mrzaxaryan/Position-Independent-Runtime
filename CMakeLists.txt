@@ -44,7 +44,7 @@ set(_platform_map_linux Linux)
 set(_platform_map_macos macOS)
 set(_platform_map_uefi UEFI)
 set(_platform_map_solaris Solaris)
-include(${CMAKE_SOURCE_DIR}/cmake/platforms/${_platform_map_${PIR_PLATFORM}}.cmake)
+include(${PIR_ROOT_DIR}/cmake/platforms/${_platform_map_${PIR_PLATFORM}}.cmake)
 
 # Universal target flags (every platform uses -target for both compile and link)
 list(APPEND PIR_BASE_FLAGS -target ${PIR_TRIPLE})
@@ -102,9 +102,9 @@ if(DOXYGEN_FOUND)
     set(DOXYGEN_SOURCE_BROWSER YES)
 
     doxygen_add_docs(docs
-        ${CMAKE_SOURCE_DIR}/src/core
-        ${CMAKE_SOURCE_DIR}/src/platform
-        ${CMAKE_SOURCE_DIR}/src/runtime
+        ${PIR_ROOT_DIR}/src/core
+        ${PIR_ROOT_DIR}/src/platform
+        ${PIR_ROOT_DIR}/src/runtime
         COMMENT "Generating documentation with Doxygen"
     )
     set(_doxygen_status "Available")

@@ -8,7 +8,7 @@ pir_get_target_info()
 pir_filter_sources(linux macos uefi posix solaris)
 
 list(APPEND PIR_INCLUDE_PATHS
-    "${CMAKE_SOURCE_DIR}/src/platform/common/windows")
+    "${PIR_ROOT_DIR}/src/platform/common/windows")
 
 # Debug-specific
 if(PIR_BUILD_TYPE STREQUAL "debug")
@@ -26,7 +26,7 @@ endif()
 pir_add_link_flags(
     /Entry:entry_point
     /SUBSYSTEM:CONSOLE
-    /ORDER:@${CMAKE_SOURCE_DIR}/cmake/data/function.order.windows
+    /ORDER:@${PIR_ROOT_DIR}/cmake/data/function.order.windows
     /MERGE:.rdata=.text
     /MAP:${PIR_MAP_FILE}
     /FILEALIGN:0x200

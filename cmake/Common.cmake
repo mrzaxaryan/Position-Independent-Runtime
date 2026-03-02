@@ -7,8 +7,11 @@
 
 include_guard(GLOBAL)
 
-include(${CMAKE_SOURCE_DIR}/cmake/Options.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/Triples.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/CompilerFlags.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/Sources.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/PostBuild.cmake)
+# Auto-discover PIR root from this file's location (cmake/Common.cmake)
+get_filename_component(PIR_ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+
+include(${PIR_ROOT_DIR}/cmake/Options.cmake)
+include(${PIR_ROOT_DIR}/cmake/Triples.cmake)
+include(${PIR_ROOT_DIR}/cmake/CompilerFlags.cmake)
+include(${PIR_ROOT_DIR}/cmake/Sources.cmake)
+include(${PIR_ROOT_DIR}/cmake/PostBuild.cmake)
