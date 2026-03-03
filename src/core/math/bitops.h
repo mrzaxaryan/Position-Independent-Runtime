@@ -55,6 +55,7 @@ public:
 	static constexpr FORCE_INLINE T Rotr(T x, UINT32 n)
 	{
 		constexpr UINT32 bits = sizeof(T) * 8;
+		n &= (bits - 1);
 		return (x >> n) | (x << (bits - n));
 	}
 
@@ -79,6 +80,7 @@ public:
 	static constexpr FORCE_INLINE T Rotl(T x, UINT32 n)
 	{
 		constexpr UINT32 bits = sizeof(T) * 8;
+		n &= (bits - 1);
 		return (x << n) | (x >> (bits - n));
 	}
 

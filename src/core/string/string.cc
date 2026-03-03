@@ -78,6 +78,22 @@ Result<DOUBLE, Error> StringUtils::StrToFloat(Span<const CHAR> str) noexcept
 		return Result<DOUBLE, Error>::Err(Error::String_ParseFloatFailed);
 	}
 
+	// Validate that the string contains at least one digit
+	BOOL hasDigit = false;
+	for (USIZE i = 0; i < str.Size(); i++)
+	{
+		if (str[i] >= '0' && str[i] <= '9')
+		{
+			hasDigit = true;
+			break;
+		}
+	}
+
+	if (!hasDigit)
+	{
+		return Result<DOUBLE, Error>::Err(Error::String_ParseFloatFailed);
+	}
+
 	DOUBLE result = DOUBLE::Parse(str);
 	return Result<DOUBLE, Error>::Ok(result);
 }
