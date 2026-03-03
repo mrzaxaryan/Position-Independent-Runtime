@@ -17,7 +17,7 @@ class UUID {
             Random rng; // Random class for random number generation
 
             for (INT32 i = 0; i < 16; i++){
-                uuid.data[i] = (UINT8)(rng.Get() & 0xFF); // Get random byte
+                uuid.data[i] = static_cast<UINT8>(rng.Get() & 0xFF);
             }
 
             return uuid;
@@ -33,14 +33,14 @@ class UUID {
 
                 UINT8 value = 0;
                 CHAR c = str[i];
-                if(c >= '0' && c <= '9') value = c - '0';
-                else if(c >= 'a' && c <= 'f') value = c - 'a' + 10;
-                else if(c >= 'A' && c <= 'F') value = c - 'A' + 10;
+                if(c >= '0' && c <= '9') value = static_cast<UINT8>(c - '0');
+                else if(c >= 'a' && c <= 'f') value = static_cast<UINT8>(c - 'a' + 10);
+                else if(c >= 'A' && c <= 'F') value = static_cast<UINT8>(c - 'A' + 10);
                 else continue;
 
                 if(count == 0){
-                    bytes[byteIndex] = value << 4; // high nibble
-                    count = 1;
+                    bytes[byteIndex] = static_cast<UINT8>(value << 4); // high nibble
+                    count = 1;   
                 } else {
                     bytes[byteIndex] |= value; // low nibble
                     byteIndex++;
@@ -52,20 +52,20 @@ class UUID {
         }
    
         // toString method to convert the UUID to a string representation
-        VOID ToString(CHAR* buffer, USIZE bufferSize){
-            if(bufferSize < 37) return;
+        VOID ToString(const UUID* pUuid, char* buffer){
+            const UINT8* bytes = pUuid->data;
+            int pos = 0;
 
-            USIZE index = 0;
-            const CHAR* hex = "0123456789abcdef"_embed;
-            
-            for(INT32 i = 0; i < 16; i++){
+            for(int i =0; i< 16; i++){
                 if(i == 4 || i == 6 || i == 8 || i == 10){
-                    buffer[index++] = '-';
+                    buffer[pos++] = '-';
                 }
-                buffer[index++] = hex[(data[i] >> 4) & 0x0F];
-                buffer[index++] = hex[data[i] & 0x0F];
+                const CHAR* hex = "0123456789abcdef"_embed;
+
+                buffer[pos++] = hex[bytes[i] >> 4];
+                buffer[pos++] = hex[bytes[i] & 0x0F];
             }
-            buffer[index] = '\0'; // null-terminate
+            buffer[pos] = '\0';
         }
 
         UINT64 GetMostSignificantBits(){

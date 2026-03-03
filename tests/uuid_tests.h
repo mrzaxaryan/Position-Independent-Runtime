@@ -10,11 +10,11 @@ private:
         LOG_INFO("Test: UUID Generation and Parsing");
 
         // Generate a random UUID
-        [[maybe_unused]] UUID uuid = UUID::RandomUUID();
+        UUID uuid = UUID::RandomUUID();
 
         // Convert to string
-        CHAR uuidStr[37];
-        uuid.ToString(uuidStr, sizeof(uuidStr));
+        CHAR uuidStr[37]; // 36 chars + null terminator
+        uuid.ToString(&uuid, uuidStr);
 
         LOG_INFO("Generated UUID: %s", uuidStr);
 
@@ -23,7 +23,7 @@ private:
 
         // Convert parsed UUID back to string for comparison
         CHAR parsedUuidStr[37];
-        parsedUuid.ToString(parsedUuidStr, sizeof(parsedUuidStr));
+        parsedUuid.ToString(&parsedUuid, parsedUuidStr);
 
         LOG_INFO("Parsed UUID: %s", parsedUuidStr);
 
