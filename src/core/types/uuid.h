@@ -30,7 +30,6 @@ class UUID {
 
             for(INT32 i = 0; str[i]!='\0'; i++){
                 if(str[i] == '-') continue;
-                if(byteIndex >= 16) break;
 
                 UINT8 value = 0;
                 CHAR c = str[i];
@@ -56,16 +55,15 @@ class UUID {
         VOID ToString(CHAR* buffer, USIZE bufferSize){
             if(bufferSize < 37) return;
 
-            INT32 index = 0;
+            USIZE index = 0;
             const CHAR* hex = "0123456789abcdef"_embed;
             
             for(INT32 i = 0; i < 16; i++){
-                buffer[index++] = hex[(data[i] >> 4) & 0x0F];
-                buffer[index++] = hex[data[i] & 0x0F];
-
-                if(index == 8 || index == 13 || index == 18 || index == 23){
+                if(i == 4 || i == 6 || i == 8 || i == 10){
                     buffer[index++] = '-';
                 }
+                buffer[index++] = hex[(data[i] >> 4) & 0x0F];
+                buffer[index++] = hex[data[i] & 0x0F];
             }
             buffer[index] = '\0'; // null-terminate
         }
