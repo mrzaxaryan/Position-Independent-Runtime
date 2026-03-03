@@ -284,4 +284,4 @@ typedef struct _IMAGE_DOS_HEADER
  * @see Microsoft PE Format -- Export Directory Table
  *      https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#export-directory-table
  */
-PVOID GetExportAddress(PVOID hModule, USIZE functionNameHash);
+PVOID GetExportAddress(PVOID hModule, UINT64 functionNameHash);

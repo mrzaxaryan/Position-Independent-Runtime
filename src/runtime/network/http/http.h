@@ -41,6 +41,7 @@ public:
 	VOID operator delete(VOID *) = delete;
 	// Placement new required by Result<HttpClient, Error>
 	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+	VOID operator delete(VOID *, PVOID) noexcept {}
 
 	~HttpClient()
 	{

@@ -194,7 +194,6 @@ Result<void, Error> TlsCipher::ComputePreKey(EccGroup ecc, Span<const CHAR> serv
 
 Result<void, Error> TlsCipher::ComputeKey(EccGroup ecc, Span<const CHAR> serverKey, Span<CHAR> finishedHash)
 {
-
 	if (cipherIndex == -1)
 	{
 		LOG_DEBUG("Cipher index is -1, cannot compute TLS key");

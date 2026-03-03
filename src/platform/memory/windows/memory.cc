@@ -1,3 +1,10 @@
+/**
+ * @file memory.cc
+ * @brief Windows memory allocation implementation.
+ * @details Provides Allocator::AllocateMemory and ReleaseMemory using
+ * NtAllocateVirtualMemory/NtFreeVirtualMemory via NTDLL wrappers.
+ */
+
 #include "platform/memory/allocator.h"
 #include "platform/common/windows/ntdll.h"
 #include "platform/common/windows/windows_types.h"

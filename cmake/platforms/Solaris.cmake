@@ -73,12 +73,18 @@ set(PIR_BASE_LINK_FLAGS "")
 # Linker flags passed directly to ld.lld (no -Wl, prefix needed).
 # Use --long-form=value syntax so each flag is a single token, avoiding
 # CMake list-splitting surprises.
+# "-z nognustack" suppresses the PT_GNU_STACK program header (type
+# 0x6474e551). This is a Linux/GNU-specific ELF segment; the Solaris
+# kernel rejects binaries containing unrecognised OS-specific program
+# header types when EI_OSABI is set to ELFOSABI_SOLARIS, producing
+# "Exec format error" (ENOEXEC).
 list(APPEND PIR_BASE_LINK_FLAGS
     --entry=entry_point
     --no-dynamic-linker
     --no-pie
     --symbol-ordering-file=${PIR_ROOT_DIR}/cmake/data/function.order.solaris
     --build-id=none
+    -z nognustack
     -Map=${PIR_MAP_FILE}
 )
 

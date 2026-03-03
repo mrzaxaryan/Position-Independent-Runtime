@@ -18,7 +18,7 @@
  * - String utilities and formatting
  * - Hash algorithms (DJB2, Base64)
  * - Encoding utilities (UTF-16)
- * - Network types (IP address)
+ * - Network types (IP address, UUID)
  *
  * @note All components in the Core layer are designed to be position-independent
  * and do not generate .rdata section dependencies.
@@ -88,6 +88,7 @@
 /// @name Network Types
 /// @{
 #include "core/types/ip_address.h"
+#include "core/types/uuid.h"
 /// @}
 
 /// @name Binary I/O

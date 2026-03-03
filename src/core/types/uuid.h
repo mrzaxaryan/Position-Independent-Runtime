@@ -18,7 +18,7 @@
 #include "core/types/error.h"
 #include "core/types/result.h"
 #include "core/types/embedded/embedded_string.h"
-#include "core/memory/memory.h"
+#include "core/string/string.h"
 
 /**
  * @class UUID
@@ -33,44 +33,49 @@ private:
 	UINT8 data[16];
 
 public:
+	/// @name Constructors
+	/// @{
+
 	/**
 	 * @brief Default constructor — initializes to nil UUID (all zeros)
 	 */
-	UUID()
+	constexpr UUID() noexcept : data{}
 	{
-		Memory::Zero(data, 16);
 	}
 
 	/**
 	 * @brief Construct from a 16-byte span
 	 * @param bytes Exactly 16 bytes of UUID data
 	 */
-	UUID(Span<const UINT8, 16> bytes)
+	constexpr UUID(Span<const UINT8, 16> bytes) noexcept : data{}
 	{
-		Memory::Copy(data, bytes.Data(), 16);
+		for (USIZE i = 0; i < 16; i++)
+			data[i] = bytes[i];
 	}
 
+	/// @}
+	/// @name Factory Methods
+	/// @{
+
 	/**
-	 * @brief Parse a UUID from its string representation
-	 * @param str Null-terminated UUID string (e.g., "550e8400-e29b-41d4-a716-446655440000")
-	 * @return Parsed UUID (unrecognized characters are skipped)
+	 * @brief Parse a UUID from a string span
+	 * @param str UUID string (e.g., "550e8400-e29b-41d4-a716-446655440000")
+	 * @return Ok(UUID) on success, Err(Uuid_FromStringFailed) if the string
+	 *         does not contain exactly 32 hex digits
 	 */
-	static UUID FromString(PCCHAR str)
+	[[nodiscard]] static Result<UUID, Error> FromString(Span<const CHAR> str) noexcept
 	{
-		UINT8 bytes[16];
-		Memory::Zero(bytes, 16);
+		UINT8 bytes[16]{};
 		INT32 byteIndex = 0;
-		INT32 count = 0;
+		INT32 nibbleCount = 0;
 
-		for (INT32 i = 0; str[i] != '\0'; i++)
+		for (USIZE i = 0; i < str.Size() && str[i] != '\0'; i++)
 		{
-			if (str[i] == '-')
-				continue;
-			if (byteIndex >= 16)
-				break;
-
-			UINT8 value = 0;
 			CHAR c = str[i];
+			if (c == '-')
+				continue;
+
+			UINT8 value;
 			if (c >= '0' && c <= '9')
 				value = c - '0';
 			else if (c >= 'a' && c <= 'f')
@@ -78,30 +83,51 @@ public:
 			else if (c >= 'A' && c <= 'F')
 				value = c - 'A' + 10;
 			else
-				continue;
+				return Result<UUID, Error>::Err(Error::Uuid_FromStringFailed);
 
-			if (count == 0)
+			if (byteIndex >= 16)
+				return Result<UUID, Error>::Err(Error::Uuid_FromStringFailed);
+
+			if (nibbleCount == 0)
 			{
 				bytes[byteIndex] = value << 4;
-				count = 1;
+				nibbleCount = 1;
 			}
 			else
 			{
 				bytes[byteIndex] |= value;
 				byteIndex++;
-				count = 0;
+				nibbleCount = 0;
 			}
 		}
 
-		return UUID(Span<const UINT8, 16>(bytes));
+		if (byteIndex != 16 || nibbleCount != 0)
+			return Result<UUID, Error>::Err(Error::Uuid_FromStringFailed);
+
+		return Result<UUID, Error>::Ok(UUID(Span<const UINT8, 16>(bytes)));
 	}
+
+	/**
+	 * @brief Parse a UUID from a null-terminated string
+	 * @param str Null-terminated UUID string (e.g., "550e8400-e29b-41d4-a716-446655440000")
+	 * @return Ok(UUID) on success, Err(Uuid_FromStringFailed) if the string
+	 *         does not contain exactly 32 hex digits
+	 */
+	[[nodiscard]] static Result<UUID, Error> FromString(PCCHAR str) noexcept
+	{
+		return FromString(Span<const CHAR>(str, StringUtils::Length(str)));
+	}
+
+	/// @}
+	/// @name Serialization
+	/// @{
 
 	/**
 	 * @brief Convert UUID to its standard string representation
 	 * @param buffer Output buffer (must be at least 37 bytes: 32 hex + 4 dashes + null)
 	 * @return Ok on success, Err if the buffer is too small
 	 */
-	[[nodiscard]] Result<void, Error> ToString(Span<CHAR> buffer) const
+	[[nodiscard]] Result<void, Error> ToString(Span<CHAR> buffer) const noexcept
 	{
 		if (buffer.Size() < 37)
 			return Result<void, Error>::Err(Error::Uuid_ToStringFailed);
@@ -121,17 +147,19 @@ public:
 		return Result<void, Error>::Ok();
 	}
 
+	/// @}
+	/// @name Accessors
+	/// @{
+
 	/**
 	 * @brief Get the most significant 64 bits of the UUID
 	 * @return Upper 64 bits (bytes 0-7)
 	 */
-	UINT64 GetMostSignificantBits() const
+	constexpr FORCE_INLINE UINT64 GetMostSignificantBits() const noexcept
 	{
 		UINT64 msb = 0;
 		for (INT32 i = 0; i < 8; i++)
-		{
 			msb = (msb << 8) | data[i];
-		}
 		return msb;
 	}
 
@@ -139,13 +167,13 @@ public:
 	 * @brief Get the least significant 64 bits of the UUID
 	 * @return Lower 64 bits (bytes 8-15)
 	 */
-	UINT64 GetLeastSignificantBits() const
+	constexpr FORCE_INLINE UINT64 GetLeastSignificantBits() const noexcept
 	{
 		UINT64 lsb = 0;
 		for (INT32 i = 8; i < 16; i++)
-		{
 			lsb = (lsb << 8) | data[i];
-		}
 		return lsb;
 	}
+
+	/// @}
 };

@@ -68,6 +68,7 @@ public:
 	VOID operator delete(VOID *) = delete;
 	// Placement new required by Result<TlsClient, Error>
 	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+	VOID operator delete(VOID *, PVOID) noexcept {}
 	TlsClient() : host(nullptr), ip(), secure(true), stateIndex(0), decryptedPos(0), decryptedSize(0) {}
 
 	// Factory — caller MUST check the result (enforced by [[nodiscard]])
@@ -96,7 +97,8 @@ public:
 	{
 		if (this != &other)
 		{
-			(void)Close();
+			if (IsValid())
+				(void)Close();
 			host = other.host;
 			ip = other.ip;
 			context = static_cast<Socket &&>(other.context);

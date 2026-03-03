@@ -195,6 +195,7 @@ struct Error
 		IpAddress_ToStringFailed      = 98,  // buffer too small for IP string
 		IpAddress_ParseFailed         = 105, // IP address string parsing failed
 		Uuid_ToStringFailed           = 106, // buffer too small for UUID string
+		Uuid_FromStringFailed         = 107, // UUID string parsing failed
 		Kernel32_CreateProcessFailed  = 99,  // CreateProcessW failed
 		Kernel32_SetHandleInfoFailed  = 100, // SetHandleInformation failed
 		Ntdll_RtlPathResolveFailed    = 101, // RtlDosPathNameToNtPathName_U failed

@@ -103,7 +103,7 @@ public:
 	template <typename T>
 	PVOID Write(T value)
 	{
-		if (offset + sizeof(T) > maxSize)
+		if (sizeof(T) > maxSize - offset)
 			return nullptr;
 
 		Memory::Copy((PCHAR)address + offset, &value, sizeof(T));
@@ -116,9 +116,9 @@ public:
 	 * @param data Source data span
 	 * @return Base address on success, nullptr if insufficient space remains
 	 */
-	PVOID WriteBytes(Span<const CHAR> data)
+	PVOID WriteBytes(Span<const UINT8> data)
 	{
-		if (offset + data.Size() > maxSize)
+		if (data.Size() > maxSize - offset)
 			return nullptr;
 
 		Memory::Copy((PCHAR)address + offset, data.Data(), data.Size());
@@ -133,7 +133,7 @@ public:
 	 */
 	constexpr FORCE_INLINE PVOID WriteU8(UINT8 value)
 	{
-		if (offset + 1 > maxSize)
+		if (maxSize - offset < 1)
 			return nullptr;
 
 		*((PUCHAR)address + offset) = value;
@@ -154,7 +154,7 @@ public:
 	 */
 	constexpr FORCE_INLINE PVOID WriteU16BE(UINT16 value)
 	{
-		if (offset + 2 > maxSize)
+		if (maxSize - offset < 2)
 			return nullptr;
 
 		PUCHAR p = (PUCHAR)address + offset;
@@ -177,7 +177,7 @@ public:
 	 */
 	constexpr FORCE_INLINE PVOID WriteU24BE(UINT32 value)
 	{
-		if (offset + 3 > maxSize)
+		if (maxSize - offset < 3)
 			return nullptr;
 
 		PUCHAR p = (PUCHAR)address + offset;
@@ -201,7 +201,7 @@ public:
 	 */
 	constexpr FORCE_INLINE PVOID WriteU32BE(UINT32 value)
 	{
-		if (offset + 4 > maxSize)
+		if (maxSize - offset < 4)
 			return nullptr;
 
 		PUCHAR p = (PUCHAR)address + offset;
@@ -224,7 +224,7 @@ public:
 	 */
 	constexpr FORCE_INLINE BOOL Skip(USIZE count)
 	{
-		if (offset + count > maxSize)
+		if (count > maxSize - offset)
 			return false;
 
 		offset += count;

@@ -2,7 +2,7 @@
 #include "platform/system/date_time.h"
 #include "platform/platform.h"
 
-static inline UINT64 GetHardwareTimestamp()
+static FORCE_INLINE UINT64 GetHardwareTimestamp()
 {
 #if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_I386)
 	// x86/x64: Read the Time Stamp Counter

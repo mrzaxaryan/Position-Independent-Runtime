@@ -1,10 +1,17 @@
+/**
+ * @file memory.cc
+ * @brief CRT-free memory operation implementations.
+ * @details Byte-by-byte implementations of memset, memcpy, and memcmp
+ * conforming to ISO/IEC 9899:2018 (C17) semantics.
+ */
+
 #include "core/memory/memory.h"
 #include "core/compiler/compiler.h"
 
 extern "C" COMPILER_RUNTIME PVOID memset(PVOID dest, INT32 ch, USIZE count)
 {
-	PCHAR p = (PCHAR)dest;
-	CHAR byte = (CHAR)ch;
+	PUCHAR p = (PUCHAR)dest;
+	UCHAR byte = (UCHAR)ch;
 
 	for (USIZE i = 0; i < count; i++)
 	{
@@ -16,9 +23,6 @@ extern "C" COMPILER_RUNTIME PVOID memset(PVOID dest, INT32 ch, USIZE count)
 
 extern "C" COMPILER_RUNTIME PVOID memcpy(PVOID dest, const VOID *src, USIZE count)
 {
-	if (!dest || !src || count == 0)
-		return dest;
-
 	PUCHAR d = (PUCHAR)dest;
 	const UCHAR *s = (const UCHAR *)src;
 

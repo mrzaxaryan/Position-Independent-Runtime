@@ -27,8 +27,14 @@ EFI_FILE_PROTOCOL *GetRootDirectory()
 	USIZE handleCount = 0;
 	EFI_HANDLE *handleBuffer = nullptr;
 
-	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &fsGuid, nullptr, &handleCount, &handleBuffer)) || handleCount == 0)
+	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &fsGuid, nullptr, &handleCount, &handleBuffer)))
 		return nullptr;
+
+	if (handleCount == 0)
+	{
+		bs->FreePool(handleBuffer);
+		return nullptr;
+	}
 
 	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fileSystem = nullptr;
 	EFI_FILE_PROTOCOL *root = nullptr;

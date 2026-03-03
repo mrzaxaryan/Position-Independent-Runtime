@@ -57,7 +57,7 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 		{
 			// Each x64 stub contains an inline syscall;ret gadget (0F 05 C3)
 			UINT8* funcAddr = base + funcRva;
-			for (UINT32 k = 0; k < 28; k++)
+			for (UINT32 k = 0; k < 26; k++)
 			{
 				if (funcAddr[k] == 0x0F && funcAddr[k + 1] == 0x05 && funcAddr[k + 2] == 0xC3)
 				{
@@ -76,7 +76,7 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 			// SVC encoding: 0xD4000001 | (imm16 << 5), mask 0xFFE0001F
 			// RET encoding: 0xD65F03C0
 			UINT32* instrs = (UINT32*)(base + funcRva);
-			for (UINT32 k = 0; k < 7; k++)
+			for (UINT32 k = 0; k < 6; k++)
 			{
 				if ((instrs[k] & 0xFFE0001F) == 0xD4000001 && instrs[k + 1] == 0xD65F03C0)
 				{

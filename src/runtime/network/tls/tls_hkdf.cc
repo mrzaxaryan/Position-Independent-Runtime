@@ -23,13 +23,13 @@ INT32 TlsHkdf::Label(Span<const CHAR> label, Span<const UCHAR> data, Span<UCHAR>
 
 	writer.WriteU16BE(length);
 	writer.WriteU8((UINT8)(prefixLen + label.Size()));
-	writer.WriteBytes(Span<const CHAR>((PCCHAR)prefix, prefixLen));
-	writer.WriteBytes(label);
+	writer.WriteBytes(Span<const UINT8>((const UINT8 *)(const CHAR *)prefix, prefixLen));
+	writer.WriteBytes(Span<const UINT8>((const UINT8 *)label.Data(), label.Size()));
 	writer.WriteU8((UINT8)data.Size());
 	if (data.Size() > 0)
 	{
 		LOG_DEBUG("Copying data to HKDF label, data_len: %d", (UINT32)data.Size());
-		writer.WriteBytes(Span<const CHAR>((PCCHAR)data.Data(), data.Size()));
+		writer.WriteBytes(Span<const UINT8>(data.Data(), data.Size()));
 	}
 
 	LOG_DEBUG("HKDF label created with total length: %d bytes", (INT32)writer.GetOffset());

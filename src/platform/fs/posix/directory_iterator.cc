@@ -18,8 +18,10 @@
 // =============================================================================
 
 DirectoryIterator::DirectoryIterator()
-	: handle((PVOID)INVALID_FD), isFirst(false), bytesRead(0), bufferPosition(0)
-{}
+	: handle((PVOID)INVALID_FD), currentEntry{}, isFirst(false), bytesRead(0), bufferPosition(0)
+{
+	Memory::Zero(buffer, sizeof(buffer));
+}
 
 Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 {

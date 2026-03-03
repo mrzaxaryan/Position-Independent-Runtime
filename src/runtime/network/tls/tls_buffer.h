@@ -28,6 +28,7 @@ public:
 	VOID *operator new(USIZE) = delete;
 	VOID operator delete(VOID *) = delete;
 	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+	VOID operator delete(VOID *, PVOID) noexcept {}
 
 	// Default constructor - owns memory, write mode
 	constexpr TlsBuffer() : buffer(nullptr), capacity(0), size(0), readPos(0), ownsMemory(true) {}

@@ -1,3 +1,11 @@
+/**
+ * @file memory.cc
+ * @brief POSIX memory allocation implementation.
+ * @details Provides Allocator::AllocateMemory and ReleaseMemory using
+ * mmap/munmap syscalls. A USIZE header is prepended to every allocation
+ * to store the total mapped size for munmap.
+ */
+
 #include "platform/memory/allocator.h"
 #if defined(PLATFORM_LINUX)
 #include "platform/common/linux/syscall.h"

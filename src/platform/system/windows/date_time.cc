@@ -3,9 +3,10 @@
 #include "core/string/string.h"
 #include "platform/io/console.h"
 
-#define MM_SHARED_USER_DATA_VA 0x7FFE0000 // address of the shared user data in the process address space
+/// Address of the shared user data in the process address space
+constexpr USIZE MM_SHARED_USER_DATA_VA = 0x7FFE0000;
 
-// System time structure
+/// System time structure
 typedef struct _KSYSTEM_TIME
 {
 	UINT32 LowPart;
@@ -13,7 +14,7 @@ typedef struct _KSYSTEM_TIME
 	INT32 High2Time;
 } KSYSTEM_TIME;
 
-// KUSER_SHARED_DATA
+/// KUSER_SHARED_DATA
 typedef struct _USER_SHARED_DATA
 {
 	UINT32 TickCountLowDeprecated;       // 0x0
@@ -23,11 +24,13 @@ typedef struct _USER_SHARED_DATA
 	volatile KSYSTEM_TIME TimeZoneBias;  // 0x20
 } USER_SHARED_DATA, *PUSER_SHARED_DATA;
 
-// Macro to get the USER_SHARED_DATA structure
-#define GetUserSharedData() ((PUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA)
+static FORCE_INLINE PUSER_SHARED_DATA GetUserSharedData()
+{
+	return (PUSER_SHARED_DATA)MM_SHARED_USER_DATA_VA;
+}
 
-// Read KSYSTEM_TIME as UINT64
-UINT64 readKSystemTimeU64(volatile const KSYSTEM_TIME &t)
+/// Read KSYSTEM_TIME as UINT64
+static UINT64 ReadKSystemTimeU64(volatile const KSYSTEM_TIME &t)
 {
 	KSYSTEM_TIME v;
 	do
@@ -39,8 +42,8 @@ UINT64 readKSystemTimeU64(volatile const KSYSTEM_TIME &t)
 	return (((UINT64)(UINT32)v.High1Time) << 32) | ((UINT64)v.LowPart);
 }
 
-// Read KSYSTEM_TIME as INT64
-INT64 readKSystemTimeS64(volatile const KSYSTEM_TIME &t)
+/// Read KSYSTEM_TIME as INT64
+static INT64 ReadKSystemTimeS64(volatile const KSYSTEM_TIME &t)
 {
 	KSYSTEM_TIME v;
 	do
@@ -60,10 +63,10 @@ DateTime DateTime::Now()
 	volatile USER_SHARED_DATA *usd = GetUserSharedData();
 
 	// 1) UTC time (100ns since 1601-01-01)
-	UINT64 utc100ns = readKSystemTimeU64(usd->SystemTime);
+	UINT64 utc100ns = ReadKSystemTimeU64(usd->SystemTime);
 
 	// 2) TimeZoneBias (signed 100ns). local = utc - bias
-	INT64 bias100ns = readKSystemTimeS64(usd->TimeZoneBias);
+	INT64 bias100ns = ReadKSystemTimeS64(usd->TimeZoneBias);
 	INT64 utc100ns_s = (INT64)utc100ns;
 	INT64 local100ns_s = utc100ns_s - bias100ns;
 	UINT64 local100ns = (UINT64)local100ns_s;
@@ -89,7 +92,7 @@ UINT64 DateTime::GetMonotonicNanoseconds()
 	volatile USER_SHARED_DATA *usd = GetUserSharedData();
 
 	// Read InterruptTime (monotonic, unaffected by system clock changes)
-	UINT64 interruptTime100ns = readKSystemTimeU64(usd->InterruptTime);
+	UINT64 interruptTime100ns = ReadKSystemTimeU64(usd->InterruptTime);
 
 	// Convert from 100ns units to nanoseconds
 	UINT64 nanoseconds = interruptTime100ns * UINT64(100u);

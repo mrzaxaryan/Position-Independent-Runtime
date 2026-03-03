@@ -22,10 +22,10 @@ static VOID FillEntry(DirectoryEntry &entry, const FILE_BOTH_DIR_INFORMATION &da
 
 	// 3. Attributes
 	UINT32 attr = data.FileAttributes;
-	entry.IsDirectory = (attr & FILE_ATTRIBUTE_DIRECTORY);
-	entry.IsHidden = (attr & FILE_ATTRIBUTE_HIDDEN);
-	entry.IsSystem = (attr & FILE_ATTRIBUTE_SYSTEM);
-	entry.IsReadOnly = (attr & FILE_ATTRIBUTE_READONLY);
+	entry.IsDirectory = (attr & FILE_ATTRIBUTE_DIRECTORY) != 0;
+	entry.IsHidden = (attr & FILE_ATTRIBUTE_HIDDEN) != 0;
+	entry.IsSystem = (attr & FILE_ATTRIBUTE_SYSTEM) != 0;
+	entry.IsReadOnly = (attr & FILE_ATTRIBUTE_READONLY) != 0;
 
 	// 4. Timestamps
 	entry.CreationTime = data.CreationTime.QuadPart;
@@ -40,7 +40,7 @@ static VOID FillEntry(DirectoryEntry &entry, const FILE_BOTH_DIR_INFORMATION &da
 }
 
 DirectoryIterator::DirectoryIterator()
-		: handle((PVOID)-1), isFirst(true)
+		: handle((PVOID)-1), currentEntry{}, isFirst(true)
 		{
 
 		}

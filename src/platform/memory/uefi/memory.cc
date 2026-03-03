@@ -36,12 +36,9 @@ PVOID Allocator::AllocateMemory(USIZE size)
  * @details Uses EFI_BOOT_SERVICES->FreePool. UEFI FreePool does not require
  * the size parameter (unlike munmap on POSIX).
  * @param ptr Pointer to memory to free.
- * @param size Size hint (ignored by UEFI).
  */
-VOID Allocator::ReleaseMemory(PVOID ptr, USIZE size)
+VOID Allocator::ReleaseMemory(PVOID ptr, USIZE)
 {
-	(VOID) size; // UEFI FreePool doesn't need size
-
 	if (ptr == nullptr)
 		return;
 

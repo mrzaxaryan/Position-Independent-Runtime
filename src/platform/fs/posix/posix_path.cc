@@ -4,6 +4,9 @@
 
 NOINLINE USIZE NormalizePathToUtf8(PCWCHAR path, Span<CHAR> utf8Out)
 {
+	if (utf8Out.Size() == 0)
+		return 0;
+
 	WCHAR normalizedPath[1024];
 	USIZE pathLen = Path::NormalizePath(path, Span<WCHAR>(normalizedPath));
 	USIZE utf8Len = UTF16::ToUTF8(Span<const WCHAR>(normalizedPath, pathLen),
