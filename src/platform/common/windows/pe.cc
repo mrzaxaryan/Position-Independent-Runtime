@@ -36,7 +36,6 @@ PVOID GetExportAddress(PVOID hModule, USIZE functionNameHash)
 		// Get the name of the i-th exported function
 		PCHAR currentName = (PCHAR)hModule + nameRvas[i];
 		USIZE currentNameHash = Djb2::Hash(currentName);
-		// Your CompareStringIgnoreCase is assumed to return non-zero on equal
 		if (currentNameHash == functionNameHash)
 		{
 			// Get the ordinal for this name

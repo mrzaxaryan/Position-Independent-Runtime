@@ -5,6 +5,9 @@
 #include "platform/common/windows/system.h"
 
 #define ResolveNtdllExportAddress(functionName) ResolveExportAddressFromPebModule(Djb2::HashCompileTime(L"ntdll.dll"), Djb2::HashCompileTime(functionName))
+// TODO: Implement CALL_FUNCTION for ARM64/ARMV7A — resolve the ntdll export
+// address via ResolveNtdllExportAddress(functionName) and call it directly,
+// since the kernel validates that SVC originates from within ntdll on ARM.
 #define CALL_FUNCTION(functionName, ...) -1
 Result<NTSTATUS, Error> NTDLL::ZwCreateEvent(PPVOID EventHandle, UINT32 DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, EVENT_TYPE EventType, INT8 InitialState)
 {

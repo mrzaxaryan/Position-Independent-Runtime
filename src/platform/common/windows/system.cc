@@ -40,7 +40,8 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 	{
 		const CHAR* name = (const CHAR*)(base + nameRvaTable[i]);
 
-		if (*(UINT16*)name != 0x775A)
+		// Check for "Zw" prefix (0x5A='Z', 0x77='w')
+		if (name[0] != 'Z' || name[1] != 'w')
 			continue;
 
 		if (Djb2::Hash(name) != functionNameHash)
@@ -56,7 +57,7 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 		{
 			// Each x64 stub contains an inline syscall;ret gadget (0F 05 C3)
 			UINT8* funcAddr = base + funcRva;
-			for (UINT32 k = 0; k < 30; k++)
+			for (UINT32 k = 0; k < 28; k++)
 			{
 				if (funcAddr[k] == 0x0F && funcAddr[k + 1] == 0x05 && funcAddr[k + 2] == 0xC3)
 				{
@@ -75,7 +76,7 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 			// SVC encoding: 0xD4000001 | (imm16 << 5), mask 0xFFE0001F
 			// RET encoding: 0xD65F03C0
 			UINT32* instrs = (UINT32*)(base + funcRva);
-			for (UINT32 k = 0; k < 8; k++)
+			for (UINT32 k = 0; k < 7; k++)
 			{
 				if ((instrs[k] & 0xFFE0001F) == 0xD4000001 && instrs[k + 1] == 0xD65F03C0)
 				{
@@ -154,7 +155,8 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 		for (UINT32 j = 0; j < numberOfNames; j++)
 		{
 			const CHAR* n = (const CHAR*)(base + nameRvaTable[j]);
-			if (*(UINT16*)n != 0x775A)
+			// Check for "Zw" prefix (0x5A='Z', 0x77='w')
+			if (n[0] != 'Z' || n[1] != 'w')
 				continue;
 
 			UINT32 rva = funcRvaTable[ordinalTable[j]];

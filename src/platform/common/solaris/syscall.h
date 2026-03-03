@@ -143,7 +143,7 @@ constexpr INT32 MAP_ANONYMOUS = 0x100;  // Linux: 0x20
 #define MAP_FAILED ((PVOID)(-1))
 
 // AT constants
-constexpr SSIZE AT_FDCWD     = (SSIZE)0xffd19553; // Linux: -100, macOS: -2
+constexpr SSIZE AT_FDCWD     = (SSIZE)(INT32)0xffd19553; // Linux: -100, macOS: -2
 constexpr INT32 AT_REMOVEDIR = 0x01;               // Linux: 0x200
 
 // Clock IDs (Solaris values -- differ from Linux!)

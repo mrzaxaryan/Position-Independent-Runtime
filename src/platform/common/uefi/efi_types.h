@@ -27,6 +27,8 @@
 #elif defined(ARCHITECTURE_AARCH64)
 // AArch64 UEFI uses standard AAPCS64
 #define EFIAPI
+#else
+#error "Unsupported architecture for UEFI"
 #endif
 
 // =============================================================================
@@ -91,10 +93,10 @@ typedef enum
 // Status Codes
 // =============================================================================
 
-#define EFI_SUCCESS 0ULL
+#define EFI_SUCCESS ((EFI_STATUS)0)
 
-// Error codes (high bit set for 64-bit architectures)
-#define EFI_ERROR_MASK (1ULL << 63)
+// Error codes (high bit set — architecture-width aware)
+#define EFI_ERROR_MASK ((EFI_STATUS)1 << (sizeof(EFI_STATUS) * 8 - 1))
 
 #define EFI_ERROR(code) (EFI_ERROR_MASK | (code))
 

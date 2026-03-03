@@ -28,7 +28,9 @@ template <typename T>
 		else
 			return Result<T, Error>::Ok((T)status);
 	}
-	return Result<T, Error>::Err(Error::Uefi((UINT32)status));
+	// Strip the EFI error mask (bit 63) — the error code index fits in 32 bits,
+	// and the Err path + PlatformKind::Uefi already convey error status.
+	return Result<T, Error>::Err(Error::Uefi((UINT32)(status & 0x7FFFFFFFFFFFFFFF)));
 }
 
 } // namespace result

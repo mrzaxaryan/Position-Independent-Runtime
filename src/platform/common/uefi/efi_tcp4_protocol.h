@@ -269,17 +269,37 @@ struct EFI_TCP4_PROTOCOL
 // Event Types for CreateEvent
 // =============================================================================
 
+#ifndef EVT_TIMER
 #define EVT_TIMER 0x80000000
+#endif
+#ifndef EVT_RUNTIME
 #define EVT_RUNTIME 0x40000000
+#endif
+#ifndef EVT_NOTIFY_WAIT
 #define EVT_NOTIFY_WAIT 0x00000100
+#endif
+#ifndef EVT_NOTIFY_SIGNAL
 #define EVT_NOTIFY_SIGNAL 0x00000200
+#endif
 
 // Timer Types for SetTimer
+#ifndef TimerCancel
 #define TimerCancel 0
+#endif
+#ifndef TimerPeriodic
 #define TimerPeriodic 1
+#endif
+#ifndef TimerRelative
 #define TimerRelative 2
+#endif
 
 // Search Types for LocateHandle/LocateHandleBuffer
+#ifndef AllHandles
 #define AllHandles 0
+#endif
+#ifndef ByRegisterNotify
 #define ByRegisterNotify 1
+#endif
+#ifndef ByProtocol
 #define ByProtocol 2
+#endif

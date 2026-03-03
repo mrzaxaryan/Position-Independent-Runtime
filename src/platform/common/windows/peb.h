@@ -187,7 +187,7 @@ PPEB GetCurrentPEB(VOID);
 /**
  * @brief Resolves a loaded module's base address by DJB2 hash of its name.
  *
- * @details Walks the PEB's InLoadOrderModuleList comparing each module's
+ * @details Walks the PEB's InMemoryOrderModuleList comparing each module's
  * BaseDllName (converted to lowercase) against the provided DJB2 hash.
  * Returns the DllBase of the first matching module, or nullptr if no
  * module matches.
