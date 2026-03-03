@@ -43,7 +43,15 @@ Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 
 	SSIZE fd;
 #if defined(PLATFORM_LINUX) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))
-	fd = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)utf8Path, O_RDONLY | O_DIRECTORY);
+	// RISC-V: omit O_DIRECTORY — QEMU user-mode does not translate the
+	// asm-generic O_DIRECTORY (0x4000) to the host value, so the flag is
+	// mis-interpreted as O_DIRECT on x86_64 hosts.  Safety is preserved
+	// because getdents64 returns ENOTDIR on non-directory fds.
+	INT32 openFlags = O_RDONLY;
+#if defined(ARCHITECTURE_AARCH64)
+	openFlags |= O_DIRECTORY;
+#endif
+	fd = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)utf8Path, openFlags, 0);
 #else
 	fd = System::Call(SYS_OPEN, (USIZE)utf8Path, O_RDONLY | O_DIRECTORY);
 #endif

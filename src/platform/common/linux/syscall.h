@@ -95,8 +95,16 @@ constexpr INT32 CLOCK_MONOTONIC = 1;
 // Socket options
 constexpr INT32 SOL_SOCKET = 1;
 constexpr INT32 SO_ERROR = 4;
+#if defined(ARCHITECTURE_RISCV32)
+// riscv32 has no time32 support — SO_RCVTIMEO_OLD/SO_SNDTIMEO_OLD (20/21) do
+// not exist; the kernel only provides the _NEW variants (66/67) which expect
+// 64-bit timeval fields.
+constexpr INT32 SO_RCVTIMEO = 66;
+constexpr INT32 SO_SNDTIMEO = 67;
+#else
 constexpr INT32 SO_RCVTIMEO = 20;
 constexpr INT32 SO_SNDTIMEO = 21;
+#endif
 constexpr INT32 IPPROTO_TCP = 6;
 constexpr INT32 TCP_NODELAY = 1;
 

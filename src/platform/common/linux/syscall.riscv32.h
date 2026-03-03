@@ -45,11 +45,12 @@ constexpr USIZE SYS_RECVFROM = 207;
 constexpr USIZE SYS_SHUTDOWN = 210;
 constexpr USIZE SYS_SETSOCKOPT = 208;
 constexpr USIZE SYS_GETSOCKOPT = 209;
-constexpr USIZE SYS_PPOLL = 73;
+constexpr USIZE SYS_PPOLL = 414;   // ppoll_time64 (riscv32 has no time32 syscalls)
 constexpr USIZE SYS_FCNTL = 25;
 
-// Time operations
-constexpr USIZE SYS_CLOCK_GETTIME = 113;
+// Time operations — riscv32 does not define __ARCH_WANT_TIME32_SYSCALLS,
+// so the kernel only provides clock_gettime64 (403), not clock_gettime (113).
+constexpr USIZE SYS_CLOCK_GETTIME = 403;
 
 // Random operations
 constexpr USIZE SYS_GETRANDOM = 278;
