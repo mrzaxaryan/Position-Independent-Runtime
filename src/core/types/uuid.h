@@ -8,10 +8,9 @@ class UUID {
     public:
         UUID() { Memory::Zero(data, 16); }
 
-        UUID(const UINT8* bytes){
+        UUID(auto bytes){
            Memory::Copy(data, bytes, 16);
         }
-
         static UUID RandomUUID(){
             UUID uuid;
             Random rng; // Random class for random number generation

@@ -5,91 +5,36 @@
 class UUIDTests
 {
 private:
-    static BOOL TestUUIDGenerationAndParsing()
-    {
-        LOG_INFO("Test: UUID Generation and Parsing");
+    static BOOL TestToString(){
 
-        // Generate a random UUID
-        UUID uuid = UUID::RandomUUID();
+        auto bytes = MakeEmbedArray((const UINT8[]){
+            0x12, 0x34, 0x56, 0x78,
+            0x9a, 0xbc,
+            0xde, 0xf0,
+            0x12, 0x34,
+            0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0
+        });
 
-        // Convert to string
-        CHAR uuidStr[37]; // 36 chars + null terminator
-        uuid.ToString(&uuid, uuidStr);
-
-        LOG_INFO("Generated UUID: %s", uuidStr);
-
-        // Parse back from string
-        UUID parsedUuid = UUID::FromString(uuidStr);
-
-        // Convert parsed UUID back to string for comparison
-        CHAR parsedUuidStr[37];
-        parsedUuid.ToString(&parsedUuid, parsedUuidStr);
-
-        LOG_INFO("Parsed UUID: %s", parsedUuidStr);
-
-        BOOL matches = (Memory::Compare(uuidStr, parsedUuidStr, 36) == 0);
-
-        if (!matches)
-        {
-            LOG_ERROR("UUID mismatch!");
-            return false;
-        }
-
-        return true;
+        UUID uuid(bytes);
+        CHAR buffer[37] = {0};
+        uuid.ToString(&uuid, buffer);
+        return Memory::Compare(buffer, "12345678-9abc-def0-1234-56789abcdef0"_embed, 36) == 0;
     }
+    
+    static BOOL TestFromString(){
+        const char* str = "12345678-9abc-def0-1234-56789abcdef0"_embed;
 
-    static BOOL TestToStringFunction()
-    {
-        LOG_INFO("Test: UUID ToString Function");
+        UUID uuid = UUID::FromString(str);
+        auto expected = MakeEmbedArray((const UINT8[]){
+            0x12, 0x34, 0x56, 0x78,
+            0x9a, 0xbc,
+            0xde, 0xf0,
+            0x12, 0x34,
+            0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0
+        });
+        
 
-        // Create a known UUID
-        UUID uuid = UUID::FromString("12345678-9abc-def0-1122-334455667788"_embed);
-
-        // Convert to string
-        CHAR uuidStr[37];
-        uuid.ToString(&uuid, uuidStr);
-
-        LOG_INFO("UUID String: %s", uuidStr);
-
-        // Expected string representation
-        const char* expectedStr = "12345678-9abc-def0-1122-334455667788"_embed;
-
-        BOOL matches = (Memory::Compare(uuidStr, expectedStr, 36) == 0);
-
-        if (!matches)
-        {
-            LOG_ERROR("ToString output mismatch!");
-            return false;
-        }
-
-        return true;
-    }
-
-    static BOOL TestFromStringFunction()
-    {
-        LOG_INFO("Test: UUID FromString Function");
-
-        // Known UUID string
-        const char* uuidStr = "12345678-9abc-def0-1122-334455667788"_embed;
-
-        // Parse UUID
-        UUID uuid = UUID::FromString(uuidStr);
-
-        // Convert back to string
-        CHAR parsedUuidStr[37];
-        uuid.ToString(&uuid, parsedUuidStr);
-
-        LOG_INFO("Parsed UUID String: %s", parsedUuidStr);
-
-        BOOL matches = (Memory::Compare(uuidStr, parsedUuidStr, 36) == 0);
-
-        if (!matches)
-        {
-            LOG_ERROR("FromString output mismatch!");
-            return false;
-        }
-
-        return true;
+        return Memory::Compare(expected, &uuid, 16) == 0;
     }
 
     public:
@@ -99,9 +44,8 @@ private:
 
             LOG_INFO("Running UUID Tests...");
 
-            RunTest(allPassed, EMBED_FUNC(TestUUIDGenerationAndParsing), "UUID generation and parsing"_embed);
-            RunTest(allPassed, EMBED_FUNC(TestToStringFunction), "UUID ToString function"_embed);
-            RunTest(allPassed, EMBED_FUNC(TestFromStringFunction), "UUID FromString function"_embed);
+            RunTest(allPassed, EMBED_FUNC(TestToString), "UUID ToString"_embed);
+            RunTest(allPassed, EMBED_FUNC(TestFromString), "UUID FromString"_embed);
             if (allPassed) LOG_INFO("All UUID tests passed!");
             else LOG_ERROR("Some UUID tests failed!");
 
