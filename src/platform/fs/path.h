@@ -22,6 +22,20 @@ constexpr CHAR PATH_SEPARATOR = '/';
 // Path class for handling file paths
 class Path
 {
+private:
+	/// @brief Check if a character is a path separator on the current platform
+	/// @details On Windows/UEFI both '/' and '\\' are valid separators.
+	/// On POSIX only '/' is a separator ('\\' is a valid filename character).
+	template <TCHAR TChar>
+	static constexpr BOOL IsSeparator(TChar c)
+	{
+#if defined(PLATFORM_WINDOWS) || defined(PLATFORM_UEFI)
+		return c == (TChar)'/' || c == (TChar)'\\';
+#else
+		return c == (TChar)PATH_SEPARATOR;
+#endif
+	}
+
 public:
 	/// @brief Combine two paths into one, ensuring proper path separators
 	/// @tparam TChar Character type (CHAR or WCHAR)
@@ -35,7 +49,7 @@ public:
 	{
 		USIZE len1 = path1.Size();
 		USIZE len2 = path2.Size();
-		BOOL needSep = len1 > 0 && path1[len1 - 1] != (TChar)PATH_SEPARATOR;
+		BOOL needSep = len1 > 0 && !IsSeparator(path1[len1 - 1]);
 		USIZE totalLen = len1 + (needSep ? 1 : 0) + len2;
 
 		if (out.Size() == 0 || totalLen >= out.Size())
@@ -69,7 +83,7 @@ public:
 
 		for (USIZE i = 0; i < len; ++i)
 		{
-			if (fullPath[i] == (TChar)PATH_SEPARATOR)
+			if (IsSeparator(fullPath[i]))
 				lastSeparator = (SSIZE)i;
 		}
 
@@ -139,7 +153,7 @@ public:
 
 		for (USIZE i = 0; i < len; ++i)
 		{
-			if (fullPath[i] == (TChar)PATH_SEPARATOR)
+			if (IsSeparator(fullPath[i]))
 				lastSeparator = (SSIZE)i;
 		}
 

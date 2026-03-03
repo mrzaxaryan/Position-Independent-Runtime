@@ -51,7 +51,16 @@ Result<File, Error> File::Open(PCWCHAR path, INT32 flags)
 	if (fd < 0)
 		return Result<File, Error>::Err(Error::Posix((UINT32)(-fd)), Error::Fs_OpenFailed);
 
-	return Result<File, Error>::Ok(File((PVOID)fd, 0));
+	// Query file size via lseek (consistent with Windows/UEFI implementations)
+	USIZE size = 0;
+	SSIZE fileEnd = System::Call(SYS_LSEEK, (USIZE)fd, (USIZE)0, SEEK_END);
+	if (fileEnd >= 0)
+	{
+		size = (USIZE)fileEnd;
+		System::Call(SYS_LSEEK, (USIZE)fd, (USIZE)0, SEEK_SET);
+	}
+
+	return Result<File, Error>::Ok(File((PVOID)fd, size));
 }
 
 Result<void, Error> File::Delete(PCWCHAR path)
@@ -88,7 +97,7 @@ Result<void, Error> File::Exists(PCWCHAR path)
 	return Result<void, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_OpenFailed);
 }
 
-File::File(File &&other) noexcept : fileHandle(nullptr), fileSize(0)
+File::File(File &&other) noexcept : fileHandle((PVOID)INVALID_FD), fileSize(0)
 {
 	fileHandle = other.fileHandle;
 	fileSize = other.fileSize;

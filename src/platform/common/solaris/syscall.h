@@ -165,6 +165,7 @@ constexpr INT32 F_SETFL  = 4;
 constexpr INT32 F_DUP2FD = 9;  // Solaris dup2 equivalent via fcntl
 
 // errno values (Solaris-specific values)
+constexpr INT32 EEXIST = 17;                    // same across all POSIX platforms
 constexpr INT32 EINPROGRESS = 150;  // Linux: 115, macOS: 36
 
 // Signal numbers

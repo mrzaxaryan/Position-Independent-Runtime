@@ -53,22 +53,22 @@ Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 	// CASE: List Drives (Path is empty or nullptr)
 	if (!path || path[0] == L'\0')
 	{
-		PROCESS_DEVICEMAP_INFORMATION ProcessDeviceMapInfo;
+		PROCESS_DEVICEMAP_INFORMATION processDeviceMapInfo;
 		auto queryResult = NTDLL::ZwQueryInformationProcess(
 			NTDLL::NtCurrentProcess(),
 			ProcessDeviceMap,
-			&ProcessDeviceMapInfo.Query,
-			sizeof(ProcessDeviceMapInfo.Query),
+			&processDeviceMapInfo.Query,
+			sizeof(processDeviceMapInfo.Query),
 			nullptr);
 
 		if (!queryResult)
 		{
 			return Result<DirectoryIterator, Error>::Err(queryResult, Error::Fs_OpenFailed);
 		}
-		if (ProcessDeviceMapInfo.Query.DriveMap != 0)
+		if (processDeviceMapInfo.Query.DriveMap != 0)
 		{
 			// Store the mask in the pointer itself
-			iter.handle = (PVOID)(USIZE)ProcessDeviceMapInfo.Query.DriveMap;
+			iter.handle = (PVOID)(USIZE)processDeviceMapInfo.Query.DriveMap;
 			iter.isFirst = true; // Flag to indicate we are in "Drive Mode"
 			iter.isBitMaskMode = true;
 		}
@@ -127,6 +127,7 @@ Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 	{
 		(void)NTDLL::ZwClose(iter.handle);
 		iter.handle = (PVOID)-1;
+		return Result<DirectoryIterator, Error>::Err(dirResult, Error::Fs_ReadFailed);
 	}
 	return Result<DirectoryIterator, Error>::Ok(static_cast<DirectoryIterator &&>(iter));
 }
@@ -138,6 +139,7 @@ Result<void, Error> DirectoryIterator::Next()
 		return Result<void, Error>::Err(Error::Fs_ReadFailed);
 
 	IO_STATUS_BLOCK ioStatusBlock;
+	Memory::Zero(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
 
 	// --- MODE 1: Drive Bitmask Mode (isFirst is true and handle is small) ---
 	// We treat handles < 0x1000000 as bitmasks (drives)

@@ -30,7 +30,7 @@ Result<void, Error> Directory::Create(PCWCHAR path)
 #else
 	SSIZE result = System::Call(SYS_MKDIR, (USIZE)utf8Path, mode);
 #endif
-	if (result == 0 || result == -17) // -EEXIST: directory already exists
+	if (result == 0 || result == -EEXIST)
 		return Result<void, Error>::Ok();
 	return Result<void, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_CreateDirFailed);
 }

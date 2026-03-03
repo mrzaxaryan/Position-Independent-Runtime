@@ -137,6 +137,7 @@ constexpr INT32 F_GETFL = 3;
 constexpr INT32 F_SETFL = 4;
 
 // errno values
+constexpr INT32 EEXIST = 17;
 constexpr INT32 EINPROGRESS = 36;
 
 // poll event flags

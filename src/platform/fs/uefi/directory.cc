@@ -15,46 +15,46 @@
 
 Result<void, Error> Directory::Create(PCWCHAR path)
 {
-	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
-	if (Root == nullptr)
+	EFI_FILE_PROTOCOL *root = GetRootDirectory();
+	if (root == nullptr)
 		return Result<void, Error>::Err(Error::Fs_CreateDirFailed);
 
 	// Normalize path separators (convert '/' to '\' for UEFI)
 	WCHAR normalizedBuf[512];
 	if (!Path::NormalizePath(path, Span<WCHAR>(normalizedBuf)))
 	{
-		Root->Close(Root);
+		root->Close(root);
 		return Result<void, Error>::Err(Error::Fs_PathResolveFailed, Error::Fs_CreateDirFailed);
 	}
 
-	EFI_FILE_PROTOCOL *DirHandle = nullptr;
-	EFI_STATUS Status = Root->Open(Root, &DirHandle, (CHAR16 *)normalizedBuf,
+	EFI_FILE_PROTOCOL *dirHandle = nullptr;
+	EFI_STATUS status = root->Open(root, &dirHandle, (CHAR16 *)normalizedBuf,
 								   EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE,
 								   EFI_FILE_DIRECTORY);
-	Root->Close(Root);
+	root->Close(root);
 
-	if (EFI_ERROR_CHECK(Status) || DirHandle == nullptr)
-		return Result<void, Error>::Err(Error::Uefi((UINT32)Status), Error::Fs_CreateDirFailed);
+	if (EFI_ERROR_CHECK(status) || dirHandle == nullptr)
+		return Result<void, Error>::Err(Error::Uefi((UINT32)status), Error::Fs_CreateDirFailed);
 
-	DirHandle->Close(DirHandle);
+	dirHandle->Close(dirHandle);
 	return Result<void, Error>::Ok();
 }
 
 Result<void, Error> Directory::Delete(PCWCHAR path)
 {
-	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
-	if (Root == nullptr)
+	EFI_FILE_PROTOCOL *root = GetRootDirectory();
+	if (root == nullptr)
 		return Result<void, Error>::Err(Error::Fs_DeleteDirFailed);
 
-	EFI_FILE_PROTOCOL *DirHandle = OpenFileFromRoot(Root, path, EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE, 0);
-	Root->Close(Root);
+	EFI_FILE_PROTOCOL *dirHandle = OpenFileFromRoot(root, path, EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE, 0);
+	root->Close(root);
 
-	if (DirHandle == nullptr)
+	if (dirHandle == nullptr)
 		return Result<void, Error>::Err(Error::Fs_DeleteDirFailed);
 
 	// EFI_FILE_PROTOCOL.Delete works for both files and directories
-	EFI_STATUS Status = DirHandle->Delete(DirHandle);
-	if (EFI_ERROR_CHECK(Status))
-		return Result<void, Error>::Err(Error::Uefi((UINT32)Status), Error::Fs_DeleteDirFailed);
+	EFI_STATUS status = dirHandle->Delete(dirHandle);
+	if (EFI_ERROR_CHECK(status))
+		return Result<void, Error>::Err(Error::Uefi((UINT32)status), Error::Fs_DeleteDirFailed);
 	return Result<void, Error>::Ok();
 }

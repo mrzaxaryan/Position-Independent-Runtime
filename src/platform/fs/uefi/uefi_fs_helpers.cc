@@ -22,37 +22,37 @@ EFI_FILE_PROTOCOL *GetRootDirectory()
 
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
 
-	EFI_GUID FsGuid = MakeFsProtocolGuid();
+	EFI_GUID fsGuid = MakeFsProtocolGuid();
 
-	USIZE HandleCount = 0;
-	EFI_HANDLE *HandleBuffer = nullptr;
+	USIZE handleCount = 0;
+	EFI_HANDLE *handleBuffer = nullptr;
 
-	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &FsGuid, nullptr, &HandleCount, &HandleBuffer)) || HandleCount == 0)
+	if (EFI_ERROR_CHECK(bs->LocateHandleBuffer(ByProtocol, &fsGuid, nullptr, &handleCount, &handleBuffer)) || handleCount == 0)
 		return nullptr;
 
-	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *FileSystem = nullptr;
-	EFI_FILE_PROTOCOL *Root = nullptr;
+	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fileSystem = nullptr;
+	EFI_FILE_PROTOCOL *root = nullptr;
 
 	// Try each handle until we find a working filesystem
-	for (USIZE i = 0; i < HandleCount; i++)
+	for (USIZE i = 0; i < handleCount; i++)
 	{
-		if (EFI_ERROR_CHECK(bs->OpenProtocol(HandleBuffer[i], &FsGuid, (PVOID *)&FileSystem, ctx->ImageHandle, nullptr, EFI_OPEN_PROTOCOL_GET_PROTOCOL)))
+		if (EFI_ERROR_CHECK(bs->OpenProtocol(handleBuffer[i], &fsGuid, (PVOID *)&fileSystem, ctx->ImageHandle, nullptr, EFI_OPEN_PROTOCOL_GET_PROTOCOL)))
 			continue;
 
-		if (FileSystem != nullptr && !EFI_ERROR_CHECK(FileSystem->OpenVolume(FileSystem, &Root)))
+		if (fileSystem != nullptr && !EFI_ERROR_CHECK(fileSystem->OpenVolume(fileSystem, &root)))
 		{
-			bs->FreePool(HandleBuffer);
-			return Root;
+			bs->FreePool(handleBuffer);
+			return root;
 		}
 	}
 
-	bs->FreePool(HandleBuffer);
+	bs->FreePool(handleBuffer);
 	return nullptr;
 }
 
-EFI_FILE_PROTOCOL *OpenFileFromRoot(EFI_FILE_PROTOCOL *Root, PCWCHAR path, UINT64 mode, UINT64 attributes)
+EFI_FILE_PROTOCOL *OpenFileFromRoot(EFI_FILE_PROTOCOL *root, PCWCHAR path, UINT64 mode, UINT64 attributes)
 {
-	if (Root == nullptr || path == nullptr)
+	if (root == nullptr || path == nullptr)
 		return nullptr;
 
 	// Normalize path separators (convert '/' to '\' for UEFI)
@@ -60,11 +60,11 @@ EFI_FILE_PROTOCOL *OpenFileFromRoot(EFI_FILE_PROTOCOL *Root, PCWCHAR path, UINT6
 	if (!Path::NormalizePath(path, Span<WCHAR>(normalizedBuf)))
 		return nullptr;
 
-	EFI_FILE_PROTOCOL *FileHandle = nullptr;
-	EFI_STATUS Status = Root->Open(Root, &FileHandle, (CHAR16 *)normalizedBuf, mode, attributes);
+	EFI_FILE_PROTOCOL *handle = nullptr;
+	EFI_STATUS status = root->Open(root, &handle, (CHAR16 *)normalizedBuf, mode, attributes);
 
-	if (EFI_ERROR_CHECK(Status))
+	if (EFI_ERROR_CHECK(status))
 		return nullptr;
 
-	return FileHandle;
+	return handle;
 }
