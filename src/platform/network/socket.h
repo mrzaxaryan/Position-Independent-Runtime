@@ -56,6 +56,8 @@
 #define AF_INET6 30 ///< IPv6 address family — macOS/BSD value (RFC 8200)
 #elif defined(PLATFORM_SOLARIS)
 #define AF_INET6 26 ///< IPv6 address family — Solaris/illumos value (RFC 8200)
+#elif defined(PLATFORM_FREEBSD)
+#define AF_INET6 28 ///< IPv6 address family — FreeBSD value (RFC 8200)
 #else
 #define AF_INET6 10 ///< IPv6 address family — Linux value (RFC 8200)
 #endif

@@ -407,6 +407,84 @@
         "BUILD_TYPE": "release",
         "OPTIMIZATION_LEVEL": "Oz"
       }
+    },
+    {
+      "name": "freebsd-i386-debug",
+      "displayName": "FreeBSD i386 (Debug)",
+      "description": "FreeBSD 32-bit x86 debug build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/debug/freebsd/i386/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "i386",
+        "PLATFORM": "freebsd",
+        "BUILD_TYPE": "debug",
+        "OPTIMIZATION_LEVEL": "Og"
+      }
+    },
+    {
+      "name": "freebsd-i386-release",
+      "displayName": "FreeBSD i386 (Release)",
+      "description": "FreeBSD 32-bit x86 release build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/release/freebsd/i386/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "i386",
+        "PLATFORM": "freebsd",
+        "BUILD_TYPE": "release",
+        "OPTIMIZATION_LEVEL": "Oz"
+      }
+    },
+    {
+      "name": "freebsd-x86_64-debug",
+      "displayName": "FreeBSD x86_64 (Debug)",
+      "description": "FreeBSD 64-bit x86 debug build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/debug/freebsd/x86_64/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "x86_64",
+        "PLATFORM": "freebsd",
+        "BUILD_TYPE": "debug",
+        "OPTIMIZATION_LEVEL": "Og"
+      }
+    },
+    {
+      "name": "freebsd-x86_64-release",
+      "displayName": "FreeBSD x86_64 (Release)",
+      "description": "FreeBSD 64-bit x86 release build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/release/freebsd/x86_64/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "x86_64",
+        "PLATFORM": "freebsd",
+        "BUILD_TYPE": "release",
+        "OPTIMIZATION_LEVEL": "Oz"
+      }
+    },
+    {
+      "name": "freebsd-aarch64-debug",
+      "displayName": "FreeBSD AArch64 (Debug)",
+      "description": "FreeBSD 64-bit ARM debug build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/debug/freebsd/aarch64/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "aarch64",
+        "PLATFORM": "freebsd",
+        "BUILD_TYPE": "debug",
+        "OPTIMIZATION_LEVEL": "Og"
+      }
+    },
+    {
+      "name": "freebsd-aarch64-release",
+      "displayName": "FreeBSD AArch64 (Release)",
+      "description": "FreeBSD 64-bit ARM release build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/release/freebsd/aarch64/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "aarch64",
+        "PLATFORM": "freebsd",
+        "BUILD_TYPE": "release",
+        "OPTIMIZATION_LEVEL": "Oz"
+      }
     }
   ],
   "buildPresets": [
@@ -529,6 +607,30 @@
     {
       "name": "solaris-aarch64-release",
       "configurePreset": "solaris-aarch64-release"
+    },
+    {
+      "name": "freebsd-i386-debug",
+      "configurePreset": "freebsd-i386-debug"
+    },
+    {
+      "name": "freebsd-i386-release",
+      "configurePreset": "freebsd-i386-release"
+    },
+    {
+      "name": "freebsd-x86_64-debug",
+      "configurePreset": "freebsd-x86_64-debug"
+    },
+    {
+      "name": "freebsd-x86_64-release",
+      "configurePreset": "freebsd-x86_64-release"
+    },
+    {
+      "name": "freebsd-aarch64-debug",
+      "configurePreset": "freebsd-aarch64-debug"
+    },
+    {
+      "name": "freebsd-aarch64-release",
+      "configurePreset": "freebsd-aarch64-release"
     }
   ],
   "testPresets": [

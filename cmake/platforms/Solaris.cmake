@@ -99,3 +99,9 @@ endif()
 # ELFOSABI patch — LLD produces ELFOSABI_NONE; Solaris requires
 # ELFOSABI_SOLARIS (6). PostBuild.cmake patches this after linking.
 set(PIR_ELF_OSABI 6)
+
+# PT_PHDR removal — LLD always emits a PT_PHDR program header and
+# provides no flag to suppress it. The Solaris/illumos kernel rejects
+# static executables (no PT_INTERP) that contain PT_PHDR:
+#   if (uphdr != NULL && intphdr == NULL) goto bad;   /* ENOEXEC */
+# PostBuild.cmake patches PT_PHDR → PT_NULL after linking.

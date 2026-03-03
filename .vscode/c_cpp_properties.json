@@ -310,6 +310,60 @@
                 "${workspaceFolder}/src/platform/os/solaris",
                 "${workspaceFolder}/src/platform/os/solaris/common"
             ]
+        },
+        {
+            "name": "freebsd-i386",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "linux-clang-x86",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+
+            "defines": [
+                "ARCHITECTURE_I386",
+                "PLATFORM_FREEBSD",
+                "PLATFORM_FREEBSD_I386",
+                "ENABLE_LOGGING"
+            ],
+            "includePath": [
+                "${commonInclude}",
+                "${workspaceFolder}/src/platform/common/freebsd"
+            ]
+        },
+        {
+            "name": "freebsd-x86_64",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "linux-clang-x64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+
+            "defines": [
+                "ARCHITECTURE_X86_64",
+                "PLATFORM_FREEBSD",
+                "PLATFORM_FREEBSD_X86_64",
+                "ENABLE_LOGGING"
+            ],
+            "includePath": [
+                "${commonInclude}",
+                "${workspaceFolder}/src/platform/common/freebsd"
+            ]
+        },
+        {
+            "name": "freebsd-aarch64",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "linux-clang-arm64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+
+            "defines": [
+                "ARCHITECTURE_AARCH64",
+                "PLATFORM_FREEBSD",
+                "PLATFORM_FREEBSD_AARCH64",
+                "ENABLE_LOGGING"
+            ],
+            "includePath": [
+                "${commonInclude}",
+                "${workspaceFolder}/src/platform/common/freebsd"
+            ]
         }
     ]
 }

@@ -10,6 +10,9 @@
 #elif defined(PLATFORM_SOLARIS)
 #include "platform/common/solaris/syscall.h"
 #include "platform/common/solaris/system.h"
+#elif defined(PLATFORM_FREEBSD)
+#include "platform/common/freebsd/syscall.h"
+#include "platform/common/freebsd/system.h"
 #endif
 #include "core/string/string.h"
 
@@ -101,6 +104,9 @@ Result<void, Error> DirectoryIterator::Next()
 #elif defined(PLATFORM_MACOS)
 		USIZE basep = 0;
 		bytesRead = (INT32)System::Call(SYS_GETDIRENTRIES64, (USIZE)handle, (USIZE)buffer, sizeof(buffer), (USIZE)&basep);
+#elif defined(PLATFORM_FREEBSD)
+		USIZE basep = 0;
+		bytesRead = (INT32)System::Call(SYS_GETDIRENTRIES, (USIZE)handle, (USIZE)buffer, sizeof(buffer), (USIZE)&basep);
 #endif
 
 		if (bytesRead < 0)
@@ -116,6 +122,8 @@ Result<void, Error> DirectoryIterator::Next()
 	SolarisDirent64 *d = (SolarisDirent64 *)(buffer + bufferPosition);
 #elif defined(PLATFORM_MACOS)
 	BsdDirent64 *d = (BsdDirent64 *)(buffer + bufferPosition);
+#elif defined(PLATFORM_FREEBSD)
+	FreeBsdDirent *d = (FreeBsdDirent *)(buffer + bufferPosition);
 #endif
 
 	StringUtils::Utf8ToWide(Span<const CHAR>(d->Name, StringUtils::Length(d->Name)), Span<WCHAR>(currentEntry.Name, 256));
@@ -123,7 +131,7 @@ Result<void, Error> DirectoryIterator::Next()
 #if defined(PLATFORM_SOLARIS)
 	currentEntry.IsDirectory = false;       // Solaris dirent64 has no Type; cannot determine without stat
 	currentEntry.Type = 0;                  // DT_UNKNOWN
-#else
+#else // Linux, macOS, FreeBSD — dirent has Type field
 	currentEntry.IsDirectory = (d->Type == DT_DIR);
 	currentEntry.Type = (UINT32)d->Type;
 #endif

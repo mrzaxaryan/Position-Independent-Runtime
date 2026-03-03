@@ -34,7 +34,7 @@ cmake --build --preset {platform}-{arch}-{build_type}
 ./build/{build_type}/{platform}/{arch}/output.{exe|elf|efi}
 ```
 
-Presets: `windows|linux|macos|uefi` x `i386|x86_64|armv7a|aarch64` x `debug|release`
+Presets: `windows|linux|macos|freebsd|uefi` x `i386|x86_64|armv7a|aarch64` x `debug|release`
 
 ---
 
@@ -147,6 +147,7 @@ src/                        # Source layers
       linux/                # Syscall numbers, System::Call, result conversion
       macos/                # Syscall numbers, System::Call, result conversion
       solaris/              # Syscall numbers, System::Call, result conversion
+      freebsd/              # Syscall numbers, System::Call, result conversion
       uefi/                 # EFI types, protocols, boot/runtime services
     memory/                 # Allocator (heap management)
       windows/              # NtAllocateVirtualMemory/NtFreeVirtualMemory
@@ -165,6 +166,7 @@ src/                        # Source layers
       linux/                # Direct socket syscalls
       macos/                # Direct socket syscalls
       solaris/              # Direct socket syscalls
+      freebsd/              # Direct socket syscalls
       uefi/                 # EFI_TCP4/TCP6_PROTOCOL
     system/                 # DateTime, Environment, Process, Random
       windows/              # Windows-specific system operations
@@ -172,6 +174,7 @@ src/                        # Source layers
       linux/                # Linux-specific environment, platform, process
       macos/                # macOS-specific environment, platform, process
       solaris/              # Solaris-specific environment, platform, process
+      freebsd/              # FreeBSD-specific environment, platform, process
       uefi/                 # UEFI-specific system operations
   runtime/                  # RUNTIME layer (.h + .cc co-located)
     runtime.h               # Aggregate header (CORE + PLATFORM + RUNTIME)
@@ -336,7 +339,7 @@ PIR has no exceptions. Every fallible function returns `Result<T, Error>` or `Re
 
 ### Platform Conversion Factories
 
-Each platform provides `result::From*` template functions in `src/platform/<platform>/platform_result.h`. These convert a raw OS status into `Ok`/`Err` in one call. Use them in low-level wrappers: `result::FromNTSTATUS<T>(status)`, `result::FromLinux<T>(result)`, `result::FromMacOS<T>(result)`, `result::FromEfiStatus<T>(status)`. For `void` Results, the raw value is discarded on success.
+Each platform provides `result::From*` template functions in `src/platform/<platform>/platform_result.h`. These convert a raw OS status into `Ok`/`Err` in one call. Use them in low-level wrappers: `result::FromNTSTATUS<T>(status)`, `result::FromLinux<T>(result)`, `result::FromMacOS<T>(result)`, `result::FromFreeBSD<T>(result)`, `result::FromEfiStatus<T>(status)`. For `void` Results, the raw value is discarded on success.
 
 ### Formatting
 

@@ -5,7 +5,7 @@
  * @details Includes all platform-layer headers for OS and hardware abstraction.
  * This is the single entry point for consumers of the PLATFORM layer, pulling in
  * memory allocation, system utilities, I/O services, networking, and process
- * management. Platform-specific headers (UEFI, Windows, Linux, macOS, Solaris)
+ * management. Platform-specific headers (UEFI, Windows, Linux, macOS, Solaris, FreeBSD)
  * are conditionally included based on the target platform. Depends on CORE.
  */
 
