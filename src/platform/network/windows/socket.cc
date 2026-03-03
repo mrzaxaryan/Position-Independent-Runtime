@@ -5,22 +5,17 @@
 #include "platform/common/windows/ntdll.h"
 #include "core/memory/memory.h"
 
-#define IOCTL_AFD_BIND       ((0x00000012) << 12 | (0  << 2) | 3)
-#define IOCTL_AFD_CONNECT    ((0x00000012) << 12 | (1  << 2) | 3)
-#define IOCTL_AFD_SEND       ((0x00000012) << 12 | (7  << 2) | 3)
-#define IOCTL_AFD_RECV       ((0x00000012) << 12 | (5  << 2) | 3)
-#define IOCTL_AFD_DISCONNECT ((0x00000012) << 12 | (10 << 2) | 3)
+constexpr UINT32 IOCTL_AFD_BIND       = (0x00000012 << 12) | (0  << 2) | 3;
+constexpr UINT32 IOCTL_AFD_CONNECT    = (0x00000012 << 12) | (1  << 2) | 3;
+constexpr UINT32 IOCTL_AFD_SEND       = (0x00000012 << 12) | (7  << 2) | 3;
+constexpr UINT32 IOCTL_AFD_RECV       = (0x00000012 << 12) | (5  << 2) | 3;
 
-#define AFD_SHARE_REUSE         0x1L
-#define AFD_DISCONNECT_SEND     0x01L
-#define AFD_DISCONNECT_RECV     0x02L
-#define AFD_DISCONNECT_ABORT    0x04L
-#define AFD_DISCONNECT_DATAGRAM 0x08L
+constexpr UINT32 AFD_SHARE_REUSE         = 0x1;
 
-#define OBJ_INHERIT    0x00000002L
-#define STATUS_PENDING ((UINT32)0x00000103L)
-#define STATUS_TIMEOUT ((UINT32)0x00000102L)
-#define IPPROTO_TCP    6
+constexpr UINT32 OBJ_INHERIT    = 0x00000002;
+constexpr UINT32 STATUS_PENDING = 0x00000103;
+constexpr UINT32 STATUS_TIMEOUT = 0x00000102;
+constexpr INT32  IPPROTO_TCP    = 6;
 
 typedef struct _AfdBindData
 {
