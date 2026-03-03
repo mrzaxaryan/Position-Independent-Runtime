@@ -61,18 +61,17 @@ endif()
 # Use <CMAKE_LINKER> so CMake auto-quotes paths containing spaces
 # (e.g. "C:/Program Files/LLVM/bin/ld.lld.exe").
 #
-# "-z nognustack" is baked into the link command template (not in
-# PIR_BASE_LINK_FLAGS) because CMake's target_link_options() splits the
-# paired flag "-z nognustack" into two list elements. On some platforms
-# the de-duplication or reordering logic drops or misplaces the argument,
-# allowing LLD to emit PT_GNU_STACK (type 0x6474e551). The Solaris
-# kernel rejects binaries containing this unrecognised OS-specific
-# program header when EI_OSABI is ELFOSABI_SOLARIS, producing
-# "Exec format error" (ENOEXEC). Hardcoding the flag here guarantees
-# it always reaches ld.lld intact.
+# A linker script with an explicit PHDRS command
+# (cmake/data/linker.solaris.ld) controls which program headers LLD
+# emits. Only the segments listed in PHDRS are created, so PT_PHDR
+# and PT_GNU_STACK are never generated:
+#   - PT_PHDR: Solaris kernel rejects static binaries with PT_PHDR but
+#     no PT_INTERP (if (uphdr && !intphdr) goto bad; → ENOEXEC).
+#   - PT_GNU_STACK: OS-specific type 0x6474e551 that Solaris rejects
+#     when EI_OSABI is ELFOSABI_SOLARIS.
 set(CMAKE_LINKER "${PIR_LLD_PATH}")
 set(CMAKE_CXX_LINK_EXECUTABLE
-    "<CMAKE_LINKER> -m ${_solaris_emulation} -z nognustack <LINK_FLAGS> <OBJECTS> -o <TARGET>")
+    "<CMAKE_LINKER> -m ${_solaris_emulation} -T ${PIR_ROOT_DIR}/cmake/data/linker.solaris.ld <LINK_FLAGS> <OBJECTS> -o <TARGET>")
 
 # Clear clang-driver-level link flags set by CompilerFlags.cmake
 # (-nostdlib, -fno-jump-tables are driver flags; ld.lld doesn't need them —
@@ -99,9 +98,3 @@ endif()
 # ELFOSABI patch — LLD produces ELFOSABI_NONE; Solaris requires
 # ELFOSABI_SOLARIS (6). PostBuild.cmake patches this after linking.
 set(PIR_ELF_OSABI 6)
-
-# PT_PHDR removal — LLD always emits a PT_PHDR program header and
-# provides no flag to suppress it. The Solaris/illumos kernel rejects
-# static executables (no PT_INTERP) that contain PT_PHDR:
-#   if (uphdr != NULL && intphdr == NULL) goto bad;   /* ENOEXEC */
-# PostBuild.cmake patches PT_PHDR → PT_NULL after linking.

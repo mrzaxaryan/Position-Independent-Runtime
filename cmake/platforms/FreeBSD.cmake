@@ -4,9 +4,9 @@
 
 include_guard(GLOBAL)
 
-# Validate: FreeBSD supports i386, x86_64, and aarch64
-if(NOT PIR_ARCH MATCHES "^(i386|x86_64|aarch64)$")
-    message(FATAL_ERROR "FreeBSD only supports i386, x86_64, and aarch64 (got: ${PIR_ARCH})")
+# Validate: FreeBSD supports i386, x86_64, aarch64, and riscv64
+if(NOT PIR_ARCH MATCHES "^(i386|x86_64|aarch64|riscv64)$")
+    message(FATAL_ERROR "FreeBSD only supports i386, x86_64, aarch64, and riscv64 (got: ${PIR_ARCH})")
 endif()
 
 pir_get_target_info()
