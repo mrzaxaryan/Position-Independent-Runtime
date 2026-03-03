@@ -100,7 +100,7 @@
  */
 struct SockAddr
 {
-	INT16 SinFamily;   ///< Address family (AF_INET)
+	UINT16 SinFamily;  ///< Address family (AF_INET)
 	UINT16 SinPort;    ///< Port number in network byte order
 	UINT32 SinAddr;    ///< IPv4 address in network byte order
 	CHAR SinZero[8];   ///< Padding to match sockaddr size (must be zeroed)

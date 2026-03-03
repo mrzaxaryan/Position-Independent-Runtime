@@ -180,15 +180,17 @@ Result<void, Error> Socket::Open()
 Result<void, Error> Socket::Close()
 {
 	SSIZE sockfd = (SSIZE)handle;
-	System::Call(SYS_CLOSE, sockfd);
+	SSIZE result = System::Call(SYS_CLOSE, sockfd);
 	handle = nullptr;
+	if (result < 0)
+		return Result<void, Error>::Err(Error::Posix((UINT32)(-result)), Error::Socket_CloseFailed_Close);
 	return Result<void, Error>::Ok();
 }
 
 Result<SSIZE, Error> Socket::Read(Span<CHAR> buffer)
 {
 	SSIZE sockfd = (SSIZE)handle;
-	SSIZE result = LinuxRecv(sockfd, (PVOID)buffer.Data(), (UINT32)buffer.Size(), 0);
+	SSIZE result = LinuxRecv(sockfd, (PVOID)buffer.Data(), buffer.Size(), 0);
 	if (result < 0)
 	{
 		return Result<SSIZE, Error>::Err(
@@ -204,10 +206,10 @@ Result<UINT32, Error> Socket::Write(Span<const CHAR> buffer)
 	SSIZE  sockfd    = (SSIZE)handle;
 	UINT32 totalSent = 0;
 
-	while (totalSent < (UINT32)buffer.Size())
+	while (totalSent < buffer.Size())
 	{
 		SSIZE sent = LinuxSend(sockfd, (const CHAR *)buffer.Data() + totalSent,
-		                        (UINT32)buffer.Size() - totalSent, 0);
+		                        buffer.Size() - totalSent, 0);
 		if (sent <= 0)
 		{
 			if (sent < 0)

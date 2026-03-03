@@ -357,6 +357,7 @@ Result<Socket, Error> Socket::Create(const IPAddress &ipAddress, UINT16 portNum)
 	{
 		LOG_DEBUG("Socket: OpenProtocol TCP interface failed");
 		sockCtx->ServiceBinding->DestroyChild(sockCtx->ServiceBinding, sockCtx->TcpHandle);
+		bs->CloseProtocol(sockCtx->ServiceHandle, &ServiceBindingGuid, ctx->ImageHandle, nullptr);
 		bs->FreePool(sockCtx);
 		return Result<Socket, Error>::Err(Error::Socket_CreateFailed_Open);
 	}
@@ -390,8 +391,13 @@ Result<void, Error> Socket::Open()
 	EFI_CONTEXT *ctx = GetEfiContext();
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
 
-	(void)InitializeNetworkInterface(*ctx);
-	(void)InitializeDhcp(*ctx);
+	auto netResult = InitializeNetworkInterface(*ctx);
+	if (!netResult)
+		return Result<void, Error>::Err(netResult, Error::Socket_OpenFailed_Connect);
+
+	auto dhcpResult = InitializeDhcp(*ctx);
+	if (!dhcpResult)
+		return Result<void, Error>::Err(dhcpResult, Error::Socket_OpenFailed_Connect);
 
 	LOG_DEBUG("Socket: Creating connect event...");
 	EFI_EVENT ConnectEvent;
@@ -794,7 +800,6 @@ Result<SSIZE, Error> Socket::Read(Span<CHAR> buffer)
 
 Result<UINT32, Error> Socket::Write(Span<const CHAR> buffer)
 {
-	PCVOID bufferPtr = (PCVOID)buffer.Data();
 	UINT32 bufferLength = (UINT32)buffer.Size();
 
 	LOG_DEBUG("Socket: Write(%u bytes) starting...", bufferLength);
@@ -819,71 +824,81 @@ Result<UINT32, Error> Socket::Write(Span<const CHAR> buffer)
 			Error::Socket_WriteFailed_EventCreate);
 	}
 
-	BOOL sent = false;
+	UINT32 totalSent = 0;
 
-	if (sockCtx->IsIPv6)
+	while (totalSent < bufferLength)
 	{
-		EFI_TCP6_TRANSMIT_DATA TxData;
-		Memory::Zero(&TxData, sizeof(TxData));
-		TxData.Push = true;
-		TxData.DataLength = bufferLength;
-		TxData.FragmentCount = 1;
-		TxData.FragmentTable[0].FragmentLength = bufferLength;
-		TxData.FragmentTable[0].FragmentBuffer = (PVOID)bufferPtr;
+		PVOID chunkPtr = (PVOID)((const CHAR *)buffer.Data() + totalSent);
+		UINT32 chunkLen = bufferLength - totalSent;
+		BOOL chunkSent = false;
 
-		EFI_TCP6_IO_TOKEN TxToken;
-		Memory::Zero(&TxToken, sizeof(TxToken));
-		TxToken.CompletionToken.Event = TxEvent;
-		TxToken.CompletionToken.Status = EFI_NOT_READY;
-		TxToken.Packet.TxData = &TxData;
-
-		EFI_STATUS Status = sockCtx->Tcp6->Transmit(sockCtx->Tcp6, &TxToken);
-		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
+		if (sockCtx->IsIPv6)
 		{
-			if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp6, TxEvent, TxToken.CompletionToken.Status, 30000)) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
-				sent = true;
+			EFI_TCP6_TRANSMIT_DATA TxData;
+			Memory::Zero(&TxData, sizeof(TxData));
+			TxData.Push = true;
+			TxData.DataLength = chunkLen;
+			TxData.FragmentCount = 1;
+			TxData.FragmentTable[0].FragmentLength = chunkLen;
+			TxData.FragmentTable[0].FragmentBuffer = chunkPtr;
+
+			EFI_TCP6_IO_TOKEN TxToken;
+			Memory::Zero(&TxToken, sizeof(TxToken));
+			TxToken.CompletionToken.Event = TxEvent;
+			TxToken.CompletionToken.Status = EFI_NOT_READY;
+			TxToken.Packet.TxData = &TxData;
+
+			EFI_STATUS Status = sockCtx->Tcp6->Transmit(sockCtx->Tcp6, &TxToken);
+			if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
+			{
+				if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp6, TxEvent, TxToken.CompletionToken.Status, 30000)) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
+					chunkSent = true;
+			}
+			else
+			{
+				LOG_DEBUG("Socket: TCP6 Transmit() call failed: 0x%lx", (UINT64)Status);
+			}
 		}
 		else
 		{
-			LOG_DEBUG("Socket: TCP6 Transmit() call failed: 0x%lx", (UINT64)Status);
-		}
-	}
-	else
-	{
-		EFI_TCP4_TRANSMIT_DATA TxData;
-		Memory::Zero(&TxData, sizeof(TxData));
-		TxData.Push = true;
-		TxData.DataLength = bufferLength;
-		TxData.FragmentCount = 1;
-		TxData.FragmentTable[0].FragmentLength = bufferLength;
-		TxData.FragmentTable[0].FragmentBuffer = (PVOID)bufferPtr;
+			EFI_TCP4_TRANSMIT_DATA TxData;
+			Memory::Zero(&TxData, sizeof(TxData));
+			TxData.Push = true;
+			TxData.DataLength = chunkLen;
+			TxData.FragmentCount = 1;
+			TxData.FragmentTable[0].FragmentLength = chunkLen;
+			TxData.FragmentTable[0].FragmentBuffer = chunkPtr;
 
-		EFI_TCP4_IO_TOKEN TxToken;
-		Memory::Zero(&TxToken, sizeof(TxToken));
-		TxToken.CompletionToken.Event = TxEvent;
-		TxToken.CompletionToken.Status = EFI_NOT_READY;
-		TxToken.Packet.TxData = &TxData;
+			EFI_TCP4_IO_TOKEN TxToken;
+			Memory::Zero(&TxToken, sizeof(TxToken));
+			TxToken.CompletionToken.Event = TxEvent;
+			TxToken.CompletionToken.Status = EFI_NOT_READY;
+			TxToken.Packet.TxData = &TxData;
 
-		EFI_STATUS Status = sockCtx->Tcp4->Transmit(sockCtx->Tcp4, &TxToken);
-		if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
-		{
-			if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp4, TxEvent, TxToken.CompletionToken.Status, 30000)) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
-				sent = true;
+			EFI_STATUS Status = sockCtx->Tcp4->Transmit(sockCtx->Tcp4, &TxToken);
+			if (!EFI_ERROR_CHECK(Status) || Status == EFI_NOT_READY)
+			{
+				if (!EFI_ERROR_CHECK(WaitForCompletion(bs, sockCtx->Tcp4, TxEvent, TxToken.CompletionToken.Status, 30000)) && !EFI_ERROR_CHECK(TxToken.CompletionToken.Status))
+					chunkSent = true;
+			}
+			else
+			{
+				LOG_DEBUG("Socket: TCP4 Transmit() call failed: 0x%lx", (UINT64)Status);
+			}
 		}
-		else
+
+		if (!chunkSent)
 		{
-			LOG_DEBUG("Socket: TCP4 Transmit() call failed: 0x%lx", (UINT64)Status);
+			LOG_DEBUG("Socket: Write() failed after %u bytes", totalSent);
+			bs->CloseEvent(TxEvent);
+			return Result<UINT32, Error>::Err(
+				Error::Socket_WriteFailed_Send);
 		}
+
+		totalSent += chunkLen;
 	}
 
 	bs->CloseEvent(TxEvent);
-
-	if (!sent)
-	{
-		LOG_DEBUG("Socket: Write() failed");
-		return Result<UINT32, Error>::Err(
-			Error::Socket_WriteFailed_Send);
-	}
-	LOG_DEBUG("Socket: Write() done, bytesSent=%u", bufferLength);
-	return Result<UINT32, Error>::Ok(bufferLength);
+	LOG_DEBUG("Socket: Write() done, bytesSent=%u", totalSent);
+	return Result<UINT32, Error>::Ok(totalSent);
 }

@@ -22,19 +22,19 @@
 #define STATUS_TIMEOUT ((UINT32)0x00000102L)
 #define IPPROTO_TCP    6
 
-typedef struct AfdBindData
+typedef struct _AfdBindData
 {
 	UINT32  ShareType;
 	SockAddr Address;
 } AfdBindData;
 
-typedef struct AfdBindData6
+typedef struct _AfdBindData6
 {
 	UINT32   ShareType;
 	SockAddr6 Address;
 } AfdBindData6;
 
-typedef struct AfdConnectInfo
+typedef struct _AfdConnectInfo
 {
 	SSIZE    UseSAN;
 	SSIZE    Root;
@@ -42,7 +42,7 @@ typedef struct AfdConnectInfo
 	SockAddr Address;
 } AfdConnectInfo;
 
-typedef struct AfdConnectInfo6
+typedef struct _AfdConnectInfo6
 {
 	SSIZE     UseSAN;
 	SSIZE     Root;
@@ -50,13 +50,13 @@ typedef struct AfdConnectInfo6
 	SockAddr6 Address;
 } AfdConnectInfo6;
 
-typedef struct AfdWsaBuf
+typedef struct _AfdWsaBuf
 {
 	UINT32 Length;
 	PVOID  Buffer;
 } AfdWsaBuf;
 
-typedef struct AfdSendRecvInfo
+typedef struct _AfdSendRecvInfo
 {
 	PVOID  BufferArray;
 	UINT32 BufferCount;
@@ -64,7 +64,7 @@ typedef struct AfdSendRecvInfo
 	UINT32 TdiFlags;
 } AfdSendRecvInfo;
 
-typedef struct AfdSocketParams
+typedef struct _AfdSocketParams
 {
 	INT32  Reserved;
 	UINT16 EaNameLength;
@@ -456,7 +456,7 @@ Result<Socket, Error> Socket::Create(const IPAddress &ipAddress, UINT16 port)
 	auto afdNameSource  = L"\\Device\\Afd\\Endpoint"_embed;
 	AfdName.Buffer      = (PWCHAR)(PCWCHAR)afdNameSource;
 	AfdName.Length      = afdNameSource.Length() * sizeof(WCHAR);
-	AfdName.MaximumLength = afdNameSource.Length() * sizeof(WCHAR);
+	AfdName.MaximumLength = (afdNameSource.Length() + 1) * sizeof(WCHAR);
 
 	OBJECT_ATTRIBUTES   Object;
 	IO_STATUS_BLOCK     IOSB;

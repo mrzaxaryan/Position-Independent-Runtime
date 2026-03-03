@@ -4,6 +4,9 @@
 
 PVOID Allocator::AllocateMemory(USIZE len)
 {
+	if (len == 0)
+		return nullptr;
+
 	PVOID base = nullptr;
 	USIZE size = len;
 	auto result = NTDLL::ZwAllocateVirtualMemory(NTDLL::NtCurrentProcess(), &base, 0, &size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -12,6 +15,9 @@ PVOID Allocator::AllocateMemory(USIZE len)
 
 VOID Allocator::ReleaseMemory(PVOID ptr, USIZE)
 {
+	if (ptr == nullptr)
+		return;
+
 	USIZE size = 0;
 	(void)NTDLL::ZwFreeVirtualMemory(NTDLL::NtCurrentProcess(), &ptr, &size, MEM_RELEASE);
 }
