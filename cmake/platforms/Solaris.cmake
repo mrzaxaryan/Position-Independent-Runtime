@@ -60,9 +60,19 @@ endif()
 # driver (and its unwanted -C injection).
 # Use <CMAKE_LINKER> so CMake auto-quotes paths containing spaces
 # (e.g. "C:/Program Files/LLVM/bin/ld.lld.exe").
+#
+# "-z nognustack" is baked into the link command template (not in
+# PIR_BASE_LINK_FLAGS) because CMake's target_link_options() splits the
+# paired flag "-z nognustack" into two list elements. On some platforms
+# the de-duplication or reordering logic drops or misplaces the argument,
+# allowing LLD to emit PT_GNU_STACK (type 0x6474e551). The Solaris
+# kernel rejects binaries containing this unrecognised OS-specific
+# program header when EI_OSABI is ELFOSABI_SOLARIS, producing
+# "Exec format error" (ENOEXEC). Hardcoding the flag here guarantees
+# it always reaches ld.lld intact.
 set(CMAKE_LINKER "${PIR_LLD_PATH}")
 set(CMAKE_CXX_LINK_EXECUTABLE
-    "<CMAKE_LINKER> -m ${_solaris_emulation} <LINK_FLAGS> <OBJECTS> -o <TARGET>")
+    "<CMAKE_LINKER> -m ${_solaris_emulation} -z nognustack <LINK_FLAGS> <OBJECTS> -o <TARGET>")
 
 # Clear clang-driver-level link flags set by CompilerFlags.cmake
 # (-nostdlib, -fno-jump-tables are driver flags; ld.lld doesn't need them —
@@ -73,18 +83,12 @@ set(PIR_BASE_LINK_FLAGS "")
 # Linker flags passed directly to ld.lld (no -Wl, prefix needed).
 # Use --long-form=value syntax so each flag is a single token, avoiding
 # CMake list-splitting surprises.
-# "-z nognustack" suppresses the PT_GNU_STACK program header (type
-# 0x6474e551). This is a Linux/GNU-specific ELF segment; the Solaris
-# kernel rejects binaries containing unrecognised OS-specific program
-# header types when EI_OSABI is set to ELFOSABI_SOLARIS, producing
-# "Exec format error" (ENOEXEC).
 list(APPEND PIR_BASE_LINK_FLAGS
     --entry=entry_point
     --no-dynamic-linker
     --no-pie
     --symbol-ordering-file=${PIR_ROOT_DIR}/cmake/data/function.order.solaris
     --build-id=none
-    -z nognustack
     -Map=${PIR_MAP_FILE}
 )
 

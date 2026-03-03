@@ -82,6 +82,11 @@ private:
 	static constexpr UINT64 GetMantissaMask() noexcept { return 0x000FFFFFFFFFFFFFULL; }
 
 public:
+	VOID *operator new(USIZE) = delete;
+	VOID operator delete(VOID *) = delete;
+	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+	VOID operator delete(VOID *, PVOID) noexcept {}
+
 	/// @name Constructors
 	/// @{
 

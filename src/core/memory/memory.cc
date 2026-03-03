@@ -120,10 +120,5 @@ extern "C" COMPILER_RUNTIME INT32 memcmp(PCVOID ptr1, PCVOID ptr2, USIZE num)
 
 extern "C" COMPILER_RUNTIME VOID bzero(PVOID dest, USIZE count)
 {
-	PUCHAR p = (PUCHAR)dest;
-
-	for (USIZE i = 0; i < count; i++)
-	{
-		p[i] = 0;
-	}
+	memset(dest, 0, count);
 }

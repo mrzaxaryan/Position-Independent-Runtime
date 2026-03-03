@@ -21,10 +21,21 @@ function(pir_add_postbuild target_name)
         )
     endif()
 
+    # Remove PT_GNU_STACK if present (Solaris rejects this OS-specific segment)
+    set(_gnustack_cmd)
+    if(PIR_PLATFORM STREQUAL "solaris")
+        set(_gnustack_cmd
+            COMMAND ${CMAKE_COMMAND}
+                -DELF_FILE="${_out}${PIR_EXT}"
+                -P "${PIR_ROOT_DIR}/cmake/scripts/RemoveGnuStack.cmake"
+        )
+    endif()
+
     add_custom_command(TARGET ${target_name} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "${PIR_OUTPUT_DIR}"
         COMMAND ${CMAKE_COMMAND} -E echo "Build complete: ${_out}${PIR_EXT}"
         ${_osabi_cmd}
+        ${_gnustack_cmd}
         COMMAND ${CMAKE_COMMAND}
             -DINPUT_FILE="${_out}${PIR_EXT}"
             -DOUTPUT_DIR="${PIR_OUTPUT_DIR}"
