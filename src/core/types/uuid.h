@@ -111,8 +111,8 @@ public:
 
 		for (INT32 i = 0; i < 16; i++)
 		{
-			buffer[index++] = hex[(data[i] >> 4) & 0xF];
-			buffer[index++] = hex[data[i] & 0xF];
+			buffer[index++] = hex[(USIZE)((data[i] >> 4) & 0xF)];
+			buffer[index++] = hex[(USIZE)(data[i] & 0xF)];
 			if (i == 3 || i == 5 || i == 7 || i == 9)
 				buffer[index++] = '-';
 		}
