@@ -20,9 +20,11 @@ public:
     TlsHash(TlsHash &&) = default;
     TlsHash &operator=(TlsHash &&) = default;
 
-    // Stack-only
+    // Stack-only — placement new/delete required by Result<TlsHash, Error>
     VOID *operator new(USIZE) = delete;
     VOID operator delete(VOID *) = delete;
+    VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+    VOID operator delete(VOID *, PVOID) noexcept {}
 
     // Reset the hash cache
     VOID Reset();

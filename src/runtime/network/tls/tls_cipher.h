@@ -67,9 +67,11 @@ public:
     TlsCipher(const TlsCipher &) = delete;
     TlsCipher &operator=(const TlsCipher &) = delete;
 
-    // Stack-only
+    // Stack-only — placement new/delete required by Result<TlsCipher, Error>
     VOID *operator new(USIZE) = delete;
     VOID operator delete(VOID *) = delete;
+    VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+    VOID operator delete(VOID *, PVOID) noexcept {}
 
     TlsCipher(TlsCipher &&other) noexcept
         : cipherCount(other.cipherCount)

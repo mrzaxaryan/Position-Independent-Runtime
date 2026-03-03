@@ -104,6 +104,24 @@ Result<void, Error> TlsBuffer::CheckSize(INT32 appendSize)
     return Result<void, Error>::Ok();
 }
 
+/// @brief Remove consumed bytes from the front and shift remaining data down
+/// @param bytes Number of bytes to consume from the front of the buffer
+
+VOID TlsBuffer::Consume(INT32 bytes)
+{
+    if (bytes <= 0)
+        return;
+    if (bytes >= size)
+    {
+        size = 0;
+        readPos = 0;
+        return;
+    }
+    Memory::Copy(buffer, buffer + bytes, size - bytes);
+    size -= bytes;
+    readPos = 0;
+}
+
 /// @brief Read a block of data from the TLS buffer
 /// @param buf The buffer to store the read data
 /// @param size The number of bytes to read

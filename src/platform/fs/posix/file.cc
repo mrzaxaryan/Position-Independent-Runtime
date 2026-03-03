@@ -16,6 +16,29 @@
 #include "platform/common/freebsd/system.h"
 #endif
 
+// --- lseek wrapper ---
+// On riscv32, SYS_LSEEK (62) maps to sys_llseek which takes 5 arguments:
+// (fd, offset_high, offset_low, &result, whence) and returns 0 on success.
+// All other architectures use the standard 3-argument lseek.
+#if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_RISCV32)
+static SSIZE PosixLseek(USIZE fd, SSIZE offset, INT32 whence)
+{
+	INT64 result = 0;
+	INT64 offset64 = (INT64)offset;
+	USIZE offsetHigh = (USIZE)((UINT64)offset64 >> 32);
+	USIZE offsetLow = (USIZE)((UINT64)offset64 & 0xFFFFFFFF);
+	SSIZE ret = System::Call(SYS_LSEEK, fd, offsetHigh, offsetLow, (USIZE)&result, (USIZE)whence);
+	if (ret < 0)
+		return ret;
+	return (SSIZE)result;
+}
+#else
+static SSIZE PosixLseek(USIZE fd, SSIZE offset, INT32 whence)
+{
+	return System::Call(SYS_LSEEK, fd, (USIZE)offset, whence);
+}
+#endif
+
 // --- Internal Constructor (trivial — never fails) ---
 File::File(PVOID handle, USIZE size) : fileHandle(handle), fileSize(size) {}
 
@@ -56,11 +79,11 @@ Result<File, Error> File::Open(PCWCHAR path, INT32 flags)
 
 	// Query file size via lseek (consistent with Windows/UEFI implementations)
 	USIZE size = 0;
-	SSIZE fileEnd = System::Call(SYS_LSEEK, (USIZE)fd, (USIZE)0, SEEK_END);
+	SSIZE fileEnd = PosixLseek((USIZE)fd, 0, SEEK_END);
 	if (fileEnd >= 0)
 	{
 		size = (USIZE)fileEnd;
-		System::Call(SYS_LSEEK, (USIZE)fd, (USIZE)0, SEEK_SET);
+		PosixLseek((USIZE)fd, 0, SEEK_SET);
 	}
 
 	return Result<File, Error>::Ok(File((PVOID)fd, size));
@@ -164,7 +187,7 @@ Result<USIZE, Error> File::GetOffset() const
 	if (!IsValid())
 		return Result<USIZE, Error>::Err(Error::Fs_SeekFailed);
 
-	SSIZE result = System::Call(SYS_LSEEK, (USIZE)fileHandle, 0, SEEK_CUR);
+	SSIZE result = PosixLseek((USIZE)fileHandle, 0, SEEK_CUR);
 	if (result >= 0)
 		return Result<USIZE, Error>::Ok((USIZE)result);
 	return Result<USIZE, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_SeekFailed);
@@ -175,7 +198,7 @@ Result<void, Error> File::SetOffset(USIZE absoluteOffset)
 	if (!IsValid())
 		return Result<void, Error>::Err(Error::Fs_SeekFailed);
 
-	SSIZE result = System::Call(SYS_LSEEK, (USIZE)fileHandle, absoluteOffset, SEEK_SET);
+	SSIZE result = PosixLseek((USIZE)fileHandle, (SSIZE)absoluteOffset, SEEK_SET);
 	if (result >= 0)
 		return Result<void, Error>::Ok();
 	return Result<void, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_SeekFailed);
@@ -192,7 +215,7 @@ Result<void, Error> File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
 	else if (origin == OffsetOrigin::End)
 		whence = SEEK_END;
 
-	SSIZE result = System::Call(SYS_LSEEK, (USIZE)fileHandle, (USIZE)relativeAmount, whence);
+	SSIZE result = PosixLseek((USIZE)fileHandle, relativeAmount, whence);
 	if (result >= 0)
 		return Result<void, Error>::Ok();
 	return Result<void, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_SeekFailed);

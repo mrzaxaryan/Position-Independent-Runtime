@@ -107,6 +107,8 @@ Result<void, Error> TlsCipher::ComputePublicKey(INT32 eccIndex, TlsBuffer &out)
         if (!initResult)
         {
             LOG_DEBUG("Failed to initialize ECC key at index %d", eccIndex);
+            delete this->privateEccKeys[eccIndex];
+            this->privateEccKeys[eccIndex] = nullptr;
             return Result<void, Error>::Err(initResult, Error::TlsCipher_ComputePublicKeyFailed);
         }
     }
@@ -228,6 +230,8 @@ Result<void, Error> TlsCipher::ComputeKey(ECC_GROUP ecc, Span<const CHAR> server
         if (!preKeyResult)
         {
             LOG_DEBUG("Failed to compute pre-master key for ECC group %d", ecc);
+            Memory::Zero(hash, sizeof(hash));
+            Memory::Zero(earlysecret, sizeof(earlysecret));
             return Result<void, Error>::Err(preKeyResult, Error::TlsCipher_ComputeKeyFailed);
         }
         LOG_DEBUG("Computed pre-master key for ECC group %d, size: %d bytes", ecc, premaster_key.GetSize());
@@ -254,6 +258,15 @@ Result<void, Error> TlsCipher::ComputeKey(ECC_GROUP ecc, Span<const CHAR> server
     TlsHKDF::ExpandLabel(Span<UCHAR>(remoteIvBuffer, this->chacha20Context.GetIvLength()), Span<const UCHAR>(this->data13.mainSecret, hashLen), Span<const CHAR>("iv"_embed, 2), Span<const UCHAR>());
 
     auto initResult = this->chacha20Context.Initialize(Span<const UINT8, POLY1305_KEYLEN>(localKeyBuffer), Span<const UINT8, POLY1305_KEYLEN>(remoteKeyBuffer), localIvBuffer, remoteIvBuffer);
+
+    Memory::Zero(hash, sizeof(hash));
+    Memory::Zero(earlysecret, sizeof(earlysecret));
+    Memory::Zero(salt, sizeof(salt));
+    Memory::Zero(localKeyBuffer, sizeof(localKeyBuffer));
+    Memory::Zero(remoteKeyBuffer, sizeof(remoteKeyBuffer));
+    Memory::Zero(localIvBuffer, sizeof(localIvBuffer));
+    Memory::Zero(remoteIvBuffer, sizeof(remoteIvBuffer));
+
     if (!initResult)
     {
         LOG_DEBUG("Failed to initialize encoder with local key: %p, remote key: %p", localKeyBuffer, remoteKeyBuffer);
@@ -301,6 +314,10 @@ VOID TlsCipher::ComputeVerify(TlsBuffer &out, INT32 verifySize, INT32 localOrRem
     hmac.Update(Span<const UCHAR>((UINT8 *)hash, hashLen));
 
     hmac.Final(Span<UCHAR>((UINT8 *)out.GetBuffer(), out.GetSize()));
+
+    Memory::Zero(hash, sizeof(hash));
+    Memory::Zero(finished_key, sizeof(finished_key));
+
     LOG_DEBUG("tls_cipher_compute_verify: Finished verify computation");
 }
 

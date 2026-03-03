@@ -273,8 +273,8 @@ Result<void, Error> TlsClient::OnServerHello(TlsBuffer &reader)
     CHAR serverRand[RAND_SIZE];
 
     LOG_DEBUG("Processing ServerHello for client: %p", this);
-    reader.ReadU24BE();                        // handshake body size (already bounded by TLS record)
-    ByteOrder::Swap16(reader.Read<INT16>()); // version
+    reader.ReadU24BE();     // handshake body size (already bounded by TLS record)
+    reader.Read<INT16>();   // version (skip)
     reader.Read(Span<CHAR>(serverRand, sizeof(serverRand)));
     INT32 sessionLen = reader.Read<INT8>();
     LOG_DEBUG("ServerHello session length: %d", sessionLen);
@@ -652,9 +652,7 @@ Result<void, Error> TlsClient::ProcessReceive()
         reader.Skip(packetSize);
     }
 
-    INT32 consumed = (INT32)reader.GetOffset();
-    Memory::Copy(recvBuffer.GetBuffer(), recvBuffer.GetBuffer() + consumed, recvBuffer.GetSize() - consumed);
-    recvBuffer.AppendSize(-consumed);
+    recvBuffer.Consume((INT32)reader.GetOffset());
     return Result<void, Error>::Ok();
 }
 
@@ -673,8 +671,7 @@ Result<INT32, Error> TlsClient::ReadChannel(Span<CHAR> output)
     {
         LOG_DEBUG("Clearing recv channel for client: %p, readed size: %d, total size: %d",
                   this, channelBytesRead, channelBuffer.GetSize());
-        Memory::Copy(channelBuffer.GetBuffer(), channelBuffer.GetBuffer() + channelBytesRead, channelBuffer.GetSize() - channelBytesRead);
-        channelBuffer.AppendSize(-channelBytesRead);
+        channelBuffer.Consume(channelBytesRead);
         channelBytesRead = 0;
     }
     LOG_DEBUG("Read %d bytes from channel for client: %p, new readed size: %d, total size: %d",

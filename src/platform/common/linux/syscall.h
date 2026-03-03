@@ -131,17 +131,32 @@ struct LinuxDirent64
 };
 
 /// @brief POSIX time specification with nanosecond precision.
+/// @details On RISC-V 32-bit, the Linux kernel was designed without support for
+/// legacy 32-bit time syscalls (__ARCH_WANT_TIME32_SYSCALLS is not defined).
+/// All time-related syscalls (clock_gettime, ppoll, etc.) require 64-bit time
+/// fields, matching the kernel's __kernel_timespec layout.
 struct Timespec
 {
+#if defined(ARCHITECTURE_RISCV32)
+	INT64 Sec;  ///< Seconds (64-bit required on riscv32)
+	INT64 Nsec; ///< Nanoseconds (64-bit required on riscv32)
+#else
 	SSIZE Sec;  ///< Seconds since the Unix epoch (1970-01-01T00:00:00Z)
 	SSIZE Nsec; ///< Nanoseconds (0 to 999,999,999)
+#endif
 };
 
 /// @brief POSIX time value with microsecond precision, used for socket timeouts.
+/// @details On RISC-V 32-bit, fields must be 64-bit to match the kernel ABI.
 struct Timeval
 {
+#if defined(ARCHITECTURE_RISCV32)
+	INT64 Sec;  ///< Seconds (64-bit required on riscv32)
+	INT64 Usec; ///< Microseconds (64-bit required on riscv32)
+#else
 	SSIZE Sec;  ///< Seconds since the Unix epoch (1970-01-01T00:00:00Z)
 	SSIZE Usec; ///< Microseconds (0 to 999,999)
+#endif
 };
 
 /// @brief File descriptor entry for the poll/ppoll syscall.

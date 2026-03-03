@@ -97,6 +97,9 @@ public:
     VOID Read(Span<CHAR> buf);
     UINT32 ReadU24BE();
 
+    // Remove consumed bytes from the front, shift remaining data down
+    VOID Consume(INT32 bytes);
+
     // Accessors
     INT32 GetSize() const { return size; }
     PCHAR GetBuffer() const { return buffer; }
