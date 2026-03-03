@@ -58,16 +58,16 @@ class UUID {
 
             INT32 index = 0;
             const CHAR* hex = "0123456789abcdef"_embed;
-            auto byteToHex = [&](UINT8 byte){
-                buffer[index++] = hex[(byte >> 4) & 0xF];
-                buffer[index++] = hex[byte & 0xF];
-            };
+            
+            for(INT32 i = 0; i < 16; i++){
+                buffer[index++] = hex[(data[i] >> 4) & 0x0F];
+                buffer[index++] = hex[data[i] & 0x0F];
 
-            for(INT32 i =0; i < 16; i++){
-                byteToHex(data[i]);
-                if(i == 3 || i == 5 || i == 7 || i == 9) buffer[index++] = '-';
+                if(index == 8 || index == 13 || index == 18 || index == 23){
+                    buffer[index++] = '-';
+                }
             }
-            buffer[index] = '\0';
+            buffer[index] = '\0'; // null-terminate
         }
 
         UINT64 GetMostSignificantBits(){
