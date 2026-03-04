@@ -19,6 +19,8 @@
 // --- lseek wrapper ---
 // On riscv32, SYS_LSEEK (62) maps to sys_llseek which takes 5 arguments:
 // (fd, offset_high, offset_low, &result, whence) and returns 0 on success.
+// On FreeBSD i386, SYS_LSEEK (478) takes off_t (64-bit) split across two
+// consecutive 32-bit stack slots (offset_lo, offset_hi) before whence.
 // All other architectures use the standard 3-argument lseek.
 #if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_RISCV32)
 static SSIZE PosixLseek(USIZE fd, SSIZE offset, INT32 whence)
@@ -31,6 +33,14 @@ static SSIZE PosixLseek(USIZE fd, SSIZE offset, INT32 whence)
 	if (ret < 0)
 		return ret;
 	return (SSIZE)result;
+}
+#elif defined(PLATFORM_FREEBSD) && defined(ARCHITECTURE_I386)
+static SSIZE PosixLseek(USIZE fd, SSIZE offset, INT32 whence)
+{
+	INT64 offset64 = (INT64)offset;
+	USIZE offsetLow  = (USIZE)((UINT64)offset64 & 0xFFFFFFFF);
+	USIZE offsetHigh = (USIZE)((UINT64)offset64 >> 32);
+	return System::Call(SYS_LSEEK, fd, offsetLow, offsetHigh, (USIZE)whence);
 }
 #else
 static SSIZE PosixLseek(USIZE fd, SSIZE offset, INT32 whence)
