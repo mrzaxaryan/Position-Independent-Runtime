@@ -21,6 +21,7 @@
  *   WebSocketTests         - WebSocket client implementation tests (ws:// and wss://)
  *   ResultTests            - Result<T,E> type tests
  *   IPAddressTests         - IPAddress constexpr and runtime tests
+ *   UuidTests              - UUID construction, parsing, and serialization tests
  *   SizeReportTests        - Object sizeof report (sorted large to small)
  *
  * USAGE:
@@ -64,6 +65,7 @@
 #include "binary_io_tests.h"
 #include "span_tests.h"
 #include "ip_address_tests.h"
+#include "uuid_tests.h"
 #include "size_report_tests.h"
 
 static BOOL RunPIRTests()
@@ -79,6 +81,7 @@ static BOOL RunPIRTests()
 	RunTestSuite<DoubleTests>(allPassed);
 	RunTestSuite<StringTests>(allPassed);
 	RunTestSuite<IPAddressTests>(allPassed);
+	RunTestSuite<UuidTests>(allPassed);
 
 	// CORE - Data Structures, String Utilities, and Algorithms
 	RunTestSuite<ArrayStorageTests>(allPassed);

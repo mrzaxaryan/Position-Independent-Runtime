@@ -51,7 +51,7 @@
         "ARCHITECTURE": "i386",
         "PLATFORM": "windows",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -77,7 +77,7 @@
         "ARCHITECTURE": "x86_64",
         "PLATFORM": "windows",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -103,7 +103,7 @@
         "ARCHITECTURE": "aarch64",
         "PLATFORM": "windows",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -129,7 +129,7 @@
         "ARCHITECTURE": "armv7a",
         "PLATFORM": "windows",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -155,7 +155,7 @@
         "ARCHITECTURE": "i386",
         "PLATFORM": "linux",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -181,7 +181,7 @@
         "ARCHITECTURE": "x86_64",
         "PLATFORM": "linux",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -207,7 +207,7 @@
         "ARCHITECTURE": "armv7a",
         "PLATFORM": "linux",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -233,7 +233,7 @@
         "ARCHITECTURE": "aarch64",
         "PLATFORM": "linux",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -259,7 +259,7 @@
         "ARCHITECTURE": "riscv32",
         "PLATFORM": "linux",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -285,7 +285,7 @@
         "ARCHITECTURE": "riscv64",
         "PLATFORM": "linux",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -311,7 +311,7 @@
         "ARCHITECTURE": "x86_64",
         "PLATFORM": "macos",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -337,7 +337,7 @@
         "ARCHITECTURE": "aarch64",
         "PLATFORM": "macos",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -363,7 +363,7 @@
         "ARCHITECTURE": "x86_64",
         "PLATFORM": "uefi",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -389,7 +389,7 @@
         "ARCHITECTURE": "aarch64",
         "PLATFORM": "uefi",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -415,7 +415,7 @@
         "ARCHITECTURE": "x86_64",
         "PLATFORM": "solaris",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -441,7 +441,7 @@
         "ARCHITECTURE": "i386",
         "PLATFORM": "solaris",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -467,7 +467,7 @@
         "ARCHITECTURE": "aarch64",
         "PLATFORM": "solaris",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -493,7 +493,7 @@
         "ARCHITECTURE": "i386",
         "PLATFORM": "freebsd",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -519,7 +519,7 @@
         "ARCHITECTURE": "x86_64",
         "PLATFORM": "freebsd",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -545,7 +545,7 @@
         "ARCHITECTURE": "aarch64",
         "PLATFORM": "freebsd",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     },
     {
@@ -571,7 +571,7 @@
         "ARCHITECTURE": "riscv64",
         "PLATFORM": "freebsd",
         "BUILD_TYPE": "release",
-        "OPTIMIZATION_LEVEL": "Oz"
+        "OPTIMIZATION_LEVEL": "O0"
       }
     }
   ],
