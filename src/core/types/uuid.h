@@ -146,35 +146,4 @@ public:
         buffer[pos] = '\0';
         return Result<void, Error>::Ok();
     }
-
-    /// @}
-    /// @name Accessors
-    /// @{
-
-    /**
-     * @brief Get the most significant 64 bits of the UUID
-     * @return Upper 64 bits (bytes 0-7)
-     */
-    constexpr FORCE_INLINE UINT64 GetMostSignificantBits() const noexcept
-    {
-        UINT64 msb = 0;
-        for (INT32 i = 0; i < 8; i++)
-            msb = (msb << 8) | data[i];
-         return msb;
-    }
-
-    /**
-     * @brief Get the least significant 64 bits of the UUID
-     * @return Lower 64 bits (bytes 8-15)
-     */
-    constexpr FORCE_INLINE UINT64 GetLeastSignificantBits() const noexcept
-    {
-        UINT64 lsb = 0;
-        for (INT32 i = 8; i < 16; i++)
-            lsb = (lsb << 8) | data[i];
-        return lsb;
-    }
-     /// @}
-
-
 };
