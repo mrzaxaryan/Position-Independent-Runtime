@@ -7,24 +7,30 @@ class UUIDTests
 private:
     static BOOL TestToString(){
 
-        auto bytes = MakeEmbedArray((const UINT8[]){
+        UUID uuid;
+        Memory::Copy(&uuid, MakeEmbedArray((const UINT8[]){
             0x12, 0x34, 0x56, 0x78,
             0x9a, 0xbc,
             0xde, 0xf0,
             0x12, 0x34,
             0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0
-        });
-
-        UUID uuid(bytes);
-        CHAR buffer[37] = {0};
-        uuid.ToString(&uuid, buffer);
-        return Memory::Compare(buffer, "12345678-9abc-def0-1234-56789abcdef0"_embed, 36) == 0;
+        }), sizeof(UUID));
+        CHAR buffer[37];
+        Span<CHAR> bufferSpan(buffer, sizeof(buffer));
+        auto result = uuid.ToString(bufferSpan);
+        return result.IsOk() && Memory::Compare(buffer, "12345678-9abc-def0-1234-56789abcdef0"_embed, 37) == 0;
+        
     }
     
     static BOOL TestFromString(){
         const char* str = "12345678-9abc-def0-1234-56789abcdef0"_embed;
-
-        UUID uuid = UUID::FromString(str);
+        Span<const CHAR> strSpan(str, StringUtils::Length(str));
+        
+        auto result = UUID::FromString(strSpan);
+        if (result.IsErr()) {
+            return false;
+        }
+        UUID uuid = result.Value();
         auto expected = MakeEmbedArray((const UINT8[]){
             0x12, 0x34, 0x56, 0x78,
             0x9a, 0xbc,

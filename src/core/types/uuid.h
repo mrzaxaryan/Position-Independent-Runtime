@@ -1,28 +1,66 @@
-#include "primitives.h"
-#include "random.h"
+/**
+ * @file uuid.h
+ * @brief Universally Unique Identifier (UUID) Generation and Manipulation
+ *
+ * @details Provides UUID generation (version 4, random), parsing from string
+ * representation, and serialization to the standard 8-4-4-4-12 hex format.
+ *
+ * @see RFC 9562 — Universally Unique IDentifiers (UUIDs)
+ *      https://datatracker.ietf.org/doc/html/rfc9562
+ *
+ * @ingroup core
+ */
+
+#pragma once
+
+#include "core/types/primitives.h"
+#include "core/types/span.h"
+#include "core/types/error.h"
+#include "core/types/result.h"
+#include "core/types/embedded/embedded_string.h"
+#include "core/string/string.h"
+
+/**
+ * @class UUID
+ * @brief 128-bit Universally Unique Identifier
+ *
+ * @details Stores a 128-bit UUID as a 16-byte array and provides factory
+ * methods for random generation and string parsing.
+ */
+class UUID
+{
+private:
+	UINT8 data[16];
+
+public:
+	VOID *operator new(USIZE) = delete;
+	VOID operator delete(VOID *) = delete;
+	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+	VOID operator delete(VOID *, PVOID) noexcept {}
+
+	/// @name Constructors
+	/// @{
+
+	/**
+	 * @brief Default constructor — initializes to nil UUID (all zeros)
+	 */
+	constexpr UUID() noexcept : data{}
+	{
+	}
+
+	/**
+	 * @brief Construct from a 16-byte span
+	 * @param bytes Exactly 16 bytes of UUID data
+	 */
+	constexpr UUID(Span<const UINT8, 16> bytes) noexcept : data{}
+	{
+		for (USIZE i = 0; i < 16; i++)
+			data[i] = bytes[i];
+	}
 
 
-class UUID {
-    private:
-        UINT8 data[16];
-    public:
-        UUID() { Memory::Zero(data, 16); }
 
-        UUID(auto bytes){
-           Memory::Copy(data, bytes, 16);
-        }
-        static UUID RandomUUID(){
-            UUID uuid;
-            Random rng; // Random class for random number generation
-
-            for (INT32 i = 0; i < 16; i++){
-                uuid.data[i] = static_cast<UINT8>(rng.Get() & 0xFF);
-            }
-
-            return uuid;
-        }
-
-        static UUID FromString(const CHAR* str){
+    [[nodiscard]] static Result<UUID, Error> FromString(Span<const CHAR> str) noexcept { 
             UINT8 bytes[16];
             INT32 byteidx = 0;
             INT32 stridx = 0;
@@ -44,7 +82,7 @@ class UUID {
                     } else if(c >= 'A' && c <= 'F'){
                         value = 10 + (c - 'A');
                     } else {
-                        return UUID{};
+                        return Result<UUID, Error>::Err(Error::Uuid_FromStringFailed);
                     }
                     if(nibble == 0){
                         bytes[byteidx] = value << 4;
@@ -54,15 +92,20 @@ class UUID {
 
             } byteidx++;
         }
-        return byteidx == 16 ? UUID(bytes) : UUID{};
+        return byteidx == 16 ? Result<UUID, Error>::Ok(UUID(bytes)) : Result<UUID, Error>::Err(Error::Uuid_FromStringFailed);
         }
    
         // toString method to convert the UUID to a string representation
-        VOID ToString(const UUID* pUuid, char* buffer){
-            const UINT8* bytes = pUuid->data;
-            int pos = 0;
+        [[nodiscard]] Result<void, Error> ToString(Span<CHAR> buffer){
 
-            for(int i =0; i< 16; i++){
+            if(buffer.Size() < 37){ // 36 chars + null terminator
+                return Result<void, Error>::Err(Error::Uuid_ToStringFailed);
+            }
+
+            const UINT8* bytes = data;
+            INT32 pos = 0;
+
+            for(INT32 i =0; i < 16; i++){
                 if(i == 4 || i == 6 || i == 8 || i == 10){
                     buffer[pos++] = '-';
                 }
@@ -72,6 +115,7 @@ class UUID {
                 buffer[pos++] = hex[bytes[i] & 0x0F];
             }
             buffer[pos] = '\0';
+            return Result<void, Error>::Ok();
         }
 
         UINT64 GetMostSignificantBits(){
