@@ -47,6 +47,36 @@ PVOID Allocator::AllocateMemory(USIZE size)
 	// 32-bit Linux architectures use mmap2 with page-shifted offset
 	USIZE offset = 0;
 	SSIZE result = System::Call(SYS_MMAP2, (USIZE)addr, totalSize, prot, flags, -1, offset);
+#elif defined(PLATFORM_FREEBSD) && defined(ARCHITECTURE_I386)
+	// FreeBSD i386: SYS_MMAP(477) takes off_t pos (64-bit), which occupies
+	// two 32-bit stack slots. The 6-arg System::Call only pushes one slot for
+	// the offset, leaving garbage in pos_hi. FreeBSD rejects MAP_ANONYMOUS
+	// with non-zero offset (EINVAL), causing allocation failure and segfault.
+	// Use direct assembly to push all 7 argument slots + dummy = 32 bytes.
+	SSIZE result;
+	register USIZE r1 __asm__("ebx") = (USIZE)addr;
+	register USIZE r2 __asm__("ecx") = totalSize;
+	register USIZE r3 __asm__("edx") = (USIZE)prot;
+	register USIZE r4 __asm__("esi") = (USIZE)flags;
+	register USIZE r5 __asm__("edi") = (USIZE)(SSIZE)-1; // fd
+	__asm__ volatile(
+		"pushl $0\n"          // off_t pos high 32 bits = 0
+		"pushl $0\n"          // off_t pos low 32 bits = 0
+		"pushl %%edi\n"       // fd = -1
+		"pushl %%esi\n"       // flags
+		"pushl %%edx\n"       // prot
+		"pushl %%ecx\n"       // len
+		"pushl %%ebx\n"       // addr
+		"pushl $0\n"          // dummy return address
+		"int $0x80\n"
+		"jnc 1f\n"
+		"negl %%eax\n"
+		"1:\n"
+		"addl $32, %%esp\n"
+		: "=a"(result)
+		: "a"((USIZE)SYS_MMAP), "r"(r1), "r"(r2), "r"(r3), "r"(r4), "r"(r5)
+		: "memory", "cc"
+	);
 #else
 	USIZE offset = 0;
 	SSIZE result = System::Call(SYS_MMAP, (USIZE)addr, totalSize, prot, flags, -1, offset);
