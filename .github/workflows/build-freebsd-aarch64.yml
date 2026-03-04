@@ -70,13 +70,9 @@ jobs:
         with:
           arch: aarch64
           prepare: |
-            pkill dhclient 2>/dev/null; sleep 1
-            dhclient vtnet0 2>/dev/null; sleep 3
-            if ! netstat -rn | grep -q default; then
-              ifconfig vtnet0 inet 192.168.122.50 netmask 255.255.255.0 up
-              route add default 192.168.122.2
-            fi
-            printf "nameserver 192.168.122.3\nnameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+            IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
+            dhclient "$IFACE"
+            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
@@ -105,13 +101,9 @@ jobs:
         with:
           arch: aarch64
           prepare: |
-            pkill dhclient 2>/dev/null; sleep 1
-            dhclient vtnet0 2>/dev/null; sleep 3
-            if ! netstat -rn | grep -q default; then
-              ifconfig vtnet0 inet 192.168.122.50 netmask 255.255.255.0 up
-              route add default 192.168.122.2
-            fi
-            printf "nameserver 192.168.122.3\nnameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+            IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
+            dhclient "$IFACE"
+            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
@@ -140,13 +132,9 @@ jobs:
         with:
           arch: aarch64
           prepare: |
-            pkill dhclient 2>/dev/null; sleep 1
-            dhclient vtnet0 2>/dev/null; sleep 3
-            if ! netstat -rn | grep -q default; then
-              ifconfig vtnet0 inet 192.168.122.50 netmask 255.255.255.0 up
-              route add default 192.168.122.2
-            fi
-            printf "nameserver 192.168.122.3\nnameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+            IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
+            dhclient "$IFACE"
+            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
@@ -175,13 +163,9 @@ jobs:
         with:
           arch: aarch64
           prepare: |
-            pkill dhclient 2>/dev/null; sleep 1
-            dhclient vtnet0 2>/dev/null; sleep 3
-            if ! netstat -rn | grep -q default; then
-              ifconfig vtnet0 inet 192.168.122.50 netmask 255.255.255.0 up
-              route add default 192.168.122.2
-            fi
-            printf "nameserver 192.168.122.3\nnameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+            IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
+            dhclient "$IFACE"
+            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
@@ -210,13 +194,9 @@ jobs:
         with:
           arch: aarch64
           prepare: |
-            pkill dhclient 2>/dev/null; sleep 1
-            dhclient vtnet0 2>/dev/null; sleep 3
-            if ! netstat -rn | grep -q default; then
-              ifconfig vtnet0 inet 192.168.122.50 netmask 255.255.255.0 up
-              route add default 192.168.122.2
-            fi
-            printf "nameserver 192.168.122.3\nnameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+            IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
+            dhclient "$IFACE"
+            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
@@ -245,13 +225,9 @@ jobs:
         with:
           arch: aarch64
           prepare: |
-            pkill dhclient 2>/dev/null; sleep 1
-            dhclient vtnet0 2>/dev/null; sleep 3
-            if ! netstat -rn | grep -q default; then
-              ifconfig vtnet0 inet 192.168.122.50 netmask 255.255.255.0 up
-              route add default 192.168.122.2
-            fi
-            printf "nameserver 192.168.122.3\nnameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+            IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
+            dhclient "$IFACE"
+            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
@@ -280,13 +256,9 @@ jobs:
         with:
           arch: aarch64
           prepare: |
-            pkill dhclient 2>/dev/null; sleep 1
-            dhclient vtnet0 2>/dev/null; sleep 3
-            if ! netstat -rn | grep -q default; then
-              ifconfig vtnet0 inet 192.168.122.50 netmask 255.255.255.0 up
-              route add default 192.168.122.2
-            fi
-            printf "nameserver 192.168.122.3\nnameserver 1.1.1.1\nnameserver 8.8.8.8\n" > /etc/resolv.conf
+            IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
+            dhclient "$IFACE"
+            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
