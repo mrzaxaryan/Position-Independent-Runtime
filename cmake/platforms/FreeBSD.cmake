@@ -21,6 +21,11 @@ if(PIR_ARCH STREQUAL "x86_64")
     list(APPEND PIR_BASE_FLAGS -mno-red-zone)
 endif()
 
+# Disable stack protector — Clang enables -fstack-protector by default for
+# FreeBSD targets (>= 13.0). The canary read (%fs:0x28 on x86_64) requires
+# CRT-initialized TLS, which is unavailable in this freestanding binary.
+list(APPEND PIR_BASE_FLAGS -fno-stack-protector)
+
 # Linker configuration (ELF via LLD through clang driver)
 pir_add_link_flags(
     -e,entry_point
