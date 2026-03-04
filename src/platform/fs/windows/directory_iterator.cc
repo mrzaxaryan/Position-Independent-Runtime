@@ -236,8 +236,7 @@ DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexc
 {
 	if (this != &other)
 	{
-		if (IsValid() && !isBitMaskMode)
-			(void)NTDLL::ZwClose(handle);
+		Close();
 		handle = other.handle;
 		currentEntry = other.currentEntry;
 		isFirst = other.isFirst;
@@ -247,16 +246,12 @@ DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexc
 	return *this;
 }
 
-DirectoryIterator::~DirectoryIterator()
+VOID DirectoryIterator::Close()
 {
-	// If handle is a bitmask (less than a valid memory address), don't close it
 	if (IsValid())
 	{
 		if (!isBitMaskMode)
-		{
 			(void)NTDLL::ZwClose(handle);
-		}
-		// If it's a bitmask, we do nothing. No memory was allocated!
 		handle = (PVOID)-1;
 	}
 }

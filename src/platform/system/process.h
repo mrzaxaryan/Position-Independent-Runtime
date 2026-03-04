@@ -10,9 +10,6 @@
 
 #include "core/core.h"
 
-// Process constants
-constexpr INT32 PROCESS_INVALID_PID = -1;
-
 /**
  * Process - Static class for process management operations
  *
@@ -71,4 +68,6 @@ public:
 	// Prevent instantiation
 	VOID *operator new(USIZE) = delete;
 	VOID operator delete(VOID *) = delete;
+	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+	VOID operator delete(VOID *, PVOID) noexcept {}
 };

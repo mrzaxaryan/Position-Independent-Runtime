@@ -35,7 +35,7 @@ private:
 	DirectoryIterator();
 
 public:
-	~DirectoryIterator();
+	~DirectoryIterator() { Close(); }
 
 	DirectoryIterator(const DirectoryIterator &) = delete;
 	DirectoryIterator &operator=(const DirectoryIterator &) = delete;
@@ -47,6 +47,12 @@ public:
 	VOID operator delete(VOID *) = delete;
 	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
 	VOID operator delete(VOID *, PVOID) noexcept {}
+
+	/**
+	 * @brief Closes the directory handle and releases platform resources.
+	 * @details Safe to call on an already-closed or default-constructed iterator.
+	 */
+	VOID Close();
 
 	/**
 	 * @brief Creates and initializes a directory iterator for the given path.

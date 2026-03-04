@@ -1,7 +1,5 @@
 #include "platform/system/date_time.h"
 #include "core/types/primitives.h"
-#include "core/string/string.h"
-#include "platform/io/console.h"
 
 /// Address of the shared user data in the process address space
 constexpr USIZE MM_SHARED_USER_DATA_VA = 0x7FFE0000;

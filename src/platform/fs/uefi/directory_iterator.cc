@@ -54,11 +54,7 @@ DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexc
 {
 	if (this != &other)
 	{
-		if (IsValid())
-		{
-			EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)handle;
-			fp->Close(fp);
-		}
+		Close();
 		handle = other.handle;
 		currentEntry = other.currentEntry;
 		isFirst = other.isFirst;
@@ -67,7 +63,7 @@ DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexc
 	return *this;
 }
 
-DirectoryIterator::~DirectoryIterator()
+VOID DirectoryIterator::Close()
 {
 	if (IsValid())
 	{

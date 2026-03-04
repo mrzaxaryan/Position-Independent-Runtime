@@ -58,7 +58,7 @@ Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 
 	if (fd < 0)
 	{
-		return Result<DirectoryIterator, Error>::Err(Error::Fs_OpenFailed);
+		return Result<DirectoryIterator, Error>::Err(Error::Posix((UINT32)(-fd)), Error::Fs_OpenFailed);
 	}
 
 	iter.handle = (PVOID)fd;
@@ -77,8 +77,7 @@ DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexc
 {
 	if (this != &other)
 	{
-		if (IsValid())
-			System::Call(SYS_CLOSE, (USIZE)handle);
+		Close();
 		handle = other.handle;
 		currentEntry = other.currentEntry;
 		isFirst = other.isFirst;
@@ -90,7 +89,7 @@ DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexc
 	return *this;
 }
 
-DirectoryIterator::~DirectoryIterator()
+VOID DirectoryIterator::Close()
 {
 	if (IsValid())
 	{

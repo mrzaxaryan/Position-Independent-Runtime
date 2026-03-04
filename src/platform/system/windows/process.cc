@@ -63,7 +63,7 @@ Result<SSIZE, Error> Process::BindSocketToShell(SSIZE socketFd, const CHAR *cmd)
 	si.hStdError = h;
 
 	PROCESS_INFORMATION pi = {};
-	WCHAR cmdWide[260];
+	WCHAR cmdWide[260]{};
 	StringUtils::Utf8ToWide(Span<const CHAR>(cmd, StringUtils::Length(cmd)), Span<WCHAR>(cmdWide, 260));
 
 	auto createResult = Kernel32::CreateProcessW(

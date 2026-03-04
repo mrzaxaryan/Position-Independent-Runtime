@@ -204,6 +204,10 @@ Result<void, Error> Socket::Open()
 		if (pollResult <= 0)
 		{
 			(void)PosixFcntl(sockfd, F_SETFL, flags);
+			if (pollResult < 0)
+				return Result<void, Error>::Err(
+					Error::Posix((UINT32)(-pollResult)),
+					Error::Socket_OpenFailed_Connect);
 			return Result<void, Error>::Err(Error::Socket_OpenFailed_Connect);
 		}
 
