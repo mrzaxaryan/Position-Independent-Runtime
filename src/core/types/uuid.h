@@ -22,35 +22,39 @@ class UUID {
             return uuid;
         }
 
-        static UUID FromString(const CHAR* str, UUID* pUuid){
+        static UUID FromString(const CHAR* str){
             UINT8 bytes[16];
             INT32 byteidx = 0;
+            INT32 stridx = 0;
 
-            for (INT32 i = 0; i < 36; i++){
-                if (str[i] == '-'){
+            while(str[stridx] != '\0' && byteidx < 16){
+                if(str[stridx] == '-'){
+                    stridx++;
                     continue;
                 }
-    
-                const CHAR* hex = "0123456789abcdef"_embed;
-                UINT8 high = 0, low = 0;
+                
+                for(int nibble = 0; nibble < 2; nibble++){
+                    CHAR c = str[stridx++];
+                    UINT8 value = 0;
 
-                for (INT32 j = 0; j < 16; j++){
-                    if (str[i] == hex[j]){
-                        high = j;
+                    if(c >= '0' && c <= '9'){
+                        value = c - '0';
+                    } else if(c >= 'a' && c <= 'f'){
+                        value = 10 + (c - 'a');
+                    } else if(c >= 'A' && c <= 'F'){
+                        value = 10 + (c - 'A');
+                    } else {
+                        return UUID{};
                     }
-                    if (str[i+1] == hex[j]){
-                        low = j;
-                    }
+                    if(nibble == 0){
+                        bytes[byteidx] = value << 4;
+                    } else {
+                       bytes[byteidx] = bytes[byteidx] | value;
                 }
-                bytes[byteidx++] = (high << 4) | low;
-                i++; 
-            }
 
-            if (pUuid) {
-                Memory::Copy(pUuid->data, bytes, 16);
-            }
-            
-            return *pUuid;
+            } byteidx++;
+        }
+        return byteidx == 16 ? UUID(bytes) : UUID{};
         }
    
         // toString method to convert the UUID to a string representation
