@@ -33,9 +33,9 @@ DateTime DateTime::Now()
 		dt.Hours = efiTime.Hour;
 		dt.Minutes = efiTime.Minute;
 		dt.Seconds = efiTime.Second;
-		dt.Nanoseconds = efiTime.Nanosecond;
 		dt.Milliseconds = efiTime.Nanosecond / 1000000;
 		dt.Microseconds = (efiTime.Nanosecond / 1000) % 1000;
+		dt.Nanoseconds = efiTime.Nanosecond % 1000;
 	}
 	else
 	{

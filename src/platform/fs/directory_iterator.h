@@ -25,7 +25,7 @@ private:
 	BOOL isBitMaskMode = false;  ///< TRUE when enumerating logical drives via bitmask on Windows
 #endif
 
-#if defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS) || defined(PLATFORM_SOLARIS)
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS) || defined(PLATFORM_SOLARIS) || defined(PLATFORM_FREEBSD)
 	CHAR buffer[1024]; ///< Kernel entry buffer for getdents64/getdirentries64
 	INT32 bytesRead;       ///< Number of bytes returned by the last syscall
 	INT32 bufferPosition;  ///< Current byte position within the buffer
@@ -35,7 +35,7 @@ private:
 	DirectoryIterator();
 
 public:
-	~DirectoryIterator();
+	~DirectoryIterator() { Close(); }
 
 	DirectoryIterator(const DirectoryIterator &) = delete;
 	DirectoryIterator &operator=(const DirectoryIterator &) = delete;
@@ -47,6 +47,12 @@ public:
 	VOID operator delete(VOID *) = delete;
 	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
 	VOID operator delete(VOID *, PVOID) noexcept {}
+
+	/**
+	 * @brief Closes the directory handle and releases platform resources.
+	 * @details Safe to call on an already-closed or default-constructed iterator.
+	 */
+	VOID Close();
 
 	/**
 	 * @brief Creates and initializes a directory iterator for the given path.

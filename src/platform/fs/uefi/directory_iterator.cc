@@ -21,24 +21,24 @@ Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 	DirectoryIterator iter;
 	(VOID) iter.isFirst; // Suppress unused warning - UEFI uses Read to iterate
 
-	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
-	if (Root == nullptr)
+	EFI_FILE_PROTOCOL *root = GetRootDirectory();
+	if (root == nullptr)
 		return Result<DirectoryIterator, Error>::Err(Error::Fs_OpenFailed);
 
 	// Empty path means root directory - use the volume root handle directly
 	// rather than calling Open() with L"" which some firmware doesn't support
 	if (path == nullptr || path[0] == 0)
 	{
-		iter.handle = (PVOID)Root;
+		iter.handle = (PVOID)root;
 		return Result<DirectoryIterator, Error>::Ok(static_cast<DirectoryIterator &&>(iter));
 	}
 
-	EFI_FILE_PROTOCOL *DirHandle = OpenFileFromRoot(Root, path, EFI_FILE_MODE_READ, 0);
-	Root->Close(Root);
+	EFI_FILE_PROTOCOL *dirHandle = OpenFileFromRoot(root, path, EFI_FILE_MODE_READ, 0);
+	root->Close(root);
 
-	if (DirHandle != nullptr)
+	if (dirHandle != nullptr)
 	{
-		iter.handle = (PVOID)DirHandle;
+		iter.handle = (PVOID)dirHandle;
 		return Result<DirectoryIterator, Error>::Ok(static_cast<DirectoryIterator &&>(iter));
 	}
 	return Result<DirectoryIterator, Error>::Err(Error::Fs_OpenFailed);
@@ -54,11 +54,8 @@ DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexc
 {
 	if (this != &other)
 	{
-		if (handle != nullptr)
-		{
-			EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)handle;
-			fp->Close(fp);
-		}
+		if (IsValid())
+			Close();
 		handle = other.handle;
 		currentEntry = other.currentEntry;
 		isFirst = other.isFirst;
@@ -67,9 +64,9 @@ DirectoryIterator &DirectoryIterator::operator=(DirectoryIterator &&other) noexc
 	return *this;
 }
 
-DirectoryIterator::~DirectoryIterator()
+VOID DirectoryIterator::Close()
 {
-	if (handle != nullptr)
+	if (IsValid())
 	{
 		EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)handle;
 		fp->Close(fp);
@@ -79,43 +76,43 @@ DirectoryIterator::~DirectoryIterator()
 
 Result<void, Error> DirectoryIterator::Next()
 {
-	if (handle == nullptr)
+	if (!IsValid())
 		return Result<void, Error>::Err(Error::Fs_ReadFailed);
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)handle;
 
 	// Allocate buffer for EFI_FILE_INFO (needs to include variable-length filename)
 	// Use a fixed buffer size that should be large enough for most filenames
-	UINT8 Buffer[512];
-	USIZE BufferSize = sizeof(Buffer);
+	UINT8 buffer[512];
+	USIZE bufferSize = sizeof(buffer);
 
-	EFI_STATUS Status = fp->Read(fp, &BufferSize, Buffer);
+	EFI_STATUS status = fp->Read(fp, &bufferSize, buffer);
 
-	if (EFI_ERROR_CHECK(Status))
-		return Result<void, Error>::Err(Error::Uefi((UINT32)Status), Error::Fs_ReadFailed);
+	if (EFI_ERROR_CHECK(status))
+		return Result<void, Error>::Err(Error::Uefi((UINT32)status), Error::Fs_ReadFailed);
 
 	// End of directory
-	if (BufferSize == 0)
+	if (bufferSize == 0)
 		return Result<void, Error>::Err(Error::Fs_ReadFailed);
 
-	EFI_FILE_INFO *FileInfo = (EFI_FILE_INFO *)Buffer;
+	EFI_FILE_INFO *fileInfo = (EFI_FILE_INFO *)buffer;
 
 	// Copy filename to currentEntry
 	INT32 i = 0;
-	while (FileInfo->FileName[i] != 0 && i < 255)
+	while (fileInfo->FileName[i] != 0 && i < 255)
 	{
-		currentEntry.Name[i] = FileInfo->FileName[i];
+		currentEntry.Name[i] = fileInfo->FileName[i];
 		i++;
 	}
 	currentEntry.Name[i] = 0;
 
 	// Fill other fields
-	currentEntry.Size = FileInfo->FileSize;
-	currentEntry.IsDirectory = (FileInfo->Attribute & EFI_FILE_DIRECTORY) != 0;
+	currentEntry.Size = fileInfo->FileSize;
+	currentEntry.IsDirectory = (fileInfo->Attribute & EFI_FILE_DIRECTORY) != 0;
 	currentEntry.IsDrive = false;
-	currentEntry.IsHidden = (FileInfo->Attribute & EFI_FILE_HIDDEN) != 0;
-	currentEntry.IsSystem = (FileInfo->Attribute & EFI_FILE_SYSTEM) != 0;
-	currentEntry.IsReadOnly = (FileInfo->Attribute & EFI_FILE_READ_ONLY) != 0;
+	currentEntry.IsHidden = (fileInfo->Attribute & EFI_FILE_HIDDEN) != 0;
+	currentEntry.IsSystem = (fileInfo->Attribute & EFI_FILE_SYSTEM) != 0;
+	currentEntry.IsReadOnly = (fileInfo->Attribute & EFI_FILE_READ_ONLY) != 0;
 	currentEntry.Type = 0;
 	currentEntry.CreationTime = 0;
 	currentEntry.LastModifiedTime = 0;

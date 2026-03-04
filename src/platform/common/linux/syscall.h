@@ -20,6 +20,10 @@
 #include "platform/common/linux/syscall.aarch64.h"
 #elif defined(ARCHITECTURE_ARMV7A)
 #include "platform/common/linux/syscall.armv7a.h"
+#elif defined(ARCHITECTURE_RISCV64)
+#include "platform/common/linux/syscall.riscv64.h"
+#elif defined(ARCHITECTURE_RISCV32)
+#include "platform/common/linux/syscall.riscv32.h"
 #else
 #error "Unsupported architecture"
 #endif
@@ -44,7 +48,7 @@ constexpr INT32 O_NONBLOCK = 0x0800;
 
 #if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_I386)
 constexpr INT32 O_DIRECTORY = 0x10000;
-#elif defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_ARMV7A)
+#elif defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_ARMV7A) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32)
 constexpr INT32 O_DIRECTORY = 0x4000;
 #endif
 
@@ -91,8 +95,16 @@ constexpr INT32 CLOCK_MONOTONIC = 1;
 // Socket options
 constexpr INT32 SOL_SOCKET = 1;
 constexpr INT32 SO_ERROR = 4;
+#if defined(ARCHITECTURE_RISCV32)
+// riscv32 has no time32 support — SO_RCVTIMEO_OLD/SO_SNDTIMEO_OLD (20/21) do
+// not exist; the kernel only provides the _NEW variants (66/67) which expect
+// 64-bit timeval fields.
+constexpr INT32 SO_RCVTIMEO = 66;
+constexpr INT32 SO_SNDTIMEO = 67;
+#else
 constexpr INT32 SO_RCVTIMEO = 20;
 constexpr INT32 SO_SNDTIMEO = 21;
+#endif
 constexpr INT32 IPPROTO_TCP = 6;
 constexpr INT32 TCP_NODELAY = 1;
 
@@ -101,6 +113,7 @@ constexpr INT32 F_GETFL = 3;
 constexpr INT32 F_SETFL = 4;
 
 // errno values
+constexpr INT32 EEXIST = 17;
 constexpr INT32 EINPROGRESS = 115;
 
 // poll event flags
@@ -126,17 +139,32 @@ struct LinuxDirent64
 };
 
 /// @brief POSIX time specification with nanosecond precision.
+/// @details On RISC-V 32-bit, the Linux kernel was designed without support for
+/// legacy 32-bit time syscalls (__ARCH_WANT_TIME32_SYSCALLS is not defined).
+/// All time-related syscalls (clock_gettime, ppoll, etc.) require 64-bit time
+/// fields, matching the kernel's __kernel_timespec layout.
 struct Timespec
 {
+#if defined(ARCHITECTURE_RISCV32)
+	INT64 Sec;  ///< Seconds (64-bit required on riscv32)
+	INT64 Nsec; ///< Nanoseconds (64-bit required on riscv32)
+#else
 	SSIZE Sec;  ///< Seconds since the Unix epoch (1970-01-01T00:00:00Z)
 	SSIZE Nsec; ///< Nanoseconds (0 to 999,999,999)
+#endif
 };
 
 /// @brief POSIX time value with microsecond precision, used for socket timeouts.
+/// @details On RISC-V 32-bit, fields must be 64-bit to match the kernel ABI.
 struct Timeval
 {
+#if defined(ARCHITECTURE_RISCV32)
+	INT64 Sec;  ///< Seconds (64-bit required on riscv32)
+	INT64 Usec; ///< Microseconds (64-bit required on riscv32)
+#else
 	SSIZE Sec;  ///< Seconds since the Unix epoch (1970-01-01T00:00:00Z)
 	SSIZE Usec; ///< Microseconds (0 to 999,999)
+#endif
 };
 
 /// @brief File descriptor entry for the poll/ppoll syscall.

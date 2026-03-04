@@ -26,22 +26,22 @@ static NOINLINE EFI_GUID MakeFileInfoGuid()
 
 static NOINLINE USIZE QueryFileSize(EFI_FILE_PROTOCOL &fp)
 {
-	EFI_GUID FileInfoId = MakeFileInfoGuid();
-	USIZE InfoSize = 0;
-	fp.GetInfo(&fp, &FileInfoId, &InfoSize, nullptr);
-	if (InfoSize == 0)
+	EFI_GUID fileInfoId = MakeFileInfoGuid();
+	USIZE infoSize = 0;
+	fp.GetInfo(&fp, &fileInfoId, &infoSize, nullptr);
+	if (infoSize == 0)
 		return 0;
 
 	EFI_CONTEXT *ctx = GetEfiContext();
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
 
 	USIZE size = 0;
-	EFI_FILE_INFO *FileInfo = nullptr;
-	if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, InfoSize, (PVOID *)&FileInfo)))
+	EFI_FILE_INFO *fileInfo = nullptr;
+	if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, infoSize, (PVOID *)&fileInfo)))
 	{
-		if (!EFI_ERROR_CHECK(fp.GetInfo(&fp, &FileInfoId, &InfoSize, FileInfo)))
-			size = FileInfo->FileSize;
-		bs->FreePool(FileInfo);
+		if (!EFI_ERROR_CHECK(fp.GetInfo(&fp, &fileInfoId, &infoSize, fileInfo)))
+			size = fileInfo->FileSize;
+		bs->FreePool(fileInfo);
 	}
 	return size;
 }
@@ -50,27 +50,29 @@ static NOINLINE USIZE QueryFileSize(EFI_FILE_PROTOCOL &fp)
 // Helper: Truncate file to zero length via EFI_FILE_INFO
 // =============================================================================
 
-static NOINLINE VOID TruncateFile(EFI_FILE_PROTOCOL &fp)
+static NOINLINE BOOL TruncateFile(EFI_FILE_PROTOCOL &fp)
 {
-	EFI_GUID FileInfoId = MakeFileInfoGuid();
-	USIZE InfoSize = 0;
-	fp.GetInfo(&fp, &FileInfoId, &InfoSize, nullptr);
-	if (InfoSize == 0)
-		return;
+	EFI_GUID fileInfoId = MakeFileInfoGuid();
+	USIZE infoSize = 0;
+	fp.GetInfo(&fp, &fileInfoId, &infoSize, nullptr);
+	if (infoSize == 0)
+		return false;
 
 	EFI_CONTEXT *ctx = GetEfiContext();
 	EFI_BOOT_SERVICES *bs = ctx->SystemTable->BootServices;
 
-	EFI_FILE_INFO *FileInfo = nullptr;
-	if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, InfoSize, (PVOID *)&FileInfo)))
+	BOOL success = false;
+	EFI_FILE_INFO *fileInfo = nullptr;
+	if (!EFI_ERROR_CHECK(bs->AllocatePool(EfiLoaderData, infoSize, (PVOID *)&fileInfo)))
 	{
-		if (!EFI_ERROR_CHECK(fp.GetInfo(&fp, &FileInfoId, &InfoSize, FileInfo)))
+		if (!EFI_ERROR_CHECK(fp.GetInfo(&fp, &fileInfoId, &infoSize, fileInfo)))
 		{
-			FileInfo->FileSize = 0;
-			fp.SetInfo(&fp, &FileInfoId, InfoSize, FileInfo);
+			fileInfo->FileSize = 0;
+			success = !EFI_ERROR_CHECK(fp.SetInfo(&fp, &fileInfoId, infoSize, fileInfo));
 		}
-		bs->FreePool(FileInfo);
+		bs->FreePool(fileInfo);
 	}
+	return success;
 }
 
 // =============================================================================
@@ -83,8 +85,8 @@ File::File(PVOID handle, USIZE size) : fileHandle(handle), fileSize(size) {}
 // --- Factory & Static Operations ---
 Result<File, Error> File::Open(PCWCHAR path, INT32 flags)
 {
-	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
-	if (Root == nullptr)
+	EFI_FILE_PROTOCOL *root = GetRootDirectory();
+	if (root == nullptr)
 		return Result<File, Error>::Err(Error::Fs_OpenFailed);
 
 	// Convert flags to EFI modes
@@ -106,54 +108,60 @@ Result<File, Error> File::Open(PCWCHAR path, INT32 flags)
 	if (mode & EFI_FILE_MODE_CREATE)
 		mode |= EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE;
 
-	EFI_FILE_PROTOCOL *FileHandle = OpenFileFromRoot(Root, path, mode, attributes);
-	Root->Close(Root);
+	EFI_FILE_PROTOCOL *handle = OpenFileFromRoot(root, path, mode, attributes);
+	root->Close(root);
 
-	if (FileHandle == nullptr)
+	if (handle == nullptr)
 		return Result<File, Error>::Err(Error::Fs_OpenFailed);
 
 	// Handle truncate flag
 	if (flags & File::ModeTruncate)
-		TruncateFile(*FileHandle);
+	{
+		if (!TruncateFile(*handle))
+		{
+			handle->Close(handle);
+			return Result<File, Error>::Err(Error::Fs_OpenFailed);
+		}
+	}
 
 	// Query file size before constructing the File (keeps the constructor trivial)
-	USIZE size = QueryFileSize(*FileHandle);
+	USIZE size = QueryFileSize(*handle);
 
-	return Result<File, Error>::Ok(File((PVOID)FileHandle, size));
+	return Result<File, Error>::Ok(File((PVOID)handle, size));
 }
 
 Result<void, Error> File::Delete(PCWCHAR path)
 {
-	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
-	if (Root == nullptr)
+	EFI_FILE_PROTOCOL *root = GetRootDirectory();
+	if (root == nullptr)
 		return Result<void, Error>::Err(Error::Fs_DeleteFailed);
 
-	EFI_FILE_PROTOCOL *FileHandle = OpenFileFromRoot(Root, path, EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE, 0);
-	Root->Close(Root);
+	EFI_FILE_PROTOCOL *handle = OpenFileFromRoot(root, path, EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE, 0);
+	root->Close(root);
 
-	if (FileHandle == nullptr)
+	if (handle == nullptr)
 		return Result<void, Error>::Err(Error::Fs_DeleteFailed);
 
 	// EFI_FILE_PROTOCOL.Delete closes the handle and deletes the file
-	EFI_STATUS Status = FileHandle->Delete(FileHandle);
-	if (EFI_ERROR_CHECK(Status))
-		return Result<void, Error>::Err(Error::Uefi((UINT32)Status), Error::Fs_DeleteFailed);
+	EFI_STATUS status = handle->Delete(handle);
+	if (EFI_ERROR_CHECK(status))
+		return Result<void, Error>::Err(Error::Uefi((UINT32)status), Error::Fs_DeleteFailed);
 	return Result<void, Error>::Ok();
 }
 
 Result<void, Error> File::Exists(PCWCHAR path)
 {
-	EFI_FILE_PROTOCOL *Root = GetRootDirectory();
-	if (Root == nullptr)
+	EFI_FILE_PROTOCOL *root = GetRootDirectory();
+	if (root == nullptr)
 		return Result<void, Error>::Err(Error::Fs_OpenFailed);
 
-	EFI_FILE_PROTOCOL *FileHandle = OpenFileFromRoot(Root, path, EFI_FILE_MODE_READ, 0);
-	Root->Close(Root);
+	EFI_FILE_PROTOCOL *handle = OpenFileFromRoot(root, path, EFI_FILE_MODE_READ, 0);
+	root->Close(root);
 
-	if (FileHandle == nullptr)
+	if (handle == nullptr)
 		return Result<void, Error>::Err(Error::Fs_OpenFailed);
 
-	FileHandle->Close(FileHandle);
+	handle->Close(handle);
 	return Result<void, Error>::Ok();
 }
 
@@ -164,7 +172,7 @@ BOOL File::IsValid() const
 
 VOID File::Close()
 {
-	if (fileHandle != nullptr)
+	if (IsValid())
 	{
 		EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
 		fp->Close(fp);
@@ -175,68 +183,70 @@ VOID File::Close()
 
 Result<UINT32, Error> File::Read(Span<UINT8> buffer)
 {
-	if (fileHandle == nullptr || buffer.Data() == nullptr || buffer.Size() == 0)
+	if (!IsValid() || buffer.Data() == nullptr || buffer.Size() == 0)
 		return Result<UINT32, Error>::Err(Error::Fs_ReadFailed);
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
 	USIZE readSize = buffer.Size();
 
-	EFI_STATUS Status = fp->Read(fp, &readSize, buffer.Data());
-	if (EFI_ERROR_CHECK(Status))
-		return Result<UINT32, Error>::Err(Error::Uefi((UINT32)Status), Error::Fs_ReadFailed);
+	EFI_STATUS status = fp->Read(fp, &readSize, buffer.Data());
+	if (EFI_ERROR_CHECK(status))
+		return Result<UINT32, Error>::Err(Error::Uefi((UINT32)status), Error::Fs_ReadFailed);
 
 	return Result<UINT32, Error>::Ok((UINT32)readSize);
 }
 
 Result<UINT32, Error> File::Write(Span<const UINT8> buffer)
 {
-	if (fileHandle == nullptr || buffer.Data() == nullptr || buffer.Size() == 0)
+	if (!IsValid() || buffer.Data() == nullptr || buffer.Size() == 0)
 		return Result<UINT32, Error>::Err(Error::Fs_WriteFailed);
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
 	USIZE writeSize = buffer.Size();
 
-	EFI_STATUS Status = fp->Write(fp, &writeSize, (PVOID)buffer.Data());
-	if (EFI_ERROR_CHECK(Status))
-		return Result<UINT32, Error>::Err(Error::Uefi((UINT32)Status), Error::Fs_WriteFailed);
+	EFI_STATUS status = fp->Write(fp, &writeSize, (PVOID)buffer.Data());
+	if (EFI_ERROR_CHECK(status))
+		return Result<UINT32, Error>::Err(Error::Uefi((UINT32)status), Error::Fs_WriteFailed);
 
 	// Update file size if we wrote past the end
 	UINT64 pos = 0;
-	fp->GetPosition(fp, &pos);
-	if (pos > fileSize)
-		fileSize = pos;
+	if (!EFI_ERROR_CHECK(fp->GetPosition(fp, &pos)))
+	{
+		if (pos > fileSize)
+			fileSize = pos;
+	}
 
 	return Result<UINT32, Error>::Ok((UINT32)writeSize);
 }
 
 Result<USIZE, Error> File::GetOffset() const
 {
-	if (fileHandle == nullptr)
+	if (!IsValid())
 		return Result<USIZE, Error>::Err(Error::Fs_SeekFailed);
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
 	UINT64 position = 0;
 	EFI_STATUS status = fp->GetPosition(fp, &position);
-	if ((SSIZE)status >= 0)
+	if (!EFI_ERROR_CHECK(status))
 		return Result<USIZE, Error>::Ok((USIZE)position);
 	return Result<USIZE, Error>::Err(Error::Uefi((UINT32)status), Error::Fs_SeekFailed);
 }
 
 Result<void, Error> File::SetOffset(USIZE absoluteOffset)
 {
-	if (fileHandle == nullptr)
+	if (!IsValid())
 		return Result<void, Error>::Err(Error::Fs_SeekFailed);
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
 	EFI_STATUS status = fp->SetPosition(fp, absoluteOffset);
-	if ((SSIZE)status >= 0)
+	if (!EFI_ERROR_CHECK(status))
 		return Result<void, Error>::Ok();
 	return Result<void, Error>::Err(Error::Uefi((UINT32)status), Error::Fs_SeekFailed);
 }
 
 Result<void, Error> File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
 {
-	if (fileHandle == nullptr)
+	if (!IsValid())
 		return Result<void, Error>::Err(Error::Fs_SeekFailed);
 
 	EFI_FILE_PROTOCOL *fp = (EFI_FILE_PROTOCOL *)fileHandle;
@@ -251,7 +261,7 @@ Result<void, Error> File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
 	{
 		UINT64 currentPos = 0;
 		EFI_STATUS getStatus = fp->GetPosition(fp, &currentPos);
-		if ((SSIZE)getStatus < 0)
+		if (EFI_ERROR_CHECK(getStatus))
 			return Result<void, Error>::Err(Error::Uefi((UINT32)getStatus), Error::Fs_SeekFailed);
 		if (relativeAmount >= 0)
 			newPosition = currentPos + relativeAmount;
@@ -265,10 +275,12 @@ Result<void, Error> File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
 		else
 			newPosition = (fileSize > (UINT64)(-relativeAmount)) ? fileSize + relativeAmount : 0;
 		break;
+	default:
+		return Result<void, Error>::Err(Error::Fs_SeekFailed);
 	}
 
 	EFI_STATUS status = fp->SetPosition(fp, newPosition);
-	if ((SSIZE)status >= 0)
+	if (!EFI_ERROR_CHECK(status))
 		return Result<void, Error>::Ok();
 	return Result<void, Error>::Err(Error::Uefi((UINT32)status), Error::Fs_SeekFailed);
 }
@@ -284,7 +296,8 @@ File &File::operator=(File &&other) noexcept
 {
 	if (this != &other)
 	{
-		Close();
+		if (IsValid())
+			(void)Close();
 		fileHandle = other.fileHandle;
 		fileSize = other.fileSize;
 		other.fileHandle = nullptr;

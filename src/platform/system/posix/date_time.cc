@@ -8,6 +8,9 @@
 #elif defined(PLATFORM_SOLARIS)
 #include "platform/common/solaris/syscall.h"
 #include "platform/common/solaris/system.h"
+#elif defined(PLATFORM_FREEBSD)
+#include "platform/common/freebsd/syscall.h"
+#include "platform/common/freebsd/system.h"
 #endif
 
 DateTime DateTime::Now()

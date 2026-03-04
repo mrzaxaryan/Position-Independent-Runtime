@@ -82,6 +82,13 @@ private:
 	static constexpr UINT64 GetMantissaMask() noexcept { return 0x000FFFFFFFFFFFFFULL; }
 
 public:
+	VOID *operator new(USIZE) = delete;
+	VOID *operator new[](USIZE) = delete;
+	VOID operator delete(VOID *) = delete;
+	VOID operator delete[](VOID *) = delete;
+	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+	VOID operator delete(VOID *, PVOID) noexcept {}
+
 	/// @name Constructors
 	/// @{
 
@@ -573,8 +580,14 @@ public:
 	/** @brief Subtract UINT64 (converts val to DOUBLE first) */
 	NOINLINE DISABLE_OPTIMIZATION DOUBLE operator-(UINT64 val) const noexcept
 	{
-		DOUBLE d_val = DOUBLE((INT64)val);
-		return *this - d_val;
+		if (val <= 0x7FFFFFFFFFFFFFFFULL)
+		{
+			return *this - DOUBLE((INT64)val);
+		}
+		// val > INT64_MAX: split as 2^63 + (val - 2^63) to avoid signed overflow
+		DOUBLE pow2_63 = DOUBLE(INT64(0x4000000000000000LL)) + DOUBLE(INT64(0x4000000000000000LL));
+		DOUBLE low = DOUBLE((INT64)(val - 0x8000000000000000ULL));
+		return *this - (pow2_63 + low);
 	}
 
 	/** @brief Subtract UINT32 (converts val to DOUBLE first) */

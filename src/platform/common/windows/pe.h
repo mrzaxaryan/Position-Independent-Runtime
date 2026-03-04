@@ -213,7 +213,7 @@ typedef struct _IMAGE_NT_HEADERS32
 
 /// @brief Architecture-appropriate IMAGE_NT_HEADERS alias.
 /// @details Aliases IMAGE_NT_HEADERS64 on 64-bit platforms (x86_64, ARM64) and
-/// IMAGE_NT_HEADERS32 on 32-bit platforms (i386).
+/// IMAGE_NT_HEADERS32 on 32-bit platforms (i386, ARMV7A).
 #if defined(PLATFORM_WINDOWS_X86_64) || defined(PLATFORM_WINDOWS_AARCH64)
 
 typedef IMAGE_NT_HEADERS64 IMAGE_NT_HEADERS;
@@ -284,4 +284,4 @@ typedef struct _IMAGE_DOS_HEADER
  * @see Microsoft PE Format -- Export Directory Table
  *      https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#export-directory-table
  */
-PVOID GetExportAddress(PVOID hModule, USIZE functionNameHash);
+PVOID GetExportAddress(PVOID hModule, UINT64 functionNameHash);

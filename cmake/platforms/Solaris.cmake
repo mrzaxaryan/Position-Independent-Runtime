@@ -10,7 +10,7 @@ if(NOT PIR_ARCH MATCHES "^(i386|x86_64|aarch64)$")
 endif()
 
 pir_get_target_info()
-pir_filter_sources(windows linux macos uefi)
+pir_filter_sources(windows linux macos uefi freebsd)
 
 list(APPEND PIR_INCLUDE_PATHS
     "${PIR_ROOT_DIR}/src/platform/common/solaris")
@@ -60,9 +60,18 @@ endif()
 # driver (and its unwanted -C injection).
 # Use <CMAKE_LINKER> so CMake auto-quotes paths containing spaces
 # (e.g. "C:/Program Files/LLVM/bin/ld.lld.exe").
+#
+# A linker script with an explicit PHDRS command
+# (cmake/data/linker.solaris.ld) controls which program headers LLD
+# emits. Only the segments listed in PHDRS are created, so PT_PHDR
+# and PT_GNU_STACK are never generated:
+#   - PT_PHDR: Solaris kernel rejects static binaries with PT_PHDR but
+#     no PT_INTERP (if (uphdr && !intphdr) goto bad; → ENOEXEC).
+#   - PT_GNU_STACK: OS-specific type 0x6474e551 that Solaris rejects
+#     when EI_OSABI is ELFOSABI_SOLARIS.
 set(CMAKE_LINKER "${PIR_LLD_PATH}")
 set(CMAKE_CXX_LINK_EXECUTABLE
-    "<CMAKE_LINKER> -m ${_solaris_emulation} <LINK_FLAGS> <OBJECTS> -o <TARGET>")
+    "<CMAKE_LINKER> -m ${_solaris_emulation} -T ${PIR_ROOT_DIR}/cmake/data/linker.solaris.ld <LINK_FLAGS> <OBJECTS> -o <TARGET>")
 
 # Clear clang-driver-level link flags set by CompilerFlags.cmake
 # (-nostdlib, -fno-jump-tables are driver flags; ld.lld doesn't need them —

@@ -140,12 +140,70 @@ jobs:
             build/**/output.exe
             build/**/output.bin
 
+  build-windows-armv7a:
+    runs-on: windows-11-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: C:\Program Files\LLVM
+          key: llvm-${{ env.LLVM_VERSION }}-windows-11-arm
+
+      - name: Install Ninja
+        shell: pwsh
+        run: choco install ninja -y
+
+      - name: Install LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $ver = "${{ env.LLVM_VERSION }}"
+          $exe = "LLVM-$ver-win64.exe"
+          $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-$ver/$exe"
+          Invoke-WebRequest -Uri $url -OutFile $exe
+          Start-Process -FilePath ".\$exe" -ArgumentList "/S" -Wait
+
+      - name: Add LLVM to PATH
+        shell: pwsh
+        run: '"C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Append'
+
+      - name: Build with -Oz (no logging, no tests)
+        shell: pwsh
+        run: |
+          cmake --preset windows-armv7a-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
+          cmake --build --preset windows-armv7a-release
+
+      - name: Get sizes
+        id: sizes
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path build -Recurse -Filter "output.exe" | Select-Object -First 1
+          $bin = Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1
+          $exeSize = if ($exe) { $exe.Length } else { 0 }
+          $binSize = if ($bin) { $bin.Length } else { 0 }
+          $result = "windows-armv7a,$exeSize,$binSize"
+          echo "result=$result" >> $env:GITHUB_OUTPUT
+
+      - name: Upload size data
+        uses: actions/upload-artifact@v4
+        with:
+          name: size-windows-armv7a
+          retention-days: 1
+          path: |
+            build/**/output.exe
+            build/**/output.bin
+
   build-linux:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        arch: [i386, x86_64, armv7a, aarch64]
+        arch: [i386, x86_64, armv7a, aarch64, riscv32, riscv64]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -365,9 +423,68 @@ jobs:
             build/**/output.elf
             build/**/output.bin
 
+  build-freebsd:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [i386, x86_64, aarch64, riscv64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: /opt/llvm
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
+
+      - name: Install LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          TARBALL="LLVM-${{ env.LLVM_VERSION }}-Linux-X64.tar.xz"
+          URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/${TARBALL}"
+          wget -q "$URL"
+          sudo mkdir -p /opt/llvm
+          sudo tar xf "$TARBALL" -C /opt/llvm --strip-components=1
+          rm "$TARBALL"
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build cmake
+
+      - name: Add LLVM to PATH
+        run: echo "/opt/llvm/bin" >> $GITHUB_PATH
+
+      - name: Build with -Oz (no logging, no tests)
+        run: |
+          cmake --preset freebsd-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
+          cmake --build --preset freebsd-${{ matrix.arch }}-release
+
+      - name: Get sizes
+        id: sizes
+        run: |
+          ELF=$(find build -type f -name "output.elf" | head -n 1)
+          BIN=$(find build -type f -name "output.bin" | head -n 1)
+          ELF_SIZE=$(stat -c%s "$ELF" 2>/dev/null || echo 0)
+          BIN_SIZE=$(stat -c%s "$BIN" 2>/dev/null || echo 0)
+          echo "result=freebsd-${{ matrix.arch }},$ELF_SIZE,$BIN_SIZE" >> $GITHUB_OUTPUT
+
+      - name: Upload size data
+        uses: actions/upload-artifact@v4
+        with:
+          name: size-freebsd-${{ matrix.arch }}
+          retention-days: 1
+          path: |
+            build/**/output.elf
+            build/**/output.bin
+
   update-readme:
     if: always()
-    needs: [build-windows, build-windows-aarch64, build-linux, build-macos, build-uefi, build-solaris]
+    needs: [build-windows, build-windows-aarch64, build-windows-armv7a, build-linux, build-macos, build-uefi, build-solaris, build-freebsd]
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -544,6 +661,7 @@ jobs:
               ("Windows", [
                   ("i386", "windows_i386"),
                   ("x86_64", "windows_x86_64"),
+                  ("armv7a", "windows_armv7a"),
                   ("aarch64", "windows_aarch64"),
               ]),
               ("Linux", [
@@ -551,6 +669,8 @@ jobs:
                   ("x86_64", "linux_x86_64"),
                   ("armv7a", "linux_armv7a"),
                   ("aarch64", "linux_aarch64"),
+                  ("riscv32", "linux_riscv32"),
+                  ("riscv64", "linux_riscv64"),
               ]),
               ("macOS", [
                   ("x86_64", "macos_x86_64"),
@@ -564,6 +684,12 @@ jobs:
                   ("i386", "solaris_i386"),
                   ("x86_64", "solaris_x86_64"),
                   ("aarch64", "solaris_aarch64"),
+              ]),
+              ("FreeBSD", [
+                  ("i386", "freebsd_i386"),
+                  ("x86_64", "freebsd_x86_64"),
+                  ("aarch64", "freebsd_aarch64"),
+                  ("riscv64", "freebsd_riscv64"),
               ]),
           ]
 

@@ -69,9 +69,6 @@ typedef unsigned char UCHAR, *PUCHAR;
 /** @brief Const char pointer */
 typedef const CHAR *PCCHAR;
 
-/** @brief Single-precision floating-point */
-typedef float FLOAT, *PFLOAT;
-
 /** @brief Wide character type (wchar_t: 2 bytes on Windows/UEFI, 4 bytes on Linux/macOS) */
 typedef wchar_t WCHAR, *PWCHAR, **PPWCHAR;
 /** @brief Const wide char pointer */

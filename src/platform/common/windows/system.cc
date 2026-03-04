@@ -19,7 +19,7 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 #if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_AARCH64)
 	UINT32 exportDirRva  = *(UINT32*)(ntHeaders + 0x88);
 	UINT32 exportDirSize = *(UINT32*)(ntHeaders + 0x8C);
-#elif defined(ARCHITECTURE_I386)
+#elif defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A)
 	UINT32 exportDirRva  = *(UINT32*)(ntHeaders + 0x78);
 	UINT32 exportDirSize = *(UINT32*)(ntHeaders + 0x7C);
 #else
@@ -40,7 +40,8 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 	{
 		const CHAR* name = (const CHAR*)(base + nameRvaTable[i]);
 
-		if (*(UINT16*)name != 0x775A)
+		// Check for "Zw" prefix (0x5A='Z', 0x77='w')
+		if (name[0] != 'Z' || name[1] != 'w')
 			continue;
 
 		if (Djb2::Hash(name) != functionNameHash)
@@ -56,7 +57,7 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 		{
 			// Each x64 stub contains an inline syscall;ret gadget (0F 05 C3)
 			UINT8* funcAddr = base + funcRva;
-			for (UINT32 k = 0; k < 30; k++)
+			for (UINT32 k = 0; k < 26; k++)
 			{
 				if (funcAddr[k] == 0x0F && funcAddr[k + 1] == 0x05 && funcAddr[k + 2] == 0xC3)
 				{
@@ -75,11 +76,35 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 			// SVC encoding: 0xD4000001 | (imm16 << 5), mask 0xFFE0001F
 			// RET encoding: 0xD65F03C0
 			UINT32* instrs = (UINT32*)(base + funcRva);
-			for (UINT32 k = 0; k < 8; k++)
+			for (UINT32 k = 0; k < 6; k++)
 			{
 				if ((instrs[k] & 0xFFE0001F) == 0xD4000001 && instrs[k + 1] == 0xD65F03C0)
 				{
 					result.SyscallAddress = (PVOID)&instrs[k];
+					break;
+				}
+			}
+			if (!result.SyscallAddress)
+				return result;
+		}
+#elif defined(ARCHITECTURE_ARMV7A)
+		{
+			// ARM32 ntdll stubs (Thumb-2 mode):
+			// MOV.W r12, #SSN    (variable length Thumb-2 encoding)
+			// SVC   #1           (Thumb-2: 0xDF01)
+			// BX    LR           (Thumb-2: 0x4770)
+			//
+			// We scan for the SVC #1 halfword to locate the stub, then set
+			// the syscall address to the function entry with bit 0 set
+			// for correct Thumb interworking via BLX.
+			UINT8* funcAddr = base + funcRva;
+			UINT16* hw = (UINT16*)funcAddr;
+			for (UINT32 k = 0; k < 16; k++)
+			{
+				if (hw[k] == 0xDF01) // SVC #1 in Thumb encoding
+				{
+					// Set bit 0 for Thumb interworking
+					result.SyscallAddress = (PVOID)((USIZE)funcAddr | 1);
 					break;
 				}
 			}
@@ -130,7 +155,8 @@ SYSCALL_ENTRY System::ResolveSyscallEntry(UINT64 functionNameHash)
 		for (UINT32 j = 0; j < numberOfNames; j++)
 		{
 			const CHAR* n = (const CHAR*)(base + nameRvaTable[j]);
-			if (*(UINT16*)n != 0x775A)
+			// Check for "Zw" prefix (0x5A='Z', 0x77='w')
+			if (n[0] != 'Z' || n[1] != 'w')
 				continue;
 
 			UINT32 rva = funcRvaTable[ordinalTable[j]];

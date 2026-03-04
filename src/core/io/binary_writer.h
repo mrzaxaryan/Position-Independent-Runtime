@@ -59,11 +59,22 @@
 class BinaryWriter
 {
 private:
-	PVOID address;  ///< Base address of the output buffer
-	USIZE offset;   ///< Current write position (bytes from base)
-	USIZE maxSize;  ///< Maximum writable size in bytes
+	UINT8 *address;  ///< Base address of the output buffer
+	USIZE offset;    ///< Current write position (bytes from base)
+	USIZE maxSize;   ///< Maximum writable size in bytes
 
 public:
+	/// @name Heap Operators
+	/// @{
+
+	VOID *operator new(USIZE) = delete;
+	VOID *operator new[](USIZE) = delete;
+	VOID operator delete(VOID *) = delete;
+	VOID operator delete[](VOID *) = delete;
+	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; } ///< Placement new for Result<BinaryWriter, Error>
+	VOID operator delete(VOID *, PVOID) noexcept {}               ///< Matching placement delete
+
+	/// @}
 	/// @name Constructors
 	/// @{
 
@@ -73,7 +84,7 @@ public:
 	 * @param offset Initial write offset in bytes
 	 */
 	constexpr BinaryWriter(Span<UINT8> data, USIZE offset)
-		: address((PVOID)data.Data()), offset(offset), maxSize(data.Size())
+		: address(data.Data()), offset(offset), maxSize(data.Size())
 	{
 	}
 
@@ -82,7 +93,7 @@ public:
 	 * @param data Span of bytes to write into
 	 */
 	constexpr BinaryWriter(Span<UINT8> data)
-		: address((PVOID)data.Data()), offset(0), maxSize(data.Size())
+		: address(data.Data()), offset(0), maxSize(data.Size())
 	{
 	}
 
@@ -103,10 +114,10 @@ public:
 	template <typename T>
 	PVOID Write(T value)
 	{
-		if (offset + sizeof(T) > maxSize)
+		if (sizeof(T) > maxSize - offset)
 			return nullptr;
 
-		Memory::Copy((PCHAR)address + offset, &value, sizeof(T));
+		Memory::Copy(address + offset, &value, sizeof(T));
 		offset += sizeof(T);
 		return address;
 	}
@@ -116,12 +127,12 @@ public:
 	 * @param data Source data span
 	 * @return Base address on success, nullptr if insufficient space remains
 	 */
-	PVOID WriteBytes(Span<const CHAR> data)
+	PVOID WriteBytes(Span<const UINT8> data)
 	{
-		if (offset + data.Size() > maxSize)
+		if (data.Size() > maxSize - offset)
 			return nullptr;
 
-		Memory::Copy((PCHAR)address + offset, data.Data(), data.Size());
+		Memory::Copy(address + offset, data.Data(), data.Size());
 		offset += data.Size();
 		return address;
 	}
@@ -133,10 +144,10 @@ public:
 	 */
 	constexpr FORCE_INLINE PVOID WriteU8(UINT8 value)
 	{
-		if (offset + 1 > maxSize)
+		if (maxSize - offset < 1)
 			return nullptr;
 
-		*((PUCHAR)address + offset) = value;
+		*(address + offset) = value;
 		offset += 1;
 		return address;
 	}
@@ -154,10 +165,10 @@ public:
 	 */
 	constexpr FORCE_INLINE PVOID WriteU16BE(UINT16 value)
 	{
-		if (offset + 2 > maxSize)
+		if (maxSize - offset < 2)
 			return nullptr;
 
-		PUCHAR p = (PUCHAR)address + offset;
+		UINT8 *p = address + offset;
 		p[0] = (UINT8)(value >> 8);
 		p[1] = (UINT8)(value & 0xFF);
 		offset += 2;
@@ -177,10 +188,10 @@ public:
 	 */
 	constexpr FORCE_INLINE PVOID WriteU24BE(UINT32 value)
 	{
-		if (offset + 3 > maxSize)
+		if (maxSize - offset < 3)
 			return nullptr;
 
-		PUCHAR p = (PUCHAR)address + offset;
+		UINT8 *p = address + offset;
 		p[0] = (UINT8)((value >> 16) & 0xFF);
 		p[1] = (UINT8)((value >> 8) & 0xFF);
 		p[2] = (UINT8)(value & 0xFF);
@@ -201,10 +212,10 @@ public:
 	 */
 	constexpr FORCE_INLINE PVOID WriteU32BE(UINT32 value)
 	{
-		if (offset + 4 > maxSize)
+		if (maxSize - offset < 4)
 			return nullptr;
 
-		PUCHAR p = (PUCHAR)address + offset;
+		UINT8 *p = address + offset;
 		p[0] = (UINT8)((value >> 24) & 0xFF);
 		p[1] = (UINT8)((value >> 16) & 0xFF);
 		p[2] = (UINT8)((value >> 8) & 0xFF);
@@ -224,7 +235,7 @@ public:
 	 */
 	constexpr FORCE_INLINE BOOL Skip(USIZE count)
 	{
-		if (offset + count > maxSize)
+		if (count > maxSize - offset)
 			return false;
 
 		offset += count;
@@ -245,7 +256,7 @@ public:
 	/// @{
 
 	/** @brief Get the base address of the output buffer */
-	constexpr PVOID GetAddress() const { return address; }
+	constexpr UINT8 *GetAddress() const { return address; }
 
 	/** @brief Get the current write offset in bytes */
 	constexpr USIZE GetOffset() const { return offset; }

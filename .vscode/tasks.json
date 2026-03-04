@@ -98,6 +98,24 @@
       "group": "build"
     },
     {
+      "label": "windows-armv7a-debug",
+      "type": "shell",
+      "command": "cmake --preset windows-armv7a-debug && cmake --build --preset windows-armv7a-debug",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "windows-armv7a-release",
+      "type": "shell",
+      "command": "cmake --preset windows-armv7a-release && cmake --build --preset windows-armv7a-release",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
       "label": "linux-i386-debug",
       "type": "shell",
       "command": "cmake --preset linux-i386-debug && cmake --build --preset linux-i386-debug",
@@ -164,6 +182,42 @@
       "label": "linux-aarch64-release",
       "type": "shell",
       "command": "cmake --preset linux-aarch64-release && cmake --build --preset linux-aarch64-release",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "linux-riscv32-debug",
+      "type": "shell",
+      "command": "cmake --preset linux-riscv32-debug && cmake --build --preset linux-riscv32-debug",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "linux-riscv32-release",
+      "type": "shell",
+      "command": "cmake --preset linux-riscv32-release && cmake --build --preset linux-riscv32-release",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "linux-riscv64-debug",
+      "type": "shell",
+      "command": "cmake --preset linux-riscv64-debug && cmake --build --preset linux-riscv64-debug",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "linux-riscv64-release",
+      "type": "shell",
+      "command": "cmake --preset linux-riscv64-release && cmake --build --preset linux-riscv64-release",
       "problemMatcher": [
         "$gcc"
       ],
@@ -296,12 +350,85 @@
       "group": "build"
     },
     {
+      "label": "freebsd-i386-debug",
+      "type": "shell",
+      "command": "cmake --preset freebsd-i386-debug && cmake --build --preset freebsd-i386-debug",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "freebsd-i386-release",
+      "type": "shell",
+      "command": "cmake --preset freebsd-i386-release && cmake --build --preset freebsd-i386-release",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "freebsd-x86_64-debug",
+      "type": "shell",
+      "command": "cmake --preset freebsd-x86_64-debug && cmake --build --preset freebsd-x86_64-debug",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "freebsd-x86_64-release",
+      "type": "shell",
+      "command": "cmake --preset freebsd-x86_64-release && cmake --build --preset freebsd-x86_64-release",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "freebsd-aarch64-debug",
+      "type": "shell",
+      "command": "cmake --preset freebsd-aarch64-debug && cmake --build --preset freebsd-aarch64-debug",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "freebsd-aarch64-release",
+      "type": "shell",
+      "command": "cmake --preset freebsd-aarch64-release && cmake --build --preset freebsd-aarch64-release",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "freebsd-riscv64-debug",
+      "type": "shell",
+      "command": "cmake --preset freebsd-riscv64-debug && cmake --build --preset freebsd-riscv64-debug",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "freebsd-riscv64-release",
+      "type": "shell",
+      "command": "cmake --preset freebsd-riscv64-release && cmake --build --preset freebsd-riscv64-release",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
       "label": "Build All Windows",
       "dependsOrder": "parallel",
       "dependsOn": [
         "windows-i386-release",
         "windows-x86_64-release",
-        "windows-aarch64-release"
+        "windows-aarch64-release",
+        "windows-armv7a-release"
       ],
       "group": "build",
       "problemMatcher": []
@@ -313,7 +440,9 @@
         "linux-i386-release",
         "linux-x86_64-release",
         "linux-armv7a-release",
-        "linux-aarch64-release"
+        "linux-aarch64-release",
+        "linux-riscv32-release",
+        "linux-riscv64-release"
       ],
       "group": "build",
       "problemMatcher": []
@@ -350,6 +479,18 @@
       "problemMatcher": []
     },
     {
+      "label": "Build All FreeBSD",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "freebsd-i386-release",
+        "freebsd-x86_64-release",
+        "freebsd-aarch64-release",
+        "freebsd-riscv64-release"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
       "label": "Run UEFI x86_64 (QEMU)",
       "type": "shell",
       "command": "qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -drive file=fat:rw:build/release/uefi/x86_64,format=raw,if=ide,index=0 -m 512 -nographic -nic user,model=e1000 -no-reboot",
@@ -380,7 +521,8 @@
         "Build All Linux",
         "Build All macOS",
         "Build All UEFI",
-        "Build All Solaris"
+        "Build All Solaris",
+        "Build All FreeBSD"
       ],
       "group": {
         "kind": "build",

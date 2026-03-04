@@ -27,10 +27,10 @@ EFI_FILE_PROTOCOL *GetRootDirectory();
 
 /**
  * @brief Open a file by path from a root directory handle
- * @param Root Root directory protocol handle
+ * @param root Root directory protocol handle
  * @param path Wide-character file path (normalized to backslashes for UEFI)
  * @param mode EFI file mode flags (EFI_FILE_MODE_READ, etc.)
  * @param attributes EFI file attributes
  * @return File protocol handle, or nullptr on failure
  */
-EFI_FILE_PROTOCOL *OpenFileFromRoot(EFI_FILE_PROTOCOL *Root, PCWCHAR path, UINT64 mode, UINT64 attributes);
+EFI_FILE_PROTOCOL *OpenFileFromRoot(EFI_FILE_PROTOCOL *root, PCWCHAR path, UINT64 mode, UINT64 attributes);

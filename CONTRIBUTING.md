@@ -1,5 +1,26 @@
 # Contributing to Position-Independent Runtime
 
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Toolchain Installation](#toolchain-installation)
+- [IDE Configuration](#ide-configuration)
+- [Project Structure](#project-structure)
+- [The Golden Rule: No Data Sections](#the-golden-rule-no-data-sections)
+- [Code Style](#code-style)
+- [Documentation](#documentation)
+- [Naming Conventions](#naming-conventions)
+- [Parameters & Returns](#parameters--returns)
+- [Error Handling](#error-handling)
+- [Memory & Resources](#memory--resources)
+- [Patterns](#patterns)
+- [Windows API Wrappers](#windows-api-wrappers)
+- [Writing Tests](#writing-tests)
+- [Common Pitfalls](#common-pitfalls)
+- [Submitting Changes](#submitting-changes)
+
+---
+
 ## Quick Start
 
 **Requirements:** Clang/LLVM 21+, CMake 3.20+, Ninja 1.10+, C++23. See [Toolchain Installation](#toolchain-installation) below.
@@ -13,7 +34,9 @@ cmake --build --preset {platform}-{arch}-{build_type}
 ./build/{build_type}/{platform}/{arch}/output.{exe|elf|efi}
 ```
 
-Presets: `windows|linux|macos|uefi` x `i386|x86_64|armv7a|aarch64` x `debug|release`
+Presets: `windows|linux|macos|freebsd|uefi` x `i386|x86_64|armv7a|aarch64` x `debug|release`
+
+---
 
 ## Toolchain Installation
 
@@ -79,30 +102,28 @@ Verify:
 clang --version && clang++ --version && ld64.lld --version && cmake --version && ninja --version
 ```
 
-### IDE Configuration
+---
 
-#### Visual Studio Code
+## IDE Configuration
+
+### Visual Studio Code
 
 This project is designed and optimized for [Visual Studio Code](https://code.visualstudio.com/). When you open this project in VSCode, you will be automatically prompted to install the recommended extensions.
 
-#### WSL Integration
+### WSL Integration
 
-If you're developing on Windows with WSL, you can open this project in WSL using VSCode's remote development features.
-
-**From within WSL**, navigate to the project directory and run:
-
-```bash
-code .
-```
+If you're developing on Windows with WSL, navigate to the project directory inside WSL and run `code .`.
 
 **Prerequisites:**
-- Ensure WSL is properly configured on your Windows system
-- Install QEMU, UEFI firmware, and disk image tools:
+- WSL properly configured on your Windows system
+- QEMU, UEFI firmware, and disk image tools:
   ```bash
   sudo apt-get update && sudo apt-get install -y qemu-user-static qemu-system-x86 qemu-system-arm ovmf qemu-efi-aarch64 dosfstools mtools
   ```
 
 For more information, see the [VSCode WSL documentation](https://code.visualstudio.com/docs/remote/wsl) and [.vscode/README.md](.vscode/README.md).
+
+---
 
 ## Project Structure
 
@@ -126,6 +147,7 @@ src/                        # Source layers
       linux/                # Syscall numbers, System::Call, result conversion
       macos/                # Syscall numbers, System::Call, result conversion
       solaris/              # Syscall numbers, System::Call, result conversion
+      freebsd/              # Syscall numbers, System::Call, result conversion
       uefi/                 # EFI types, protocols, boot/runtime services
     memory/                 # Allocator (heap management)
       windows/              # NtAllocateVirtualMemory/NtFreeVirtualMemory
@@ -144,6 +166,7 @@ src/                        # Source layers
       linux/                # Direct socket syscalls
       macos/                # Direct socket syscalls
       solaris/              # Direct socket syscalls
+      freebsd/              # Direct socket syscalls
       uefi/                 # EFI_TCP4/TCP6_PROTOCOL
     system/                 # DateTime, Environment, Process, Random
       windows/              # Windows-specific system operations
@@ -151,6 +174,7 @@ src/                        # Source layers
       linux/                # Linux-specific environment, platform, process
       macos/                # macOS-specific environment, platform, process
       solaris/              # Solaris-specific environment, platform, process
+      freebsd/              # FreeBSD-specific environment, platform, process
       uefi/                 # UEFI-specific system operations
   runtime/                  # RUNTIME layer (.h + .cc co-located)
     runtime.h               # Aggregate header (CORE + PLATFORM + RUNTIME)
@@ -166,9 +190,7 @@ Three-layer architecture (RUNTIME > PLATFORM > CORE) — upper layers depend on 
 
 ---
 
-## Rules
-
-### The Golden Rule: No Data Sections
+## The Golden Rule: No Data Sections
 
 The binary must contain **only** a `.text` section. No `.rdata`, `.rodata`, `.data`, or `.bss`. Verified automatically by `cmake/VerifyPICMode.cmake`.
 
@@ -186,20 +208,9 @@ The binary must contain **only** a `.text` section. No `.rdata`, `.rodata`, `.da
 | RTTI (`dynamic_cast`, `typeid`) | Static dispatch |
 | `(T*, USIZE)` buffer parameter pairs | `Span<T>` / `Span<const T>` |
 
-**Embedded types quick reference:**
+---
 
-```cpp
-auto msg  = "Hello, World!"_embed;              // EMBEDDED_STRING (CHAR)
-auto wide = L"Hello"_embed;                     // EMBEDDED_STRING (WCHAR)
-auto pi   = 3.14159_embed;                      // DOUBLE (IEEE-754 immediate)
-auto fn   = EMBED_FUNC(MyFunction);             // Function pointer (PC-relative)
-
-constexpr UINT32 table[] = {0x11, 0x22, 0x33};
-auto embedded = MakeEmbedArray(table);           // EMBEDDED_ARRAY (packed words)
-UINT32 val = embedded[0];                        // Unpacked at runtime
-```
-
-### Code Style
+## Code Style
 
 - **Indentation:** Tabs (not spaces)
 - **Braces:** Allman style — opening brace on its own line
@@ -209,97 +220,34 @@ UINT32 val = embedded[0];                        // Unpacked at runtime
 - **`constexpr`/`consteval` everywhere possible:** mark every function and variable `constexpr` if it *can* be evaluated at compile time; use `consteval` when it *must* be compile-time only
 - **Cast to `USIZE`** when passing pointer/handle arguments to `System::Call`
 - **Includes:** `runtime.h` = everything; `platform.h` = CORE + PLATFORM; implementation files include own header first
-- **Include paths:** Always use full paths relative to `src/` — never bare filenames. This eliminates ambiguity, makes dependencies self-documenting, and does not rely on CMake include-path ordering:
-  ```cpp
-  // Good — unambiguous, self-documenting:
-  #include "core/types/primitives.h"
-  #include "core/string/string.h"
-  #include "platform/io/console.h"
+- **Include paths:** Always use full paths relative to `src/` (e.g., `"core/types/primitives.h"`, not `"primitives.h"`). This eliminates ambiguity and does not rely on CMake include-path ordering. Exception: test files in `tests/` may use bare filenames for other test headers in the same directory.
 
-  // Bad — relies on search-path ordering, ambiguous origin:
-  #include "primitives.h"
-  #include "string.h"
-  #include "console.h"
-  ```
-  Exception: test files in `tests/` may use bare filenames for other test headers in the same directory (e.g., `#include "tests.h"`).
+---
 
-### Documentation & RFC References
+## Documentation
 
-All public APIs and protocol implementations **must** include Doxygen documentation with RFC references where applicable.
+All public APIs and protocol implementations **must** include Doxygen documentation.
 
-**File-level documentation** — every header starts with `@file`, `@brief`, `@details`, and relevant `@see` RFC links:
+### RFC References
 
-```cpp
-/**
- * @file base64.h
- * @brief Base64 Encoding and Decoding
- *
- * @details Platform-independent Base64 encoding and decoding implementing
- * the standard alphabet defined in RFC 4648 Section 4.
- *
- * @see RFC 4648 — The Base16, Base32, and Base64 Data Encodings
- *      https://datatracker.ietf.org/doc/html/rfc4648
- * @see RFC 4648 Section 4 — Base 64 Encoding (alphabet and padding definition)
- *      https://datatracker.ietf.org/doc/html/rfc4648#section-4
- */
-```
+- Every header starts with `@file`, `@brief`, `@details`, and relevant `@see` RFC links
+- Functions include `@brief`, `@details` (algorithm steps), `@param`, `@return`, and `@see` with specific RFC section links
+- RFC `@see` format: human-readable citation on the first line, full URL (`https://datatracker.ietf.org/doc/html/rfcXXXX#section-Y.Z`) indented on the next
+- Inline references use `///` comments for enum values, struct members, and implementation comments
 
-**Function/method documentation** — `@brief`, `@details` explaining the algorithm step-by-step, `@param`, `@return`, and `@see` with specific RFC section links:
+**Required for:** all cryptographic algorithms, network protocols, encoding/decoding schemes, wire-format structs and enums, and implementation comments referencing protocol steps.
+**Optional for:** internal utility functions with no protocol specification, and test files.
 
-```cpp
-/**
- * @brief Encodes binary data to Base64 format
- *
- * @details Implements the encoding procedure from RFC 4648 Section 4:
- * 1. Input bytes are consumed in 3-byte (24-bit) groups
- * 2. Each group is split into four 6-bit values ...
- *
- * @param input Input binary data
- * @param output Output buffer
- *
- * @see RFC 4648 Section 4 — Base 64 Encoding
- *      https://datatracker.ietf.org/doc/html/rfc4648#section-4
- */
-```
+### Windows NT API References
 
-**RFC reference format** — always use the `@see` tag with both the human-readable citation and the full URL on the next line:
+Platform-specific OS API wrappers must include `@see` links to the official Microsoft Learn documentation instead of RFC links.
 
-```
-@see RFC XXXX Section Y.Z — Short description
-     https://datatracker.ietf.org/doc/html/rfcXXXX#section-Y.Z
-```
+- **WDK-documented functions** — link to the WDK DDI reference
+- **Partially documented functions** — link to the closest available page (Win32 DevNotes or Nt prefix equivalent)
+- **Undocumented functions** — add `@note This function is undocumented by Microsoft.` and link to the closest documented Win32 equivalent
+- **Requirements** — every function must include a `@par Requirements` block listing minimum supported Windows client and server versions
 
-**Inline RFC references** — use `///` comments for enum values, struct members, and implementation comments:
-
-```cpp
-Text = 0x1, ///< Text data frame — payload is UTF-8 (RFC 6455 Section 5.6)
-```
-
-**When RFC documentation is required:**
-- All cryptographic algorithms (SHA, HMAC, ChaCha20, ECC, etc.)
-- All network protocols (TLS, HTTP, WebSocket, DNS, etc.)
-- All encoding/decoding schemes (Base64, ASN.1/DER, etc.)
-- All wire-format structs and enums
-- Implementation comments referencing specific protocol steps or state machines
-
-**When RFC documentation is optional:**
-- Internal utility functions with no protocol specification
-- Test files
-
-### Windows NT API Documentation References
-
-Platform-specific OS API wrappers (NTDLL, Kernel32) **must** include Doxygen documentation with `@see` links to the official Microsoft Learn documentation instead of RFC links. Use the same `@see` tag pattern as RFC references: human-readable name on the first line, full URL indented on the next.
-
-- **WDK-documented functions** — most Zw* syscall wrappers are in the WDK DDI reference
-- **Partially documented functions** — some are only in Win32 DevNotes or under the Nt prefix; link to the closest available page
-- **Undocumented functions** (e.g., ZwCreateUserProcess, ZwSetInformationObject) — add `@note This function is undocumented by Microsoft.` and link to the closest documented Win32 equivalent
-- **Requirements** — every function must include a `@par Requirements` block listing the minimum supported Windows client and server versions (e.g., `Minimum supported client: Windows XP`, `Minimum supported server: Windows Server 2003`). Place it after `@return` and before `@see`/`@note`
-
-**When Microsoft Learn documentation is required:**
-- All NTDLL Zw*/Nt* syscall wrappers
-- All NTDLL Rtl* runtime library wrappers
-- All Kernel32/Win32 API wrappers
-- Windows-specific structs, enums, and constants that correspond to documented types
+**Required for:** all NTDLL Zw*/Nt* and Rtl* wrappers, all Kernel32/Win32 wrappers, and Windows-specific structs/enums/constants.
 
 **Common URL patterns:**
 
@@ -312,7 +260,9 @@ Platform-specific OS API wrappers (NTDLL, Kernel32) **must** include Doxygen doc
 | Win32 DevNotes | `https://learn.microsoft.com/en-us/windows/win32/devnotes/{function}` |
 | Kernel concepts | `https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/{topic}` |
 
-### Naming
+---
+
+## Naming Conventions
 
 | Kind | Convention | Examples |
 |------|-----------|----------|
@@ -343,7 +293,9 @@ Platform-specific OS API wrappers (NTDLL, Kernel32) **must** include Doxygen doc
 | Platform+arch-specific | `name.platform.arch.cc` | `syscall.windows.x86_64.cc`, `entry_point.linux.aarch64.cc` |
 | Test files | `snake_case_tests.h` | `djb2_tests.h`, `socket_tests.h` |
 
-### Parameters & Returns
+---
+
+## Parameters & Returns
 
 | Style | When | Example |
 |-------|------|---------|
@@ -352,104 +304,21 @@ Platform-specific OS API wrappers (NTDLL, Kernel32) **must** include Doxygen doc
 | By reference | Non-null params (compile-time guarantee) | `Socket(const IPAddress &ipAddress, UINT16 port)` |
 | `Span<T>` | Contiguous buffer params (replaces `T*, USIZE` pairs) | `void Process(Span<const UINT8> data)` |
 
-**Prefer references over pointers** — Use reference parameters (`T&` / `const T&`) by default for non-null arguments. References provide a compile-time non-null guarantee, which means the callee never needs a null check — any null guard inside the function is dead code and a sign the parameter should be a reference. Reserve pointers only for output parameters, nullable arguments, and Windows API compatibility.
+### Key Rules
 
-**`Span<T>`** — **Use `Span<T>` instead of raw pointer buffer parameters** for functions that operate on contiguous buffers. This applies to both `(T*, USIZE)` pairs and bare `T*` pointers without any size — bare pointers are worse since no bounds checking is possible at all. This eliminates size-mismatch bugs at zero runtime cost:
-
-```cpp
-// Bad — caller can pass wrong size:
-void Write(const UINT8 *data, USIZE size);
-
-// Good — size is bundled with pointer:
-void Write(Span<const UINT8> data);
-
-UINT8 buffer[64];
-Write(Span(buffer));              // size deduced from array
-Write(Span(ptr, len));            // explicit pointer + size
-Write(writable.Subspan(4, 16));   // slicing
-```
-
-Use `Span<T>` for writable buffers and `Span<const T>` for read-only views. `Span<T>` implicitly converts to `Span<const T>`. The following are exempt from this rule:
-- Core primitives that Span itself is built on (e.g., `Memory::Copy`, `Memory::Set`, `Memory::Compare`) — they take raw `(PVOID, PCVOID, USIZE)` by design.
-- Null-terminated string functions (e.g., `StringUtils::Length`, `StringUtils::Compare`, `StringUtils::Equals`) — they compute length from the null terminator, so they are string parameters with implicit length, not buffer parameters. These typically have `Span` overloads as well for callers that already know the length.
-
-**Do not cache `Span::Size()` into a read-only local variable** — `Size()` is `constexpr FORCE_INLINE` and compiles to a direct member access, so there is no cost to calling it repeatedly. Caching it into a local just for loop bounds or repeated comparisons adds a redundant variable with no benefit. Mutable counters initialized from `Size()` and derived computations from multiple `Size()` calls are fine:
-
-```cpp
-// Bad — unnecessary read-only local for loop bound:
-INT32 maxLen = (INT32)data.Size();
-while (offset < maxLen) { ... }
-
-// Good — call Size() directly:
-while (offset < (INT32)data.Size()) { ... }
-
-// Good — mutable counter that gets modified:
-USIZE len = str.Size();
-while (len > 0 && IsSpace(str[len - 1])) { len--; }
-
-// Good — derived computation from multiple Size() calls:
-USIZE offset = str.Size() - suffix.Size();
-```
-
-**`[[nodiscard]] Result<T, Error>`** — **All fallible functions must return `Result<T, Error>`** (or `Result<void, Error>` when there is no value). Do not use raw `BOOL`, `NTSTATUS`, or `SSIZE` as return types for success/failure. The `Result` class itself is declared `class [[nodiscard]] Result`, so all Result-returning functions automatically warn on discard. Adding `[[nodiscard]]` on the function declaration as well is encouraged for explicitness but not strictly required. This ensures a uniform error-handling interface across the codebase:
-
-```cpp
-[[nodiscard]] Result<IPAddress, Error> Resolve(PCCHAR host);
-
-auto result = Resolve(hostName);
-if (result.IsErr())
-    return;
-IPAddress &ip = result.Value();  // borrow; Result still owns it
-
-// Use Result<void, Error> when there is no value to return
-[[nodiscard]] Result<void, Error> Open();
-```
-
-**Do not copy `Result::Value()`** into local variables — `Value()` returns a reference to the value owned by `Result`, so copying it creates an unnecessary duplicate. Pass `Value()` directly to functions, or bind to `auto&` when you need to call multiple methods on it:
-
-```cpp
-// Good — pass Value() directly to functions:
-auto createResult = Socket::Create(result.Value(), 443);
-
-// Good — single method call chaining is fine:
-result.Value().Method();
-
-// Good — local reference when calling multiple methods (avoids repeating .Value()):
-auto& x = result.Value();
-x.Method1();
-x.Method2();
-
-// Bad — unnecessary copy just to pass as argument:
-IPAddress ip = result.Value();
-auto createResult = Socket::Create(ip, 443);
-```
-
-Infallible functions (getters, pure computations, operators) return their value directly — they do not use `Result`.
-
-### Platform-Specific Code
-
-Use preprocessor guards:
-
-```cpp
-#if defined(PLATFORM_WINDOWS_X86_64)     // Platform + arch combos
-#elif defined(PLATFORM_LINUX_AARCH64)
-#endif
-
-#if defined(ARCHITECTURE_X86_64)         // Architecture-only
-#elif defined(ARCHITECTURE_AARCH64)
-#endif
-```
+- **Prefer references over pointers** for non-null arguments. References provide a compile-time non-null guarantee; reserve pointers for output parameters, nullable arguments, and Windows API compatibility.
+- **Use `Span<T>` instead of raw pointer buffer parameters.** This applies to both `(T*, USIZE)` pairs and bare `T*` pointers. Exempt: core primitives that `Span` itself is built on (`Memory::Copy`, `Memory::Set`, `Memory::Compare`) and null-terminated string functions (`StringUtils::Length`, etc.).
+- **Prefer `Span<T, N>` (static extent) when the size is a compile-time constant.** Static extent encodes the size in the type and enables compile-time bounds checks. Use a template parameter `N` when the exact size varies per call site but is still known at compile time. Reserve `Span<T>` (dynamic extent) for genuinely runtime-only sizes.
+- **`Span<T, N>` implicitly converts to `Span<T>`** (static-to-dynamic), so callers with static-extent spans can pass them to functions accepting dynamic extent without explicit conversion.
+- **All fallible functions must return `Result<T, Error>`** (or `Result<void, Error>` when there is no value). The `Result` class itself is `[[nodiscard]]`. Adding `[[nodiscard]]` on the function declaration is encouraged for explicitness.
+- **Never use `Result<bool, Error>`** — use `Result<void, Error>` instead. `Result` is already bool-testable via `operator BOOL`.
+- Infallible functions (getters, pure computations, operators) return their value directly — they do not use `Result`.
 
 ---
 
 ## Error Handling
 
-PIR has no exceptions. **Every fallible function must return `Result<T, Error>`** (or `Result<void, Error>` when there is no value to return). Do not use raw `BOOL`, `NTSTATUS`, or `SSIZE` as return types for success/failure.
-
-**Exceptions — these do NOT use `Result`:**
-- **Low-level primitives** (`System::Call`, `Memory::Copy`, etc.) — these return raw OS types (`NTSTATUS`, `SSIZE`) or operate infallibly. Higher-level wrappers (e.g., `NTDLL::Zw*`, `result::FromNTSTATUS`) are responsible for converting raw returns into `Result`.
-- **Best-effort output** (`Console::Write`, logging callbacks) — failures are non-actionable; forcing `Result` through the entire logging chain would add code bloat for zero benefit.
-- **Infallible functions** (getters, pure computations, operators) — return their value directly.
+PIR has no exceptions. Every fallible function returns `Result<T, Error>` or `Result<void, Error>`.
 
 ### The Error Struct
 
@@ -458,70 +327,48 @@ PIR has no exceptions. **Every fallible function must return `Result<T, Error>`*
 - **Runtime codes** (`PlatformKind::Runtime`): named `ErrorCodes` enumerators — `Socket_WriteFailed_Send`, `Tls_OpenFailed_Handshake`, etc.
 - **OS codes**: created via factories — `Error::Windows(ntstatus)`, `Error::Posix(errno)`, `Error::Uefi(efiStatus)`
 
-### Construction Patterns
+### Construction Rules
 
-`Error` stores a single `(Code, Platform)` slot — there is no call-chain. Each layer picks the most useful code to surface.
+`Error` stores a single `(Code, Platform)` slot — there is no call chain. Each layer picks the most useful code to surface:
+
+- **Single runtime error (no prior result):** pass a bare `ErrorCodes` enumerator to `Result::Err` — only when there is no underlying `Result` to forward (e.g., pure validation failures, null checks)
+- **Single OS error:** use `Error::Windows()`, `Error::Posix()`, or `Error::Uefi()` factory methods
+- **Propagate unchanged:** forward `r.Error()` from the lower-level result
+- **Replace with own layer's error:** use the two-arg shorthand (see below) when the caller's context is more useful
+- **Two-arg shorthand (preferred):** `Result::Err(r, Error::Tls_WriteFailed_Send)` — always use this form when an underlying `Result` failed. This documents the error chain even though only the new code is stored
+
+**Important:** When a lower-level call returns a failed `Result` and you return `Err` with your own layer's error code, **always** pass the failed result as the first argument. Never discard a failed result by using the single-arg `Err(Error::MyCode)` form when a result variable is available:
 
 ```cpp
-// Single runtime error:
-return Result<UINT32, Error>::Err(Error::Socket_WriteFailed_Send);
+// WRONG — discards the underlying error
+auto tlsResult = TlsClient::Create(host, ip, port, isSecure);
+if (!tlsResult)
+    return Result<void, Error>::Err(Error::Ws_CreateFailed);
 
-// Single OS error (low-level wrappers — OS code is the most useful context):
-return Result<UINT32, Error>::Err(Error::Posix((UINT32)(-sent)));
-
-// Propagate lower-level error unchanged:
-auto r = context.Write(buffer, size);
-if (!r)
-    return Result<UINT32, Error>::Err(r.Error());
-
-// Replace with own layer's error code (when the caller's context is more useful):
-auto r = context.Write(buffer, size);
-if (!r)
-    return Result<UINT32, Error>::Err(Error::Tls_WriteFailed_Send);
-
-// Replace error via 2-arg shorthand (stores only the new code, discards the original):
-auto r = context.Write(buffer, size);
-if (!r)
-    return Result<UINT32, Error>::Err(r, Error::Tls_WriteFailed_Send);
+// CORRECT — forwards the underlying result
+auto tlsResult = TlsClient::Create(host, ip, port, isSecure);
+if (!tlsResult)
+    return Result<void, Error>::Err(tlsResult, Error::Ws_CreateFailed);
 ```
 
 ### Platform Conversion Factories
 
-Each platform provides `result::From*` template functions in `src/platform/<platform>/platform_result.h`. These convert a raw OS status into `Ok`/`Err` in one call. Use them in low-level wrappers that only need the OS error code:
-
-```cpp
-// Windows (include "platform_result.h"):
-return result::FromNTSTATUS<NTSTATUS>(status);    // Ok when status >= 0
-return result::FromNTSTATUS<void>(status);         // void: discards value on success
-
-// Linux (include "platform_result.h"):
-return result::FromLinux<UINT32>(result);           // Ok when result >= 0
-return result::FromLinux<void>(result);             // void: discards value on success
-
-// macOS (include "platform_result.h"):
-return result::FromMacOS<UINT32>(result);           // Ok when result >= 0
-
-// UEFI (include "platform_result.h"):
-return result::FromEfiStatus<void>(status);         // Ok when (SSIZE)status >= 0
-```
-
-For void Results, the raw value is discarded on success. For non-void Results, the raw value is stored as the Ok value.
+Each platform provides `result::From*` template functions in `src/platform/<platform>/platform_result.h`. These convert a raw OS status into `Ok`/`Err` in one call. Use them in low-level wrappers: `result::FromNTSTATUS<T>(status)`, `result::FromLinux<T>(result)`, `result::FromMacOS<T>(result)`, `result::FromFreeBSD<T>(result)`, `result::FromEfiStatus<T>(status)`. For `void` Results, the raw value is discarded on success.
 
 ### Formatting
 
-Use `%e` with `result.Error()`:
+Use `%e` with `result.Error()` in log macros. Output format: runtime codes print as decimal, Windows as `"0xNNNNNNNN[W]"`, Posix as `"N[P]"`, UEFI as `"0xNNNN...[U]"`.
 
-```cpp
-LOG_ERROR("Operation failed (error: %e)", result.Error());
-// Runtime: "33"    Windows: "0xC0000034[W]"    Posix: "111[P]"    UEFI: "0x8000...[U]"
-```
+### Exceptions to Result
 
-### Error Rules
+- **Low-level primitives** (`System::Call`, `Memory::Copy`, etc.) return raw OS types or operate infallibly. Higher-level wrappers convert to `Result`.
+- **Best-effort output** (`Console::Write`, logging callbacks) — failures are non-actionable.
+- **Infallible functions** (getters, pure computations, operators) return their value directly.
 
-- `[[nodiscard]]` — see [Parameters & Returns](#parameters--returns) for the full policy. Additionally, `[[nodiscard]]` **may** be used on factory methods and non-Result functions where discarding the return value is always a bug.
-- **Never use `Result<bool, Error>`** — use `Result<void, Error>` instead. `Result` itself is already bool-testable via `operator BOOL`, so wrapping a `bool` value creates confusing double-boolean checks (`!r || !r.Value()`). With `Result<void, Error>`, truthy means success and falsy means failure — clean and unambiguous.
-- OS errors: use factory methods — `Error::Windows()`, `Error::Posix()`, `Error::Uefi()`
-- Runtime errors: pass bare — `Result::Err(Error::Socket_WriteFailed_Send)`
+### Rules Summary
+
+- `[[nodiscard]]` may also be used on factory methods and non-Result functions where discarding the return value is always a bug
+- OS errors: use factory methods; runtime errors: pass bare enumerators
 - Each layer adds only its own `ErrorCodes` values
 - Discard `[[nodiscard]]` Result with `(void)` only when intentional (destructors, move-assignment)
 
@@ -531,105 +378,29 @@ LOG_ERROR("Operation failed (error: %e)", result.Error());
 
 ### Heap & Stack
 
-- **Avoid heap** unless no alternative. Prefer stack-local variables and fixed-size buffers
-- **`new`/`new[]`/`delete`/`delete[]` are safe** — they are globally overloaded to route through the custom `Allocator` (see `src/platform/allocator.cc`), so all heap allocations use the PIR memory backend
+- **Avoid heap** unless no alternative. Prefer stack-local variables and fixed-size buffers.
+- **`new`/`new[]`/`delete`/`delete[]` are safe** — globally overloaded to route through the custom `Allocator` (see `src/platform/allocator.cc`).
 - **Embed by value**, not by pointer: `IPAddress ipAddress;` not `IPAddress *ipAddress;`
-- **Watch stack size**: `EMBEDDED_STRING` temporaries materialize words on stack; avoid deep recursion
+- **Watch stack size**: `EMBEDDED_STRING` temporaries materialize words on stack; avoid deep recursion.
 
 ### Constructor Rules
 
-Constructors must be **trivial and never fail**. All fallible work goes into a `[[nodiscard]]` factory:
-
-```cpp
-class MyClient
-{
-private:
-    MyClient() : port(0), isConnected(false) {}  // trivial, cannot fail
-
-public:
-    [[nodiscard]] static Result<MyClient, Error> Create(PCCHAR url);
-    [[nodiscard]] Result<void, Error> Open();
-    [[nodiscard]] Result<void, Error> Close();
-};
-
-auto createResult = MyClient::Create((PCCHAR)url);
-if (!createResult)
-    return Result<void, Error>::Err(createResult.Error());
-MyClient &client = createResult.Value();
-```
+- Constructors must be **trivial and never fail**. All fallible work goes into a `[[nodiscard]] static` factory method returning `Result<T, Error>`.
+- The factory creates the object, then performs fallible initialization (connecting, opening, etc.) via separate methods if needed.
 
 ### RAII Pattern
 
-Every resource-owning class follows this template:
-
-```cpp
-class MyResource
-{
-private:
-    PVOID handle;
-
-public:
-    MyResource() : handle(nullptr) {}
-    ~MyResource() { Close(); }
-
-    // Non-copyable
-    MyResource(const MyResource &) = delete;
-    MyResource &operator=(const MyResource &) = delete;
-
-    // Movable — transfer ownership, nullify source
-    MyResource(MyResource &&other) noexcept : handle(other.handle) { other.handle = nullptr; }
-    MyResource &operator=(MyResource &&other) noexcept
-    {
-        if (this != &other) { Close(); handle = other.handle; other.handle = nullptr; }
-        return *this;
-    }
-
-    VOID Close()
-    {
-        if (handle != nullptr) { (void)NTDLL::ZwClose(handle); handle = nullptr; }
-    }
-};
-```
-
-Rules: destructor calls `Close()`, copy deleted, move nullifies source, `Close()` sets handle to `nullptr`. Use `static_cast<T &&>()` instead of `std::move()`.
+Every resource-owning class follows: destructor calls `Close()`, copy deleted, move nullifies source, `Close()` sets handle to `nullptr`. Use `static_cast<T &&>()` instead of `std::move()`.
 
 ### Stack-Only Types
 
-Delete heap allocation; keep placement new for `Result`:
-
-```cpp
-VOID *operator new(USIZE) = delete;
-VOID operator delete(VOID *) = delete;
-VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }  // Result needs this
-```
-
-Examples: `Socket`, `File`, `Random`, `HttpClient`, `WebSocketClient`
-
-### Secure Cleanup
-
-Crypto classes zero all key material on destruction:
-
-```cpp
-~ChaCha20Encoder() { Memory::Zero(this, sizeof(ChaCha20Encoder)); initialized = false; }
-```
-
-### Conditional Ownership
-
-Use a `BOOL ownsMemory` flag when a class may or may not own its buffer:
-
-```cpp
-TlsBuffer() : buffer(nullptr), ownsMemory(true) {}
-TlsBuffer(Span<CHAR> data) : buffer(data.Data()), ownsMemory(false) {}
-~TlsBuffer() { if (ownsMemory) Clear(); }
-```
+Delete heap allocation operators (`operator new`/`operator delete = delete`);
 
 ---
 
 ## Patterns
 
 ### Compile-Time Embedding
-
-The `_embed` ecosystem converts literals into immediate values, eliminating `.rdata`:
 
 | Type | Literal | Result |
 |------|---------|--------|
@@ -644,30 +415,11 @@ A **register barrier** (`__asm__ volatile("" : "+r"(word))`) prevents the compil
 
 ### Traits-Based Dispatch
 
-Parameterize algorithm variants via traits structs instead of runtime branching:
-
-```cpp
-struct SHA256Traits { using Word = UINT32; static constexpr USIZE DIGEST_SIZE = 32; };
-struct SHA384Traits { using Word = UINT64; static constexpr USIZE DIGEST_SIZE = 48; };
-template <typename Traits> class SHABase { /* single implementation */ };
-```
-
-Examples: `SHA256Traits`/`SHA384Traits`, `UINT_OF_SIZE`, `VOID_TO_TAG`
+Parameterize algorithm variants via traits structs instead of runtime branching. The traits struct defines associated types and constants; a single template class implements the algorithm. Examples: `SHA256Traits`/`SHA384Traits`, `UINT_OF_SIZE`, `VOID_TO_TAG`.
 
 ### Variadic Template Type Erasure
 
-Variadic templates at the API surface, type-erased into a fixed `Argument` array before calling a `NOINLINE` implementation. Prevents code bloat:
-
-```cpp
-template <TCHAR TChar, typename... Args>
-static VOID Info(const TChar *format, Args... args)
-{
-    StringFormatter::Argument argArray[] = { StringFormatter::Argument(args)... };
-    TimestampedLogOutput(prefix, format, argArray, sizeof...(Args));  // NOINLINE
-}
-```
-
-Examples: `Logger::Info/Error/Warning/Debug`, `Console::WriteFormatted`, `StringFormatter::Format`
+Variadic templates at the API surface are type-erased into a fixed `Argument` array before calling a `NOINLINE` implementation. This prevents code bloat from template instantiation. Examples: `Logger::Info/Error/Warning/Debug`, `Console::WriteFormatted`, `StringFormatter::Format`.
 
 ### Concepts and Constraints
 
@@ -682,9 +434,9 @@ C++20 concepts and `requires` clauses enforce type safety. Use Clang builtins, n
 
 ### Guard and Validation
 
-- **Factory-created types** (`Socket`, `TlsClient`): do **not** add `IsValid()` guards — the factory + RAII pattern ensures validity
-- **Non-factory types** parsing external input: validate at entry, return `Result::Err` on failure
-- Only validate at system boundaries — trust internal code
+- **Factory-created types**: the factory + RAII pattern ensures validity.
+- **Non-factory types** parsing external input: validate at entry, return `Result::Err` on failure.
+- Only validate at system boundaries — trust internal code.
 
 ### Platform Dispatch
 
@@ -696,75 +448,27 @@ Two strategies: **conditional compilation** (`#if defined(PLATFORM_*)`) for smal
 
 ### Kernel32 / Win32
 
-```cpp
-// Header: src/platform/windows/kernel32.h
-class Kernel32 { public: [[nodiscard]] static Result<void, Error> MyFunction(UINT32 param1, PVOID param2); };
-
-// Source: src/platform/windows/kernel32.cc
-Result<void, Error> Kernel32::MyFunction(UINT32 param1, PVOID param2)
-{
-    BOOL ok = ((BOOL(STDCALL *)(UINT32, PVOID))
-        ResolveKernel32ExportAddress("MyFunction"))(param1, param2);
-    if (!ok)
-        return Result<void, Error>::Err(Error::Kernel32_MyFunctionFailed);
-    return Result<void, Error>::Ok();
-}
-```
+- Declare in `src/platform/windows/kernel32.h`, implement in `src/platform/windows/kernel32.cc`
+- Resolve function addresses dynamically via `ResolveKernel32ExportAddress` with the function name
+- Cast the resolved address to the correct function pointer type and call it
+- Return `Result<T, Error>` with an appropriate `ErrorCodes` enumerator on failure
 
 ### NTDLL / Zw* Syscalls
 
-Indirect syscalls on x86_64/i386, direct ntdll calls on ARM64. Use `result::FromNTSTATUS` to convert the raw status:
-
-```cpp
-#include "platform_result.h"
-
-[[nodiscard]] Result<NTSTATUS, Error> NTDLL::ZwMyFunction(PVOID Param1, UINT32 Param2)
-{
-    SYSCALL_ENTRY entry = ResolveSyscall("ZwMyFunction");
-    NTSTATUS status = entry.ssn != SYSCALL_SSN_INVALID
-        ? System::Call(entry, (USIZE)Param1, (USIZE)Param2)
-        : CALL_FUNCTION("ZwMyFunction", PVOID Param1, UINT32 Param2);
-    return result::FromNTSTATUS<NTSTATUS>(status);
-}
-```
-
-All arguments to `System::Call` must be cast to `USIZE`.
+- Indirect syscalls on x86_64/i386 (via `System::Call` with resolved SSN), direct ntdll calls on ARM64 (via `CALL_FUNCTION`)
+- Use `result::FromNTSTATUS<T>(status)` to convert raw `NTSTATUS` into `Result`
+- All arguments to `System::Call` must be cast to `USIZE`
+- Include `"platform_result.h"` for the conversion factories
 
 ---
 
 ## Writing Tests
 
-Each test suite is a class in `tests/<name>_tests.h`:
-
-```cpp
-#pragma once
-#include "runtime.h"
-#include "tests.h"
-
-class MyFeatureTests
-{
-public:
-    static BOOL RunAll()
-    {
-        BOOL allPassed = true;
-        LOG_INFO("Running MyFeature Tests...");
-        RunTest(allPassed, EMBED_FUNC(TestSomething), L"Something works"_embed);
-        if (allPassed) LOG_INFO("All MyFeature tests passed!");
-        else LOG_ERROR("Some MyFeature tests failed!");
-        return allPassed;
-    }
-
-private:
-    static BOOL TestSomething()
-    {
-        auto msg = "test input"_embed;
-        // ... test logic ...
-        return true;  // true = pass, false = fail
-    }
-};
-```
-
-Register: add `#include "my_feature_tests.h"` and `RunTestSuite<MyFeatureTests>(allPassed);` in `tests/pir_tests.h` under the appropriate layer comment (CORE, PLATFORM, or RUNTIME).
+- Each test suite is a class in `tests/<name>_tests.h`
+- The class has a `static BOOL RunAll()` method that calls `RunTest(allPassed, EMBED_FUNC(TestName), L"description"_embed)` for each test
+- Individual test methods are `static BOOL` functions returning `true` for pass, `false` for fail
+- Register by adding `#include "my_feature_tests.h"` and `RunTestSuite<MyFeatureTests>(allPassed);` in `tests/pir_tests.h` under the appropriate layer comment (CORE, PLATFORM, or RUNTIME)
+- See existing test files for reference
 
 ---
 
@@ -773,6 +477,8 @@ Register: add `#include "my_feature_tests.h"` and `RunTestSuite<MyFeatureTests>(
 1. **Inline asm register clobbers** — On x86_64, declare all volatile registers (RAX, RCX, RDX, R8-R11) as outputs or clobbers
 2. **Memory operands with RSP modification** — Never use `"m"` constraints in asm blocks that modify RSP; under `-Oz` the compiler uses RSP-relative addressing
 3. **i386 `EMBEDDED_STRING` indexing** — Cast indices to `USIZE` to avoid ambiguous overload between `operator[]` and pointer decay
+
+---
 
 ## Submitting Changes
 

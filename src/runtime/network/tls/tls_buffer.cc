@@ -3,8 +3,9 @@
 #include "platform/io/logger.h"
 
 /// @brief Append data to the TLS buffer
-/// @param data Span of data to append
-/// @return The offset at which the data was appended, or -1 on allocation failure
+/// @param data Pointer to the data to append
+/// @param size Size of the data to append
+/// @return The offset at which the data was appended
 
 INT32 TlsBuffer::Append(Span<const CHAR> data)
 {
@@ -16,9 +17,14 @@ INT32 TlsBuffer::Append(Span<const CHAR> data)
 	return size - (INT32)data.Size();
 }
 
-/// @brief Reserve space in the buffer without writing data
-/// @param count Number of bytes to reserve
-/// @return The offset at which the space was reserved, or -1 on allocation failure
+/// @brief Append a single character to the TLS buffer
+/// @param data Character to append
+/// @return The offset at which the character was appended
+
+
+/// @brief Append a 32-bit integer to the TLS buffer
+/// @param size The 32-bit integer to append
+/// @return The offset at which the 32-bit integer was appended
 
 INT32 TlsBuffer::AppendSize(INT32 count)
 {
@@ -29,9 +35,9 @@ INT32 TlsBuffer::AppendSize(INT32 count)
 	return size - count;
 }
 
-/// @brief Set the logical size of the TLS buffer
-/// @param newSize The new size of the buffer
-/// @return Result<void, Error>::Ok() on success, or TlsBuffer_AllocationFailed on failure
+/// @brief Set the size of the TLS buffer
+/// @param size The new size of the buffer
+/// @return void
 
 Result<void, Error> TlsBuffer::SetSize(INT32 newSize)
 {
@@ -43,16 +49,16 @@ Result<void, Error> TlsBuffer::SetSize(INT32 newSize)
 	return Result<void, Error>::Ok();
 }
 
-/// @brief Clean up the TLS buffer by zeroing and freeing memory if owned, resetting size and capacity
+/// @brief Clean up the TLS buffer by freeing memory if owned and resetting size and capacity
+/// @return void
 
 VOID TlsBuffer::Clear()
 {
 	if (buffer && ownsMemory)
 	{
-		Memory::Zero(buffer, capacity);
 		delete[] buffer;
-		buffer = nullptr;
 	}
+	buffer = nullptr;
 	size = 0;
 	capacity = 0;
 	readPos = 0;
@@ -60,7 +66,7 @@ VOID TlsBuffer::Clear()
 
 /// @brief Ensure there is enough capacity in the TLS buffer to append additional data
 /// @param appendSize The size of the data to be appended
-/// @return Result<void, Error>::Ok() on success, or TlsBuffer_AllocationFailed on failure
+/// @return void
 
 Result<void, Error> TlsBuffer::CheckSize(INT32 appendSize)
 {
@@ -77,7 +83,7 @@ Result<void, Error> TlsBuffer::CheckSize(INT32 appendSize)
 		newLen = 256;
 	}
 
-	PCHAR newBuffer = (PCHAR)new CHAR[newLen];
+	PCHAR newBuffer = (PCHAR) new CHAR[newLen];
 	if (!newBuffer)
 	{
 		return Result<void, Error>::Err(Error::TlsBuffer_AllocationFailed);
@@ -89,7 +95,6 @@ Result<void, Error> TlsBuffer::CheckSize(INT32 appendSize)
 	}
 	if (oldBuffer && ownsMemory)
 	{
-		Memory::Zero(oldBuffer, capacity);
 		delete[] oldBuffer;
 		oldBuffer = nullptr;
 	}
@@ -99,13 +104,38 @@ Result<void, Error> TlsBuffer::CheckSize(INT32 appendSize)
 	return Result<void, Error>::Ok();
 }
 
-/// @brief Read a block of data from the TLS buffer into the provided span
-/// @param buf Output span to read into
+/// @brief Remove consumed bytes from the front and shift remaining data down
+/// @param bytes Number of bytes to consume from the front of the buffer
+
+VOID TlsBuffer::Consume(INT32 bytes)
+{
+	if (bytes <= 0)
+		return;
+	if (bytes >= size)
+	{
+		size = 0;
+		readPos = 0;
+		return;
+	}
+	Memory::Move(buffer, buffer + bytes, size - bytes);
+	size -= bytes;
+	readPos = 0;
+}
+
+/// @brief Read a block of data from the TLS buffer
+/// @param buf The buffer to store the read data
+/// @param size The number of bytes to read
+/// @return void
 
 VOID TlsBuffer::Read(Span<CHAR> buf)
 {
-	Memory::Copy(buf.Data(), buffer + readPos, buf.Size());
-	readPos += (INT32)buf.Size();
+	INT32 available = size - readPos;
+	INT32 count = (INT32)buf.Size();
+	if (count > available)
+		count = available;
+	if (count > 0)
+		Memory::Copy(buf.Data(), buffer + readPos, count);
+	readPos += count;
 }
 
 /// @brief Read a 24-bit big-endian unsigned integer from the TLS buffer
@@ -113,6 +143,11 @@ VOID TlsBuffer::Read(Span<CHAR> buf)
 
 UINT32 TlsBuffer::ReadU24BE()
 {
+	if (readPos + 3 > size)
+	{
+		readPos = size;
+		return 0;
+	}
 	UINT8 b0 = (UINT8)buffer[readPos];
 	UINT8 b1 = (UINT8)buffer[readPos + 1];
 	UINT8 b2 = (UINT8)buffer[readPos + 2];

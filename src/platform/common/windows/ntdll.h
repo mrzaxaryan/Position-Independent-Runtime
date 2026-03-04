@@ -767,6 +767,9 @@ public:
 	 *
 	 * @note This function is undocumented by Microsoft. Behavior may vary across
 	 * Windows versions.
+	 *
+	 * @see SetHandleInformation (closest documented Win32 equivalent)
+	 *      https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-sethandleinformation
 	 */
 	[[nodiscard]] static Result<NTSTATUS, Error> ZwSetInformationObject(PVOID Handle, UINT32 ObjectInformationClass, PVOID ObjectInformation, UINT32 ObjectInformationLength);
 

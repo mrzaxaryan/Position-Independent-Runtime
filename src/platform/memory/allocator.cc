@@ -1,3 +1,10 @@
+/**
+ * @file allocator.cc
+ * @brief Global operator new/delete overloads.
+ * @details Routes all heap allocations through the platform-specific Allocator,
+ * eliminating CRT dependencies.
+ */
+
 #include "platform/memory/allocator.h"
 
 PVOID operator new(USIZE size)

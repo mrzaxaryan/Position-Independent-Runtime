@@ -125,7 +125,7 @@ public:
 			"int $0x80\n"
 			"popl %%ebp\n"
 			: "=a"(ret)
-			: "a"(number), "r"(r_ebx), "r"(r_ecx), "r"(r_edx), "r"(r_esi), "r"(r_edi), [a6] "g"(arg6)
+			: "a"(number), "r"(r_ebx), "r"(r_ecx), "r"(r_edx), "r"(r_esi), "r"(r_edi), [a6] "r"(arg6)
 			: "memory"
 		);
 		return ret;

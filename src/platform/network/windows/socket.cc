@@ -1,40 +1,35 @@
+#include "platform/network/socket.h"
 #include "core/types/primitives.h"
 #include "platform/common/windows/windows_types.h"
-#include "platform/network/socket.h"
 #include "platform/io/logger.h"
 #include "platform/common/windows/ntdll.h"
 #include "core/memory/memory.h"
 
-#define IOCTL_AFD_BIND       ((0x00000012) << 12 | (0  << 2) | 3)
-#define IOCTL_AFD_CONNECT    ((0x00000012) << 12 | (1  << 2) | 3)
-#define IOCTL_AFD_SEND       ((0x00000012) << 12 | (7  << 2) | 3)
-#define IOCTL_AFD_RECV       ((0x00000012) << 12 | (5  << 2) | 3)
-#define IOCTL_AFD_DISCONNECT ((0x00000012) << 12 | (10 << 2) | 3)
+constexpr UINT32 IOCTL_AFD_BIND       = (0x00000012 << 12) | (0  << 2) | 3;
+constexpr UINT32 IOCTL_AFD_CONNECT    = (0x00000012 << 12) | (1  << 2) | 3;
+constexpr UINT32 IOCTL_AFD_SEND       = (0x00000012 << 12) | (7  << 2) | 3;
+constexpr UINT32 IOCTL_AFD_RECV       = (0x00000012 << 12) | (5  << 2) | 3;
 
-#define AFD_SHARE_REUSE         0x1L
-#define AFD_DISCONNECT_SEND     0x01L
-#define AFD_DISCONNECT_RECV     0x02L
-#define AFD_DISCONNECT_ABORT    0x04L
-#define AFD_DISCONNECT_DATAGRAM 0x08L
+constexpr UINT32 AFD_SHARE_REUSE         = 0x1;
 
-#define OBJ_INHERIT    0x00000002L
-#define STATUS_PENDING ((UINT32)0x00000103L)
-#define STATUS_TIMEOUT ((UINT32)0x00000102L)
-#define IPPROTO_TCP    6
+constexpr UINT32 OBJ_INHERIT    = 0x00000002;
+constexpr UINT32 STATUS_PENDING = 0x00000103;
+constexpr UINT32 STATUS_TIMEOUT = 0x00000102;
+constexpr INT32  IPPROTO_TCP    = 6;
 
-typedef struct AfdBindData
+typedef struct _AfdBindData
 {
 	UINT32  ShareType;
 	SockAddr Address;
 } AfdBindData;
 
-typedef struct AfdBindData6
+typedef struct _AfdBindData6
 {
 	UINT32   ShareType;
 	SockAddr6 Address;
 } AfdBindData6;
 
-typedef struct AfdConnectInfo
+typedef struct _AfdConnectInfo
 {
 	SSIZE    UseSAN;
 	SSIZE    Root;
@@ -42,7 +37,7 @@ typedef struct AfdConnectInfo
 	SockAddr Address;
 } AfdConnectInfo;
 
-typedef struct AfdConnectInfo6
+typedef struct _AfdConnectInfo6
 {
 	SSIZE     UseSAN;
 	SSIZE     Root;
@@ -50,13 +45,13 @@ typedef struct AfdConnectInfo6
 	SockAddr6 Address;
 } AfdConnectInfo6;
 
-typedef struct AfdWsaBuf
+typedef struct _AfdWsaBuf
 {
 	UINT32 Length;
 	PVOID  Buffer;
 } AfdWsaBuf;
 
-typedef struct AfdSendRecvInfo
+typedef struct _AfdSendRecvInfo
 {
 	PVOID  BufferArray;
 	UINT32 BufferCount;
@@ -64,7 +59,7 @@ typedef struct AfdSendRecvInfo
 	UINT32 TdiFlags;
 } AfdSendRecvInfo;
 
-typedef struct AfdSocketParams
+typedef struct _AfdSocketParams
 {
 	INT32  Reserved;
 	UINT16 EaNameLength;
@@ -84,7 +79,7 @@ typedef struct AfdSocketParams
 // Returns STATUS_TIMEOUT if timed out (Status is NOT updated in that case).
 // Returns the wait status on success; if ZwWaitForSingleObject itself fails,
 // propagates its failure NTSTATUS so callers see a non-timeout, non-success result.
-static Result<NTSTATUS, Error> AfdWait(PVOID SockEvent, PIO_STATUS_BLOCK IOSB, NTSTATUS *Status, LARGE_INTEGER *Timeout)
+[[nodiscard]] static Result<NTSTATUS, Error> AfdWait(PVOID SockEvent, PIO_STATUS_BLOCK IOSB, NTSTATUS *Status, LARGE_INTEGER *Timeout)
 {
 	auto waitResult = NTDLL::ZwWaitForSingleObject(SockEvent, 0, Timeout);
 	if (!waitResult)
@@ -176,7 +171,7 @@ Result<void, Error> Socket::Bind(const SockAddr &socketAddress, INT32 shareType)
 
 Result<void, Error> Socket::Open()
 {
-	LOG_DEBUG("Open(handle: 0x%p, port: %d)\n", this, port);
+	LOG_DEBUG("Open(handle: 0x%p, port: %d)\n", handle, port);
 
 	// AFD requires an explicit bind to a wildcard local address before connect
 	union
@@ -279,7 +274,7 @@ Result<void, Error> Socket::Open()
 
 Result<void, Error> Socket::Close()
 {
-	LOG_DEBUG("Close(handle: 0x%p)\n", this);
+	LOG_DEBUG("Close(handle: 0x%p)\n", handle);
 
 	auto closeResult = NTDLL::ZwClose(handle);
 	handle = nullptr;
@@ -292,7 +287,7 @@ Result<void, Error> Socket::Close()
 
 Result<SSIZE, Error> Socket::Read(Span<CHAR> buffer)
 {
-	LOG_DEBUG("Read(handle: 0x%p, bufferSize: %d)\n", this, (UINT32)buffer.Size());
+	LOG_DEBUG("Read(handle: 0x%p, bufferSize: %d)\n", handle, (UINT32)buffer.Size());
 
 	PVOID SockEvent = nullptr;
 	auto evtResult = NTDLL::ZwCreateEvent(&SockEvent, EVENT_ALL_ACCESS, nullptr, SynchronizationEvent, false);
@@ -358,7 +353,7 @@ Result<SSIZE, Error> Socket::Read(Span<CHAR> buffer)
 
 Result<UINT32, Error> Socket::Write(Span<const CHAR> buffer)
 {
-	LOG_DEBUG("Write(handle: 0x%p, length: %d)\n", this, (UINT32)buffer.Size());
+	LOG_DEBUG("Write(handle: 0x%p, length: %d)\n", handle, (UINT32)buffer.Size());
 
 	PVOID SockEvent = nullptr;
 	auto evtResult = NTDLL::ZwCreateEvent(&SockEvent, EVENT_ALL_ACCESS, nullptr, SynchronizationEvent, false);
@@ -456,7 +451,7 @@ Result<Socket, Error> Socket::Create(const IPAddress &ipAddress, UINT16 port)
 	auto afdNameSource  = L"\\Device\\Afd\\Endpoint"_embed;
 	AfdName.Buffer      = (PWCHAR)(PCWCHAR)afdNameSource;
 	AfdName.Length      = afdNameSource.Length() * sizeof(WCHAR);
-	AfdName.MaximumLength = afdNameSource.Length() * sizeof(WCHAR);
+	AfdName.MaximumLength = (afdNameSource.Length() + 1) * sizeof(WCHAR);
 
 	OBJECT_ATTRIBUTES   Object;
 	IO_STATUS_BLOCK     IOSB;

@@ -29,7 +29,7 @@ Result<void, Error> WebSocketClient::Open(PCCHAR path)
 		if (!dnsResult)
 		{
 			LOG_ERROR("Failed to resolve IPv4 address for %s, cannot connect to WebSocket server", hostName);
-			return Result<void, Error>::Err(Error::Ws_DnsFailed);
+			return Result<void, Error>::Err(dnsResult, Error::Ws_DnsFailed);
 		}
 
 		ipAddress = dnsResult.Value();
@@ -39,7 +39,7 @@ Result<void, Error> WebSocketClient::Open(PCCHAR path)
 		if (!tlsResult)
 		{
 			LOG_ERROR("Failed to create TLS client for IPv4 fallback (error: %e)", tlsResult.Error());
-			return Result<void, Error>::Err(Error::Ws_TransportFailed);
+			return Result<void, Error>::Err(tlsResult, Error::Ws_TransportFailed);
 		}
 		tlsContext = static_cast<TlsClient &&>(tlsResult.Value());
 		openResult = tlsContext.Open();
@@ -105,7 +105,7 @@ Result<void, Error> WebSocketClient::Close()
 	if (isConnected)
 	{
 		// RFC 6455 Section 5.5.1: Send Close frame with status code 1000 (Normal Closure, big-endian)
-		UINT16 statusCode = UINT16SwapByteOrder(1000);
+		UINT16 statusCode = ByteOrder::Swap16(1000);
 		(void)Write(Span<const CHAR>((const CHAR *)&statusCode, sizeof(statusCode)), WebSocketOpcode::Close);
 	}
 
@@ -153,7 +153,7 @@ Result<UINT32, Error> WebSocketClient::Write(Span<const CHAR> buffer, WebSocketO
 	else if (buffer.Size() <= 0xFFFF)
 	{
 		header[1] = (126 | 0x80);
-		UINT16 len16 = UINT16SwapByteOrder((UINT16)buffer.Size());
+		UINT16 len16 = ByteOrder::Swap16((UINT16)buffer.Size());
 		Memory::Copy(header + 2, &len16, 2);
 		Memory::Copy(header + 4, maskKey, 4);
 		headerLength = 8;
@@ -161,7 +161,7 @@ Result<UINT32, Error> WebSocketClient::Write(Span<const CHAR> buffer, WebSocketO
 	else
 	{
 		header[1] = (127 | 0x80);
-		UINT64 len64 = UINT64SwapByteOrder((UINT64)buffer.Size());
+		UINT64 len64 = ByteOrder::Swap64((UINT64)buffer.Size());
 		Memory::Copy(header + 2, &len64, 8);
 		Memory::Copy(header + 10, maskKey, 4);
 		headerLength = 14;
@@ -181,20 +181,20 @@ Result<UINT32, Error> WebSocketClient::Write(Span<const CHAR> buffer, WebSocketO
 
 		UINT32 frameLength = headerLength + (UINT32)buffer.Size();
 		auto smallWrite = tlsContext.Write(Span<const CHAR>((PCHAR)chunk, frameLength));
-		if (!smallWrite || smallWrite.Value() != frameLength)
-		{
+		if (!smallWrite)
+			return Result<UINT32, Error>::Err(smallWrite, Error::Ws_WriteFailed);
+		if (smallWrite.Value() != frameLength)
 			return Result<UINT32, Error>::Err(Error::Ws_WriteFailed);
-		}
 
 		return Result<UINT32, Error>::Ok((UINT32)buffer.Size());
 	}
 
 	// Large frames: write header, then mask and write payload in chunks
 	auto headerWrite = tlsContext.Write(Span<const CHAR>((PCHAR)header, headerLength));
-	if (!headerWrite || headerWrite.Value() != headerLength)
-	{
+	if (!headerWrite)
+		return Result<UINT32, Error>::Err(headerWrite, Error::Ws_WriteFailed);
+	if (headerWrite.Value() != headerLength)
 		return Result<UINT32, Error>::Err(Error::Ws_WriteFailed);
-	}
 
 	PUINT8 src = (PUINT8)buffer.Data();
 	USIZE offset = 0;
@@ -207,10 +207,10 @@ Result<UINT32, Error> WebSocketClient::Write(Span<const CHAR> buffer, WebSocketO
 			chunk[i] = src[offset + i] ^ maskKey[(offset + i) & 3];
 
 		auto chunkWrite = tlsContext.Write(Span<const CHAR>((PCHAR)chunk, chunkSize));
-		if (!chunkWrite || chunkWrite.Value() != chunkSize)
-		{
+		if (!chunkWrite)
+			return Result<UINT32, Error>::Err(chunkWrite, Error::Ws_WriteFailed);
+		if (chunkWrite.Value() != chunkSize)
 			return Result<UINT32, Error>::Err(Error::Ws_WriteFailed);
-		}
 
 		offset += chunkSize;
 		remaining -= chunkSize;
@@ -231,8 +231,10 @@ Result<void, Error> WebSocketClient::ReceiveRestrict(Span<CHAR> buffer)
 	while (totalBytesRead < buffer.Size())
 	{
 		auto readResult = tlsContext.Read(Span<CHAR>(buffer.Data() + totalBytesRead, buffer.Size() - totalBytesRead));
-		if (!readResult || readResult.Value() <= 0)
+		if (!readResult)
 			return Result<void, Error>::Err(readResult, Error::Ws_ReceiveFailed);
+		if (readResult.Value() <= 0)
+			return Result<void, Error>::Err(Error::Ws_ReceiveFailed);
 		totalBytesRead += readResult.Value();
 	}
 	return Result<void, Error>::Ok();
@@ -308,7 +310,7 @@ Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 		auto lenResult = ReceiveRestrict(Span<CHAR>((PCHAR)&len16, sizeof(len16)));
 		if (!lenResult)
 			return Result<void, Error>::Err(lenResult, Error::Ws_ReceiveFailed);
-		frame.Length = UINT16SwapByteOrder(len16);
+		frame.Length = ByteOrder::Swap16(len16);
 	}
 	else if (lengthBits == 127)
 	{
@@ -316,7 +318,7 @@ Result<void, Error> WebSocketClient::ReceiveFrame(WebSocketFrame &frame)
 		auto lenResult = ReceiveRestrict(Span<CHAR>((PCHAR)&len64, sizeof(len64)));
 		if (!lenResult)
 			return Result<void, Error>::Err(lenResult, Error::Ws_ReceiveFailed);
-		frame.Length = UINT64SwapByteOrder(len64);
+		frame.Length = ByteOrder::Swap64(len64);
 	}
 	else
 	{
@@ -509,14 +511,14 @@ Result<WebSocketClient, Error> WebSocketClient::Create(Span<const CHAR> url)
 	BOOL isSecure = false;
 	auto parseResult = HttpClient::ParseUrl(url, host, parsedPath, port, isSecure);
 	if (!parseResult)
-		return Result<WebSocketClient, Error>::Err(Error::Ws_CreateFailed);
+		return Result<WebSocketClient, Error>::Err(parseResult, Error::Ws_CreateFailed);
 
 	Span<const CHAR> hostSpan(host, StringUtils::Length(host));
 	auto dnsResult = DNS::Resolve(hostSpan);
 	if (!dnsResult)
 	{
 		LOG_ERROR("Failed to resolve hostname %s", host);
-		return Result<WebSocketClient, Error>::Err(Error::Ws_CreateFailed);
+		return Result<WebSocketClient, Error>::Err(dnsResult, Error::Ws_CreateFailed);
 	}
 	auto& ip = dnsResult.Value();
 
@@ -534,7 +536,7 @@ Result<WebSocketClient, Error> WebSocketClient::Create(Span<const CHAR> url)
 	}
 
 	if (!tlsResult)
-		return Result<WebSocketClient, Error>::Err(Error::Ws_CreateFailed);
+		return Result<WebSocketClient, Error>::Err(tlsResult, Error::Ws_CreateFailed);
 
 	WebSocketClient client(host, ip, port, static_cast<TlsClient &&>(tlsResult.Value()));
 

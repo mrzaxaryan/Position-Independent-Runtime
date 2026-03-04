@@ -252,7 +252,7 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
 		if (!skipResult)
 		{
 			LOG_WARNING("ParseQuery: invalid name length");
-			return Result<INT32, Error>::Err(Error::Dns_ParseFailed);
+			return Result<INT32, Error>::Err(skipResult, Error::Dns_ParseFailed);
 		}
 
 		INT32 entrySize = skipResult.Value() + (INT32)sizeof(DNS_REQUEST_QUESTION);
@@ -337,7 +337,7 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
 		if (!queryResult)
 		{
 			LOG_WARNING("ParseDnsResponse: invalid query section");
-			return Result<IPAddress, Error>::Err(Error::Dns_ParseFailed);
+			return Result<IPAddress, Error>::Err(queryResult, Error::Dns_ParseFailed);
 		}
 		reader.Skip((USIZE)queryResult.Value());
 	}
@@ -425,7 +425,7 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
  * @brief Constructs a DNS query message in wire format for use with DoH (RFC 8484)
  * @param host Hostname to query
  * @param dnstype Record type — A (1) for IPv4 or AAAA (28) for IPv6
- * @param buffer Output span to write the DNS query message into
+ * @param buffer Output byte span to write the DNS query message into
  * @return Ok(query size in bytes) on success, or Err(Dns_QueryFailed) if the buffer is too small
  *
  * @details Builds a complete DNS query message per RFC 1035 Section 4.1, consisting of:
@@ -444,30 +444,30 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
  * @see RFC 8484 Section 4.1 — DNS Wire Format (POST method, no TCP length prefix)
  *      https://datatracker.ietf.org/doc/html/rfc8484#section-4.1
  */
-[[nodiscard]] static Result<UINT32, Error> GenerateQuery(Span<const CHAR> host, DnsRecordType dnstype, Span<CHAR> buffer)
+[[nodiscard]] static Result<UINT32, Error> GenerateQuery(Span<const CHAR> host, DnsRecordType dnstype, Span<UINT8> buffer)
 {
 	if (buffer.Size() < sizeof(DNS_REQUEST_HEADER) + sizeof(DNS_REQUEST_QUESTION) + 2)
 		return Result<UINT32, Error>::Err(Error::Dns_QueryFailed);
 
-	PDNS_REQUEST_HEADER pHeader = (PDNS_REQUEST_HEADER)buffer.Data();
+	PDNS_REQUEST_HEADER header = (PDNS_REQUEST_HEADER)buffer.Data();
 
-	pHeader->Id = (UINT16)0x24a1;
-	pHeader->Qr = 0;
-	pHeader->Opcode = 0;
-	pHeader->Aa = 0;
-	pHeader->Tc = 0;
-	pHeader->Rd = 1;
-	pHeader->Ra = 0;
-	pHeader->Z = 0;
-	pHeader->Ad = 0;
-	pHeader->Cd = 0;
-	pHeader->Rcode = 0;
-	pHeader->QdCount = UINT16SwapByteOrder(1);
-	pHeader->AnsCount = 0;
-	pHeader->AuthCount = 0;
-	pHeader->AddCount = 0;
+	header->Id = (UINT16)0x24a1;
+	header->Qr = 0;
+	header->Opcode = 0;
+	header->Aa = 0;
+	header->Tc = 0;
+	header->Rd = 1;
+	header->Ra = 0;
+	header->Z = 0;
+	header->Ad = 0;
+	header->Cd = 0;
+	header->Rcode = 0;
+	header->QdCount = ByteOrder::Swap16(1);
+	header->AnsCount = 0;
+	header->AuthCount = 0;
+	header->AddCount = 0;
 
-	UINT8 *qname = (UINT8 *)buffer.Data() + sizeof(DNS_REQUEST_HEADER);
+	UINT8 *qname = buffer.Data() + sizeof(DNS_REQUEST_HEADER);
 	INT32 nameSpaceLeft = (INT32)(buffer.Size() - sizeof(DNS_REQUEST_HEADER) - sizeof(DNS_REQUEST_QUESTION));
 	auto nameResult = FormatDnsName(Span<UINT8>(qname, (USIZE)nameSpaceLeft), host);
 	if (!nameResult)
@@ -477,9 +477,9 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
 	}
 	INT32 nameLen = nameResult.Value();
 
-	PDNS_REQUEST_QUESTION pQuestion = (PDNS_REQUEST_QUESTION)(qname + nameLen);
-	pQuestion->QClass = UINT16SwapByteOrder(1);
-	pQuestion->QType = UINT16SwapByteOrder(static_cast<UINT16>(dnstype));
+	PDNS_REQUEST_QUESTION question = (PDNS_REQUEST_QUESTION)(qname + nameLen);
+	question->QClass = ByteOrder::Swap16(1);
+	question->QType = ByteOrder::Swap16(static_cast<UINT16>(dnstype));
 
 	return Result<UINT32, Error>::Ok((UINT32)(sizeof(DNS_REQUEST_HEADER) + nameLen + sizeof(DNS_REQUEST_QUESTION)));
 }
@@ -521,18 +521,19 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(Span<const CHAR> host, const IPAdd
 	if (!tlsResult)
 	{
 		LOG_WARNING("Failed to create TLS client for DNS server");
-		return Result<IPAddress, Error>::Err(Error::Dns_ConnectFailed);
+		return Result<IPAddress, Error>::Err(tlsResult, Error::Dns_ConnectFailed);
 	}
 	auto& tlsClient = tlsResult.Value();
 
-	if (!tlsClient.Open())
+	auto openResult = tlsClient.Open();
+	if (!openResult)
 	{
 		LOG_WARNING("Failed to connect to DNS server");
-		return Result<IPAddress, Error>::Err(Error::Dns_ConnectFailed);
+		return Result<IPAddress, Error>::Err(openResult, Error::Dns_ConnectFailed);
 	}
 
 	UINT8 queryBuffer[256];
-	auto queryResult = GenerateQuery(host, dnstype, Span<CHAR>((PCHAR)queryBuffer, sizeof(queryBuffer)));
+	auto queryResult = GenerateQuery(host, dnstype, Span<UINT8>(queryBuffer));
 	if (!queryResult)
 	{
 		LOG_WARNING("Failed to generate DNS query");
@@ -544,7 +545,7 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(Span<const CHAR> host, const IPAdd
 	{
 		auto r = tlsClient.Write(s);
 		if (!r || r.Value() != s.Size())
-			return Result<void, Error>::Err(Error::Dns_SendFailed);
+			return Result<void, Error>::Err(r, Error::Dns_SendFailed);
 		return Result<void, Error>::Ok();
 	};
 
@@ -566,7 +567,7 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(Span<const CHAR> host, const IPAdd
 	if (!writeBody || writeBody.Value() != querySize)
 	{
 		LOG_WARNING("Failed to send DNS query");
-		return Result<IPAddress, Error>::Err(Error::Dns_SendFailed);
+		return Result<IPAddress, Error>::Err(writeBody, Error::Dns_SendFailed);
 	}
 
 	auto headerResult = HttpClient::ReadResponseHeaders(tlsClient, 200);
@@ -583,24 +584,24 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(Span<const CHAR> host, const IPAdd
 		return Result<IPAddress, Error>::Err(Error::Dns_ResponseFailed);
 	}
 
-	CHAR binaryResponse[512];
+	UINT8 binaryResponse[512];
 	UINT32 totalRead = 0;
 	while (totalRead < (UINT32)contentLength)
 	{
-		auto readResult = tlsClient.Read(Span<CHAR>(binaryResponse + totalRead, (UINT32)contentLength - totalRead));
+		auto readResult = tlsClient.Read(Span<CHAR>((PCHAR)(binaryResponse + totalRead), (UINT32)contentLength - totalRead));
 		if (!readResult || readResult.Value() <= 0)
 		{
 			LOG_WARNING("Failed to read DNS binary response");
-			return Result<IPAddress, Error>::Err(Error::Dns_ResponseFailed);
+			return Result<IPAddress, Error>::Err(readResult, Error::Dns_ResponseFailed);
 		}
 		totalRead += (UINT32)readResult.Value();
 	}
 
-	auto parseResult = ParseDnsResponse(Span<const UINT8>((const UINT8 *)binaryResponse, (USIZE)contentLength));
+	auto parseResult = ParseDnsResponse(Span<const UINT8>(binaryResponse, (USIZE)contentLength));
 	if (!parseResult)
 	{
 		LOG_WARNING("Failed to parse DNS response");
-		return Result<IPAddress, Error>::Err(Error::Dns_ParseFailed);
+		return Result<IPAddress, Error>::Err(parseResult, Error::Dns_ParseFailed);
 	}
 
 	return parseResult;
@@ -623,8 +624,8 @@ Result<IPAddress, Error> DNS::ResolveOverHttp(Span<const CHAR> host, const IPAdd
 Result<IPAddress, Error> DNS::CloudflareResolve(Span<const CHAR> host, DnsRecordType dnstype)
 {
 	auto serverName = "one.one.one.one"_embed;
-	IPAddress ips[] = {IPAddress::FromIPv4(0x01010101), IPAddress::FromIPv4(0x01000001)};
-	return ResolveWithFallback(host, ips, serverName, dnstype);
+	const IPAddress ips[] = {IPAddress::FromIPv4(0x01010101), IPAddress::FromIPv4(0x01000001)};
+	return ResolveWithFallback(host, Span(ips), serverName, dnstype);
 }
 
 /**
@@ -644,8 +645,8 @@ Result<IPAddress, Error> DNS::CloudflareResolve(Span<const CHAR> host, DnsRecord
 Result<IPAddress, Error> DNS::GoogleResolve(Span<const CHAR> host, DnsRecordType dnstype)
 {
 	auto serverName = "dns.google"_embed;
-	IPAddress ips[] = {IPAddress::FromIPv4(0x08080808), IPAddress::FromIPv4(0x08080404)};
-	return ResolveWithFallback(host, ips, serverName, dnstype);
+	const IPAddress ips[] = {IPAddress::FromIPv4(0x08080808), IPAddress::FromIPv4(0x08080404)};
+	return ResolveWithFallback(host, Span(ips), serverName, dnstype);
 }
 
 /**

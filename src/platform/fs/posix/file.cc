@@ -11,6 +11,32 @@
 #elif defined(PLATFORM_SOLARIS)
 #include "platform/common/solaris/syscall.h"
 #include "platform/common/solaris/system.h"
+#elif defined(PLATFORM_FREEBSD)
+#include "platform/common/freebsd/syscall.h"
+#include "platform/common/freebsd/system.h"
+#endif
+
+// --- lseek wrapper ---
+// On riscv32, SYS_LSEEK (62) maps to sys_llseek which takes 5 arguments:
+// (fd, offset_high, offset_low, &result, whence) and returns 0 on success.
+// All other architectures use the standard 3-argument lseek.
+#if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_RISCV32)
+static SSIZE PosixLseek(USIZE fd, SSIZE offset, INT32 whence)
+{
+	INT64 result = 0;
+	INT64 offset64 = (INT64)offset;
+	USIZE offsetHigh = (USIZE)((UINT64)offset64 >> 32);
+	USIZE offsetLow = (USIZE)((UINT64)offset64 & 0xFFFFFFFF);
+	SSIZE ret = System::Call(SYS_LSEEK, fd, offsetHigh, offsetLow, (USIZE)&result, (USIZE)whence);
+	if (ret < 0)
+		return ret;
+	return (SSIZE)result;
+}
+#else
+static SSIZE PosixLseek(USIZE fd, SSIZE offset, INT32 whence)
+{
+	return System::Call(SYS_LSEEK, fd, (USIZE)offset, whence);
+}
 #endif
 
 // --- Internal Constructor (trivial — never fails) ---
@@ -42,7 +68,7 @@ Result<File, Error> File::Open(PCWCHAR path, INT32 flags)
 		openFlags |= O_APPEND;
 
 	SSIZE fd;
-#if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_AARCH64)
+#if defined(PLATFORM_LINUX) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))
 	fd = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)utf8Path, openFlags, mode);
 #else
 	fd = System::Call(SYS_OPEN, (USIZE)utf8Path, openFlags, mode);
@@ -51,7 +77,16 @@ Result<File, Error> File::Open(PCWCHAR path, INT32 flags)
 	if (fd < 0)
 		return Result<File, Error>::Err(Error::Posix((UINT32)(-fd)), Error::Fs_OpenFailed);
 
-	return Result<File, Error>::Ok(File((PVOID)fd, 0));
+	// Query file size via lseek (consistent with Windows/UEFI implementations)
+	USIZE size = 0;
+	SSIZE fileEnd = PosixLseek((USIZE)fd, 0, SEEK_END);
+	if (fileEnd >= 0)
+	{
+		size = (USIZE)fileEnd;
+		PosixLseek((USIZE)fd, 0, SEEK_SET);
+	}
+
+	return Result<File, Error>::Ok(File((PVOID)fd, size));
 }
 
 Result<void, Error> File::Delete(PCWCHAR path)
@@ -59,7 +94,7 @@ Result<void, Error> File::Delete(PCWCHAR path)
 	CHAR utf8Path[1024];
 	NormalizePathToUtf8(path, Span<CHAR>(utf8Path));
 
-#if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_AARCH64)
+#if defined(PLATFORM_LINUX) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))
 	SSIZE result = System::Call(SYS_UNLINKAT, AT_FDCWD, (USIZE)utf8Path, 0);
 #else
 	SSIZE result = System::Call(SYS_UNLINK, (USIZE)utf8Path);
@@ -76,7 +111,7 @@ Result<void, Error> File::Exists(PCWCHAR path)
 
 	UINT8 statbuf[144];
 
-#if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_AARCH64)
+#if defined(PLATFORM_LINUX) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))
 	SSIZE result = System::Call(SYS_FSTATAT, AT_FDCWD, (USIZE)utf8Path, (USIZE)statbuf, 0);
 #elif defined(PLATFORM_MACOS)
 	SSIZE result = System::Call(SYS_STAT64, (USIZE)utf8Path, (USIZE)statbuf);
@@ -88,7 +123,7 @@ Result<void, Error> File::Exists(PCWCHAR path)
 	return Result<void, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_OpenFailed);
 }
 
-File::File(File &&other) noexcept : fileHandle(nullptr), fileSize(0)
+File::File(File &&other) noexcept : fileHandle((PVOID)INVALID_FD), fileSize(0)
 {
 	fileHandle = other.fileHandle;
 	fileSize = other.fileSize;
@@ -100,7 +135,8 @@ File &File::operator=(File &&other) noexcept
 {
 	if (this != &other)
 	{
-		Close();
+		if (IsValid())
+			(void)Close();
 		fileHandle = other.fileHandle;
 		fileSize = other.fileSize;
 		other.fileHandle = (PVOID)INVALID_FD;
@@ -152,7 +188,7 @@ Result<USIZE, Error> File::GetOffset() const
 	if (!IsValid())
 		return Result<USIZE, Error>::Err(Error::Fs_SeekFailed);
 
-	SSIZE result = System::Call(SYS_LSEEK, (USIZE)fileHandle, 0, SEEK_CUR);
+	SSIZE result = PosixLseek((USIZE)fileHandle, 0, SEEK_CUR);
 	if (result >= 0)
 		return Result<USIZE, Error>::Ok((USIZE)result);
 	return Result<USIZE, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_SeekFailed);
@@ -163,7 +199,7 @@ Result<void, Error> File::SetOffset(USIZE absoluteOffset)
 	if (!IsValid())
 		return Result<void, Error>::Err(Error::Fs_SeekFailed);
 
-	SSIZE result = System::Call(SYS_LSEEK, (USIZE)fileHandle, absoluteOffset, SEEK_SET);
+	SSIZE result = PosixLseek((USIZE)fileHandle, (SSIZE)absoluteOffset, SEEK_SET);
 	if (result >= 0)
 		return Result<void, Error>::Ok();
 	return Result<void, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_SeekFailed);
@@ -180,7 +216,7 @@ Result<void, Error> File::MoveOffset(SSIZE relativeAmount, OffsetOrigin origin)
 	else if (origin == OffsetOrigin::End)
 		whence = SEEK_END;
 
-	SSIZE result = System::Call(SYS_LSEEK, (USIZE)fileHandle, (USIZE)relativeAmount, whence);
+	SSIZE result = PosixLseek((USIZE)fileHandle, relativeAmount, whence);
 	if (result >= 0)
 		return Result<void, Error>::Ok();
 	return Result<void, Error>::Err(Error::Posix((UINT32)(-result)), Error::Fs_SeekFailed);

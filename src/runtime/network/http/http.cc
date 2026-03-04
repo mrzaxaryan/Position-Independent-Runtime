@@ -1,12 +1,11 @@
 #include "runtime/network/http/http.h"
 #include "runtime/network/dns/dns.h"
 #include "platform/io/logger.h"
-#include "core/types/embedded/embedded_string.h"
 
-// Helper to append an embedded string to a buffer
-static USIZE AppendStr(CHAR *buf, USIZE pos, USIZE maxPos, const CHAR *str) noexcept
+// Helper to append a null-terminated string to a buffer
+static USIZE AppendStr(Span<CHAR> buf, USIZE pos, const CHAR *str) noexcept
 {
-	for (USIZE i = 0; str[i] != '\0' && pos < maxPos; i++)
+	for (USIZE i = 0; str[i] != '\0' && pos < buf.Size(); i++)
 	{
 		buf[pos++] = str[i];
 	}
@@ -25,13 +24,13 @@ Result<HttpClient, Error> HttpClient::Create(Span<const CHAR> url)
 	BOOL isSecure = false;
 	auto parseResult = ParseUrl(url, host, parsedPath, port, isSecure);
 	if (!parseResult)
-		return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
+		return Result<HttpClient, Error>::Err(parseResult, Error::Http_CreateFailed);
 
 	auto dnsResult = DNS::Resolve(Span<const CHAR>(host, StringUtils::Length(host)));
 	if (!dnsResult)
 	{
 		LOG_ERROR("Failed to resolve hostname %s", host);
-		return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
+		return Result<HttpClient, Error>::Err(dnsResult, Error::Http_CreateFailed);
 	}
 	auto& ip = dnsResult.Value();
 
@@ -49,7 +48,7 @@ Result<HttpClient, Error> HttpClient::Create(Span<const CHAR> url)
 	}
 
 	if (!tlsResult)
-		return Result<HttpClient, Error>::Err(Error::Http_CreateFailed);
+		return Result<HttpClient, Error>::Err(tlsResult, Error::Http_CreateFailed);
 
 	HttpClient client(ip, port, static_cast<TlsClient &&>(tlsResult.Value()));
 	return Result<HttpClient, Error>::Ok(static_cast<HttpClient &&>(client));
@@ -79,7 +78,6 @@ Result<void, Error> HttpClient::Close()
 
 /// @brief Read data from the server into the provided buffer, handling decryption if the connection is secure
 /// @param buffer The buffer to store the read data
-/// @param bufferLength The maximum number of bytes to read into the buffer
 /// @return Ok(bytesRead) on success, or Err with Http_ReadFailed on failure
 
 Result<SSIZE, Error> HttpClient::Read(Span<CHAR> buffer)
@@ -91,8 +89,7 @@ Result<SSIZE, Error> HttpClient::Read(Span<CHAR> buffer)
 }
 
 /// @brief Write data to the server
-/// @param buffer Pointer to the data to be sent to the server
-/// @param bufferLength The length of the data to be sent in bytes
+/// @param buffer The data to be sent to the server
 /// @return Ok(bytesWritten) on success, or Err with Http_WriteFailed on failure
 
 Result<UINT32, Error> HttpClient::Write(Span<const CHAR> buffer)
@@ -110,61 +107,68 @@ Result<void, Error> HttpClient::SendGetRequest(PCCHAR host, PCCHAR path)
 {
 	// Build GET request: "GET <path> HTTP/1.1\r\nHost: <host>\r\nConnection: close\r\n\r\n"
 	CHAR request[2048];
+	Span<CHAR> requestSpan(request, 2000);
 	USIZE pos = 0;
 
-	pos = AppendStr(request, pos, 2000, "GET "_embed);
-	pos = AppendStr(request, pos, 2000, path);
-	pos = AppendStr(request, pos, 2000, " HTTP/1.1\r\nHost: "_embed);
-	pos = AppendStr(request, pos, 2000, host);
-	pos = AppendStr(request, pos, 2000, "\r\nConnection: close\r\n\r\n"_embed);
+	pos = AppendStr(requestSpan, pos, "GET "_embed);
+	pos = AppendStr(requestSpan, pos, path);
+	pos = AppendStr(requestSpan, pos, " HTTP/1.1\r\nHost: "_embed);
+	pos = AppendStr(requestSpan, pos, host);
+	pos = AppendStr(requestSpan, pos, "\r\nConnection: close\r\n\r\n"_embed);
 
 	request[pos] = '\0';
 
 	auto r = Write(Span<const CHAR>(request, (UINT32)pos));
-	if (!r || r.Value() != pos)
+	if (!r)
 		return Result<void, Error>::Err(r, Error::Http_SendGetFailed);
+	if (r.Value() != (UINT32)pos)
+		return Result<void, Error>::Err(Error::Http_SendGetFailed);
 	return Result<void, Error>::Ok();
 }
 
 /// @brief Send an HTTP POST request to the server
+/// @param host Null-terminated hostname for the Host header
+/// @param path Null-terminated request-URI path component
 /// @param data The data to be sent in the body of the POST request
-/// @param dataLength Length of the data to be sent in bytes
 /// @return Ok on success, or Err with Http_SendPostFailed on failure
 
 Result<void, Error> HttpClient::SendPostRequest(PCCHAR host, PCCHAR path, Span<const CHAR> data)
 {
 	// Build POST request with Content-Length
 	CHAR request[2048];
+	Span<CHAR> requestSpan(request, 1900);
 	USIZE pos = 0;
 
-	pos = AppendStr(request, pos, 1900, "POST "_embed);
-	pos = AppendStr(request, pos, 1900, path);
-	pos = AppendStr(request, pos, 1900, " HTTP/1.1\r\nHost: "_embed);
-	pos = AppendStr(request, pos, 1900, host);
-	pos = AppendStr(request, pos, 1900, "\r\nContent-Length: "_embed);
+	pos = AppendStr(requestSpan, pos, "POST "_embed);
+	pos = AppendStr(requestSpan, pos, path);
+	pos = AppendStr(requestSpan, pos, " HTTP/1.1\r\nHost: "_embed);
+	pos = AppendStr(requestSpan, pos, host);
+	pos = AppendStr(requestSpan, pos, "\r\nContent-Length: "_embed);
 
 	// Convert data.Size() to string
 	CHAR lenStr[16];
 	StringUtils::UIntToStr((UINT32)data.Size(), Span<CHAR>(lenStr));
 
-	pos = AppendStr(request, pos, 1900, lenStr);
-	pos = AppendStr(request, pos, 1900, "\r\nConnection: close\r\n\r\n"_embed);
+	pos = AppendStr(requestSpan, pos, lenStr);
+	pos = AppendStr(requestSpan, pos, "\r\nConnection: close\r\n\r\n"_embed);
 
 	request[pos] = '\0';
 
 	// Send headers
 	auto r = Write(Span<const CHAR>(request, (UINT32)pos));
-	if (!r || r.Value() != pos)
-	{
+	if (!r)
 		return Result<void, Error>::Err(r, Error::Http_SendPostFailed);
-	}
+	if (r.Value() != (UINT32)pos)
+		return Result<void, Error>::Err(Error::Http_SendPostFailed);
 
 	// Send body
 	if (data.Size() > 0)
 	{
 		auto bodyResult = Write(data);
-		if (!bodyResult || bodyResult.Value() != (UINT32)data.Size())
+		if (!bodyResult)
 			return Result<void, Error>::Err(bodyResult, Error::Http_SendPostFailed);
+		if (bodyResult.Value() != (UINT32)data.Size())
+			return Result<void, Error>::Err(Error::Http_SendPostFailed);
 	}
 
 	return Result<void, Error>::Ok();
@@ -187,25 +191,23 @@ Result<void, Error> HttpClient::ParseUrl(Span<const CHAR> url, CHAR (&host)[254]
 	port = 0;
 	secure = false;
 
-	Span<const CHAR> urlSpan = url;
-
 	UINT8 schemeLength = 0;
-	if (StringUtils::StartsWith<CHAR>(urlSpan, "ws://"_embed))
+	if (StringUtils::StartsWith<CHAR>(url, "ws://"_embed))
 	{
 		secure = false;
 		schemeLength = 5; // ws://
 	}
-	else if (StringUtils::StartsWith<CHAR>(urlSpan, "wss://"_embed))
+	else if (StringUtils::StartsWith<CHAR>(url, "wss://"_embed))
 	{
 		secure = true;
 		schemeLength = 6; // wss://
 	}
-	else if (StringUtils::StartsWith<CHAR>(urlSpan, "http://"_embed))
+	else if (StringUtils::StartsWith<CHAR>(url, "http://"_embed))
 	{
 		secure = false;
 		schemeLength = 7; // http://
 	}
-	else if (StringUtils::StartsWith<CHAR>(urlSpan, "https://"_embed))
+	else if (StringUtils::StartsWith<CHAR>(url, "https://"_embed))
 	{
 		secure = true;
 		schemeLength = 8; // https://
@@ -257,30 +259,35 @@ Result<void, Error> HttpClient::ParseUrl(Span<const CHAR> url, CHAR (&host)[254]
 
 		auto pnumResult = StringUtils::ParseInt64(portBuffer);
 		if (!pnumResult)
-			return Result<void, Error>::Err(Error::Http_ParseUrlFailed);
-		INT64 pnum = pnumResult.Value();
+			return Result<void, Error>::Err(pnumResult, Error::Http_ParseUrlFailed);
+		auto& pnum = pnumResult.Value();
 		if (pnum == 0 || pnum > 65535)
 			return Result<void, Error>::Err(Error::Http_ParseUrlFailed);
 		port = (UINT16)pnum;
 	}
 
-	// Extract path (common to both branches)
-	if (*pathStart == '\0')
+	// Extract path — compute length from span bounds, not null terminator
+	USIZE pathLen = (USIZE)((url.Data() + url.Size()) - pathStart);
+	if (pathLen == 0)
 	{
 		path[0] = '/';
 		path[1] = '\0';
 	}
 	else
 	{
-		USIZE pLen = (USIZE)StringUtils::Length(pathStart);
-		if (pLen > 2047)
+		if (pathLen > 2047)
 			return Result<void, Error>::Err(Error::Http_ParseUrlFailed);
-		Memory::Copy(path, pathStart, pLen);
-		path[pLen] = '\0';
+		Memory::Copy(path, pathStart, pathLen);
+		path[pathLen] = '\0';
 	}
 
 	return Result<void, Error>::Ok();
 }
+
+/// @brief Read HTTP response headers using a rolling 4-byte window
+/// @param client The TLS client to read from
+/// @param expectedStatus The expected HTTP status code (e.g., 200)
+/// @return Ok(contentLength) on success (-1 if Content-Length absent), or Err on failure
 
 Result<INT64, Error> HttpClient::ReadResponseHeaders(TlsClient &client, UINT16 expectedStatus)
 {
@@ -306,8 +313,10 @@ Result<INT64, Error> HttpClient::ReadResponseHeaders(TlsClient &client, UINT16 e
 	{
 		CHAR c;
 		auto readResult = client.Read(Span<CHAR>(&c, 1));
-		if (!readResult || readResult.Value() <= 0)
+		if (!readResult)
 			return Result<INT64, Error>::Err(readResult, Error::Http_ReadHeadersFailed_Read);
+		if (readResult.Value() <= 0)
+			return Result<INT64, Error>::Err(Error::Http_ReadHeadersFailed_Read);
 
 		tail = (tail << 8) | (UINT8)c;
 		bytesConsumed++;

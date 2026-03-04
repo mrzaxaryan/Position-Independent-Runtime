@@ -59,11 +59,22 @@
 class BinaryReader
 {
 private:
-	PCVOID address;  ///< Base address of the data buffer
-	USIZE offset;   ///< Current read position (bytes from base)
-	USIZE maxSize;  ///< Maximum readable size in bytes
+	const UINT8 *address;  ///< Base address of the data buffer
+	USIZE offset;          ///< Current read position (bytes from base)
+	USIZE maxSize;         ///< Maximum readable size in bytes
 
 public:
+	/// @name Heap Operators
+	/// @{
+
+	VOID *operator new(USIZE) = delete;
+	VOID *operator new[](USIZE) = delete;
+	VOID operator delete(VOID *) = delete;
+	VOID operator delete[](VOID *) = delete;
+	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; } ///< Placement new for Result<BinaryReader, Error>
+	VOID operator delete(VOID *, PVOID) noexcept {}               ///< Matching placement delete
+
+	/// @}
 	/// @name Constructors
 	/// @{
 
@@ -102,11 +113,11 @@ public:
 	template <typename T>
 	T Read()
 	{
-		if (offset + sizeof(T) > maxSize)
+		if (sizeof(T) > maxSize - offset)
 			return T{};
 
 		T value;
-		Memory::Copy(&value, (PCCHAR)address + offset, sizeof(T));
+		Memory::Copy(&value, address + offset, sizeof(T));
 		offset += sizeof(T);
 		return value;
 	}
@@ -116,12 +127,12 @@ public:
 	 * @param buffer Destination buffer span
 	 * @return Number of bytes read (buffer.Size() on success, 0 if out of bounds)
 	 */
-	USIZE ReadBytes(Span<CHAR> buffer)
+	USIZE ReadBytes(Span<UINT8> buffer)
 	{
-		if (offset + buffer.Size() > maxSize)
+		if (buffer.Size() > maxSize - offset)
 			return 0;
 
-		Memory::Copy(buffer.Data(), (PCCHAR)address + offset, buffer.Size());
+		Memory::Copy(buffer.Data(), address + offset, buffer.Size());
 		offset += buffer.Size();
 		return buffer.Size();
 	}
@@ -138,10 +149,10 @@ public:
 	 */
 	constexpr FORCE_INLINE UINT16 ReadU16BE()
 	{
-		if (offset + 2 > maxSize)
+		if (maxSize - offset < 2)
 			return 0;
 
-		const UCHAR *p = (const UCHAR *)address + offset;
+		const UINT8 *p = address + offset;
 		UINT16 value = (UINT16)((p[0] << 8) | p[1]);
 		offset += 2;
 		return value;
@@ -159,10 +170,10 @@ public:
 	 */
 	constexpr FORCE_INLINE UINT32 ReadU24BE()
 	{
-		if (offset + 3 > maxSize)
+		if (maxSize - offset < 3)
 			return 0;
 
-		const UCHAR *p = (const UCHAR *)address + offset;
+		const UINT8 *p = address + offset;
 		UINT32 value = ((UINT32)p[0] << 16) | ((UINT32)p[1] << 8) | (UINT32)p[2];
 		offset += 3;
 		return value;
@@ -180,10 +191,10 @@ public:
 	 */
 	constexpr FORCE_INLINE UINT32 ReadU32BE()
 	{
-		if (offset + 4 > maxSize)
+		if (maxSize - offset < 4)
 			return 0;
 
-		const UCHAR *p = (const UCHAR *)address + offset;
+		const UINT8 *p = address + offset;
 		UINT32 value = ((UINT32)p[0] << 24) | ((UINT32)p[1] << 16) | ((UINT32)p[2] << 8) | (UINT32)p[3];
 		offset += 4;
 		return value;
@@ -200,7 +211,7 @@ public:
 	 */
 	constexpr FORCE_INLINE BOOL Skip(USIZE count)
 	{
-		if (offset + count > maxSize)
+		if (count > maxSize - offset)
 			return false;
 
 		offset += count;
@@ -238,13 +249,13 @@ public:
 	 * @brief Get a pointer to the current read position
 	 * @return Pointer to the byte at the current offset
 	 */
-	constexpr PCVOID Current() const
+	constexpr const UINT8 *Current() const
 	{
-		return (PCCHAR)address + offset;
+		return address + offset;
 	}
 
 	/** @brief Get the base address of the data buffer */
-	constexpr PCVOID GetAddress() const { return address; }
+	constexpr const UINT8 *GetAddress() const { return address; }
 
 	/** @brief Get the current read offset in bytes */
 	constexpr USIZE GetOffset() const { return offset; }

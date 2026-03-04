@@ -6,14 +6,8 @@
 #include "runtime/network/tls/tls_hkdf.h"
 #include "core/math/math.h"
 
-/// ECC key size for secp256r1 (NIST P-256) in bytes
-constexpr INT32 SECP256R1_KEY_SIZE = 32;
-/// ECC key size for secp384r1 (NIST P-384) in bytes
-constexpr INT32 SECP384R1_KEY_SIZE = 48;
-/// Length of TLS 1.3 traffic label strings (e.g., "s hs traffic", "c ap traffic")
-constexpr INT32 TRAFFIC_LABEL_LEN = 12;
-
 /// @brief Reset the TlsCipher object to its initial state
+/// @return void
 
 VOID TlsCipher::Reset()
 {
@@ -40,30 +34,27 @@ VOID TlsCipher::Reset()
 }
 
 /// @brief Destroy the TlsCipher object and clean up resources
+/// @return void
 
 VOID TlsCipher::Destroy()
 {
 	Reset();
-	publicKey.Clear();
-	decodeBuffer.Clear();
 }
 
-/// @brief Generate and return the client random value for the ClientHello message
-/// @return Span wrapping the generated client random data (RAND_SIZE bytes)
-/// @see RFC 8446 Section 4.1.2 — Client Hello (client random field)
-///      https://datatracker.ietf.org/doc/html/rfc8446#section-4.1.2
+/// @brief Create client random data
+/// @return Pointer to the client random data
 
-Span<const UINT8> TlsCipher::CreateClientRand()
+PINT8 TlsCipher::CreateClientRand()
 {
 	Random random;
 
 	LOG_DEBUG("Creating client random data for cipher: %p", this);
-	for (USIZE i = 0; i < sizeof(data12.clientRandom); i++)
+	for (UINT64 i = 0; i < (UINT64)sizeof(data12.clientRandom); i++)
 	{
 		data12.clientRandom[i] = random.Get() & 0xff;
 	}
 	LOG_DEBUG("Client random data created: %p", data12.clientRandom);
-	return Span<const UINT8>(data12.clientRandom, RAND_SIZE);
+	return (PINT8)data12.clientRandom;
 }
 
 /// @brief Update server information for the TLS cipher
@@ -78,8 +69,7 @@ Result<void, Error> TlsCipher::UpdateServerInfo()
 
 /// @brief Get the current handshake hash and store it in the provided output span
 /// @param out Output span; size determines which hash algorithm is used
-/// @see RFC 8446 Section 4.4.1 — Transcript Hash
-///      https://datatracker.ietf.org/doc/html/rfc8446#section-4.4.1
+/// @return void
 
 VOID TlsCipher::GetHash(Span<CHAR> out)
 {
@@ -87,9 +77,9 @@ VOID TlsCipher::GetHash(Span<CHAR> out)
 }
 
 /// @brief Update the handshake hash with new input data
-/// @param in Input data to be added to the handshake hash
-/// @see RFC 8446 Section 4.4.1 — Transcript Hash
-///      https://datatracker.ietf.org/doc/html/rfc8446#section-4.4.1
+/// @param in Pointer to the input data to be added to the handshake hash
+/// @param len Length of the input data
+/// @return void
 
 VOID TlsCipher::UpdateHash(Span<const CHAR> in)
 {
@@ -98,25 +88,27 @@ VOID TlsCipher::UpdateHash(Span<const CHAR> in)
 
 /// @brief Compute the public key for the specified ECC index and store it in the provided output buffer
 /// @param eccIndex Index of the ECC key to use for public key computation
-/// @param out Buffer where the computed public key will be appended
+/// @param out Pointer to the buffer where the computed public key will be stored
 /// @return Result<void, Error>::Ok() if the public key was successfully computed
-/// @see RFC 8446 Section 4.2.8 — Key Share
-///      https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.8
 
 Result<void, Error> TlsCipher::ComputePublicKey(INT32 eccIndex, TlsBuffer &out)
 {
+	if (eccIndex < 0 || eccIndex >= ECC_COUNT)
+		return Result<void, Error>::Err(Error::TlsCipher_ComputePublicKeyFailed);
 	if (privateEccKeys[eccIndex] == nullptr)
 	{
 		LOG_DEBUG("Allocating memory for private ECC key at index %d", eccIndex);
 		privateEccKeys[eccIndex] = new ECC();
-		INT32 eccSizeList[2];
-		eccSizeList[0] = SECP256R1_KEY_SIZE;
-		eccSizeList[1] = SECP384R1_KEY_SIZE;
+		INT32 ecc_size_list[2];
+		ecc_size_list[0] = 32;
+		ecc_size_list[1] = 48;
 
-		auto initResult = privateEccKeys[eccIndex]->Initialize(eccSizeList[eccIndex]);
+		auto initResult = privateEccKeys[eccIndex]->Initialize(ecc_size_list[eccIndex]);
 		if (!initResult)
 		{
 			LOG_DEBUG("Failed to initialize ECC key at index %d", eccIndex);
+			delete privateEccKeys[eccIndex];
+			privateEccKeys[eccIndex] = nullptr;
 			return Result<void, Error>::Err(initResult, Error::TlsCipher_ComputePublicKeyFailed);
 		}
 	}
@@ -135,28 +127,27 @@ Result<void, Error> TlsCipher::ComputePublicKey(INT32 eccIndex, TlsBuffer &out)
 	return Result<void, Error>::Ok();
 }
 
-/// @brief Compute the pre-master key using the specified ECC group and server key
+/// @brief Compute the pre-master key using the specified ECC group and server key, and store it in the provided output buffer
 /// @param ecc Specified ECC group to use for key computation
-/// @param serverKey Server's public key for pre-master key computation
-/// @param premasterKey Buffer where the computed pre-master key will be stored
+/// @param serverKey Server's public key to use for pre-master key computation
+/// @param serverKeyLen Server key length in bytes
+/// @param premasterKey Pointer to the buffer where the computed pre-master key will be stored
 /// @return Result<void, Error>::Ok() if the pre-master key was successfully computed
-/// @see RFC 8446 Section 7.4 — (EC)DHE Shared Secret
-///      https://datatracker.ietf.org/doc/html/rfc8446#section-7.4
 
-Result<void, Error> TlsCipher::ComputePreKey(EccGroup ecc, Span<const CHAR> serverKey, TlsBuffer &premasterKey)
+Result<void, Error> TlsCipher::ComputePreKey(ECC_GROUP ecc, Span<const CHAR> serverKey, TlsBuffer &premasterKey)
 {
 	INT32 eccIndex;
 	INT32 eccSize;
 
 	// Replace loop with two if statements
-	if (ecc == EccGroup::Secp256r1)
+	if (ecc == ECC_SECP256R1)
 	{
-		eccSize = SECP256R1_KEY_SIZE;
+		eccSize = 32;
 		eccIndex = 0;
 	}
-	else if (ecc == EccGroup::Secp384r1)
+	else if (ecc == ECC_SECP384R1)
 	{
-		eccSize = SECP384R1_KEY_SIZE;
+		eccSize = 48;
 		eccIndex = 1;
 	}
 	else
@@ -166,35 +157,33 @@ Result<void, Error> TlsCipher::ComputePreKey(EccGroup ecc, Span<const CHAR> serv
 	auto pubKeyResult = ComputePublicKey(eccIndex, publicKey);
 	if (!pubKeyResult)
 	{
-		LOG_DEBUG("Failed to compute public key for ECC group %d", (UINT16)ecc);
+		LOG_DEBUG("Failed to compute public key for ECC group %d", ecc);
 		return Result<void, Error>::Err(pubKeyResult, Error::TlsCipher_ComputePreKeyFailed);
 	}
 
-	auto setSizeResult = premasterKey.SetSize(eccSize);
-	if (!setSizeResult)
-		return Result<void, Error>::Err(setSizeResult, Error::TlsCipher_ComputePreKeyFailed);
+	auto premasterSizeResult = premasterKey.SetSize(eccSize);
+	if (!premasterSizeResult)
+		return Result<void, Error>::Err(premasterSizeResult, Error::TlsCipher_ComputePreKeyFailed);
 
 	auto secretResult = privateEccKeys[eccIndex]->ComputeSharedSecret(Span<const UINT8>((UINT8 *)serverKey.Data(), serverKey.Size()), Span<UINT8>((UINT8 *)premasterKey.GetBuffer(), eccSize));
 	if (!secretResult)
 	{
-		LOG_DEBUG("Failed to compute shared secret for ECC group %d", (UINT16)ecc);
+		LOG_DEBUG("Failed to compute shared secret for ECC group %d", ecc);
 		return Result<void, Error>::Err(secretResult, Error::TlsCipher_ComputePreKeyFailed);
 	}
 
 	return Result<void, Error>::Ok();
 }
 
-/// @brief Compute the TLS key using the specified ECC group and server key
+/// @brief Compute the TLS key using the specified ECC group and server key, and store it in the provided finished hash
 /// @param ecc Specified ECC group to use for key computation
-/// @param serverKey Server's public key for TLS key computation
-/// @param finishedHash Buffer where the computed finished hash will be stored
+/// @param serverKey Server's public key to use for TLS key computation
+/// @param serverKeyLen Server key length in bytes
+/// @param finishedHash Pointer to the buffer where the computed finished hash will be stored
 /// @return Result<void, Error>::Ok() if the TLS key was successfully computed
-/// @see RFC 8446 Section 7.1 — Key Schedule
-///      https://datatracker.ietf.org/doc/html/rfc8446#section-7.1
 
-Result<void, Error> TlsCipher::ComputeKey(EccGroup ecc, Span<const CHAR> serverKey, Span<CHAR> finishedHash)
+Result<void, Error> TlsCipher::ComputeKey(ECC_GROUP ecc, Span<const CHAR> serverKey, Span<CHAR> finishedHash)
 {
-
 	if (cipherIndex == -1)
 	{
 		LOG_DEBUG("Cipher index is -1, cannot compute TLS key");
@@ -210,25 +199,22 @@ Result<void, Error> TlsCipher::ComputeKey(EccGroup ecc, Span<const CHAR> serverK
 	UINT8 localKeyBuffer[MAX_KEY_SIZE], remoteKeyBuffer[MAX_KEY_SIZE];
 	UINT8 localIvBuffer[MAX_IV_SIZE], remoteIvBuffer[MAX_IV_SIZE];
 	// Declare _embed strings separately to avoid type deduction issues with ternary
-	auto serverKeyApp = "s ap traffic"_embed;
-	auto serverKeyHs = "s hs traffic"_embed;
-	auto clientKeyApp = "c ap traffic"_embed;
-	auto clientKeyHs = "c hs traffic"_embed;
-	PCCHAR serverLabel = ecc == EccGroup::None ? (PCCHAR)serverKeyApp : (PCCHAR)serverKeyHs;
-	PCCHAR clientLabel = ecc == EccGroup::None ? (PCCHAR)clientKeyApp : (PCCHAR)clientKeyHs;
-	auto derivedLabel = "derived"_embed;
-	auto keyLabel = "key"_embed;
-	auto ivLabel = "iv"_embed;
+	auto server_key_app = "s ap traffic"_embed;
+	auto server_key_hs = "s hs traffic"_embed;
+	auto client_key_app = "c ap traffic"_embed;
+	auto client_key_hs = "c hs traffic"_embed;
+	const CHAR *server_key = ecc == ECC_NONE ? (const CHAR *)server_key_app : (const CHAR *)server_key_hs;
+	const CHAR *client_key = ecc == ECC_NONE ? (const CHAR *)client_key_app : (const CHAR *)client_key_hs;
 	TlsHash hash2;
 	hash2.GetHash(Span<CHAR>((CHAR *)hash, hashLen));
 	Memory::Zero(earlysecret, sizeof(earlysecret));
 
-	if (ecc == EccGroup::None)
+	if (ecc == ECC_NONE)
 	{
-		LOG_DEBUG("Using EccGroup::None for TLS key computation");
+		LOG_DEBUG("Using ECC_NONE for TLS key computation");
 
-		TlsHkdf::ExpandLabel(Span<UCHAR>(salt, hashLen), Span<const UCHAR>((UINT8 *)data13.pseudoRandomKey, hashLen), Span<const CHAR>(derivedLabel, derivedLabel.Length()), Span<const UCHAR>(hash, hashLen));
-		TlsHkdf::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(salt, hashLen), Span<const UCHAR>(earlysecret, hashLen));
+		TlsHKDF::ExpandLabel(Span<UCHAR>(salt, hashLen), Span<const UCHAR>((UINT8 *)data13.pseudoRandomKey, hashLen), Span<const CHAR>("derived"_embed, 7), Span<const UCHAR>(hash, hashLen));
+		TlsHKDF::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(salt, hashLen), Span<const UCHAR>(earlysecret, hashLen));
 
 		if (finishedHash.Data())
 		{
@@ -238,100 +224,117 @@ Result<void, Error> TlsCipher::ComputeKey(EccGroup ecc, Span<const CHAR> serverK
 	}
 	else
 	{
-		TlsBuffer premasterKey;
-		auto preKeyResult = ComputePreKey(ecc, serverKey, premasterKey);
+		TlsBuffer premaster_key;
+		auto preKeyResult = ComputePreKey(ecc, serverKey, premaster_key);
 		if (!preKeyResult)
 		{
-			LOG_DEBUG("Failed to compute pre-master key for ECC group %d", (UINT16)ecc);
+			LOG_DEBUG("Failed to compute pre-master key for ECC group %d", ecc);
+			Memory::Zero(hash, sizeof(hash));
+			Memory::Zero(earlysecret, sizeof(earlysecret));
 			return Result<void, Error>::Err(preKeyResult, Error::TlsCipher_ComputeKeyFailed);
 		}
-		LOG_DEBUG("Computed pre-master key for ECC group %d, size: %d bytes", ecc, premasterKey.GetSize());
+		LOG_DEBUG("Computed pre-master key for ECC group %d, size: %d bytes", ecc, premaster_key.GetSize());
 
 		// RFC 8446 §7.1: the initial Extract uses a salt of HashLen zero bytes
 		UCHAR zeroSalt[MAX_HASH_LEN];
 		Memory::Zero(zeroSalt, hashLen);
 
-		TlsHkdf::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(zeroSalt, hashLen), Span<const UCHAR>(earlysecret, hashLen));
-		TlsHkdf::ExpandLabel(Span<UCHAR>(salt, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(derivedLabel, derivedLabel.Length()), Span<const UCHAR>(hash, hashLen));
-		TlsHkdf::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(salt, hashLen), Span<const UCHAR>((UINT8 *)premasterKey.GetBuffer(), premasterKey.GetSize()));
+		TlsHKDF::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(zeroSalt, hashLen), Span<const UCHAR>(earlysecret, hashLen));
+		TlsHKDF::ExpandLabel(Span<UCHAR>(salt, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>("derived"_embed, 7), Span<const UCHAR>(hash, hashLen));
+		TlsHKDF::Extract(Span<UCHAR>(data13.pseudoRandomKey, hashLen), Span<const UCHAR>(salt, hashLen), Span<const UCHAR>((UINT8 *)premaster_key.GetBuffer(), premaster_key.GetSize()));
 
 		GetHash(Span<CHAR>((CHAR *)hash, CIPHER_HASH_SIZE));
 	}
 
-	TlsHkdf::ExpandLabel(Span<UCHAR>(data13.handshakeSecret, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(clientLabel, TRAFFIC_LABEL_LEN), Span<const UCHAR>(hash, hashLen));
+	TlsHKDF::ExpandLabel(Span<UCHAR>(data13.handshakeSecret, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(client_key, 12), Span<const UCHAR>(hash, hashLen));
 
-	TlsHkdf::ExpandLabel(Span<UCHAR>(localKeyBuffer, keyLen), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>(keyLabel, keyLabel.Length()), Span<const UCHAR>());
-	TlsHkdf::ExpandLabel(Span<UCHAR>(localIvBuffer, chacha20Context.GetIvLength()), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>(ivLabel, ivLabel.Length()), Span<const UCHAR>());
+	TlsHKDF::ExpandLabel(Span<UCHAR>(localKeyBuffer, keyLen), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>("key"_embed, 3), Span<const UCHAR>());
+	TlsHKDF::ExpandLabel(Span<UCHAR>(localIvBuffer, chacha20Context.GetIvLength()), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>("iv"_embed, 2), Span<const UCHAR>());
 
-	TlsHkdf::ExpandLabel(Span<UCHAR>(data13.mainSecret, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(serverLabel, TRAFFIC_LABEL_LEN), Span<const UCHAR>(hash, hashLen));
+	TlsHKDF::ExpandLabel(Span<UCHAR>(data13.mainSecret, hashLen), Span<const UCHAR>(data13.pseudoRandomKey, hashLen), Span<const CHAR>(server_key, 12), Span<const UCHAR>(hash, hashLen));
 
-	TlsHkdf::ExpandLabel(Span<UCHAR>(remoteKeyBuffer, keyLen), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>(keyLabel, keyLabel.Length()), Span<const UCHAR>());
-	TlsHkdf::ExpandLabel(Span<UCHAR>(remoteIvBuffer, chacha20Context.GetIvLength()), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>(ivLabel, ivLabel.Length()), Span<const UCHAR>());
+	TlsHKDF::ExpandLabel(Span<UCHAR>(remoteKeyBuffer, keyLen), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>("key"_embed, 3), Span<const UCHAR>());
+	TlsHKDF::ExpandLabel(Span<UCHAR>(remoteIvBuffer, chacha20Context.GetIvLength()), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>("iv"_embed, 2), Span<const UCHAR>());
 
 	auto initResult = chacha20Context.Initialize(Span<const UINT8, POLY1305_KEYLEN>(localKeyBuffer), Span<const UINT8, POLY1305_KEYLEN>(remoteKeyBuffer), localIvBuffer, remoteIvBuffer);
+
+	Memory::Zero(hash, sizeof(hash));
+	Memory::Zero(earlysecret, sizeof(earlysecret));
+	Memory::Zero(salt, sizeof(salt));
+	Memory::Zero(localKeyBuffer, sizeof(localKeyBuffer));
+	Memory::Zero(remoteKeyBuffer, sizeof(remoteKeyBuffer));
+	Memory::Zero(localIvBuffer, sizeof(localIvBuffer));
+	Memory::Zero(remoteIvBuffer, sizeof(remoteIvBuffer));
+
 	if (!initResult)
 	{
-		LOG_DEBUG("Failed to initialize encoder with local key: %p, remote key: %p", localKeyBuffer, remoteKeyBuffer);
+		LOG_DEBUG("Failed to initialize encoder");
 		return Result<void, Error>::Err(initResult, Error::TlsCipher_ComputeKeyFailed);
 	}
 
-	LOG_DEBUG("Encoder initialized with local key: %p, remote key: %p", localKeyBuffer, remoteKeyBuffer);
+	LOG_DEBUG("Encoder initialized successfully");
 	return Result<void, Error>::Ok();
 }
 
-/// @brief Compute the verify data for the TLS handshake
-/// @param out Buffer where the computed verify data will be stored
+/// @brief Compute the verify data for the TLS handshake and store it in the provided output buffer
+/// @param out Pointer to the buffer where the computed verify data will be stored
 /// @param verifySize Size of the verify data to compute
-/// @param localOrRemote Indicates whether to use the local (0) or remote (1) finished key
-/// @return Result<void, Error> Success or error if cipher is not initialized
-/// @see RFC 8446 Section 4.4.4 — Finished
-///      https://datatracker.ietf.org/doc/html/rfc8446#section-4.4.4
+/// @param localOrRemote Indicates whether to use the local or remote finished key
+/// @return Result<void, Error>::Ok() if the verify data was successfully computed
 
 Result<void, Error> TlsCipher::ComputeVerify(TlsBuffer &out, INT32 verifySize, INT32 localOrRemote)
 {
 	if (cipherIndex == -1)
 	{
-		LOG_DEBUG("Cipher index is -1, cannot compute verify data");
+		LOG_DEBUG("tls_cipher_compute_verify: cipher_index is -1, cannot compute verify data");
 		return Result<void, Error>::Err(Error::TlsCipher_ComputeVerifyFailed);
 	}
 	CHAR hash[MAX_HASH_LEN];
 	INT32 hashLen = CIPHER_HASH_SIZE;
-	LOG_DEBUG("Computing verify data, hashLen=%d", hashLen);
+	LOG_DEBUG("tls_cipher_compute_verify: Getting handshake hash, hash_len=%d", hashLen);
 	GetHash(Span<CHAR>(hash, hashLen));
 
-	UINT8 finishedKey[MAX_HASH_LEN];
+	UINT8 finished_key[MAX_HASH_LEN];
 	auto finishedLabel = "finished"_embed;
 	if (localOrRemote)
 	{
-		LOG_DEBUG("Using server finished key");
-		TlsHkdf::ExpandLabel(Span<UCHAR>(finishedKey, hashLen), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>(finishedLabel, finishedLabel.Length()), Span<const UCHAR>());
+		LOG_DEBUG("tls_cipher_compute_verify: Using server finished key");
+		TlsHKDF::ExpandLabel(Span<UCHAR>(finished_key, hashLen), Span<const UCHAR>(data13.mainSecret, hashLen), Span<const CHAR>(finishedLabel, 8), Span<const UCHAR>());
 	}
 	else
 	{
-		LOG_DEBUG("Using client finished key");
-		TlsHkdf::ExpandLabel(Span<UCHAR>(finishedKey, hashLen), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>(finishedLabel, finishedLabel.Length()), Span<const UCHAR>());
+		LOG_DEBUG("tls_cipher_compute_verify: Using client finished key");
+		TlsHKDF::ExpandLabel(Span<UCHAR>(finished_key, hashLen), Span<const UCHAR>(data13.handshakeSecret, hashLen), Span<const CHAR>(finishedLabel, 8), Span<const UCHAR>());
 	}
 	auto setSizeResult = out.SetSize(verifySize);
 	if (!setSizeResult)
+	{
+		Memory::Zero(hash, sizeof(hash));
+		Memory::Zero(finished_key, sizeof(finished_key));
 		return Result<void, Error>::Err(setSizeResult, Error::TlsCipher_ComputeVerifyFailed);
-	LOG_DEBUG("Calculating HMAC for verify, verifySize=%d", verifySize);
+	}
+	LOG_DEBUG("tls_cipher_compute_verify: Calculating HMAC for verify, verify_size=%d", verifySize);
 	HMAC_SHA256 hmac;
-	hmac.Init(Span<const UCHAR>(finishedKey, hashLen));
+	hmac.Init(Span<const UCHAR>(finished_key, hashLen));
 	hmac.Update(Span<const UCHAR>((UINT8 *)hash, hashLen));
 
 	hmac.Final(Span<UCHAR>((UINT8 *)out.GetBuffer(), out.GetSize()));
-	LOG_DEBUG("Finished verify computation");
+
+	Memory::Zero(hash, sizeof(hash));
+	Memory::Zero(finished_key, sizeof(finished_key));
+
+	LOG_DEBUG("tls_cipher_compute_verify: Finished verify computation");
 	return Result<void, Error>::Ok();
 }
 
 /// @brief Encode a TLS record using the ChaCha20 encoder and append it to the send buffer
-/// @param sendbuf Buffer where the encoded TLS record will be appended
-/// @param packet TLS record data to encode
+/// @param sendbuf Pointer to the buffer where the encoded TLS record will be appended
+/// @param packet Pointer to the TLS record to encode
+/// @param packetSize Size of the TLS record to encode
 /// @param keepOriginal Indicates whether to keep the original TLS record without encoding
-/// @see RFC 8446 Section 5.2 — Record Payload Protection
-///      https://datatracker.ietf.org/doc/html/rfc8446#section-5.2
+/// @return void
 
-VOID TlsCipher::Encode(TlsBuffer &sendbuf, Span<const CHAR> packet, BOOL keepOriginal, INT32 innerContentType)
+VOID TlsCipher::Encode(TlsBuffer &sendbuf, Span<const CHAR> packet, BOOL keepOriginal)
 {
 	if (!isEncoding || keepOriginal)
 	{
@@ -339,39 +342,26 @@ VOID TlsCipher::Encode(TlsBuffer &sendbuf, Span<const CHAR> packet, BOOL keepOri
 		sendbuf.Append(packet);
 		return;
 	}
-
-	Span<const CHAR> plaintext = packet;
-	TlsBuffer concatenated;
-
-	if (innerContentType >= 0)
-	{
-		concatenated.Append(packet);
-		concatenated.Append<CHAR>((CHAR)innerContentType);
-		plaintext = concatenated.AsSpan();
-	}
-
-	LOG_DEBUG("Encoding packet with size: %d bytes", (INT32)plaintext.Size());
+	INT32 packetSize = (INT32)packet.Size();
+	LOG_DEBUG("Encoding packet with size: %d bytes", packetSize);
 
 	UCHAR aad[13];
 
 	aad[0] = CONTENT_APPLICATION_DATA;
 	aad[1] = sendbuf.GetBuffer()[1];
 	aad[2] = sendbuf.GetBuffer()[2];
-	UINT16 encSize = (UINT16)ChaCha20Encoder::ComputeSize((INT32)plaintext.Size(), CipherDirection::Encode);
-	aad[3] = (UINT8)(encSize >> 8);
-	aad[4] = (UINT8)(encSize & 0xFF);
-	UINT64 clientSeq = UINT64SwapByteOrder(clientSeqNum++);
+	UINT16 encSize = ByteOrder::Swap16(ChaCha20Encoder::ComputeSize(packetSize, CipherDirection::Encode));
+	Memory::Copy(aad + 3, &encSize, sizeof(UINT16));
+	UINT64 clientSeq = ByteOrder::Swap64(clientSeqNum++);
 	Memory::Copy(aad + 5, &clientSeq, sizeof(UINT64));
 
-	chacha20Context.Encode(sendbuf, plaintext, Span<const UCHAR>(aad));
+	chacha20Context.Encode(sendbuf, packet, Span<const UCHAR>(aad));
 }
 
-/// @brief Decode a TLS record using the ChaCha20 encoder
-/// @param inout Buffer containing the TLS record to decode; updated with decoded data
+/// @brief Decode a TLS record using the ChaCha20 encoder and store the result in the provided buffer
+/// @param inout Pointer to the buffer containing the TLS record to decode, and also where the decoded data will be stored
 /// @param version TLS version of the record to decode
 /// @return Result<void, Error>::Ok() if the TLS record was successfully decoded
-/// @see RFC 8446 Section 5.2 — Record Payload Protection
-///      https://datatracker.ietf.org/doc/html/rfc8446#section-5.2
 
 Result<void, Error> TlsCipher::Decode(TlsBuffer &inout, INT32 version)
 {
@@ -383,12 +373,11 @@ Result<void, Error> TlsCipher::Decode(TlsBuffer &inout, INT32 version)
 	UCHAR aad[13];
 
 	aad[0] = CONTENT_APPLICATION_DATA;
-	aad[1] = UINT16SwapByteOrder(version) >> 8;
-	aad[2] = UINT16SwapByteOrder(version) & 0xff;
-	UINT16 recSize = (UINT16)inout.GetSize();
-	aad[3] = (UINT8)(recSize >> 8);
-	aad[4] = (UINT8)(recSize & 0xFF);
-	UINT64 serverSeq = UINT64SwapByteOrder(serverSeqNum++);
+	aad[1] = ByteOrder::Swap16(version) >> 8;
+	aad[2] = ByteOrder::Swap16(version) & 0xff;
+	UINT16 decSize = ByteOrder::Swap16(inout.GetSize());
+	Memory::Copy(aad + 3, &decSize, sizeof(UINT16));
+	UINT64 serverSeq = ByteOrder::Swap64(serverSeqNum++);
 	Memory::Copy(aad + 5, &serverSeq, sizeof(UINT64));
 
 	auto decodeResult = chacha20Context.Decode(inout, decodeBuffer, Span<const UCHAR>(aad));
@@ -397,10 +386,29 @@ Result<void, Error> TlsCipher::Decode(TlsBuffer &inout, INT32 version)
 		LOG_ERROR("Decoding failed, returning error");
 		return Result<void, Error>::Err(decodeResult, Error::TlsCipher_DecodeFailed);
 	}
-	inout.SetBuffer(decodeBuffer.GetBuffer());
 	auto setSizeResult = inout.SetSize(decodeBuffer.GetSize());
 	if (!setSizeResult)
 		return Result<void, Error>::Err(setSizeResult, Error::TlsCipher_DecodeFailed);
+	Memory::Copy(inout.GetBuffer(), decodeBuffer.GetBuffer(), decodeBuffer.GetSize());
+	inout.ResetReadPos();
 
 	return Result<void, Error>::Ok();
+}
+
+/// @brief Set the encoding status for the TLS cipher
+/// @param encoding Indicates whether encoding should be enabled or disabled
+/// @return void
+
+VOID TlsCipher::SetEncoding(BOOL encoding)
+{
+	isEncoding = encoding;
+}
+
+/// @brief Request a reset of the sequence numbers for both client and server
+/// @return void
+
+VOID TlsCipher::ResetSequenceNumber()
+{
+	clientSeqNum = 0;
+	serverSeqNum = 0;
 }

@@ -143,7 +143,7 @@ constexpr INT32 MAP_ANONYMOUS = 0x100;  // Linux: 0x20
 #define MAP_FAILED ((PVOID)(-1))
 
 // AT constants
-constexpr SSIZE AT_FDCWD     = (SSIZE)0xffd19553; // Linux: -100, macOS: -2
+constexpr SSIZE AT_FDCWD     = (SSIZE)(INT32)0xffd19553; // Linux: -100, macOS: -2
 constexpr INT32 AT_REMOVEDIR = 0x01;               // Linux: 0x200
 
 // Clock IDs (Solaris values -- differ from Linux!)
@@ -165,6 +165,7 @@ constexpr INT32 F_SETFL  = 4;
 constexpr INT32 F_DUP2FD = 9;  // Solaris dup2 equivalent via fcntl
 
 // errno values (Solaris-specific values)
+constexpr INT32 EEXIST = 17;                    // same across all POSIX platforms
 constexpr INT32 EINPROGRESS = 150;  // Linux: 115, macOS: 36
 
 // Signal numbers

@@ -56,6 +56,8 @@
 #define AF_INET6 30 ///< IPv6 address family — macOS/BSD value (RFC 8200)
 #elif defined(PLATFORM_SOLARIS)
 #define AF_INET6 26 ///< IPv6 address family — Solaris/illumos value (RFC 8200)
+#elif defined(PLATFORM_FREEBSD)
+#define AF_INET6 28 ///< IPv6 address family — FreeBSD value (RFC 8200)
 #else
 #define AF_INET6 10 ///< IPv6 address family — Linux value (RFC 8200)
 #endif
@@ -100,7 +102,7 @@
  */
 struct SockAddr
 {
-	INT16 SinFamily;   ///< Address family (AF_INET)
+	UINT16 SinFamily;  ///< Address family (AF_INET)
 	UINT16 SinPort;    ///< Port number in network byte order
 	UINT32 SinAddr;    ///< IPv4 address in network byte order
 	CHAR SinZero[8];   ///< Padding to match sockaddr size (must be zeroed)
@@ -167,7 +169,7 @@ public:
 			SockAddr6 *addr6 = (SockAddr6 *)addrBuffer.Data();
 			Memory::Zero(addr6, sizeof(SockAddr6));
 			addr6->Sin6Family = AF_INET6;
-			addr6->Sin6Port = UINT16SwapByteOrder(port);
+			addr6->Sin6Port = ByteOrder::Swap16(port);
 			addr6->Sin6Flowinfo = 0;
 			addr6->Sin6ScopeId = 0;
 
@@ -187,7 +189,7 @@ public:
 			SockAddr *addr = (SockAddr *)addrBuffer.Data();
 			Memory::Zero(addr, sizeof(SockAddr));
 			addr->SinFamily = AF_INET;
-			addr->SinPort = UINT16SwapByteOrder(port);
+			addr->SinPort = ByteOrder::Swap16(port);
 			addr->SinAddr = ip.ToIPv4();
 
 			return sizeof(SockAddr);
@@ -220,7 +222,7 @@ public:
 			SockAddr6 *addr6 = (SockAddr6 *)addrBuffer.Data();
 			Memory::Zero(addr6, sizeof(SockAddr6));
 			addr6->Sin6Family = AF_INET6;
-			addr6->Sin6Port = UINT16SwapByteOrder(port);
+			addr6->Sin6Port = ByteOrder::Swap16(port);
 
 			return sizeof(SockAddr6);
 		}
@@ -232,7 +234,7 @@ public:
 			SockAddr *addr = (SockAddr *)addrBuffer.Data();
 			Memory::Zero(addr, sizeof(SockAddr));
 			addr->SinFamily = AF_INET;
-			addr->SinPort = UINT16SwapByteOrder(port);
+			addr->SinPort = ByteOrder::Swap16(port);
 
 			return sizeof(SockAddr);
 		}

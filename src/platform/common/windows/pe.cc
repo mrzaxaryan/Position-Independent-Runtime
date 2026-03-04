@@ -4,7 +4,7 @@
 #include "core/algorithms/djb2.h"
 
 // Get the address of an exported function from a module base address
-PVOID GetExportAddress(PVOID hModule, USIZE functionNameHash)
+PVOID GetExportAddress(PVOID hModule, UINT64 functionNameHash)
 {
 	// Validate DOS header
 	PIMAGE_DOS_HEADER dosHeader = (PIMAGE_DOS_HEADER)hModule;
@@ -35,8 +35,7 @@ PVOID GetExportAddress(PVOID hModule, USIZE functionNameHash)
 	{
 		// Get the name of the i-th exported function
 		PCHAR currentName = (PCHAR)hModule + nameRvas[i];
-		USIZE currentNameHash = Djb2::Hash(currentName);
-		// Your CompareStringIgnoreCase is assumed to return non-zero on equal
+		UINT64 currentNameHash = Djb2::Hash(currentName);
 		if (currentNameHash == functionNameHash)
 		{
 			// Get the ordinal for this name

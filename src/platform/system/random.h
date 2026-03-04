@@ -9,6 +9,7 @@
 #pragma once
 
 #include "platform/platform.h"
+#include "core/types/uuid.h"
 
 /**
  * @class Random
@@ -30,6 +31,8 @@ private:
 public:
 	VOID *operator new(USIZE) = delete;
 	VOID operator delete(VOID *) = delete;
+	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+	VOID operator delete(VOID *, PVOID) noexcept {}
 
 	/// The exclusive upper bound for values returned by Get()
 	static constexpr INT32 Max = Prng::Max;
@@ -50,12 +53,11 @@ public:
 	/**
 	 * @brief Fill a buffer with pseudorandom bytes
 	 * @param buffer Output buffer to fill
-	 * @return 1 on success
 	 */
-	INT32 GetArray(Span<UINT8> buffer)
+	VOID GetArray(Span<UINT8> buffer)
 	{
 		EnsureSeeded();
-		return prng.GetArray(buffer);
+		prng.GetArray(buffer);
 	}
 
 	/**
@@ -81,5 +83,25 @@ public:
 	{
 		EnsureSeeded();
 		return prng.GetString<TChar>(str);
+	}
+
+	/**
+	 * @brief Generate a random (version 4) UUID
+	 * @return Randomly generated UUID with version 4 and RFC 9562 variant bits set
+	 *
+	 * @see RFC 9562 Section 5.4 — UUID Version 4
+	 *      https://datatracker.ietf.org/doc/html/rfc9562#section-5.4
+	 */
+	UUID RandomUUID()
+	{
+		UINT8 bytes[16];
+		GetArray(Span<UINT8>(bytes));
+
+		// Set version 4 (random): high nibble of byte 6 = 0100
+		bytes[6] = (bytes[6] & 0x0F) | 0x40;
+		// Set variant 10 (RFC 9562): high 2 bits of byte 8 = 10
+		bytes[8] = (bytes[8] & 0x3F) | 0x80;
+
+		return UUID(Span<const UINT8, 16>(bytes));
 	}
 };

@@ -37,8 +37,8 @@ USIZE StringUtils::FloatToStr(DOUBLE value, Span<CHAR> buffer, UINT8 precision) 
 	}
 
 	// Integer part
-	UINT64 intPart = (UINT64)(INT64)value;
-	DOUBLE fracPart = value - DOUBLE((INT64)intPart);
+	UINT64 intPart = (UINT64)value;
+	DOUBLE fracPart = value - intPart;
 
 	CHAR intBuf[24];
 	USIZE intLen = UIntToStr(intPart, Span<CHAR>(intBuf));
@@ -74,6 +74,22 @@ USIZE StringUtils::FloatToStr(DOUBLE value, Span<CHAR> buffer, UINT8 precision) 
 Result<DOUBLE, Error> StringUtils::StrToFloat(Span<const CHAR> str) noexcept
 {
 	if (str.Size() == 0)
+	{
+		return Result<DOUBLE, Error>::Err(Error::String_ParseFloatFailed);
+	}
+
+	// Validate that the string contains at least one digit
+	BOOL hasDigit = false;
+	for (USIZE i = 0; i < str.Size(); i++)
+	{
+		if (str[i] >= '0' && str[i] <= '9')
+		{
+			hasDigit = true;
+			break;
+		}
+	}
+
+	if (!hasDigit)
 	{
 		return Result<DOUBLE, Error>::Err(Error::String_ParseFloatFailed);
 	}
