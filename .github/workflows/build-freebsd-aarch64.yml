@@ -69,9 +69,11 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           arch: aarch64
+          prepare: |
+            dhclient vtnet0 || true
+            sleep 3
+            ping -c 1 -t 5 8.8.8.8 || echo "WARNING: No internet connectivity"
           run: |
-            dhclient vtnet0 >/dev/null 2>&1 || true
-            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -98,9 +100,11 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           arch: aarch64
+          prepare: |
+            dhclient vtnet0 || true
+            sleep 3
+            ping -c 1 -t 5 8.8.8.8 || echo "WARNING: No internet connectivity"
           run: |
-            dhclient vtnet0 >/dev/null 2>&1 || true
-            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -127,9 +131,11 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           arch: aarch64
+          prepare: |
+            dhclient vtnet0 || true
+            sleep 3
+            ping -c 1 -t 5 8.8.8.8 || echo "WARNING: No internet connectivity"
           run: |
-            dhclient vtnet0 >/dev/null 2>&1 || true
-            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -156,9 +162,11 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           arch: aarch64
+          prepare: |
+            dhclient vtnet0 || true
+            sleep 3
+            ping -c 1 -t 5 8.8.8.8 || echo "WARNING: No internet connectivity"
           run: |
-            dhclient vtnet0 >/dev/null 2>&1 || true
-            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -185,9 +193,11 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           arch: aarch64
+          prepare: |
+            dhclient vtnet0 || true
+            sleep 3
+            ping -c 1 -t 5 8.8.8.8 || echo "WARNING: No internet connectivity"
           run: |
-            dhclient vtnet0 >/dev/null 2>&1 || true
-            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -214,9 +224,11 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           arch: aarch64
+          prepare: |
+            dhclient vtnet0 || true
+            sleep 3
+            ping -c 1 -t 5 8.8.8.8 || echo "WARNING: No internet connectivity"
           run: |
-            dhclient vtnet0 >/dev/null 2>&1 || true
-            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -243,9 +255,11 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           arch: aarch64
+          prepare: |
+            dhclient vtnet0 || true
+            sleep 3
+            ping -c 1 -t 5 8.8.8.8 || echo "WARNING: No internet connectivity"
           run: |
-            dhclient vtnet0 >/dev/null 2>&1 || true
-            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
