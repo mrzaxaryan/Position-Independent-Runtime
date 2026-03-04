@@ -206,9 +206,6 @@ struct Error
 		Tls_CreateFailed  = 102, // Socket::Create() failed in TlsClient::Create()
 		Http_CreateFailed = 103, // URL parse / DNS / TLS create failed in HttpClient::Create()
 		Ws_CreateFailed   = 104, // URL parse / DNS / TLS create failed in WebSocketClient::Create()
-
-		Uuid_ToStringFailed           = 106, // buffer too small for UUID string
-		Uuid_FromStringFailed         = 107, // UUID string parsing failed
 	};
 
 	/**
