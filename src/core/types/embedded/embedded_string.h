@@ -121,7 +121,7 @@ private:
 		{
 			USIZE word = GetPackedWord<I>();
 			__asm__ volatile("" : "+r"(word));
-			reinterpret_cast<USIZE *>(data)[I] = word;
+			__builtin_memcpy(data + I * CharsPerWord, &word, sizeof(USIZE));
 			WritePackedWord<I + 1>();
 		}
 	}
