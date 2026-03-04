@@ -152,10 +152,13 @@ public:
 	/// @}
 
 	// Stack-only: prevent heap allocation
-	void *operator new(USIZE) = delete;
-	void *operator new[](USIZE) = delete;
-	void operator delete(void *) = delete;
-	void operator delete[](void *) = delete;
+	VOID *operator new(USIZE) = delete;
+	VOID *operator new[](USIZE) = delete;
+	VOID operator delete(VOID *) = delete;
+	VOID operator delete[](VOID *) = delete;
+	// Placement new/delete required by Result<Span<T>, Error>
+	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+	VOID operator delete(VOID *, PVOID) noexcept {}
 };
 
 // =============================================================================
@@ -290,10 +293,13 @@ public:
 	/// @}
 
 	// Stack-only: prevent heap allocation
-	void *operator new(USIZE) = delete;
-	void *operator new[](USIZE) = delete;
-	void operator delete(void *) = delete;
-	void operator delete[](void *) = delete;
+	VOID *operator new(USIZE) = delete;
+	VOID *operator new[](USIZE) = delete;
+	VOID operator delete(VOID *) = delete;
+	VOID operator delete[](VOID *) = delete;
+	// Placement new/delete required by Result<Span<T, N>, Error>
+	VOID *operator new(USIZE, PVOID ptr) noexcept { return ptr; }
+	VOID operator delete(VOID *, PVOID) noexcept {}
 };
 
 /** @} */ // end of span group

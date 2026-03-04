@@ -1,10 +1,10 @@
-#include "tls_cipher.h"
-#include "logger.h"
-#include "memory.h"
-#include "random.h"
-#include "sha2.h"
-#include "tls_hkdf.h"
-#include "math.h"
+#include "runtime/network/tls/tls_cipher.h"
+#include "platform/io/logger.h"
+#include "core/memory/memory.h"
+#include "platform/system/random.h"
+#include "runtime/crypto/sha2.h"
+#include "runtime/network/tls/tls_hkdf.h"
+#include "core/math/math.h"
 
 /// @brief Reset the TlsCipher object to its initial state
 /// @return void
@@ -39,8 +39,6 @@ VOID TlsCipher::Reset()
 VOID TlsCipher::Destroy()
 {
 	Reset();
-	publicKey.Clear();
-	decodeBuffer.Clear();
 }
 
 /// @brief Create client random data
@@ -142,12 +140,12 @@ Result<void, Error> TlsCipher::ComputePreKey(ECC_GROUP ecc, Span<const CHAR> ser
 	INT32 eccSize;
 
 	// Replace loop with two if statements
-	if (ecc == ECC_secp256r1)
+	if (ecc == ECC_SECP256R1)
 	{
 		eccSize = 32;
 		eccIndex = 0;
 	}
-	else if (ecc == ECC_secp384r1)
+	else if (ecc == ECC_SECP384R1)
 	{
 		eccSize = 48;
 		eccIndex = 1;
@@ -352,7 +350,8 @@ VOID TlsCipher::Encode(TlsBuffer &sendbuf, Span<const CHAR> packet, BOOL keepOri
 	aad[0] = CONTENT_APPLICATION_DATA;
 	aad[1] = sendbuf.GetBuffer()[1];
 	aad[2] = sendbuf.GetBuffer()[2];
-	*((UINT16 *)(aad + 3)) = ByteOrder::Swap16(ChaCha20Encoder::ComputeSize(packetSize, CipherDirection::Encode)); //-header_size
+	UINT16 encSize = ByteOrder::Swap16(ChaCha20Encoder::ComputeSize(packetSize, CipherDirection::Encode));
+	Memory::Copy(aad + 3, &encSize, sizeof(UINT16));
 	UINT64 clientSeq = ByteOrder::Swap64(clientSeqNum++);
 	Memory::Copy(aad + 5, &clientSeq, sizeof(UINT64));
 
@@ -376,7 +375,8 @@ Result<void, Error> TlsCipher::Decode(TlsBuffer &inout, INT32 version)
 	aad[0] = CONTENT_APPLICATION_DATA;
 	aad[1] = ByteOrder::Swap16(version) >> 8;
 	aad[2] = ByteOrder::Swap16(version) & 0xff;
-	*((UINT16 *)(aad + 3)) = ByteOrder::Swap16(inout.GetSize()); //-header_size
+	UINT16 decSize = ByteOrder::Swap16(inout.GetSize());
+	Memory::Copy(aad + 3, &decSize, sizeof(UINT16));
 	UINT64 serverSeq = ByteOrder::Swap64(serverSeqNum++);
 	Memory::Copy(aad + 5, &serverSeq, sizeof(UINT64));
 
