@@ -52,7 +52,7 @@ static SSIZE PosixBind(SSIZE sockfd, const SockAddr &addr, UINT32 addrlen)
 	USIZE args[3] = {(USIZE)sockfd, (USIZE)&addr, addrlen};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_BIND, (USIZE)args);
 #else
-	return System::Call(SYS_BIND, sockfd, (USIZE)&addr, addrlen);
+	return System::Call(SYS_BIND, (USIZE)sockfd, (USIZE)&addr, addrlen);
 #endif
 }
 
@@ -63,7 +63,7 @@ static SSIZE PosixConnect(SSIZE sockfd, const SockAddr &addr, UINT32 addrlen)
 	USIZE args[3] = {(USIZE)sockfd, (USIZE)&addr, addrlen};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_CONNECT, (USIZE)args);
 #else
-	return System::Call(SYS_CONNECT, sockfd, (USIZE)&addr, addrlen);
+	return System::Call(SYS_CONNECT, (USIZE)sockfd, (USIZE)&addr, addrlen);
 #endif
 }
 
@@ -74,7 +74,7 @@ static SSIZE PosixSend(SSIZE sockfd, const VOID *buf, USIZE len, INT32 flags)
 	USIZE args[4] = {(USIZE)sockfd, (USIZE)buf, len, (USIZE)flags};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_SEND, (USIZE)args);
 #else
-	return System::Call(SYS_SENDTO, sockfd, (USIZE)buf, len, flags, 0, 0);
+	return System::Call(SYS_SENDTO, (USIZE)sockfd, (USIZE)buf, len, flags, 0, 0);
 #endif
 }
 
@@ -85,7 +85,7 @@ static SSIZE PosixRecv(SSIZE sockfd, VOID *buf, USIZE len, INT32 flags)
 	USIZE args[4] = {(USIZE)sockfd, (USIZE)buf, len, (USIZE)flags};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_RECV, (USIZE)args);
 #else
-	return System::Call(SYS_RECVFROM, sockfd, (USIZE)buf, len, flags, 0, 0);
+	return System::Call(SYS_RECVFROM, (USIZE)sockfd, (USIZE)buf, len, flags, 0, 0);
 #endif
 }
 
@@ -96,7 +96,7 @@ static SSIZE PosixGetsockopt(SSIZE sockfd, INT32 level, INT32 optname, PVOID opt
 	USIZE args[5] = {(USIZE)sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)optlen};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_GETSOCKOPT, (USIZE)args);
 #else
-	return System::Call(SYS_GETSOCKOPT, sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)optlen);
+	return System::Call(SYS_GETSOCKOPT, (USIZE)sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)optlen);
 #endif
 }
 
@@ -104,9 +104,9 @@ static SSIZE PosixGetsockopt(SSIZE sockfd, INT32 level, INT32 optname, PVOID opt
 static SSIZE PosixFcntl(SSIZE fd, INT32 cmd, SSIZE arg = 0)
 {
 #if defined(PLATFORM_LINUX) && (defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A))
-	return System::Call(SYS_FCNTL64, fd, (USIZE)cmd, (USIZE)arg);
+	return System::Call(SYS_FCNTL64, (USIZE)fd, (USIZE)cmd, (USIZE)arg);
 #else
-	return System::Call(SYS_FCNTL, fd, (USIZE)cmd, (USIZE)arg);
+	return System::Call(SYS_FCNTL, (USIZE)fd, (USIZE)cmd, (USIZE)arg);
 #endif
 }
 
@@ -214,12 +214,13 @@ Result<void, Error> Socket::Open()
 		// Check for connection error
 		INT32 sockError = 0;
 		UINT32 optLen = sizeof(sockError);
-		(void)PosixGetsockopt(sockfd, SOL_SOCKET, SO_ERROR, &sockError, &optLen);
-		if (sockError != 0)
+		SSIZE gsoResult = PosixGetsockopt(sockfd, SOL_SOCKET, SO_ERROR, &sockError, &optLen);
+		if (gsoResult < 0 || sockError != 0)
 		{
 			(void)PosixFcntl(sockfd, F_SETFL, flags);
+			UINT32 errCode = (sockError != 0) ? (UINT32)sockError : (UINT32)(-gsoResult);
 			return Result<void, Error>::Err(
-				Error::Posix((UINT32)sockError),
+				Error::Posix(errCode),
 				Error::Socket_OpenFailed_Connect);
 		}
 	}
@@ -232,7 +233,7 @@ Result<void, Error> Socket::Open()
 Result<void, Error> Socket::Close()
 {
 	SSIZE sockfd = (SSIZE)handle;
-	SSIZE result = System::Call(SYS_CLOSE, sockfd);
+	SSIZE result = System::Call(SYS_CLOSE, (USIZE)sockfd);
 	handle = nullptr;
 	if (result < 0)
 		return Result<void, Error>::Err(Error::Posix((UINT32)(-result)), Error::Socket_CloseFailed_Close);
