@@ -78,18 +78,10 @@ jobs:
         with:
           arch: riscv64
           sync: scp
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
-            uname -a
-            sysctl hw.machine_arch 2>/dev/null || true
-            ifconfig vtnet0 2>/dev/null || ifconfig -a
-            netstat -rn 2>/dev/null | head -10 || true
-            ping -c 1 -t 5 1.1.1.1 && echo "Network OK" || echo "No outbound connectivity"
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
-            echo "Found: $TEST_ELF"
-            ls -la "$TEST_ELF"
-            file "$TEST_ELF" 2>/dev/null || true
-            readelf -e "$TEST_ELF" 2>/dev/null || true
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
 
@@ -116,8 +108,9 @@ jobs:
         with:
           arch: riscv64
           sync: scp
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -145,8 +138,9 @@ jobs:
         with:
           arch: riscv64
           sync: scp
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -174,8 +168,9 @@ jobs:
         with:
           arch: riscv64
           sync: scp
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -203,8 +198,9 @@ jobs:
         with:
           arch: riscv64
           sync: scp
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -232,8 +228,9 @@ jobs:
         with:
           arch: riscv64
           sync: scp
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -261,8 +258,9 @@ jobs:
         with:
           arch: riscv64
           sync: scp
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"

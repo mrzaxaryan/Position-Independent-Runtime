@@ -76,16 +76,10 @@ jobs:
         if: always()
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
-            uname -a
-            sysctl hw.machine_arch 2>/dev/null || true
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
-            echo "Found: $TEST_ELF"
-            ls -la "$TEST_ELF"
-            file "$TEST_ELF"
-            readelf -e "$TEST_ELF" 2>/dev/null || true
-            od -N 32 -t x1 "$TEST_ELF"
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
 
@@ -110,8 +104,9 @@ jobs:
         if: always()
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -137,8 +132,9 @@ jobs:
         if: always()
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -164,8 +160,9 @@ jobs:
         if: always()
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -191,8 +188,9 @@ jobs:
         if: always()
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -218,8 +216,9 @@ jobs:
         if: always()
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"
@@ -245,8 +244,9 @@ jobs:
         if: always()
         uses: vmactions/freebsd-vm@v1
         with:
-          prepare: dhclient vtnet0 2>/dev/null; true
           run: |
+            dhclient vtnet0 >/dev/null 2>&1 || true
+            sleep 2
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
             "$TEST_ELF"

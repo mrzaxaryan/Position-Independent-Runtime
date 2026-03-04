@@ -3,25 +3,40 @@
 # =============================================================================
 
 cmake_minimum_required(VERSION 3.20)
-include(${CMAKE_SOURCE_DIR}/cmake/Toolchain.cmake)
-project(pir LANGUAGES CXX)
-include(${CMAKE_SOURCE_DIR}/cmake/Common.cmake)
+
+option(BUILD_DOCS "Build documentation only (no compiler required)" OFF)
 
 # =============================================================================
-# Documentation (Doxygen)
+# Documentation-only build
 # =============================================================================
-find_program(DOXYGEN_EXECUTABLE doxygen)
+if(BUILD_DOCS)
+    project(pir-docs LANGUAGES NONE)
 
-if(DOXYGEN_EXECUTABLE)
-    add_custom_target(docs
+    find_program(DOXYGEN_EXECUTABLE doxygen REQUIRED)
+
+    add_custom_target(docs ALL
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Generating documentation with Doxygen"
         VERBATIM
     )
-    set(_doxygen_status "Available")
-else()
-    set(_doxygen_status "Not found")
+
+    message(STATUS "")
+    message(STATUS "┌─────────────────────────────────────┐")
+    message(STATUS "│      Documentation Build            │")
+    message(STATUS "├─────────────────────────────────────┤")
+    message(STATUS "│ Doxygen:      ${DOXYGEN_EXECUTABLE}")
+    message(STATUS "│ Output:       docs/html/")
+    message(STATUS "└─────────────────────────────────────┘")
+    message(STATUS "")
+
+    return()
 endif()
 
+# =============================================================================
+# Compilation build
+# =============================================================================
+include(${CMAKE_SOURCE_DIR}/cmake/Toolchain.cmake)
+project(pir LANGUAGES CXX)
+include(${CMAKE_SOURCE_DIR}/cmake/Common.cmake)
 include(${PIR_ROOT_DIR}/cmake/Target.cmake)

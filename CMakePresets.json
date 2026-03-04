@@ -19,6 +19,16 @@
       }
     },
     {
+      "name": "docs",
+      "displayName": "Documentation",
+      "description": "Build Doxygen documentation (no compiler required)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/docs/cmake",
+      "cacheVariables": {
+        "BUILD_DOCS": "ON"
+      }
+    },
+    {
       "name": "windows-i386-debug",
       "displayName": "Windows i386 (Debug)",
       "description": "Windows 32-bit x86 debug build",
@@ -566,6 +576,10 @@
     }
   ],
   "buildPresets": [
+    {
+      "name": "docs",
+      "configurePreset": "docs"
+    },
     {
       "name": "windows-i386-debug",
       "configurePreset": "windows-i386-debug"
