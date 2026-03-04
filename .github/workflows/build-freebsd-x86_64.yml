@@ -79,8 +79,9 @@ jobs:
           prepare: |
             IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
             pkill dhclient 2>/dev/null; sleep 1
-            dhclient "$IFACE"
-            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
+            dhclient "$IFACE"; sleep 3
+            GW=$(netstat -rn | awk '/default/{print $2; exit}')
+            printf "nameserver %s\nnameserver 8.8.8.8\nnameserver 1.1.1.1\n" "$GW" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
@@ -110,8 +111,9 @@ jobs:
           prepare: |
             IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
             pkill dhclient 2>/dev/null; sleep 1
-            dhclient "$IFACE"
-            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
+            dhclient "$IFACE"; sleep 3
+            GW=$(netstat -rn | awk '/default/{print $2; exit}')
+            printf "nameserver %s\nnameserver 8.8.8.8\nnameserver 1.1.1.1\n" "$GW" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
@@ -141,8 +143,9 @@ jobs:
           prepare: |
             IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
             pkill dhclient 2>/dev/null; sleep 1
-            dhclient "$IFACE"
-            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
+            dhclient "$IFACE"; sleep 3
+            GW=$(netstat -rn | awk '/default/{print $2; exit}')
+            printf "nameserver %s\nnameserver 8.8.8.8\nnameserver 1.1.1.1\n" "$GW" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
@@ -172,8 +175,9 @@ jobs:
           prepare: |
             IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
             pkill dhclient 2>/dev/null; sleep 1
-            dhclient "$IFACE"
-            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
+            dhclient "$IFACE"; sleep 3
+            GW=$(netstat -rn | awk '/default/{print $2; exit}')
+            printf "nameserver %s\nnameserver 8.8.8.8\nnameserver 1.1.1.1\n" "$GW" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
@@ -203,8 +207,9 @@ jobs:
           prepare: |
             IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
             pkill dhclient 2>/dev/null; sleep 1
-            dhclient "$IFACE"
-            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
+            dhclient "$IFACE"; sleep 3
+            GW=$(netstat -rn | awk '/default/{print $2; exit}')
+            printf "nameserver %s\nnameserver 8.8.8.8\nnameserver 1.1.1.1\n" "$GW" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
@@ -234,8 +239,9 @@ jobs:
           prepare: |
             IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
             pkill dhclient 2>/dev/null; sleep 1
-            dhclient "$IFACE"
-            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
+            dhclient "$IFACE"; sleep 3
+            GW=$(netstat -rn | awk '/default/{print $2; exit}')
+            printf "nameserver %s\nnameserver 8.8.8.8\nnameserver 1.1.1.1\n" "$GW" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
@@ -265,8 +271,9 @@ jobs:
           prepare: |
             IFACE=$(ifconfig -l | tr ' ' '\n' | grep -v lo0 | head -n1)
             pkill dhclient 2>/dev/null; sleep 1
-            dhclient "$IFACE"
-            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
+            dhclient "$IFACE"; sleep 3
+            GW=$(netstat -rn | awk '/default/{print $2; exit}')
+            printf "nameserver %s\nnameserver 8.8.8.8\nnameserver 1.1.1.1\n" "$GW" > /etc/resolv.conf
           run: |
             TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
             chmod +x "$TEST_ELF"
