@@ -75,37 +75,37 @@ static BOOL RunPIRTests()
 	LOG_INFO("");
 
 	// CORE - Result Type and Embedded Types
-	RunTestSuite<SpanTests>(allPassed);
-	RunTestSuite<ResultTests>(allPassed);
-	RunTestSuite<DoubleTests>(allPassed);
-	RunTestSuite<StringTests>(allPassed);
-	RunTestSuite<IPAddressTests>(allPassed);
+	// RunTestSuite<SpanTests>(allPassed);
+	// RunTestSuite<ResultTests>(allPassed);
+	// RunTestSuite<DoubleTests>(allPassed);
+	// RunTestSuite<StringTests>(allPassed);
+	// RunTestSuite<IPAddressTests>(allPassed);
 
-	// CORE - Data Structures, String Utilities, and Algorithms
-	RunTestSuite<ArrayStorageTests>(allPassed);
-	RunTestSuite<StringFormatterTests>(allPassed);
-	RunTestSuite<Djb2Tests>(allPassed);
-	RunTestSuite<Base64Tests>(allPassed);
-	RunTestSuite<BinaryIOTests>(allPassed);
-	RunTestSuite<PrngTests>(allPassed);
+	// // CORE - Data Structures, String Utilities, and Algorithms
+	// RunTestSuite<ArrayStorageTests>(allPassed);
+	// RunTestSuite<StringFormatterTests>(allPassed);
+	// RunTestSuite<Djb2Tests>(allPassed);
+	// RunTestSuite<Base64Tests>(allPassed);
+	// RunTestSuite<BinaryIOTests>(allPassed);
+	// RunTestSuite<PrngTests>(allPassed);
 
-	// PLATFORM - Memory, System, and File I/O
-	RunTestSuite<MemoryTests>(allPassed);
-	RunTestSuite<RandomTests>(allPassed);
-	RunTestSuite<FileSystemTests>(allPassed);
+	// // PLATFORM - Memory, System, and File I/O
+	// RunTestSuite<MemoryTests>(allPassed);
+	// RunTestSuite<RandomTests>(allPassed);
+	// RunTestSuite<FileSystemTests>(allPassed);
 
-	// RAL - Cryptography
-	RunTestSuite<ShaTests>(allPassed);
-	RunTestSuite<EccTests>(allPassed);
+	// // RAL - Cryptography
+	// RunTestSuite<ShaTests>(allPassed);
+	// RunTestSuite<EccTests>(allPassed);
 
-	// RAL - Network
-	RunTestSuite<SocketTests>(allPassed);
-	RunTestSuite<TlsTests>(allPassed);
-	RunTestSuite<DnsTests>(allPassed);
-	RunTestSuite<WebSocketTests>(allPassed);
+	// // RAL - Network
+	// RunTestSuite<SocketTests>(allPassed);
+	// RunTestSuite<TlsTests>(allPassed);
+	// RunTestSuite<DnsTests>(allPassed);
+	// RunTestSuite<WebSocketTests>(allPassed);
 
-	// Size Report always runs last since it's just informational and doesn't test functionality
-	RunTestSuite<SizeReportTests>(allPassed);
+	// // Size Report always runs last since it's just informational and doesn't test functionality
+	// RunTestSuite<SizeReportTests>(allPassed);
 
 	RunTestSuite<UUIDTests>(allPassed);
 

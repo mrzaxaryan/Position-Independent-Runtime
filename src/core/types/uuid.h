@@ -22,32 +22,35 @@ class UUID {
             return uuid;
         }
 
-        static UUID FromString(const char* str){
-            UINT8 bytes[16] = {0};
-            INT32 byteIndex = 0;
-            INT32 count = 0;
+        static UUID FromString(const CHAR* str, UUID* pUuid){
+            UINT8 bytes[16];
+            INT32 byteidx = 0;
 
-            for(INT32 i = 0; str[i]!='\0'; i++){
-                if(str[i] == '-') continue;
-
-                UINT8 value = 0;
-                CHAR c = str[i];
-                if(c >= '0' && c <= '9') value = static_cast<UINT8>(c - '0');
-                else if(c >= 'a' && c <= 'f') value = static_cast<UINT8>(c - 'a' + 10);
-                else if(c >= 'A' && c <= 'F') value = static_cast<UINT8>(c - 'A' + 10);
-                else continue;
-
-                if(count == 0){
-                    bytes[byteIndex] = static_cast<UINT8>(value << 4); // high nibble
-                    count = 1;   
-                } else {
-                    bytes[byteIndex] |= value; // low nibble
-                    byteIndex++;
-                    count = 0;
+            for (INT32 i = 0; i < 36; i++){
+                if (str[i] == '-'){
+                    continue;
                 }
+    
+                const CHAR* hex = "0123456789abcdef"_embed;
+                UINT8 high = 0, low = 0;
+
+                for (INT32 j = 0; j < 16; j++){
+                    if (str[i] == hex[j]){
+                        high = j;
+                    }
+                    if (str[i+1] == hex[j]){
+                        low = j;
+                    }
+                }
+                bytes[byteidx++] = (high << 4) | low;
+                i++; 
             }
 
-            return UUID(bytes);
+            if (pUuid) {
+                Memory::Copy(pUuid->data, bytes, 16);
+            }
+            
+            return *pUuid;
         }
    
         // toString method to convert the UUID to a string representation

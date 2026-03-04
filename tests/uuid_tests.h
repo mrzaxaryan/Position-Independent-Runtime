@@ -24,7 +24,7 @@ private:
     static BOOL TestFromString(){
         const char* str = "12345678-9abc-def0-1234-56789abcdef0"_embed;
 
-        UUID uuid = UUID::FromString(str);
+        UUID uuid = UUID::FromString(str, &uuid);
         auto expected = MakeEmbedArray((const UINT8[]){
             0x12, 0x34, 0x56, 0x78,
             0x9a, 0xbc,
