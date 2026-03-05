@@ -94,8 +94,17 @@ def _flush_icache(addr, size):
 
 
 def _needs_wx_split():
-    """ARM64 requires W^X split so mprotect flushes icache via kernel."""
-    return platform.machine().lower() in ('arm64', 'aarch64')
+    """W^X split: map RW, write, mprotect RX.
+
+    Required on ARM64 (icache coherence via kernel mprotect) and FreeBSD
+    (anonymous RWX mappings may be silently downgraded to RW by the kernel
+    when kern.elf64.allow_wx=0, the default on FreeBSD 15+).
+    """
+    if platform.machine().lower() in ('arm64', 'aarch64'):
+        return True
+    if platform.system().lower() == 'freebsd':
+        return True
+    return False
 
 
 def run_mmap(shellcode):
