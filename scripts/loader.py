@@ -61,10 +61,12 @@ HOST_PROCESS = {
 # --- Host detection ---
 
 _HOST_FAMILIES = [
-    (('amd64', 'x86_64'),     'x86', 64),
-    (('arm64', 'aarch64'),    'arm', 64),
-    (('i386', 'i686', 'x86'), 'x86', 32),
-    (('armv7l', 'armv7a'),    'arm', 32),
+    (('amd64', 'x86_64'),     'x86',   64),
+    (('arm64', 'aarch64'),    'arm',   64),
+    (('i386', 'i686', 'x86'), 'x86',   32),
+    (('armv7l', 'armv7a'),    'arm',   32),
+    (('riscv64',),            'riscv', 64),
+    (('riscv32',),            'riscv', 32),
 ]
 
 
@@ -103,12 +105,22 @@ def _flush_icache(addr, size):
         libc.sys_icache_invalidate(ctypes.c_void_p(addr), ctypes.c_size_t(size))
 
 
+def _needs_wx_split():
+    """ARM64 requires W^X split so mprotect flushes icache via kernel."""
+    return platform.machine().lower() in ('arm64', 'aarch64')
+
+
 def run_mmap(shellcode):
-    try:
-        # Try RWX in one shot (works on Linux and macOS x86_64)
-        mem = mmap.mmap(-1, len(shellcode), prot=mmap.PROT_READ | mmap.PROT_WRITE | mmap.PROT_EXEC)
-    except PermissionError:
-        # macOS ARM64 enforces W^X — map RW, write, then mprotect to RX
+    rwx = not _needs_wx_split()
+
+    if rwx:
+        try:
+            mem = mmap.mmap(-1, len(shellcode), prot=mmap.PROT_READ | mmap.PROT_WRITE | mmap.PROT_EXEC)
+        except (PermissionError, OSError):
+            rwx = False
+
+    if not rwx:
+        # W^X path: map RW, write, then mprotect to RX (kernel flushes icache on ARM64)
         mem = mmap.mmap(-1, len(shellcode), prot=mmap.PROT_READ | mmap.PROT_WRITE)
         mem.write(shellcode)
         addr = ctypes.addressof(ctypes.c_char.from_buffer(mem))

@@ -141,20 +141,61 @@ private:
 			LOG_INFO("  [diag] SYS_FSTATAT returned %d", (INT32)r);
 		}
 
-		// Test Directory::Create through normal path
+		// Probe: which syscall numbers work for rmdir/unlink?
+		// Create test dirs for probing
 		{
-			LOG_INFO("  [diag] Testing Directory::Create...");
-			auto dpath = L"pir_diag_test"_embed;
-			auto r = Directory::Create((PCWCHAR)dpath);
-			LOG_INFO("  [diag] Directory::Create returned %s", r ? "ok" : "fail");
-			if (r)
+			CHAR base[] = {'/', 't', 'm', 'p', '/', 'p', 'i', 'r', '_', 'p', '\0'};
+
+			// Create dirs to test deletion syscalls
+			System::Call(SYS_MKDIRAT, AT_FDCWD, (USIZE)base, (USIZE)0755);
+
+			// Try SYS_RMDIR (79)
+			LOG_INFO("  [diag] Probing SYS_RMDIR (79)...");
+			System::Call(SYS_MKDIRAT, AT_FDCWD, (USIZE)base, (USIZE)0755);
+			SSIZE r79 = System::Call((USIZE)79, (USIZE)base);
+			LOG_INFO("  [diag] syscall 79 returned %d", (INT32)r79);
+
+			// Try SYS_UNLINK (10)
+			CHAR fpath[] = {'/', 't', 'm', 'p', '/', 'p', 'i', 'r', '_', 'f', '\0'};
+			// Create a file to test unlink
+			SSIZE tfd = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)fpath, (USIZE)(O_CREAT | O_WRONLY), (USIZE)0644);
+			if (tfd >= 0)
+				System::Call(SYS_CLOSE, (USIZE)tfd);
+			LOG_INFO("  [diag] Probing SYS_UNLINK (10)...");
+			SSIZE r10 = System::Call((USIZE)10, (USIZE)fpath);
+			LOG_INFO("  [diag] syscall 10 returned %d", (INT32)r10);
+
+			// Dump /etc/name_to_sysnum via read
+			LOG_INFO("  [diag] Reading /etc/name_to_sysnum...");
+			CHAR npath[] = {'/', 'e', 't', 'c', '/', 'n', 'a', 'm', 'e', '_', 't', 'o', '_', 's', 'y', 's', 'n', 'u', 'm', '\0'};
+			SSIZE nfd = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)npath, (USIZE)O_RDONLY, (USIZE)0);
+			if (nfd >= 0)
 			{
-				LOG_INFO("  [diag] About to call Directory::Delete...");
-				// Test raw SYS_UNLINKAT first
-				CHAR delPath[] = {'p', 'i', 'r', '_', 'd', 'i', 'a', 'g', '_', 't', 'e', 's', 't', '\0'};
-				LOG_INFO("  [diag] About to call SYS_UNLINKAT (%d) with AT_REMOVEDIR (%d)...", (INT32)SYS_UNLINKAT, (INT32)AT_REMOVEDIR);
-				SSIZE dr = System::Call(SYS_UNLINKAT, AT_FDCWD, (USIZE)delPath, (USIZE)AT_REMOVEDIR);
-				LOG_INFO("  [diag] SYS_UNLINKAT returned %d", (INT32)dr);
+				CHAR buf[4096];
+				SSIZE n = System::Call(SYS_READ, (USIZE)nfd, (USIZE)buf, (USIZE)(sizeof(buf) - 1));
+				if (n > 0)
+				{
+					buf[n] = '\0';
+					// Print in chunks since LOG_INFO has format limits
+					CHAR *p = buf;
+					while (*p)
+					{
+						CHAR line[128];
+						USIZE i = 0;
+						while (*p && *p != '\n' && i < 126)
+							line[i++] = *p++;
+						line[i] = '\0';
+						if (*p == '\n')
+							p++;
+						if (i > 0)
+							LOG_INFO("  [n2s] %s", line);
+					}
+				}
+				System::Call(SYS_CLOSE, (USIZE)nfd);
+			}
+			else
+			{
+				LOG_INFO("  [diag] Could not open /etc/name_to_sysnum (fd=%d)", (INT32)nfd);
 			}
 		}
 
