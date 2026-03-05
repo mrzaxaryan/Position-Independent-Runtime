@@ -50,13 +50,13 @@ jobs:
 
       - name: Build all optimization levels
         run: |
-          mkdir -p test-elfs
           for opt in O0 O1 O2 O3 Os Oz Og; do
             echo "=== Building -${opt} ==="
             rm -rf build
             cmake --preset solaris-aarch64-release -DOPTIMIZATION_LEVEL=${opt}
             cmake --build --preset solaris-aarch64-release
-            cp $(find build -type f -name "output.elf" | head -n 1) test-elfs/output-${opt}.elf
+            mkdir -p "release/${opt}"
+            find build/release -maxdepth 1 -type f -exec cp {} "release/${opt}/" \;
           done
 
       - name: Upload all artifacts
@@ -65,7 +65,7 @@ jobs:
         with:
           name: build-solaris-aarch64
           retention-days: 1
-          path: test-elfs/
+          path: release/
 
       # NOTE: vmactions/solaris-vm@v1 does not support aarch64 (no config).
       # Solaris AArch64 is cross-compiled and build-verified only.
