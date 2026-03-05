@@ -68,7 +68,6 @@ jobs:
           path: release/
 
       - name: Test all optimization levels
-        if: always()
         uses: vmactions/solaris-vm@v1
         with:
           usesh: true

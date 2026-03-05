@@ -68,7 +68,6 @@ jobs:
           path: release/
 
       - name: Test all optimization levels
-        if: always()
         uses: vmactions/freebsd-vm@v1
         with:
           arch: aarch64

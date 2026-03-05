@@ -75,7 +75,6 @@ jobs:
           path: release/
 
       - name: Test all optimization levels
-        if: always()
         shell: pwsh
         run: |
           foreach ($dir in Get-ChildItem -Path release -Directory) {

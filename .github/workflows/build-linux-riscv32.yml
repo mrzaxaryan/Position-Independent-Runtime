@@ -68,7 +68,6 @@ jobs:
           path: test-elfs/
 
       - name: Test all optimization levels
-        if: always()
         run: |
           for elf in test-elfs/output-*.elf; do
             opt=$(basename "$elf" .elf | sed 's/output-//')

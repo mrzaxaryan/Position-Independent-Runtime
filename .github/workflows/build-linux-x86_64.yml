@@ -67,7 +67,6 @@ jobs:
           path: release/
 
       - name: Test all optimization levels
-        if: always()
         run: |
           for dir in release/*/; do
             opt=$(basename "$dir")

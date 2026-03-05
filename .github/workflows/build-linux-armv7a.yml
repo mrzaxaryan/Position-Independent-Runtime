@@ -67,7 +67,6 @@ jobs:
           path: release/
 
       - name: Test all optimization levels
-        if: always()
         uses: uraimo/run-on-arch-action@v2
         with:
           arch: armv7
