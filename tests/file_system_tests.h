@@ -114,52 +114,31 @@ private:
 		// Test SYS_WRITE (4) — already works if we see this message
 		LOG_INFO("  [diag] SYS_WRITE ok (you see this)");
 
-		// Test SYS_MKDIR (80) with a simple path
+		// Test SYS_MKDIRAT (102) with AT_FDCWD
 		{
 			CHAR path[] = {'/', 't', 'm', 'p', '/', 'p', 'i', 'r', '_', 'd', 'i', 'a', 'g', '\0'};
-			LOG_INFO("  [diag] About to call SYS_MKDIR (%d)...", (INT32)SYS_MKDIR);
-			SSIZE r = System::Call(SYS_MKDIR, (USIZE)path, (USIZE)0755);
-			LOG_INFO("  [diag] SYS_MKDIR returned %d", (INT32)r);
+			LOG_INFO("  [diag] About to call SYS_MKDIRAT (%d)...", (INT32)SYS_MKDIRAT);
+			SSIZE r = System::Call(SYS_MKDIRAT, AT_FDCWD, (USIZE)path, (USIZE)0755);
+			LOG_INFO("  [diag] SYS_MKDIRAT returned %d", (INT32)r);
 		}
 
-		// Test SYS_OPEN (5)
+		// Test SYS_OPENAT (68) with AT_FDCWD
 		{
 			CHAR path[] = {'/', 'd', 'e', 'v', '/', 'n', 'u', 'l', 'l', '\0'};
-			LOG_INFO("  [diag] About to call SYS_OPEN (%d)...", (INT32)SYS_OPEN);
-			SSIZE r = System::Call(SYS_OPEN, (USIZE)path, (USIZE)O_RDONLY, (USIZE)0);
-			LOG_INFO("  [diag] SYS_OPEN returned %d", (INT32)r);
+			LOG_INFO("  [diag] About to call SYS_OPENAT (%d)...", (INT32)SYS_OPENAT);
+			SSIZE r = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)path, (USIZE)O_RDONLY, (USIZE)0);
+			LOG_INFO("  [diag] SYS_OPENAT returned %d", (INT32)r);
 			if (r >= 0)
 				System::Call(SYS_CLOSE, (USIZE)r);
 		}
 
-		// Test SYS_STAT (18)
+		// Test SYS_FSTATAT (66) with AT_FDCWD
 		{
 			CHAR path[] = {'/', 't', 'm', 'p', '\0'};
 			UINT8 statbuf[256];
-			LOG_INFO("  [diag] About to call SYS_STAT (%d)...", (INT32)SYS_STAT);
-			SSIZE r = System::Call(SYS_STAT, (USIZE)path, (USIZE)statbuf);
-			LOG_INFO("  [diag] SYS_STAT returned %d", (INT32)r);
-		}
-
-		// Test SYS_MMAP (115)
-		{
-			LOG_INFO("  [diag] About to call SYS_MMAP (%d)...", (INT32)SYS_MMAP);
-			SSIZE r = System::Call(SYS_MMAP, (USIZE)0, (USIZE)4096,
-				(USIZE)(PROT_READ | PROT_WRITE),
-				(USIZE)(MAP_PRIVATE | MAP_ANONYMOUS),
-				(USIZE)(SSIZE)-1, (USIZE)0);
-			LOG_INFO("  [diag] SYS_MMAP returned 0x%x", (UINT32)(USIZE)r);
-			if (r > 0)
-				System::Call(SYS_MUNMAP, (USIZE)r, (USIZE)4096);
-		}
-
-		// Test NormalizePathToUtf8
-		{
-			LOG_INFO("  [diag] Testing NormalizePathToUtf8...");
-			WCHAR wpath[] = {'t', 'e', 's', 't', '\0'};
-			CHAR utf8[64];
-			NormalizePathToUtf8(wpath, Span<CHAR>(utf8));
-			LOG_INFO("  [diag] NormalizePathToUtf8 ok, result: %s", utf8);
+			LOG_INFO("  [diag] About to call SYS_FSTATAT (%d)...", (INT32)SYS_FSTATAT);
+			SSIZE r = System::Call(SYS_FSTATAT, AT_FDCWD, (USIZE)path, (USIZE)statbuf, (USIZE)0);
+			LOG_INFO("  [diag] SYS_FSTATAT returned %d", (INT32)r);
 		}
 
 		// Test Directory::Create through normal path

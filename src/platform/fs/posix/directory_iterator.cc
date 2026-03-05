@@ -52,6 +52,8 @@ Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 	openFlags |= O_DIRECTORY;
 #endif
 	fd = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)utf8Path, openFlags, 0);
+#elif defined(PLATFORM_SOLARIS)
+	fd = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)utf8Path, (USIZE)(O_RDONLY | O_DIRECTORY), (USIZE)0);
 #else
 	fd = System::Call(SYS_OPEN, (USIZE)utf8Path, O_RDONLY | O_DIRECTORY);
 #endif
