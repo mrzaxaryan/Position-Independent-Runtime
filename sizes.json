@@ -25,10 +25,6 @@
   "freebsd_x86_64_bin": "88.7 KB",
   "linux_riscv64_exe": "77.1 KB",
   "linux_riscv64_bin": "72.1 KB",
-  "solaris_i386_exe": "99.1 KB",
-  "solaris_i386_bin": "94.8 KB",
-  "solaris_aarch64_exe": "142.3 KB",
-  "solaris_aarch64_bin": "77.9 KB",
   "uefi_aarch64_exe": "89.5 KB",
   "uefi_aarch64_bin": "87.9 KB",
   "linux_x86_64_exe": "89.8 KB",
@@ -37,8 +33,6 @@
   "macos_aarch64_bin": "75.9 KB",
   "linux_aarch64_exe": "78.9 KB",
   "linux_aarch64_bin": "77.5 KB",
-  "solaris_x86_64_exe": "93.1 KB",
-  "solaris_x86_64_bin": "88.7 KB",
   "windows_i386_exe": "100.5 KB",
-  "windows_i386_bin": "99.5 KB"
+  "windows_i386_bin": "99.6 KB"
 }
