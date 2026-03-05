@@ -38,6 +38,16 @@
  * StringFormatter::Argument arrays, then forward to a single non-templated
  * TimestampedLogOutput. This eliminates per-argument-type template
  * instantiations that previously bloated the binary.
+ *
+ * DESIGN NOTE: The colour prefix is written by each public method BEFORE
+ * calling TimestampedLogOutput, not inside the NOINLINE helper. This is
+ * required because the EMBEDDED_STRING holding the prefix must be constructed
+ * and consumed (written via Console::Write) within the SAME inline scope.
+ * Passing the prefix as a const CHAR* to a NOINLINE function fails on
+ * FreeBSD x86_64 at -O1+ with LTO: the pointer-laundering asm barrier in
+ * EMBEDDED_STRING::operator const TChar*() breaks the alias chain between
+ * the stack data and the escaped pointer, allowing the compiler to reuse
+ * the stack slot before the callee reads through the pointer.
  */
 class Logger
 {
@@ -53,28 +63,19 @@ private:
 
 	/**
 	 * TimestampedLogOutput - Single non-templated helper for all log levels.
-	 * Arguments are pre-erased into a StringFormatter::Argument array by
-	 * the public Info/Error/Warning/Debug methods, so this function is
-	 * instantiated only once regardless of how many argument-type
-	 * combinations appear across the codebase.
 	 *
-	 * @param colorPrefix - ANSI-colored prefix (e.g., "\033[0;32m[INF] ")
-	 * @param format      - Format string with embedded specifiers
-	 * @param args        - Pre-erased argument array (nullptr when argCount == 0)
-	 * @param argCount    - Number of arguments
+	 * The colour prefix has already been written by the caller; this function
+	 * emits the [HH:MM:SS] timestamp, the formatted message, and the ANSI
+	 * reset sequence.
+	 *
+	 * @param format - Format string with embedded specifiers
+	 * @param args   - Pre-erased argument array
 	 */
-	static NOINLINE VOID TimestampedLogOutput(const CHAR *colorPrefix, const CHAR *format, Span<const StringFormatter::Argument> args)
+	static NOINLINE VOID TimestampedLogOutput(const CHAR *format, Span<const StringFormatter::Argument> args)
 	{
 		DateTime now = DateTime::Now();
 		TimeOnlyString<CHAR> timeStr = now.ToTimeOnlyString<CHAR>();
 
-		// Write colour prefix and timestamp bracket directly instead of
-		// going through %s formatting. On FreeBSD x86_64 at -O1+ with LTO,
-		// the Argument type-erasure for colorPrefix via %s produces a null
-		// Cstr (the compiler may zero-initialise the union's first member
-		// I32 instead of the Cstr member when constructing the Argument on
-		// the stack). Writing the prefix directly avoids this entirely.
-		Console::Write<CHAR>(colorPrefix);
 		auto consoleA = EMBED_FUNC(ConsoleCallbackA);
 		StringFormatter::Format<CHAR>(consoleA, nullptr, "[%s] "_embed, (const CHAR *)timeStr);
 		StringFormatter::FormatWithArgs<CHAR>(consoleA, nullptr, format, args);
@@ -82,98 +83,55 @@ private:
 	}
 
 public:
-	/**
-	 * Info - Informational messages (green)
-	 *
-	 * Use for: Normal operation events, status updates, confirmations
-	 * Color: Green (ANSI: \033[0;32m)
-	 *
-	 * @tparam TChar Character type (CHAR or WCHAR)
-	 * @tparam Args Variadic format arguments (deduced automatically)
-	 *
-	 * IMPORTANT: The colour-prefix EMBEDDED_STRING must be a named local
-	 * variable, not a temporary in the argument list. With LTO at -O1+ on
-	 * FreeBSD x86_64, the compiler may reuse the temporary's stack slot
-	 * before the NOINLINE callee finishes reading through the pointer.
-	 * A named variable's lifetime extends to the closing brace, which is
-	 * guaranteed to be after the call returns.
-	 */
 	template <TCHAR TChar, typename... Args>
 	static VOID Info(const TChar *format, Args... args)
 	{
-		auto prefix = "\033[0;32m[INF] "_embed;
+		Console::Write(Span<const CHAR>("\033[0;32m[INF] "_embed));
 		if constexpr (sizeof...(Args) == 0)
-			TimestampedLogOutput(prefix, format, Span<const StringFormatter::Argument>());
+			TimestampedLogOutput(format, Span<const StringFormatter::Argument>());
 		else
 		{
 			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
-			TimestampedLogOutput(prefix, format, Span<const StringFormatter::Argument>(argArray));
+			TimestampedLogOutput(format, Span<const StringFormatter::Argument>(argArray));
 		}
 	}
 
-	/**
-	 * Error - Error messages (red)
-	 *
-	 * Use for: Failures, exceptions, critical issues
-	 * Color: Red (ANSI: \033[0;31m)
-	 *
-	 * @tparam TChar Character type (CHAR or WCHAR)
-	 * @tparam Args Variadic format arguments (deduced automatically)
-	 */
 	template <TCHAR TChar, typename... Args>
 	static VOID Error(const TChar *format, Args... args)
 	{
-		auto prefix = "\033[0;31m[ERR] "_embed;
+		Console::Write(Span<const CHAR>("\033[0;31m[ERR] "_embed));
 		if constexpr (sizeof...(Args) == 0)
-			TimestampedLogOutput(prefix, format, Span<const StringFormatter::Argument>());
+			TimestampedLogOutput(format, Span<const StringFormatter::Argument>());
 		else
 		{
 			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
-			TimestampedLogOutput(prefix, format, Span<const StringFormatter::Argument>(argArray));
+			TimestampedLogOutput(format, Span<const StringFormatter::Argument>(argArray));
 		}
 	}
 
-	/**
-	 * Warning - Warning messages (yellow)
-	 *
-	 * Use for: Non-critical issues, deprecation notices, potential problems
-	 * Color: Yellow (ANSI: \033[0;33m)
-	 *
-	 * @tparam TChar Character type (CHAR or WCHAR)
-	 * @tparam Args Variadic format arguments (deduced automatically)
-	 */
 	template <TCHAR TChar, typename... Args>
 	static VOID Warning(const TChar *format, Args... args)
 	{
-		auto prefix = "\033[0;33m[WRN] "_embed;
+		Console::Write(Span<const CHAR>("\033[0;33m[WRN] "_embed));
 		if constexpr (sizeof...(Args) == 0)
-			TimestampedLogOutput(prefix, format, Span<const StringFormatter::Argument>());
+			TimestampedLogOutput(format, Span<const StringFormatter::Argument>());
 		else
 		{
 			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
-			TimestampedLogOutput(prefix, format, Span<const StringFormatter::Argument>(argArray));
+			TimestampedLogOutput(format, Span<const StringFormatter::Argument>(argArray));
 		}
 	}
 
-	/**
-	 * Debug - Debug messages (yellow)
-	 *
-	 * Use for: Detailed diagnostic information, variable dumps, trace logs
-	 * Color: Yellow (ANSI: \033[0;33m)
-	 *
-	 * @tparam TChar Character type (CHAR or WCHAR)
-	 * @tparam Args Variadic format arguments (deduced automatically)
-	 */
 	template <TCHAR TChar, typename... Args>
 	static VOID Debug(const TChar *format, Args... args)
 	{
-		auto prefix = "\033[0;33m[DBG] "_embed;
+		Console::Write(Span<const CHAR>("\033[0;33m[DBG] "_embed));
 		if constexpr (sizeof...(Args) == 0)
-			TimestampedLogOutput(prefix, format, Span<const StringFormatter::Argument>());
+			TimestampedLogOutput(format, Span<const StringFormatter::Argument>());
 		else
 		{
 			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
-			TimestampedLogOutput(prefix, format, Span<const StringFormatter::Argument>(argArray));
+			TimestampedLogOutput(format, Span<const StringFormatter::Argument>(argArray));
 		}
 	}
 };
