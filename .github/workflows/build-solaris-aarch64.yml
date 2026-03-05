@@ -180,23 +180,5 @@ jobs:
             build/
             !build/**/cmake/
 
-      - name: Test all optimization levels
-        if: always()
-        uses: vmactions/solaris-vm@v1
-        with:
-          arch: aarch64
-          usesh: true
-          run: |
-            failed=0
-            for elf in test-elfs/output-*.elf; do
-              opt=$(basename "$elf" .elf | sed 's/output-//')
-              echo "=== Testing -${opt} ==="
-              chmod +x "$elf"
-              if "$elf"; then
-                echo "=== PASSED -${opt} ==="
-              else
-                echo "=== FAILED -${opt} ==="
-                failed=1
-              fi
-            done
-            exit $failed
+      # NOTE: vmactions/solaris-vm@v1 does not support aarch64 (no config).
+      # Solaris AArch64 is cross-compiled and build-verified only.
