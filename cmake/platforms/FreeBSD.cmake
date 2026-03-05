@@ -57,8 +57,11 @@ endif()
 
 # RISC-V 64: merge .rodata (LTO constant pools) into .text so the
 # PIC binary contains the constant-pool data that auipc+ld references.
+# Uses a FreeBSD-specific linker script with a non-zero base address
+# (0x200000) because FreeBSD disallows mapping at VA 0 by default
+# (security.bsd.map_at_zero=0).
 if(PIR_ARCH STREQUAL "riscv64")
-    pir_add_link_flags(-T,${PIR_ROOT_DIR}/cmake/data/linker.riscv64.ld)
+    pir_add_link_flags(-T,${PIR_ROOT_DIR}/cmake/data/linker.freebsd.riscv64.ld)
 endif()
 
 list(APPEND PIR_BASE_LINK_FLAGS -fuse-ld=lld)
