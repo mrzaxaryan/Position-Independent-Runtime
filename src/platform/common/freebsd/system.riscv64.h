@@ -13,6 +13,10 @@
  * The syscall number is loaded into t0 explicitly inside the asm block
  * (via "mv t0, %N") rather than relying on register variable bindings,
  * which the LLVM LTO backend may not honour for caller-saved temporaries.
+ * All argument-register outputs use the early-clobber "&" modifier to
+ * prevent the compiler from assigning the "r"(number) input to the same
+ * physical register as a "+r" output — without "&", the compiler may
+ * overlap them, putting arg1 into t0 instead of the syscall number.
  *
  * @see FreeBSD libsys RISC-V SYS.h
  *      https://github.com/freebsd/freebsd-src/blob/main/lib/libsys/riscv/SYS.h
@@ -35,7 +39,7 @@ public:
 			"beqz t0, 1f\n"
 			"neg a0, a0\n"
 			"1:\n"
-			: "=r"(a0)
+			: "=&r"(a0)
 			: "r"(number)
 			: "t0", "a1", "memory"
 		);
@@ -52,7 +56,7 @@ public:
 			"beqz t0, 1f\n"
 			"neg a0, a0\n"
 			"1:\n"
-			: "+r"(a0)
+			: "+&r"(a0)
 			: "r"(number)
 			: "t0", "a1", "memory"
 		);
@@ -70,7 +74,7 @@ public:
 			"beqz t0, 1f\n"
 			"neg a0, a0\n"
 			"1:\n"
-			: "+r"(a0), "+r"(a1)
+			: "+&r"(a0), "+&r"(a1)
 			: "r"(number)
 			: "t0", "memory"
 		);
@@ -89,7 +93,7 @@ public:
 			"beqz t0, 1f\n"
 			"neg a0, a0\n"
 			"1:\n"
-			: "+r"(a0), "+r"(a1), "+r"(a2)
+			: "+&r"(a0), "+&r"(a1), "+&r"(a2)
 			: "r"(number)
 			: "t0", "memory"
 		);
@@ -109,7 +113,7 @@ public:
 			"beqz t0, 1f\n"
 			"neg a0, a0\n"
 			"1:\n"
-			: "+r"(a0), "+r"(a1), "+r"(a2), "+r"(a3)
+			: "+&r"(a0), "+&r"(a1), "+&r"(a2), "+&r"(a3)
 			: "r"(number)
 			: "t0", "memory"
 		);
@@ -130,7 +134,7 @@ public:
 			"beqz t0, 1f\n"
 			"neg a0, a0\n"
 			"1:\n"
-			: "+r"(a0), "+r"(a1), "+r"(a2), "+r"(a3), "+r"(a4)
+			: "+&r"(a0), "+&r"(a1), "+&r"(a2), "+&r"(a3), "+&r"(a4)
 			: "r"(number)
 			: "t0", "memory"
 		);
@@ -152,7 +156,7 @@ public:
 			"beqz t0, 1f\n"
 			"neg a0, a0\n"
 			"1:\n"
-			: "+r"(a0), "+r"(a1), "+r"(a2), "+r"(a3), "+r"(a4), "+r"(a5)
+			: "+&r"(a0), "+&r"(a1), "+&r"(a2), "+&r"(a3), "+&r"(a4), "+&r"(a5)
 			: "r"(number)
 			: "t0", "memory"
 		);
