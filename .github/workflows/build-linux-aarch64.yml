@@ -15,8 +15,8 @@ env:
   LLVM_VERSION: "21.1.0"
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
+  build-and-test:
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,13 +26,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /opt/llvm
-          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
+          key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64
 
       - name: Install LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           set -e
-          TARBALL="LLVM-${{ env.LLVM_VERSION }}-Linux-X64.tar.xz"
+          TARBALL="LLVM-${{ env.LLVM_VERSION }}-Linux-AArch64.tar.xz"
           URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/${TARBALL}"
           wget -q "$URL"
           sudo mkdir -p /opt/llvm
@@ -67,20 +67,8 @@ jobs:
           retention-days: 1
           path: test-elfs/
 
-  test:
-    needs: build
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-linux-aarch64
-          path: test-elfs/
-
       - name: Test all optimization levels
+        if: always()
         run: |
           failed=0
           for elf in test-elfs/output-*.elf; do
