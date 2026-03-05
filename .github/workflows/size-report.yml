@@ -16,16 +16,39 @@ env:
   LLVM_VERSION: "21.1.0"
 
 jobs:
-  build-windows:
+  build:
     runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
-        arch: [i386, x86_64, aarch64]
-        exclude:
-          - arch: aarch64
-    outputs:
-      sizes: ${{ steps.sizes.outputs.result }}
+        include:
+          # Windows
+          - { platform: windows, arch: i386,    ext: exe }
+          - { platform: windows, arch: x86_64,  ext: exe }
+          - { platform: windows, arch: aarch64, ext: exe }
+          - { platform: windows, arch: armv7a,  ext: exe }
+          # Linux
+          - { platform: linux, arch: i386,    ext: elf }
+          - { platform: linux, arch: x86_64,  ext: elf }
+          - { platform: linux, arch: armv7a,  ext: elf }
+          - { platform: linux, arch: aarch64, ext: elf }
+          - { platform: linux, arch: riscv32, ext: elf }
+          - { platform: linux, arch: riscv64, ext: elf }
+          # macOS
+          - { platform: macos, arch: x86_64,  ext: "" }
+          - { platform: macos, arch: aarch64, ext: "" }
+          # UEFI
+          - { platform: uefi, arch: x86_64,  ext: efi }
+          - { platform: uefi, arch: aarch64, ext: efi }
+          # FreeBSD
+          - { platform: freebsd, arch: i386,    ext: elf }
+          - { platform: freebsd, arch: x86_64,  ext: elf }
+          - { platform: freebsd, arch: aarch64, ext: elf }
+          - { platform: freebsd, arch: riscv64, ext: elf }
+          # Solaris
+          - { platform: solaris, arch: i386,    ext: elf }
+          - { platform: solaris, arch: x86_64,  ext: elf }
+          - { platform: solaris, arch: aarch64, ext: elf }
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -59,432 +82,34 @@ jobs:
       - name: Build with -Oz (no logging, no tests)
         shell: pwsh
         run: |
-          cmake --preset windows-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
-          cmake --build --preset windows-${{ matrix.arch }}-release
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Get sizes
         id: sizes
         shell: pwsh
         run: |
-          $exe = Get-ChildItem -Path build -Recurse -Filter "output.exe" | Select-Object -First 1
+          $ext = "${{ matrix.ext }}"
+          if ($ext -eq "") {
+            $main = Get-ChildItem -Path build -Recurse | Where-Object { $_.Name -eq "output" -and -not $_.PSIsContainer } | Select-Object -First 1
+          } else {
+            $main = Get-ChildItem -Path build -Recurse -Filter "output.$ext" | Select-Object -First 1
+          }
           $bin = Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1
-          $exeSize = if ($exe) { $exe.Length } else { 0 }
-          $binSize = if ($bin) { $bin.Length } else { 0 }
-          $result = "windows-${{ matrix.arch }},$exeSize,$binSize"
-          echo "result=$result" >> $env:GITHUB_OUTPUT
+          $mainSize = if ($main) { $main.Length } else { 0 }
+          $binSize  = if ($bin)  { $bin.Length  } else { 0 }
+          echo "result=${{ matrix.platform }}-${{ matrix.arch }},$mainSize,$binSize" >> $env:GITHUB_OUTPUT
 
       - name: Upload size data
         uses: actions/upload-artifact@v4
         with:
-          name: size-windows-${{ matrix.arch }}
+          name: size-${{ matrix.platform }}-${{ matrix.arch }}
           retention-days: 1
-          path: |
-            build/**/output.exe
-            build/**/output.bin
-
-  build-windows-aarch64:
-    runs-on: windows-11-arm
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v4
-        with:
-          path: C:\Program Files\LLVM
-          key: llvm-${{ env.LLVM_VERSION }}-windows-11-arm
-
-      - name: Install Ninja
-        shell: pwsh
-        run: choco install ninja -y
-
-      - name: Install LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $ver = "${{ env.LLVM_VERSION }}"
-          $exe = "LLVM-$ver-win64.exe"
-          $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-$ver/$exe"
-          Invoke-WebRequest -Uri $url -OutFile $exe
-          Start-Process -FilePath ".\$exe" -ArgumentList "/S" -Wait
-
-      - name: Add LLVM to PATH
-        shell: pwsh
-        run: '"C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Append'
-
-      - name: Build with -Oz (no logging, no tests)
-        shell: pwsh
-        run: |
-          cmake --preset windows-aarch64-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
-          cmake --build --preset windows-aarch64-release
-
-      - name: Get sizes
-        id: sizes
-        shell: pwsh
-        run: |
-          $exe = Get-ChildItem -Path build -Recurse -Filter "output.exe" | Select-Object -First 1
-          $bin = Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1
-          $exeSize = if ($exe) { $exe.Length } else { 0 }
-          $binSize = if ($bin) { $bin.Length } else { 0 }
-          $result = "windows-aarch64,$exeSize,$binSize"
-          echo "result=$result" >> $env:GITHUB_OUTPUT
-
-      - name: Upload size data
-        uses: actions/upload-artifact@v4
-        with:
-          name: size-windows-aarch64
-          retention-days: 1
-          path: |
-            build/**/output.exe
-            build/**/output.bin
-
-  build-windows-armv7a:
-    runs-on: windows-11-arm
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v4
-        with:
-          path: C:\Program Files\LLVM
-          key: llvm-${{ env.LLVM_VERSION }}-windows-11-arm
-
-      - name: Install Ninja
-        shell: pwsh
-        run: choco install ninja -y
-
-      - name: Install LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $ver = "${{ env.LLVM_VERSION }}"
-          $exe = "LLVM-$ver-win64.exe"
-          $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-$ver/$exe"
-          Invoke-WebRequest -Uri $url -OutFile $exe
-          Start-Process -FilePath ".\$exe" -ArgumentList "/S" -Wait
-
-      - name: Add LLVM to PATH
-        shell: pwsh
-        run: '"C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Append'
-
-      - name: Build with -Oz (no logging, no tests)
-        shell: pwsh
-        run: |
-          cmake --preset windows-armv7a-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
-          cmake --build --preset windows-armv7a-release
-
-      - name: Get sizes
-        id: sizes
-        shell: pwsh
-        run: |
-          $exe = Get-ChildItem -Path build -Recurse -Filter "output.exe" | Select-Object -First 1
-          $bin = Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1
-          $exeSize = if ($exe) { $exe.Length } else { 0 }
-          $binSize = if ($bin) { $bin.Length } else { 0 }
-          $result = "windows-armv7a,$exeSize,$binSize"
-          echo "result=$result" >> $env:GITHUB_OUTPUT
-
-      - name: Upload size data
-        uses: actions/upload-artifact@v4
-        with:
-          name: size-windows-armv7a
-          retention-days: 1
-          path: |
-            build/**/output.exe
-            build/**/output.bin
-
-  build-linux:
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [i386, x86_64, armv7a, aarch64, riscv32, riscv64]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v4
-        with:
-          path: /opt/llvm
-          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
-
-      - name: Install LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: |
-          set -e
-          TARBALL="LLVM-${{ env.LLVM_VERSION }}-Linux-X64.tar.xz"
-          URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/${TARBALL}"
-          wget -q "$URL"
-          sudo mkdir -p /opt/llvm
-          sudo tar xf "$TARBALL" -C /opt/llvm --strip-components=1
-          rm "$TARBALL"
-
-      - name: Install build tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build cmake
-
-      - name: Add LLVM to PATH
-        run: echo "/opt/llvm/bin" >> $GITHUB_PATH
-
-      - name: Build with -Oz (no logging, no tests)
-        run: |
-          cmake --preset linux-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
-          cmake --build --preset linux-${{ matrix.arch }}-release
-
-      - name: Get sizes
-        id: sizes
-        run: |
-          ELF=$(find build -type f -name "output.elf" | head -n 1)
-          BIN=$(find build -type f -name "output.bin" | head -n 1)
-          ELF_SIZE=$(stat -c%s "$ELF" 2>/dev/null || echo 0)
-          BIN_SIZE=$(stat -c%s "$BIN" 2>/dev/null || echo 0)
-          echo "result=linux-${{ matrix.arch }},$ELF_SIZE,$BIN_SIZE" >> $GITHUB_OUTPUT
-
-      - name: Upload size data
-        uses: actions/upload-artifact@v4
-        with:
-          name: size-linux-${{ matrix.arch }}
-          retention-days: 1
-          path: |
-            build/**/output.elf
-            build/**/output.bin
-
-  build-macos:
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x86_64
-            runner: macos-15-intel
-          - arch: aarch64
-            runner: macos-14
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install LLVM and build tools
-        env:
-          HOMEBREW_NO_AUTO_UPDATE: 1
-        run: |
-          for i in 1 2 3; do
-            brew install llvm ninja cmake && break
-            echo "Attempt $i failed, retrying in 10s..."
-            sleep 10
-          done
-          echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
-
-      - name: Build with -Oz (no logging, no tests)
-        run: |
-          cmake --preset macos-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
-          cmake --build --preset macos-${{ matrix.arch }}-release
-
-      - name: Get sizes
-        id: sizes
-        run: |
-          MACHO=$(find build -type f -name "output" ! -name "*.bin" ! -name "*.txt" | head -n 1)
-          BIN=$(find build -type f -name "output.bin" | head -n 1)
-          MACHO_SIZE=$(stat -f%z "$MACHO" 2>/dev/null || echo 0)
-          BIN_SIZE=$(stat -f%z "$BIN" 2>/dev/null || echo 0)
-          echo "result=macos-${{ matrix.arch }},$MACHO_SIZE,$BIN_SIZE" >> $GITHUB_OUTPUT
-
-      - name: Upload size data
-        uses: actions/upload-artifact@v4
-        with:
-          name: size-macos-${{ matrix.arch }}
-          retention-days: 1
-          path: |
-            build/**/output
-            build/**/output.bin
-
-  build-uefi:
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [x86_64, aarch64]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v4
-        with:
-          path: /opt/llvm
-          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
-
-      - name: Install LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: |
-          set -e
-          TARBALL="LLVM-${{ env.LLVM_VERSION }}-Linux-X64.tar.xz"
-          URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/${TARBALL}"
-          wget -q "$URL"
-          sudo mkdir -p /opt/llvm
-          sudo tar xf "$TARBALL" -C /opt/llvm --strip-components=1
-          rm "$TARBALL"
-
-      - name: Install build tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build cmake
-
-      - name: Add LLVM to PATH
-        run: echo "/opt/llvm/bin" >> $GITHUB_PATH
-
-      - name: Build with -Oz (no logging, no tests)
-        run: |
-          cmake --preset uefi-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
-          cmake --build --preset uefi-${{ matrix.arch }}-release
-
-      - name: Get sizes
-        id: sizes
-        run: |
-          EFI=$(find build -type f -name "output.efi" | head -n 1)
-          BIN=$(find build -type f -name "output.bin" | head -n 1)
-          EFI_SIZE=$(stat -c%s "$EFI" 2>/dev/null || echo 0)
-          BIN_SIZE=$(stat -c%s "$BIN" 2>/dev/null || echo 0)
-          echo "result=uefi-${{ matrix.arch }},$EFI_SIZE,$BIN_SIZE" >> $GITHUB_OUTPUT
-
-      - name: Upload size data
-        uses: actions/upload-artifact@v4
-        with:
-          name: size-uefi-${{ matrix.arch }}
-          retention-days: 1
-          path: |
-            build/**/output.efi
-            build/**/output.bin
-
-  build-solaris:
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [i386, x86_64, aarch64]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v4
-        with:
-          path: /opt/llvm
-          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
-
-      - name: Install LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: |
-          set -e
-          TARBALL="LLVM-${{ env.LLVM_VERSION }}-Linux-X64.tar.xz"
-          URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/${TARBALL}"
-          wget -q "$URL"
-          sudo mkdir -p /opt/llvm
-          sudo tar xf "$TARBALL" -C /opt/llvm --strip-components=1
-          rm "$TARBALL"
-
-      - name: Install build tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build cmake
-
-      - name: Add LLVM to PATH
-        run: echo "/opt/llvm/bin" >> $GITHUB_PATH
-
-      - name: Build with -Oz (no logging, no tests)
-        run: |
-          cmake --preset solaris-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
-          cmake --build --preset solaris-${{ matrix.arch }}-release
-
-      - name: Get sizes
-        id: sizes
-        run: |
-          ELF=$(find build -type f -name "output.elf" | head -n 1)
-          BIN=$(find build -type f -name "output.bin" | head -n 1)
-          ELF_SIZE=$(stat -c%s "$ELF" 2>/dev/null || echo 0)
-          BIN_SIZE=$(stat -c%s "$BIN" 2>/dev/null || echo 0)
-          echo "result=solaris-${{ matrix.arch }},$ELF_SIZE,$BIN_SIZE" >> $GITHUB_OUTPUT
-
-      - name: Upload size data
-        uses: actions/upload-artifact@v4
-        with:
-          name: size-solaris-${{ matrix.arch }}
-          retention-days: 1
-          path: |
-            build/**/output.elf
-            build/**/output.bin
-
-  build-freebsd:
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [i386, x86_64, aarch64, riscv64]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v4
-        with:
-          path: /opt/llvm
-          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
-
-      - name: Install LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: |
-          set -e
-          TARBALL="LLVM-${{ env.LLVM_VERSION }}-Linux-X64.tar.xz"
-          URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/${TARBALL}"
-          wget -q "$URL"
-          sudo mkdir -p /opt/llvm
-          sudo tar xf "$TARBALL" -C /opt/llvm --strip-components=1
-          rm "$TARBALL"
-
-      - name: Install build tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build cmake
-
-      - name: Add LLVM to PATH
-        run: echo "/opt/llvm/bin" >> $GITHUB_PATH
-
-      - name: Build with -Oz (no logging, no tests)
-        run: |
-          cmake --preset freebsd-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
-          cmake --build --preset freebsd-${{ matrix.arch }}-release
-
-      - name: Get sizes
-        id: sizes
-        run: |
-          ELF=$(find build -type f -name "output.elf" | head -n 1)
-          BIN=$(find build -type f -name "output.bin" | head -n 1)
-          ELF_SIZE=$(stat -c%s "$ELF" 2>/dev/null || echo 0)
-          BIN_SIZE=$(stat -c%s "$BIN" 2>/dev/null || echo 0)
-          echo "result=freebsd-${{ matrix.arch }},$ELF_SIZE,$BIN_SIZE" >> $GITHUB_OUTPUT
-
-      - name: Upload size data
-        uses: actions/upload-artifact@v4
-        with:
-          name: size-freebsd-${{ matrix.arch }}
-          retention-days: 1
-          path: |
-            build/**/output.elf
-            build/**/output.bin
+          path: build/**/output*
 
   update-readme:
     if: always()
-    needs: [build-windows, build-windows-aarch64, build-windows-armv7a, build-linux, build-macos, build-uefi, build-solaris, build-freebsd]
+    needs: [build]
     runs-on: ubuntu-22.04
     permissions:
       contents: write
