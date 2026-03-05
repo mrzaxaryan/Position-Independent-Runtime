@@ -129,7 +129,7 @@ private:
 		const USIZE wi = byteIndex / WordBytes;
 		const USIZE sh = (byteIndex % WordBytes) * 8u;
 		USIZE word = words[wi];
-		__asm__ volatile("" : "+r"(word));
+		__asm__ volatile("" : "+r"(word) : : "memory");
 		return (UINT8)((word >> sh) & (USIZE)0xFFu);
 	}
 

@@ -113,6 +113,9 @@ private:
 	 * @details Uses if constexpr recursion to write all words as immediate values.
 	 * The "+r" asm barrier per word forces each constant into a register as an
 	 * immediate operand and prevents LLVM from coalescing stores into .rdata + memcpy.
+	 * The "memory" clobber acts as a full compiler memory barrier, preventing the
+	 * LTO backend from recognising consecutive word stores as a memcpy from a
+	 * constant pool (observed on FreeBSD x86_64 at -O1+).
 	 */
 	template <USIZE I = 0>
 	FORCE_INLINE void WritePackedWord() noexcept
@@ -120,7 +123,7 @@ private:
 		if constexpr (I < NumWords)
 		{
 			USIZE word = GetPackedWord<I>();
-			__asm__ volatile("" : "+r"(word));
+			__asm__ volatile("" : "+r"(word) : : "memory");
 			__builtin_memcpy(data + I * CharsPerWord, &word, sizeof(USIZE));
 			WritePackedWord<I + 1>();
 		}
