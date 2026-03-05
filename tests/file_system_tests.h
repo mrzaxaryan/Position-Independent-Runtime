@@ -126,7 +126,7 @@ private:
 		{
 			CHAR path[] = {'/', 'd', 'e', 'v', '/', 'n', 'u', 'l', 'l', '\0'};
 			LOG_INFO("  [diag] About to call SYS_OPENAT (%d)...", (INT32)SYS_OPENAT);
-			SSIZE r = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)path, (USIZE)O_RDONLY, (USIZE)0);
+			[[maybe_unused]] SSIZE r = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)path, (USIZE)O_RDONLY, (USIZE)0);
 			LOG_INFO("  [diag] SYS_OPENAT returned %d", (INT32)r);
 			if (r >= 0)
 				System::Call(SYS_CLOSE, (USIZE)r);
@@ -137,7 +137,7 @@ private:
 			CHAR path[] = {'/', 't', 'm', 'p', '\0'};
 			UINT8 statbuf[256];
 			LOG_INFO("  [diag] About to call SYS_FSTATAT (%d)...", (INT32)SYS_FSTATAT);
-			SSIZE r = System::Call(SYS_FSTATAT, AT_FDCWD, (USIZE)path, (USIZE)statbuf, (USIZE)0);
+			[[maybe_unused]] SSIZE r = System::Call(SYS_FSTATAT, AT_FDCWD, (USIZE)path, (USIZE)statbuf, (USIZE)0);
 			LOG_INFO("  [diag] SYS_FSTATAT returned %d", (INT32)r);
 		}
 
@@ -152,7 +152,7 @@ private:
 			// Try SYS_RMDIR (79)
 			LOG_INFO("  [diag] Probing SYS_RMDIR (79)...");
 			System::Call(SYS_MKDIRAT, AT_FDCWD, (USIZE)base, (USIZE)0755);
-			SSIZE r79 = System::Call((USIZE)79, (USIZE)base);
+			[[maybe_unused]] SSIZE r79 = System::Call((USIZE)79, (USIZE)base);
 			LOG_INFO("  [diag] syscall 79 returned %d", (INT32)r79);
 
 			// Try SYS_UNLINK (10)
@@ -162,7 +162,7 @@ private:
 			if (tfd >= 0)
 				System::Call(SYS_CLOSE, (USIZE)tfd);
 			LOG_INFO("  [diag] Probing SYS_UNLINK (10)...");
-			SSIZE r10 = System::Call((USIZE)10, (USIZE)fpath);
+			[[maybe_unused]] SSIZE r10 = System::Call((USIZE)10, (USIZE)fpath);
 			LOG_INFO("  [diag] syscall 10 returned %d", (INT32)r10);
 
 			// Dump /etc/name_to_sysnum via read
@@ -373,7 +373,7 @@ private:
 		// Test 1: Simple text
 		{
 			auto openResult = OpenTestFile(L"test_write_read.txt"_embed,
-											File::ModeCreate | File::ModeWrite | File::ModeTruncate);
+										   File::ModeCreate | File::ModeWrite | File::ModeTruncate);
 			if (!openResult)
 			{
 				LOG_ERROR("Failed to open test_write_read.txt for writing");
@@ -435,7 +435,7 @@ private:
 		// Test 2: Binary data
 		{
 			auto openResult = OpenTestFile(L"level1_dir1\\binary_test.dat"_embed,
-											File::ModeCreate | File::ModeWrite | File::ModeTruncate);
+										   File::ModeCreate | File::ModeWrite | File::ModeTruncate);
 			if (!openResult)
 			{
 				LOG_ERROR("Failed to open binary_test.dat for writing");
@@ -502,7 +502,7 @@ private:
 		// Test 3: File offset operations
 		{
 			auto openResult = OpenTestFile(L"level1_dir2\\offset_test.dat"_embed,
-											File::ModeCreate | File::ModeWrite | File::ModeTruncate);
+										   File::ModeCreate | File::ModeWrite | File::ModeTruncate);
 			if (!openResult)
 			{
 				LOG_ERROR("Failed to open offset_test.dat for writing");
