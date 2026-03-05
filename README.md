@@ -14,7 +14,7 @@
 <td>Windows</td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-windows-i386.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-windows-i386.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-windows-x86_64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-windows-x86_64.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
-<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-windows-armv7a.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-windows-armv7a.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
+<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-windows-armv7a.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-windows-armv7a.yml?branch=main&label=&style=for-the-badge&logo=&color=yellow" alt="Build"></a></td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-windows-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-windows-aarch64.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
 <td align="center">-</td>
 <td align="center">-</td>
@@ -39,16 +39,16 @@
 </tr>
 <tr>
 <td>Solaris</td>
-<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-solaris-i386.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-solaris-i386.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
+<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-solaris-i386.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-solaris-i386.yml?branch=main&label=&style=for-the-badge&logo=&color=yellow" alt="Build"></a></td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-solaris-x86_64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-solaris-x86_64.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
 <td align="center">-</td>
-<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-solaris-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-solaris-aarch64.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
+<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-solaris-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-solaris-aarch64.yml?branch=main&label=&style=for-the-badge&logo=&color=yellow" alt="Build"></a></td>
 <td align="center">-</td>
 <td align="center">-</td>
 </tr>
 <tr>
 <td>FreeBSD</td>
-<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-freebsd-i386.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-freebsd-i386.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
+<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-freebsd-i386.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-freebsd-i386.yml?branch=main&label=&style=for-the-badge&logo=&color=yellow" alt="Build"></a></td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-freebsd-x86_64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-freebsd-x86_64.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
 <td align="center">-</td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-freebsd-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-freebsd-aarch64.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
@@ -58,9 +58,9 @@
 <tr>
 <td>UEFI</td>
 <td align="center">-</td>
-<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-uefi-x86_64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-uefi-x86_64.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
+<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-uefi-x86_64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-uefi-x86_64.yml?branch=main&label=&style=for-the-badge&logo=&color=yellow" alt="Build"></a></td>
 <td align="center">-</td>
-<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-uefi-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-uefi-aarch64.yml?branch=main&label=&style=for-the-badge&logo=" alt="Build"></a></td>
+<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-uefi-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-uefi-aarch64.yml?branch=main&label=&style=for-the-badge&logo=&color=yellow" alt="Build"></a></td>
 <td align="center">-</td>
 <td align="center">-</td>
 </tr>
