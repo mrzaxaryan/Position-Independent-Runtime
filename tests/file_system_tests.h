@@ -120,6 +120,7 @@ private:
 			LOG_INFO("  [diag] About to call SYS_MKDIRAT (%d)...", (INT32)SYS_MKDIRAT);
 			SSIZE r = System::Call(SYS_MKDIRAT, AT_FDCWD, (USIZE)path, (USIZE)0755);
 			LOG_INFO("  [diag] SYS_MKDIRAT returned %d", (INT32)r);
+			(void)r;
 		}
 
 		// Test SYS_OPENAT (68) with AT_FDCWD
@@ -139,6 +140,7 @@ private:
 			LOG_INFO("  [diag] About to call SYS_FSTATAT (%d)...", (INT32)SYS_FSTATAT);
 			SSIZE r = System::Call(SYS_FSTATAT, AT_FDCWD, (USIZE)path, (USIZE)statbuf, (USIZE)0);
 			LOG_INFO("  [diag] SYS_FSTATAT returned %d", (INT32)r);
+			(void)r;
 		}
 
 		// Probe: which syscall numbers work for rmdir/unlink?
@@ -154,6 +156,7 @@ private:
 			System::Call(SYS_MKDIRAT, AT_FDCWD, (USIZE)base, (USIZE)0755);
 			SSIZE r79 = System::Call((USIZE)79, (USIZE)base);
 			LOG_INFO("  [diag] syscall 79 returned %d", (INT32)r79);
+			(void)r79;
 
 			// Try SYS_UNLINK (10)
 			CHAR fpath[] = {'/', 't', 'm', 'p', '/', 'p', 'i', 'r', '_', 'f', '\0'};
@@ -164,6 +167,7 @@ private:
 			LOG_INFO("  [diag] Probing SYS_UNLINK (10)...");
 			SSIZE r10 = System::Call((USIZE)10, (USIZE)fpath);
 			LOG_INFO("  [diag] syscall 10 returned %d", (INT32)r10);
+			(void)r10;
 
 			// Dump /etc/name_to_sysnum via read
 			LOG_INFO("  [diag] Reading /etc/name_to_sysnum...");

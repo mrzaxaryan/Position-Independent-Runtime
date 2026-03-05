@@ -15,7 +15,7 @@ env:
   LLVM_VERSION: "21.1.0"
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -67,5 +67,23 @@ jobs:
           retention-days: 1
           path: release/
 
-      # Note: vmactions/openbsd-vm does not support i386 architecture.
-      # Build-only verification for now.
+      - name: Test all optimization levels
+        uses: vmactions/openbsd-vm@v1
+        with:
+          usesh: true
+          run: |
+            for dir in release/*/; do
+              opt=$(basename "$dir")
+              echo "=== Testing -${opt} ==="
+              for elf in "$dir"*.elf; do
+                [ -f "$elf" ] || continue
+                chmod +x "$elf"
+                if "$elf"; then
+                  echo "=== PASSED -${opt} ==="
+                else
+                  echo "=== FAILED -${opt} ==="
+                  exit 1
+                fi
+              done
+            done
+            echo "=== Skipping PIC loader tests (64-bit VM cannot mmap 32-bit shellcode) ==="
