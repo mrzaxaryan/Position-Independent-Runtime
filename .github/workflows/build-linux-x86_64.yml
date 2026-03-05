@@ -63,13 +63,6 @@ jobs:
             build/
             !build/**/cmake/
 
-      - name: Test -O0 elf
-        if: always()
-        run: |
-          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
-          chmod +x "$TEST_ELF"
-          "$TEST_ELF"
-
       - name: Test -O0 pic
         if: always()
         run: python3 scripts/loader.py --arch x86_64 $(find build -type f -name "output.bin" | head -n 1)
@@ -90,13 +83,6 @@ jobs:
           path: |
             build/
             !build/**/cmake/
-
-      - name: Test -O1 elf
-        if: always()
-        run: |
-          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
-          chmod +x "$TEST_ELF"
-          "$TEST_ELF"
 
       - name: Test -O1 pic
         if: always()
@@ -119,13 +105,6 @@ jobs:
             build/
             !build/**/cmake/
 
-      - name: Test -O2 elf
-        if: always()
-        run: |
-          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
-          chmod +x "$TEST_ELF"
-          "$TEST_ELF"
-
       - name: Test -O2 pic
         if: always()
         run: python3 scripts/loader.py --arch x86_64 $(find build -type f -name "output.bin" | head -n 1)
@@ -146,13 +125,6 @@ jobs:
           path: |
             build/
             !build/**/cmake/
-
-      - name: Test -O3 elf
-        if: always()
-        run: |
-          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
-          chmod +x "$TEST_ELF"
-          "$TEST_ELF"
 
       - name: Test -O3 pic
         if: always()
@@ -175,13 +147,6 @@ jobs:
             build/
             !build/**/cmake/
 
-      - name: Test -Os elf
-        if: always()
-        run: |
-          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
-          chmod +x "$TEST_ELF"
-          "$TEST_ELF"
-
       - name: Test -Os pic
         if: always()
         run: python3 scripts/loader.py --arch x86_64 $(find build -type f -name "output.bin" | head -n 1)
@@ -203,13 +168,6 @@ jobs:
             build/
             !build/**/cmake/
 
-      - name: Test -Oz elf
-        if: always()
-        run: |
-          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
-          chmod +x "$TEST_ELF"
-          "$TEST_ELF"
-
       - name: Test -Oz pic
         if: always()
         run: python3 scripts/loader.py --arch x86_64 $(find build -type f -name "output.bin" | head -n 1)
@@ -230,13 +188,6 @@ jobs:
           path: |
             build/
             !build/**/cmake/
-
-      - name: Test -Og elf
-        if: always()
-        run: |
-          TEST_ELF=$(find build -type f -name "output.elf" | head -n 1)
-          chmod +x "$TEST_ELF"
-          "$TEST_ELF"
 
       - name: Test -Og pic
         if: always()

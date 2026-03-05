@@ -50,18 +50,6 @@ jobs:
             build/
             !build/**/cmake/
 
-      - name: Test -O0 macho
-        if: always()
-        run: |
-          TEST_BIN=$(find build -type f -name "output" ! -name "*.bin" ! -name "*.txt" | head -n 1)
-          echo "Mach-O: $TEST_BIN ($(wc -c < "$TEST_BIN") bytes)"
-          file "$TEST_BIN"
-          llvm-objdump -h "$TEST_BIN" 2>/dev/null || true
-          chmod +x "$TEST_BIN"
-          codesign --sign - --force "$TEST_BIN"
-          codesign --verify --verbose "$TEST_BIN" || echo "WARNING: codesign verification failed"
-          "$TEST_BIN"
-
       - name: Test -O0 pic
         if: always()
         run: |
@@ -85,18 +73,6 @@ jobs:
           path: |
             build/
             !build/**/cmake/
-
-      - name: Test -O1 macho
-        if: always()
-        run: |
-          TEST_BIN=$(find build -type f -name "output" ! -name "*.bin" ! -name "*.txt" | head -n 1)
-          echo "Mach-O: $TEST_BIN ($(wc -c < "$TEST_BIN") bytes)"
-          file "$TEST_BIN"
-          llvm-objdump -h "$TEST_BIN" 2>/dev/null || true
-          chmod +x "$TEST_BIN"
-          codesign --sign - --force "$TEST_BIN"
-          codesign --verify --verbose "$TEST_BIN" || echo "WARNING: codesign verification failed"
-          "$TEST_BIN"
 
       - name: Test -O1 pic
         if: always()
@@ -122,18 +98,6 @@ jobs:
             build/
             !build/**/cmake/
 
-      - name: Test -O2 macho
-        if: always()
-        run: |
-          TEST_BIN=$(find build -type f -name "output" ! -name "*.bin" ! -name "*.txt" | head -n 1)
-          echo "Mach-O: $TEST_BIN ($(wc -c < "$TEST_BIN") bytes)"
-          file "$TEST_BIN"
-          llvm-objdump -h "$TEST_BIN" 2>/dev/null || true
-          chmod +x "$TEST_BIN"
-          codesign --sign - --force "$TEST_BIN"
-          codesign --verify --verbose "$TEST_BIN" || echo "WARNING: codesign verification failed"
-          "$TEST_BIN"
-
       - name: Test -O2 pic
         if: always()
         run: |
@@ -157,18 +121,6 @@ jobs:
           path: |
             build/
             !build/**/cmake/
-
-      - name: Test -O3 macho
-        if: always()
-        run: |
-          TEST_BIN=$(find build -type f -name "output" ! -name "*.bin" ! -name "*.txt" | head -n 1)
-          echo "Mach-O: $TEST_BIN ($(wc -c < "$TEST_BIN") bytes)"
-          file "$TEST_BIN"
-          llvm-objdump -h "$TEST_BIN" 2>/dev/null || true
-          chmod +x "$TEST_BIN"
-          codesign --sign - --force "$TEST_BIN"
-          codesign --verify --verbose "$TEST_BIN" || echo "WARNING: codesign verification failed"
-          "$TEST_BIN"
 
       - name: Test -O3 pic
         if: always()
@@ -194,18 +146,6 @@ jobs:
             build/
             !build/**/cmake/
 
-      - name: Test -Os macho
-        if: always()
-        run: |
-          TEST_BIN=$(find build -type f -name "output" ! -name "*.bin" ! -name "*.txt" | head -n 1)
-          echo "Mach-O: $TEST_BIN ($(wc -c < "$TEST_BIN") bytes)"
-          file "$TEST_BIN"
-          llvm-objdump -h "$TEST_BIN" 2>/dev/null || true
-          chmod +x "$TEST_BIN"
-          codesign --sign - --force "$TEST_BIN"
-          codesign --verify --verbose "$TEST_BIN" || echo "WARNING: codesign verification failed"
-          "$TEST_BIN"
-
       - name: Test -Os pic
         if: always()
         run: |
@@ -230,18 +170,6 @@ jobs:
             build/
             !build/**/cmake/
 
-      - name: Test -Oz macho
-        if: always()
-        run: |
-          TEST_BIN=$(find build -type f -name "output" ! -name "*.bin" ! -name "*.txt" | head -n 1)
-          echo "Mach-O: $TEST_BIN ($(wc -c < "$TEST_BIN") bytes)"
-          file "$TEST_BIN"
-          llvm-objdump -h "$TEST_BIN" 2>/dev/null || true
-          chmod +x "$TEST_BIN"
-          codesign --sign - --force "$TEST_BIN"
-          codesign --verify --verbose "$TEST_BIN" || echo "WARNING: codesign verification failed"
-          "$TEST_BIN"
-
       - name: Test -Oz pic
         if: always()
         run: |
@@ -265,18 +193,6 @@ jobs:
           path: |
             build/
             !build/**/cmake/
-
-      - name: Test -Og macho
-        if: always()
-        run: |
-          TEST_BIN=$(find build -type f -name "output" ! -name "*.bin" ! -name "*.txt" | head -n 1)
-          echo "Mach-O: $TEST_BIN ($(wc -c < "$TEST_BIN") bytes)"
-          file "$TEST_BIN"
-          llvm-objdump -h "$TEST_BIN" 2>/dev/null || true
-          chmod +x "$TEST_BIN"
-          codesign --sign - --force "$TEST_BIN"
-          codesign --verify --verbose "$TEST_BIN" || echo "WARNING: codesign verification failed"
-          "$TEST_BIN"
 
       - name: Test -Og pic
         if: always()

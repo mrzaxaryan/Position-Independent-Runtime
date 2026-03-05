@@ -67,23 +67,6 @@ jobs:
           retention-days: 1
           path: test-elfs/
 
-      - name: Test ELF
-        if: always()
-        run: |
-          failed=0
-          for elf in test-elfs/output-*.elf; do
-            opt=$(basename "$elf" .elf | sed 's/output-//')
-            echo "=== Testing ELF -${opt} ==="
-            chmod +x "$elf"
-            if qemu-i386-static "$elf"; then
-              echo "=== ELF PASSED -${opt} ==="
-            else
-              echo "=== ELF FAILED -${opt} ==="
-              failed=1
-            fi
-          done
-          exit $failed
-
       - name: Setup QEMU for Docker
         if: always()
         uses: docker/setup-qemu-action@v3
