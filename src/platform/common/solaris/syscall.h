@@ -1,9 +1,9 @@
 /**
  * @file syscall.h
- * @brief Solaris syscall numbers and type definitions.
+ * @brief Oracle Solaris 11.4 syscall numbers and type definitions.
  *
- * @details Defines Solaris/illumos syscall numbers (sourced from illumos-gate
- * usr/src/uts/common/sys/syscall.h), POSIX constants, file descriptor flags,
+ * @details Defines Oracle Solaris 11.4 syscall numbers (sourced from
+ * /etc/name_to_sysnum on the CI VM), POSIX constants, file descriptor flags,
  * memory protection flags, socket options, errno values, and kernel structures
  * (SolarisDirent64, Timespec, Pollfd). Solaris uses the carry flag to indicate
  * errors (like BSD/macOS), not negative return values (like Linux). Syscall
@@ -11,6 +11,11 @@
  * AArch64), unlike Linux where they differ per architecture. Note that many
  * constant values differ from Linux (e.g., O_CREAT, MAP_ANONYMOUS, AT_FDCWD,
  * CLOCK_REALTIME, EINPROGRESS).
+ *
+ * IMPORTANT: Oracle Solaris 11.4 has a different syscall table from
+ * illumos-gate. Many legacy syscalls (open, stat, fstat, unlink, mkdir,
+ * rmdir) have been removed or repurposed. Use the *at variants (openat,
+ * fstatat, unlinkat, mkdirat) exclusively.
  */
 #pragma once
 
@@ -31,7 +36,7 @@ constexpr USIZE SYS_STAT       = 18;
 constexpr USIZE SYS_FSTAT      = 28;
 constexpr USIZE SYS_FSTATAT    = 66;
 constexpr USIZE SYS_UNLINK     = 10;
-constexpr USIZE SYS_UNLINKAT   = 65;
+constexpr USIZE SYS_UNLINKAT   = 76;
 
 // Directory operations
 constexpr USIZE SYS_MKDIR      = 80;
