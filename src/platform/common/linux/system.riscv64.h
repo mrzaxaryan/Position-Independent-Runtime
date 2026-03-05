@@ -15,7 +15,7 @@ class System
 public:
 
 	// Syscall with 0 arguments
-	static inline SSIZE Call(USIZE number)
+	static NOINLINE SSIZE Call(USIZE number)
 	{
 		register USIZE a0 __asm__("a0");
 		register USIZE a7 __asm__("a7") = number;
@@ -29,7 +29,7 @@ public:
 	}
 
 	// Syscall with 1 argument
-	static inline SSIZE Call(USIZE number, USIZE arg1)
+	static NOINLINE SSIZE Call(USIZE number, USIZE arg1)
 	{
 		register USIZE a0 __asm__("a0") = arg1;
 		register USIZE a7 __asm__("a7") = number;
@@ -43,7 +43,7 @@ public:
 	}
 
 	// Syscall with 2 arguments
-	static inline SSIZE Call(USIZE number, USIZE arg1, USIZE arg2)
+	static NOINLINE SSIZE Call(USIZE number, USIZE arg1, USIZE arg2)
 	{
 		register USIZE a0 __asm__("a0") = arg1;
 		register USIZE a1 __asm__("a1") = arg2;
@@ -58,7 +58,7 @@ public:
 	}
 
 	// Syscall with 3 arguments
-	static inline SSIZE Call(USIZE number, USIZE arg1, USIZE arg2, USIZE arg3)
+	static NOINLINE SSIZE Call(USIZE number, USIZE arg1, USIZE arg2, USIZE arg3)
 	{
 		register USIZE a0 __asm__("a0") = arg1;
 		register USIZE a1 __asm__("a1") = arg2;
@@ -74,7 +74,7 @@ public:
 	}
 
 	// Syscall with 4 arguments
-	static inline SSIZE Call(USIZE number, USIZE arg1, USIZE arg2, USIZE arg3, USIZE arg4)
+	static NOINLINE SSIZE Call(USIZE number, USIZE arg1, USIZE arg2, USIZE arg3, USIZE arg4)
 	{
 		register USIZE a0 __asm__("a0") = arg1;
 		register USIZE a1 __asm__("a1") = arg2;
@@ -91,7 +91,7 @@ public:
 	}
 
 	// Syscall with 5 arguments
-	static inline SSIZE Call(USIZE number, USIZE arg1, USIZE arg2, USIZE arg3, USIZE arg4, USIZE arg5)
+	static NOINLINE SSIZE Call(USIZE number, USIZE arg1, USIZE arg2, USIZE arg3, USIZE arg4, USIZE arg5)
 	{
 		register USIZE a0 __asm__("a0") = arg1;
 		register USIZE a1 __asm__("a1") = arg2;
@@ -109,7 +109,7 @@ public:
 	}
 
 	// Syscall with 6 arguments
-	static inline SSIZE Call(USIZE number, USIZE arg1, USIZE arg2, USIZE arg3, USIZE arg4, USIZE arg5, USIZE arg6)
+	static NOINLINE SSIZE Call(USIZE number, USIZE arg1, USIZE arg2, USIZE arg3, USIZE arg4, USIZE arg5, USIZE arg6)
 	{
 		register USIZE a0 __asm__("a0") = arg1;
 		register USIZE a1 __asm__("a1") = arg2;
