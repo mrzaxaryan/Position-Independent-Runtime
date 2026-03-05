@@ -45,11 +45,23 @@ list(APPEND PIR_BASE_FLAGS -fno-stack-protector)
 pir_add_link_flags(
     -e,entry_point
     --no-dynamic-linker
-    --no-pie
     --symbol-ordering-file=${PIR_ROOT_DIR}/cmake/data/function.order.freebsd
     --build-id=none
     -Map,${PIR_MAP_FILE}
 )
+
+# x86 requires --pie: with -flto=full the LTO code generator runs at link time
+# and selects its relocation model based on the output type. A non-PIE
+# executable causes the x86 backend to emit absolute addressing (movl
+# $0xNNNNNN, %reg) instead of RIP-relative (leaq offset(%rip), %reg) for
+# references to data embedded in .text. These absolute addresses are resolved at
+# the link-time VMA and break when the PIC binary is loaded at a different
+# address. --pie produces a PIE (ET_DYN) executable, which forces the LTO
+# backend to generate position-independent code. AArch64 and RISC-V are
+# unaffected because those ISAs always use PC-relative addressing.
+if(PIR_ARCH MATCHES "^(i386|x86_64)$")
+    pir_add_link_flags(--pie)
+endif()
 
 if(PIR_BUILD_TYPE STREQUAL "release")
     pir_add_link_flags(--strip-all --gc-sections)
