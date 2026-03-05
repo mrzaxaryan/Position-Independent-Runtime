@@ -7,10 +7,18 @@
   "linux_i386_bin": "101.7 KB",
   "freebsd_i386_exe": "98.4 KB",
   "freebsd_i386_bin": "97.4 KB",
+  "uefi_x86_64_exe": "93.0 KB",
+  "uefi_x86_64_bin": "91.4 KB",
+  "windows_x86_64_exe": "94.0 KB",
+  "windows_x86_64_bin": "93.3 KB",
   "freebsd_aarch64_exe": "79.2 KB",
   "freebsd_aarch64_bin": "78.5 KB",
   "linux_riscv32_exe": "86.6 KB",
   "linux_riscv32_bin": "85.5 KB",
+  "macos_x86_64_exe": "105.1 KB",
+  "macos_x86_64_bin": "88.8 KB",
+  "freebsd_x86_64_exe": "90.2 KB",
+  "freebsd_x86_64_bin": "88.7 KB",
   "linux_riscv64_exe": "77.4 KB",
   "linux_riscv64_bin": "72.4 KB",
   "uefi_aarch64_exe": "89.5 KB",
@@ -20,5 +28,7 @@
   "macos_aarch64_exe": "125.7 KB",
   "macos_aarch64_bin": "76.6 KB",
   "linux_aarch64_exe": "79.9 KB",
-  "linux_aarch64_bin": "78.5 KB"
+  "linux_aarch64_bin": "78.5 KB",
+  "windows_i386_exe": "100.5 KB",
+  "windows_i386_bin": "99.5 KB"
 }
