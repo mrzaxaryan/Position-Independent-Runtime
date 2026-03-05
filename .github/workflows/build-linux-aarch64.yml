@@ -32,7 +32,7 @@ jobs:
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           set -e
-          TARBALL="LLVM-${{ env.LLVM_VERSION }}-Linux-AArch64.tar.xz"
+          TARBALL="LLVM-${{ env.LLVM_VERSION }}-Linux-ARM64.tar.xz"
           URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/${TARBALL}"
           wget -q "$URL"
           sudo mkdir -p /opt/llvm
