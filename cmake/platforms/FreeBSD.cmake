@@ -19,10 +19,12 @@ list(APPEND PIR_INCLUDE_PATHS
 if(PIR_ARCH STREQUAL "x86_64")
     # Disable the red zone for x86_64 (same rationale as Linux/macOS/Solaris)
     list(APPEND PIR_BASE_FLAGS -mno-red-zone)
-    # Clang defaults to -fPIC for FreeBSD x86_64, producing GOT-relative
-    # constant accesses that require loader-initialized GOT. This freestanding
-    # binary has no GOT, so force direct addressing (same as Solaris x86_64).
-    list(APPEND PIR_BASE_FLAGS -fno-pic)
+    # Clang defaults to -fPIC and -fPIE for FreeBSD x86_64. PIC/PIE produce
+    # GOT-relative constant accesses that require a loader-initialized GOT,
+    # which is unavailable in this freestanding binary. Disable both at compile
+    # time and link time so the LTO backend generates direct addressing.
+    list(APPEND PIR_BASE_FLAGS -fno-pic -fno-pie)
+    list(APPEND PIR_BASE_LINK_FLAGS -fno-pic -no-pie)
 endif()
 
 # Disable stack protector — Clang enables -fstack-protector by default for
@@ -34,6 +36,7 @@ list(APPEND PIR_BASE_FLAGS -fno-stack-protector)
 pir_add_link_flags(
     -e,entry_point
     --no-dynamic-linker
+    --no-pie
     --symbol-ordering-file=${PIR_ROOT_DIR}/cmake/data/function.order.freebsd
     --build-id=none
     -Map,${PIR_MAP_FILE}
