@@ -67,13 +67,11 @@ jobs:
           path: release/
 
       - name: Setup QEMU for Docker
-        if: always()
         uses: docker/setup-qemu-action@v3
         with:
           platforms: linux/386
 
       - name: Test all optimization levels
-        if: always()
         run: |
           docker run --rm --platform linux/386 \
             -v "$PWD:/work" -w /work \
