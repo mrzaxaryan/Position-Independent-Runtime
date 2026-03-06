@@ -53,310 +53,56 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y qemu-system-x86 qemu-system-arm ovmf libslirp0 qemu-system-common dosfstools mtools
 
-      - name: Build -O0
+      - name: Build all optimization levels
         run: |
-          rm -rf build
-          cmake --preset uefi-x86_64-release -DOPTIMIZATION_LEVEL=O0
-          cmake --build --preset uefi-x86_64-release
+          for opt in O0 O1 O2 O3 Os Oz Og; do
+            echo "=== Building -${opt} ==="
+            rm -rf build
+            cmake --preset uefi-x86_64-release -DOPTIMIZATION_LEVEL=${opt}
+            cmake --build --preset uefi-x86_64-release
+            mkdir -p "release/${opt}"
+            find build/release -type f -not -path "*/cmake/*" -exec cp {} "release/${opt}/" \;
+          done
 
-      - name: Upload Artifacts -O0
+      - name: Upload all artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-uefi-x86_64-O0
+          name: build-uefi-x86_64
           retention-days: 1
-          path: |
-            build/
-            !build/**/cmake/
+          path: release/
 
-      - name: Test -O0 uefi
+      - name: Test all optimization levels
         run: |
-          set -o pipefail
-          DISK_IMG="uefi-disk.img"
-          dd if=/dev/zero of="$DISK_IMG" bs=1M count=64 2>/dev/null
-          mkfs.fat -F 32 -n UEFI "$DISK_IMG" >/dev/null
-          mmd -i "$DISK_IMG" ::/EFI
-          mmd -i "$DISK_IMG" ::/EFI/BOOT
-          mcopy -i "$DISK_IMG" build/release/uefi/x86_64/output.efi "::EFI/BOOT/BOOTX64.EFI"
+          for dir in release/*/; do
+            opt=$(basename "$dir")
+            echo "=== Testing -${opt} ==="
+            for efi in "$dir"*.efi; do
+              [ -f "$efi" ] || continue
+              echo "=== Testing UEFI -${opt} ==="
+              DISK_IMG="uefi-disk.img"
+              dd if=/dev/zero of="$DISK_IMG" bs=1M count=64 2>/dev/null
+              mkfs.fat -F 32 -n UEFI "$DISK_IMG" >/dev/null
+              mmd -i "$DISK_IMG" ::/EFI
+              mmd -i "$DISK_IMG" ::/EFI/BOOT
+              mcopy -i "$DISK_IMG" "$efi" "::EFI/BOOT/BOOTX64.EFI"
 
-          set +e
-          timeout 180s qemu-system-x86_64 \
-            -bios /usr/share/ovmf/OVMF.fd \
-            -drive file="$DISK_IMG",format=raw,if=ide,index=0 \
-            -m 512 \
-            -nographic \
-            -serial mon:stdio \
-            -nic user,model=e1000 \
-            -no-reboot 2>&1 | sed -u 's/?\\[[0-9;]*m//g' | tee /tmp/qemu-output.log
-          set -e
-          rm -f "$DISK_IMG"
-          if grep -q "ALL TESTS PASSED" /tmp/qemu-output.log; then
-            echo "Tests passed!"
-          else
-            echo "Tests failed or output not found!"
-            exit 1
-          fi
-
-      - name: Build -O1
-        run: |
-          rm -rf build
-          cmake --preset uefi-x86_64-release -DOPTIMIZATION_LEVEL=O1
-          cmake --build --preset uefi-x86_64-release
-
-      - name: Upload Artifacts -O1
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-uefi-x86_64-O1
-          retention-days: 1
-          path: |
-            build/
-            !build/**/cmake/
-
-      - name: Test -O1 uefi
-        run: |
-          set -o pipefail
-          DISK_IMG="uefi-disk.img"
-          dd if=/dev/zero of="$DISK_IMG" bs=1M count=64 2>/dev/null
-          mkfs.fat -F 32 -n UEFI "$DISK_IMG" >/dev/null
-          mmd -i "$DISK_IMG" ::/EFI
-          mmd -i "$DISK_IMG" ::/EFI/BOOT
-          mcopy -i "$DISK_IMG" build/release/uefi/x86_64/output.efi "::EFI/BOOT/BOOTX64.EFI"
-
-          set +e
-          timeout 180s qemu-system-x86_64 \
-            -bios /usr/share/ovmf/OVMF.fd \
-            -drive file="$DISK_IMG",format=raw,if=ide,index=0 \
-            -m 512 \
-            -nographic \
-            -serial mon:stdio \
-            -nic user,model=e1000 \
-            -no-reboot 2>&1 | sed -u 's/?\\[[0-9;]*m//g' | tee /tmp/qemu-output.log
-          set -e
-          rm -f "$DISK_IMG"
-          if grep -q "ALL TESTS PASSED" /tmp/qemu-output.log; then
-            echo "Tests passed!"
-          else
-            echo "Tests failed or output not found!"
-            exit 1
-          fi
-
-      - name: Build -O2
-        run: |
-          rm -rf build
-          cmake --preset uefi-x86_64-release -DOPTIMIZATION_LEVEL=O2
-          cmake --build --preset uefi-x86_64-release
-
-      - name: Upload Artifacts -O2
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-uefi-x86_64-O2
-          retention-days: 1
-          path: |
-            build/
-            !build/**/cmake/
-
-      - name: Test -O2 uefi
-        run: |
-          set -o pipefail
-          DISK_IMG="uefi-disk.img"
-          dd if=/dev/zero of="$DISK_IMG" bs=1M count=64 2>/dev/null
-          mkfs.fat -F 32 -n UEFI "$DISK_IMG" >/dev/null
-          mmd -i "$DISK_IMG" ::/EFI
-          mmd -i "$DISK_IMG" ::/EFI/BOOT
-          mcopy -i "$DISK_IMG" build/release/uefi/x86_64/output.efi "::EFI/BOOT/BOOTX64.EFI"
-
-          set +e
-          timeout 180s qemu-system-x86_64 \
-            -bios /usr/share/ovmf/OVMF.fd \
-            -drive file="$DISK_IMG",format=raw,if=ide,index=0 \
-            -m 512 \
-            -nographic \
-            -serial mon:stdio \
-            -nic user,model=e1000 \
-            -no-reboot 2>&1 | sed -u 's/?\\[[0-9;]*m//g' | tee /tmp/qemu-output.log
-          set -e
-          rm -f "$DISK_IMG"
-          if grep -q "ALL TESTS PASSED" /tmp/qemu-output.log; then
-            echo "Tests passed!"
-          else
-            echo "Tests failed or output not found!"
-            exit 1
-          fi
-
-      - name: Build -O3
-        run: |
-          rm -rf build
-          cmake --preset uefi-x86_64-release -DOPTIMIZATION_LEVEL=O3
-          cmake --build --preset uefi-x86_64-release
-
-      - name: Upload Artifacts -O3
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-uefi-x86_64-O3
-          retention-days: 1
-          path: |
-            build/
-            !build/**/cmake/
-
-      - name: Test -O3 uefi
-        run: |
-          set -o pipefail
-          DISK_IMG="uefi-disk.img"
-          dd if=/dev/zero of="$DISK_IMG" bs=1M count=64 2>/dev/null
-          mkfs.fat -F 32 -n UEFI "$DISK_IMG" >/dev/null
-          mmd -i "$DISK_IMG" ::/EFI
-          mmd -i "$DISK_IMG" ::/EFI/BOOT
-          mcopy -i "$DISK_IMG" build/release/uefi/x86_64/output.efi "::EFI/BOOT/BOOTX64.EFI"
-
-          set +e
-          timeout 180s qemu-system-x86_64 \
-            -bios /usr/share/ovmf/OVMF.fd \
-            -drive file="$DISK_IMG",format=raw,if=ide,index=0 \
-            -m 512 \
-            -nographic \
-            -serial mon:stdio \
-            -nic user,model=e1000 \
-            -no-reboot 2>&1 | sed -u 's/?\\[[0-9;]*m//g' | tee /tmp/qemu-output.log
-          set -e
-          rm -f "$DISK_IMG"
-          if grep -q "ALL TESTS PASSED" /tmp/qemu-output.log; then
-            echo "Tests passed!"
-          else
-            echo "Tests failed or output not found!"
-            exit 1
-          fi
-
-      - name: Build -Os
-        run: |
-          rm -rf build
-          cmake --preset uefi-x86_64-release -DOPTIMIZATION_LEVEL=Os
-          cmake --build --preset uefi-x86_64-release
-
-      - name: Upload Artifacts -Os
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-uefi-x86_64-Os
-          retention-days: 1
-          path: |
-            build/
-            !build/**/cmake/
-
-      - name: Test -Os uefi
-        run: |
-          set -o pipefail
-          DISK_IMG="uefi-disk.img"
-          dd if=/dev/zero of="$DISK_IMG" bs=1M count=64 2>/dev/null
-          mkfs.fat -F 32 -n UEFI "$DISK_IMG" >/dev/null
-          mmd -i "$DISK_IMG" ::/EFI
-          mmd -i "$DISK_IMG" ::/EFI/BOOT
-          mcopy -i "$DISK_IMG" build/release/uefi/x86_64/output.efi "::EFI/BOOT/BOOTX64.EFI"
-
-          set +e
-          timeout 180s qemu-system-x86_64 \
-            -bios /usr/share/ovmf/OVMF.fd \
-            -drive file="$DISK_IMG",format=raw,if=ide,index=0 \
-            -m 512 \
-            -nographic \
-            -serial mon:stdio \
-            -nic user,model=e1000 \
-            -no-reboot 2>&1 | sed -u 's/?\\[[0-9;]*m//g' | tee /tmp/qemu-output.log
-          set -e
-          rm -f "$DISK_IMG"
-          if grep -q "ALL TESTS PASSED" /tmp/qemu-output.log; then
-            echo "Tests passed!"
-          else
-            echo "Tests failed or output not found!"
-            exit 1
-          fi
-
-      - name: Build -Oz
-        run: |
-          rm -rf build
-          cmake --preset uefi-x86_64-release -DOPTIMIZATION_LEVEL=Oz
-          cmake --build --preset uefi-x86_64-release
-
-      - name: Upload Artifacts -Oz
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-uefi-x86_64-Oz
-          retention-days: 1
-          path: |
-            build/
-            !build/**/cmake/
-
-      - name: Test -Oz uefi
-        run: |
-          set -o pipefail
-          DISK_IMG="uefi-disk.img"
-          dd if=/dev/zero of="$DISK_IMG" bs=1M count=64 2>/dev/null
-          mkfs.fat -F 32 -n UEFI "$DISK_IMG" >/dev/null
-          mmd -i "$DISK_IMG" ::/EFI
-          mmd -i "$DISK_IMG" ::/EFI/BOOT
-          mcopy -i "$DISK_IMG" build/release/uefi/x86_64/output.efi "::EFI/BOOT/BOOTX64.EFI"
-
-          set +e
-          timeout 180s qemu-system-x86_64 \
-            -bios /usr/share/ovmf/OVMF.fd \
-            -drive file="$DISK_IMG",format=raw,if=ide,index=0 \
-            -m 512 \
-            -nographic \
-            -serial mon:stdio \
-            -nic user,model=e1000 \
-            -no-reboot 2>&1 | sed -u 's/?\\[[0-9;]*m//g' | tee /tmp/qemu-output.log
-          set -e
-          rm -f "$DISK_IMG"
-          if grep -q "ALL TESTS PASSED" /tmp/qemu-output.log; then
-            echo "Tests passed!"
-          else
-            echo "Tests failed or output not found!"
-            exit 1
-          fi
-
-      - name: Build -Og
-        run: |
-          rm -rf build
-          cmake --preset uefi-x86_64-release -DOPTIMIZATION_LEVEL=Og
-          cmake --build --preset uefi-x86_64-release
-
-      - name: Upload Artifacts -Og
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-uefi-x86_64-Og
-          retention-days: 1
-          path: |
-            build/
-            !build/**/cmake/
-
-      - name: Test -Og uefi
-        run: |
-          set -o pipefail
-          DISK_IMG="uefi-disk.img"
-          dd if=/dev/zero of="$DISK_IMG" bs=1M count=64 2>/dev/null
-          mkfs.fat -F 32 -n UEFI "$DISK_IMG" >/dev/null
-          mmd -i "$DISK_IMG" ::/EFI
-          mmd -i "$DISK_IMG" ::/EFI/BOOT
-          mcopy -i "$DISK_IMG" build/release/uefi/x86_64/output.efi "::EFI/BOOT/BOOTX64.EFI"
-
-          set +e
-          timeout 180s qemu-system-x86_64 \
-            -bios /usr/share/ovmf/OVMF.fd \
-            -drive file="$DISK_IMG",format=raw,if=ide,index=0 \
-            -m 512 \
-            -nographic \
-            -serial mon:stdio \
-            -nic user,model=e1000 \
-            -no-reboot 2>&1 | sed -u 's/?\\[[0-9;]*m//g' | tee /tmp/qemu-output.log
-          set -e
-          rm -f "$DISK_IMG"
-          if grep -q "ALL TESTS PASSED" /tmp/qemu-output.log; then
-            echo "Tests passed!"
-          else
-            echo "Tests failed or output not found!"
-            exit 1
-          fi
+              set +e
+              timeout 180s qemu-system-x86_64 \
+                -bios /usr/share/ovmf/OVMF.fd \
+                -drive file="$DISK_IMG",format=raw,if=ide,index=0 \
+                -m 512 \
+                -nographic \
+                -serial mon:stdio \
+                -nic user,model=e1000 \
+                -no-reboot 2>&1 | sed -u 's/?\\[[0-9;]*m//g' | tee /tmp/qemu-output.log
+              set -e
+              rm -f "$DISK_IMG"
+              if grep -q "ALL TESTS PASSED" /tmp/qemu-output.log; then
+                echo "=== UEFI PASSED -${opt} ==="
+              else
+                echo "=== UEFI FAILED -${opt} ==="
+                exit 1
+              fi
+            done
+          done
