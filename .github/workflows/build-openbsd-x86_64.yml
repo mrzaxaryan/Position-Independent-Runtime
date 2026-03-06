@@ -77,6 +77,17 @@ jobs:
             for dir in release/*/; do
               opt=$(basename "$dir")
               echo "=== Testing -${opt} ==="
+              for elf in "$dir"*.elf; do
+                [ -f "$elf" ] || continue
+                chmod +x "$elf"
+                echo "=== Testing ELF -${opt} ==="
+                if "$elf"; then
+                  echo "=== ELF PASSED -${opt} ==="
+                else
+                  echo "=== ELF FAILED -${opt} ==="
+                  exit 1
+                fi
+              done
               for bin in "$dir"*.bin; do
                 [ -f "$bin" ] || continue
                 echo "=== Testing PIC -${opt} ==="
