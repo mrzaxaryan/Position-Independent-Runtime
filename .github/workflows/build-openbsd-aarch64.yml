@@ -58,6 +58,8 @@ jobs:
             mkdir -p "release/${opt}"
             find build/release -type f -not -path "*/cmake/*" -exec cp {} "release/${opt}/" \;
           done
+          echo "=== ELF Diagnostics (O0) ==="
+          llvm-readelf -h -l -n release/O0/output.elf
 
       - name: Upload all artifacts
         if: always()

@@ -19,6 +19,19 @@ list(APPEND PIR_INCLUDE_PATHS
 if(PIR_ARCH STREQUAL "x86_64")
     # Disable the red zone for x86_64 (same rationale as Linux/macOS/Solaris)
     list(APPEND PIR_BASE_FLAGS -mno-red-zone)
+    # Disable Intel CET (Control-flow Enforcement Technology). Clang emits a
+    # .note.gnu.property section with the IBT feature flag by default, which
+    # adds PT_GNU_PROPERTY and a PT_NOTE containing only GNU metadata. The
+    # OpenBSD kernel's elf_os_pt_note() scans PT_NOTE segments for an
+    # NT_OPENBSD_IDENT note; if the only PT_NOTE is the GNU property note,
+    # the kernel fails to identify the binary as OpenBSD and returns ENOEXEC.
+    list(APPEND PIR_BASE_FLAGS -fcf-protection=none)
+elseif(PIR_ARCH STREQUAL "aarch64")
+    # Disable ARM branch protection (BTI + PAC). Same rationale as x86_64
+    # CET above: Clang emits .note.gnu.property with BTI/PAC feature flags
+    # by default for OpenBSD aarch64 targets, which produces a PT_NOTE
+    # segment without the required NT_OPENBSD_IDENT note.
+    list(APPEND PIR_BASE_FLAGS -mbranch-protection=none)
 endif()
 
 # Prevent GOT indirection. Clang's OpenBSD target defaults to PIC, producing
