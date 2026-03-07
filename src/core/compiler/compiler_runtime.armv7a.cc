@@ -661,6 +661,42 @@ extern "C"
 	}
 
 	/**
+	 * __aeabi_memcpy - Unaligned memory copy
+	 *
+	 * @see ARM EABI §4.3.4
+	 *      https://github.com/ARM-software/abi-aa/blob/main/rtabi32/rtabi32.rst
+	 */
+	COMPILER_RUNTIME void __aeabi_memcpy(void *dest, const void *src, USIZE n)
+	{
+		memcpy(dest, src, n);
+	}
+
+	/**
+	 * __aeabi_memclr - Unaligned memory clear (zero fill)
+	 *
+	 * @see ARM EABI §4.3.4
+	 *      https://github.com/ARM-software/abi-aa/blob/main/rtabi32/rtabi32.rst
+	 */
+	COMPILER_RUNTIME void __aeabi_memclr(void *dest, USIZE n)
+	{
+		memset(dest, 0, n);
+	}
+
+	/**
+	 * __aeabi_memset - Unaligned memory set
+	 *
+	 * @note ARM EABI swaps the parameter order vs standard memset:
+	 *       __aeabi_memset(dest, n, c) vs memset(dest, c, n)
+	 *
+	 * @see ARM EABI §4.3.4
+	 *      https://github.com/ARM-software/abi-aa/blob/main/rtabi32/rtabi32.rst
+	 */
+	COMPILER_RUNTIME void __aeabi_memset(void *dest, USIZE n, INT32 c)
+	{
+		memset(dest, c, n);
+	}
+
+	/**
 	 * __aeabi_memclr4 - 4-byte aligned memory clear (zero fill)
 	 *
 	 * @see ARM EABI §4.3.4
