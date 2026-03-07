@@ -21,6 +21,10 @@
 
 #if defined(ARCHITECTURE_ARMV7A)
 
+// Forward declarations for CRT-free memory operations (defined in memory.cc)
+extern "C" PVOID memcpy(PVOID dest, PCVOID src, USIZE count);
+extern "C" PVOID memset(PVOID dest, INT32 ch, USIZE count);
+
 // =============================================================================
 // 32-bit Division Helpers
 // =============================================================================
@@ -628,6 +632,54 @@ extern "C"
 			intValue = mantissaWithOne << (exponent - 52);
 
 		return intValue;
+	}
+
+	// =========================================================================
+	// ARM EABI: Memory Operation Functions
+	// =========================================================================
+
+	/**
+	 * __aeabi_memcpy4 - 4-byte aligned memory copy
+	 *
+	 * @see ARM EABI §4.3.4
+	 *      https://github.com/ARM-software/abi-aa/blob/main/rtabi32/rtabi32.rst
+	 */
+	COMPILER_RUNTIME void __aeabi_memcpy4(void *dest, const void *src, USIZE n)
+	{
+		memcpy(dest, src, n);
+	}
+
+	/**
+	 * __aeabi_memcpy8 - 8-byte aligned memory copy
+	 *
+	 * @see ARM EABI §4.3.4
+	 *      https://github.com/ARM-software/abi-aa/blob/main/rtabi32/rtabi32.rst
+	 */
+	COMPILER_RUNTIME void __aeabi_memcpy8(void *dest, const void *src, USIZE n)
+	{
+		memcpy(dest, src, n);
+	}
+
+	/**
+	 * __aeabi_memclr4 - 4-byte aligned memory clear (zero fill)
+	 *
+	 * @see ARM EABI §4.3.4
+	 *      https://github.com/ARM-software/abi-aa/blob/main/rtabi32/rtabi32.rst
+	 */
+	COMPILER_RUNTIME void __aeabi_memclr4(void *dest, USIZE n)
+	{
+		memset(dest, 0, n);
+	}
+
+	/**
+	 * __aeabi_memclr8 - 8-byte aligned memory clear (zero fill)
+	 *
+	 * @see ARM EABI §4.3.4
+	 *      https://github.com/ARM-software/abi-aa/blob/main/rtabi32/rtabi32.rst
+	 */
+	COMPILER_RUNTIME void __aeabi_memclr8(void *dest, USIZE n)
+	{
+		memset(dest, 0, n);
 	}
 
 } // extern "C"
