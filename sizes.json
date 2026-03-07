@@ -45,6 +45,8 @@
   "macos_aarch64_bin": "76.6 KB",
   "linux_aarch64_exe": "78.7 KB",
   "linux_aarch64_bin": "77.3 KB",
+  "ios_aarch64_exe": "124.7 KB",
+  "ios_aarch64_bin": "76.5 KB",
   "solaris_x86_64_exe": "92.4 KB",
   "solaris_x86_64_bin": "87.4 KB",
   "windows_i386_exe": "99.5 KB",
