@@ -1,8 +1,6 @@
 {
   "linux_armv7a_exe": "103.7 KB",
   "linux_armv7a_bin": "102.6 KB",
-  "linux_mips64_exe": "177.2 KB",
-  "linux_mips64_bin": "105.3 KB",
   "windows_aarch64_exe": "88.5 KB",
   "windows_aarch64_bin": "87.9 KB",
   "freebsd_riscv64_exe": "83.8 KB",
@@ -27,8 +25,6 @@
   "macos_x86_64_bin": "87.4 KB",
   "freebsd_x86_64_exe": "88.7 KB",
   "freebsd_x86_64_bin": "87.3 KB",
-  "linux_riscv64_exe": "76.3 KB",
-  "linux_riscv64_bin": "71.3 KB",
   "solaris_i386_exe": "98.7 KB",
   "solaris_i386_bin": "94.3 KB",
   "solaris_aarch64_exe": "141.9 KB",
