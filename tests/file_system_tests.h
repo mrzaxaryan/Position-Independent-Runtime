@@ -7,6 +7,10 @@
 #include "platform/common/solaris/syscall.h"
 #include "platform/common/solaris/system.h"
 #include "platform/fs/posix/posix_path.h"
+#elif defined(PLATFORM_LINUX_MIPS64)
+#include "platform/common/linux/syscall.h"
+#include "platform/common/linux/system.h"
+#include "platform/fs/posix/posix_path.h"
 #endif
 
 class FileSystemTests
@@ -204,6 +208,110 @@ private:
 		}
 
 		LOG_INFO("  [diag] All diagnostics done.");
+#elif defined(PLATFORM_LINUX_MIPS64)
+		LOG_INFO("  [diag] Testing raw syscalls on MIPS64 Linux...");
+		LOG_INFO("  [diag] SYS_WRITE ok (you see this)");
+
+		// Test SYS_MKDIR (5083) — legacy mkdir
+		{
+			CHAR path[] = {'/', 't', 'm', 'p', '/', 'p', 'i', 'r', '_', 'm', 'k', 'd', '\0'};
+			LOG_INFO("  [diag] SYS_MKDIR=%d, calling mkdir(\"/tmp/pir_mkd\", 0755)...", (INT32)SYS_MKDIR);
+			SSIZE r = System::Call(SYS_MKDIR, (USIZE)path, (USIZE)0755);
+			LOG_INFO("  [diag] SYS_MKDIR returned %d (neg = errno)", (INT32)r);
+			// Cleanup
+			if (r == 0)
+				System::Call(SYS_RMDIR, (USIZE)path);
+		}
+
+		// Test SYS_MKDIRAT (5252) — *at variant
+		{
+			CHAR path[] = {'/', 't', 'm', 'p', '/', 'p', 'i', 'r', '_', 'm', 'k', 'a', 't', '\0'};
+			LOG_INFO("  [diag] SYS_MKDIRAT=%d, AT_FDCWD=%d, calling mkdirat...", (INT32)SYS_MKDIRAT, (INT32)AT_FDCWD);
+			SSIZE r = System::Call(SYS_MKDIRAT, AT_FDCWD, (USIZE)path, (USIZE)0755);
+			LOG_INFO("  [diag] SYS_MKDIRAT returned %d", (INT32)r);
+			if (r == 0)
+				System::Call(SYS_RMDIR, (USIZE)path);
+		}
+
+		// Test SYS_OPEN (5002) — legacy open
+		{
+			CHAR path[] = {'/', 'd', 'e', 'v', '/', 'n', 'u', 'l', 'l', '\0'};
+			LOG_INFO("  [diag] SYS_OPEN=%d, calling open(\"/dev/null\", O_RDONLY)...", (INT32)SYS_OPEN);
+			SSIZE r = System::Call(SYS_OPEN, (USIZE)path, (USIZE)O_RDONLY, (USIZE)0);
+			LOG_INFO("  [diag] SYS_OPEN returned %d", (INT32)r);
+			if (r >= 0)
+				System::Call(SYS_CLOSE, (USIZE)r);
+		}
+
+		// Test SYS_OPENAT (5247)
+		{
+			CHAR path[] = {'/', 'd', 'e', 'v', '/', 'n', 'u', 'l', 'l', '\0'};
+			LOG_INFO("  [diag] SYS_OPENAT=%d, calling openat(AT_FDCWD, \"/dev/null\", O_RDONLY)...", (INT32)SYS_OPENAT);
+			SSIZE r = System::Call(SYS_OPENAT, AT_FDCWD, (USIZE)path, (USIZE)O_RDONLY, (USIZE)0);
+			LOG_INFO("  [diag] SYS_OPENAT returned %d", (INT32)r);
+			if (r >= 0)
+				System::Call(SYS_CLOSE, (USIZE)r);
+		}
+
+		// Test SYS_STAT (5004) — check /tmp exists
+		{
+			CHAR path[] = {'/', 't', 'm', 'p', '\0'};
+			UINT8 statbuf[256];
+			LOG_INFO("  [diag] SYS_STAT=%d, calling stat(\"/tmp\")...", (INT32)SYS_STAT);
+			SSIZE r = System::Call(SYS_STAT, (USIZE)path, (USIZE)statbuf);
+			LOG_INFO("  [diag] SYS_STAT returned %d", (INT32)r);
+		}
+
+		// Test SYS_SOCKET (5041) — create TCP socket
+		{
+			LOG_INFO("  [diag] SYS_SOCKET=%d, SOCK_STREAM=%d, calling socket(AF_INET=%d, SOCK_STREAM, IPPROTO_TCP=6)...",
+				(INT32)SYS_SOCKET, (INT32)SOCK_STREAM, (INT32)AF_INET);
+			SSIZE r = System::Call(SYS_SOCKET, (USIZE)AF_INET, (USIZE)SOCK_STREAM, (USIZE)6);
+			LOG_INFO("  [diag] SYS_SOCKET returned %d", (INT32)r);
+			if (r >= 0)
+				System::Call(SYS_CLOSE, (USIZE)r);
+		}
+
+		// Test SYS_GETRANDOM (5313)
+		{
+			UINT8 buf[8];
+			LOG_INFO("  [diag] SYS_GETRANDOM=%d, calling getrandom(buf, 8, 0)...", (INT32)SYS_GETRANDOM);
+			SSIZE r = System::Call(SYS_GETRANDOM, (USIZE)buf, (USIZE)8, (USIZE)0);
+			LOG_INFO("  [diag] SYS_GETRANDOM returned %d, bytes: %02x %02x %02x %02x",
+				(INT32)r, (INT32)buf[0], (INT32)buf[1], (INT32)buf[2], (INT32)buf[3]);
+		}
+
+		// Test SYS_GETDENTS64 (5308) — read /tmp directory
+		{
+			CHAR path[] = {'/', 't', 'm', 'p', '\0'};
+			SSIZE dfd = System::Call(SYS_OPEN, (USIZE)path, (USIZE)(O_RDONLY | O_DIRECTORY));
+			LOG_INFO("  [diag] open(/tmp, O_RDONLY|O_DIRECTORY) fd=%d (O_DIRECTORY=0x%x)", (INT32)dfd, (INT32)O_DIRECTORY);
+			if (dfd >= 0)
+			{
+				UINT8 dbuf[256];
+				SSIZE n = System::Call(SYS_GETDENTS64, (USIZE)dfd, (USIZE)dbuf, (USIZE)sizeof(dbuf));
+				LOG_INFO("  [diag] SYS_GETDENTS64=%d returned %d", (INT32)SYS_GETDENTS64, (INT32)n);
+				System::Call(SYS_CLOSE, (USIZE)dfd);
+			}
+		}
+
+		// Test mkdir in CWD (same as what test suite does)
+		{
+			CHAR path[] = {'p', 'i', 'r', '_', 'd', 'i', 'a', 'g', '_', 'd', 'i', 'r', '\0'};
+			LOG_INFO("  [diag] mkdir(\"pir_diag_dir\", 0755) via SYS_MKDIR=%d...", (INT32)SYS_MKDIR);
+			SSIZE r = System::Call(SYS_MKDIR, (USIZE)path, (USIZE)0755);
+			LOG_INFO("  [diag] returned %d", (INT32)r);
+			if (r == 0)
+			{
+				// Try stat to confirm it's a directory
+				UINT8 statbuf[256];
+				SSIZE sr = System::Call(SYS_STAT, (USIZE)path, (USIZE)statbuf);
+				LOG_INFO("  [diag] stat(\"pir_diag_dir\") returned %d", (INT32)sr);
+				System::Call(SYS_RMDIR, (USIZE)path);
+			}
+		}
+
+		LOG_INFO("  [diag] All MIPS64 diagnostics done.");
 #endif
 		return true;
 	}
