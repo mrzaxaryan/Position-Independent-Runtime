@@ -16,7 +16,7 @@ env:
 
 jobs:
   build:
-    runs-on: windows-2022
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -61,53 +61,49 @@ jobs:
         id: cache-llvm
         uses: actions/cache@v4
         with:
-          path: C:\Program Files\LLVM
-          key: llvm-${{ env.LLVM_VERSION }}-windows-2022
+          path: /opt/llvm
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
 
       - name: Install Ninja
-        shell: pwsh
-        run: choco install ninja -y
+        run: sudo apt-get install -y ninja-build
 
       - name: Install LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        shell: pwsh
         run: |
-          $ErrorActionPreference = "Stop"
-          $ver = "${{ env.LLVM_VERSION }}"
-          $exe = "LLVM-$ver-win64.exe"
-          $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-$ver/$exe"
-          Invoke-WebRequest -Uri $url -OutFile $exe
-          Start-Process -FilePath ".\$exe" -ArgumentList "/S" -Wait
+          ver="${{ env.LLVM_VERSION }}"
+          tarball="LLVM-${ver}-Linux-X64.tar.xz"
+          url="https://github.com/llvm/llvm-project/releases/download/llvmorg-${ver}/${tarball}"
+          curl -fSL "$url" -o "$tarball"
+          sudo mkdir -p /opt/llvm
+          sudo tar -xf "$tarball" --strip-components=1 -C /opt/llvm
+          rm "$tarball"
 
       - name: Add LLVM to PATH
-        shell: pwsh
-        run: '"C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Append'
+        run: echo "/opt/llvm/bin" >> "$GITHUB_PATH"
 
       - name: Build with -Oz
-        shell: pwsh
         run: |
           cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz
           cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Rename artifacts
-        shell: pwsh
         run: |
-          $ext = "${{ matrix.ext }}"
-          $name = "${{ matrix.platform }}-${{ matrix.arch }}"
-          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          ext="${{ matrix.ext }}"
+          name="${{ matrix.platform }}-${{ matrix.arch }}"
+          mkdir -p artifacts
 
           # Find and rename the main executable
-          if ($ext -eq "") {
-            $main = Get-ChildItem -Path build -Recurse | Where-Object { $_.Name -eq "output" -and -not $_.PSIsContainer } | Select-Object -First 1
-            if ($main) { Copy-Item $main.FullName "artifacts/$name" }
-          } else {
-            $main = Get-ChildItem -Path build -Recurse -Filter "output.$ext" | Select-Object -First 1
-            if ($main) { Copy-Item $main.FullName "artifacts/$name.$ext" }
-          }
+          if [ -z "$ext" ]; then
+            main_file=$(find build -name "output" -type f | head -n 1)
+            [ -n "$main_file" ] && cp "$main_file" "artifacts/$name"
+          else
+            main_file=$(find build -name "output.${ext}" -type f | head -n 1)
+            [ -n "$main_file" ] && cp "$main_file" "artifacts/$name.$ext"
+          fi
 
           # Find and rename the .bin (raw shellcode)
-          $bin = Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1
-          if ($bin) { Copy-Item $bin.FullName "artifacts/$name.bin" }
+          bin_file=$(find build -name "output.bin" -type f | head -n 1)
+          [ -n "$bin_file" ] && cp "$bin_file" "artifacts/$name.bin"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

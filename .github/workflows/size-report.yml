@@ -17,7 +17,7 @@ env:
 
 jobs:
   build:
-    runs-on: windows-2022
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -62,48 +62,46 @@ jobs:
         id: cache-llvm
         uses: actions/cache@v4
         with:
-          path: C:\Program Files\LLVM
-          key: llvm-${{ env.LLVM_VERSION }}-windows-2022
+          path: /opt/llvm
+          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
 
       - name: Install Ninja
-        shell: pwsh
-        run: choco install ninja -y
+        run: sudo apt-get install -y ninja-build
 
       - name: Install LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        shell: pwsh
         run: |
-          $ErrorActionPreference = "Stop"
-          $ver = "${{ env.LLVM_VERSION }}"
-          $exe = "LLVM-$ver-win64.exe"
-          $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-$ver/$exe"
-          Invoke-WebRequest -Uri $url -OutFile $exe
-          Start-Process -FilePath ".\$exe" -ArgumentList "/S" -Wait
+          ver="${{ env.LLVM_VERSION }}"
+          tarball="LLVM-${ver}-Linux-X64.tar.xz"
+          url="https://github.com/llvm/llvm-project/releases/download/llvmorg-${ver}/${tarball}"
+          curl -fSL "$url" -o "$tarball"
+          sudo mkdir -p /opt/llvm
+          sudo tar -xf "$tarball" --strip-components=1 -C /opt/llvm
+          rm "$tarball"
 
       - name: Add LLVM to PATH
-        shell: pwsh
-        run: '"C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Append'
+        run: echo "/opt/llvm/bin" >> "$GITHUB_PATH"
 
       - name: Build with -Oz (no logging, no tests)
-        shell: pwsh
         run: |
           cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz -DENABLE_LOGGING=OFF
           cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
 
       - name: Get sizes
         id: sizes
-        shell: pwsh
         run: |
-          $ext = "${{ matrix.ext }}"
-          if ($ext -eq "") {
-            $main = Get-ChildItem -Path build -Recurse | Where-Object { $_.Name -eq "output" -and -not $_.PSIsContainer } | Select-Object -First 1
-          } else {
-            $main = Get-ChildItem -Path build -Recurse -Filter "output.$ext" | Select-Object -First 1
-          }
-          $bin = Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1
-          $mainSize = if ($main) { $main.Length } else { 0 }
-          $binSize  = if ($bin)  { $bin.Length  } else { 0 }
-          echo "result=${{ matrix.platform }}-${{ matrix.arch }},$mainSize,$binSize" >> $env:GITHUB_OUTPUT
+          ext="${{ matrix.ext }}"
+          if [ -z "$ext" ]; then
+            main_file=$(find build -name "output" -type f | head -n 1)
+          else
+            main_file=$(find build -name "output.${ext}" -type f | head -n 1)
+          fi
+          bin_file=$(find build -name "output.bin" -type f | head -n 1)
+          main_size=0
+          bin_size=0
+          [ -n "$main_file" ] && main_size=$(stat -c%s "$main_file")
+          [ -n "$bin_file" ] && bin_size=$(stat -c%s "$bin_file")
+          echo "result=${{ matrix.platform }}-${{ matrix.arch }},${main_size},${bin_size}" >> "$GITHUB_OUTPUT"
 
       - name: Upload size data
         uses: actions/upload-artifact@v4
