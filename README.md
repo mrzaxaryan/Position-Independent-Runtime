@@ -1,15 +1,10 @@
 # Position-Independent Runtime (PIR): A Modern C++ Approach to Zero-Dependency, Position-Independent Code Generation
 
-<details>
-<summary><b>Badge Legend</b></summary>
+<sub>
 
-| Color | Description |
-|-------|-------------|
-| ![](https://img.shields.io/badge/%E2%80%8B-lightgrey?style=flat-square) | Compilation only — no CI runner available to execute tests |
-| ![](https://img.shields.io/badge/%E2%80%8B-yellow?style=flat-square) | ELF/EXE built and tests pass, but no PIC injection test — no suitable CI runner available |
-| ![](https://img.shields.io/badge/%E2%80%8B-brightgreen?style=flat-square) | ELF/EXE built and tests pass + `.text` section extracted and tested as injected PIC shellcode |
+![](https://img.shields.io/badge/%E2%80%8B-orange?style=flat-square) Compile only (no runner) &nbsp;&nbsp; ![](https://img.shields.io/badge/%E2%80%8B-yellow?style=flat-square) Tests pass &nbsp;&nbsp; ![](https://img.shields.io/badge/%E2%80%8B-brightgreen?style=flat-square) Shellcode tests pass
 
-</details>
+</sub>
 
 <table>
 <tr>
@@ -28,7 +23,7 @@
 <td>Windows</td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-windows-i386.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-windows-i386.yml?branch=main&label=%E2%80%8B&labelColor=brightgreen&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-windows-x86_64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-windows-x86_64.yml?branch=main&label=%E2%80%8B&labelColor=brightgreen&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
-<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-windows-armv7a.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-windows-armv7a.yml?branch=main&label=%E2%80%8B&labelColor=lightgrey&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
+<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-windows-armv7a.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-windows-armv7a.yml?branch=main&label=%E2%80%8B&labelColor=orange&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-windows-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-windows-aarch64.yml?branch=main&label=%E2%80%8B&labelColor=brightgreen&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
 <td align="center">-</td>
 <td align="center">-</td>
@@ -54,7 +49,7 @@
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-linux-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-linux-aarch64.yml?branch=main&label=%E2%80%8B&labelColor=brightgreen&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-linux-riscv32.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-linux-riscv32.yml?branch=main&label=%E2%80%8B&labelColor=yellow&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-linux-riscv64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-linux-riscv64.yml?branch=main&label=%E2%80%8B&labelColor=brightgreen&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
-<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-linux-mips64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-linux-mips64.yml?branch=main&label=%E2%80%8B&labelColor=lightgrey&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
+<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-linux-mips64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-linux-mips64.yml?branch=main&label=%E2%80%8B&labelColor=orange&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
 </tr>
 <tr>
 <td align="center">4</td>
@@ -62,7 +57,7 @@
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-solaris-i386.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-solaris-i386.yml?branch=main&label=%E2%80%8B&labelColor=yellow&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-solaris-x86_64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-solaris-x86_64.yml?branch=main&label=%E2%80%8B&labelColor=brightgreen&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
 <td align="center">-</td>
-<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-solaris-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-solaris-aarch64.yml?branch=main&label=%E2%80%8B&labelColor=lightgrey&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
+<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-solaris-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-solaris-aarch64.yml?branch=main&label=%E2%80%8B&labelColor=orange&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
 <td align="center">-</td>
 <td align="center">-</td>
 <td align="center">-</td>
@@ -96,6 +91,17 @@
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-android-x86_64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-android-x86_64.yml?branch=main&label=%E2%80%8B&labelColor=brightgreen&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-android-armv7a.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-android-armv7a.yml?branch=main&label=%E2%80%8B&labelColor=brightgreen&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
 <td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-android-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-android-aarch64.yml?branch=main&label=%E2%80%8B&labelColor=brightgreen&style=for-the-badge" alt="Build" width="130" height="28"></a></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td align="center">-</td>
+</tr>
+<tr>
+<td align="center">8</td>
+<td>iOS</td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td align="center"><img src="https://img.shields.io/badge/%E2%80%8B-orange?style=for-the-badge" alt="Build" width="130" height="28"></td>
 <td align="center">-</td>
 <td align="center">-</td>
 <td align="center">-</td>
@@ -187,6 +193,17 @@
 <td align="center"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrzaxaryan%2FPosition-Independent-Runtime%2Fbuild-sizes%2Fsizes.json&query=%24.android_x86_64_bin&label=&style=for-the-badge&color=blue" alt="Bin" width="130" height="28"></td>
 <td align="center"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrzaxaryan%2FPosition-Independent-Runtime%2Fbuild-sizes%2Fsizes.json&query=%24.android_armv7a_bin&label=&style=for-the-badge&color=blue" alt="Bin" width="130" height="28"></td>
 <td align="center"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrzaxaryan%2FPosition-Independent-Runtime%2Fbuild-sizes%2Fsizes.json&query=%24.android_aarch64_bin&label=&style=for-the-badge&color=blue" alt="Bin" width="130" height="28"></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td align="center">-</td>
+</tr>
+<tr>
+<td align="center">8</td>
+<td>iOS</td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td align="center"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmrzaxaryan%2FPosition-Independent-Runtime%2Fbuild-sizes%2Fsizes.json&query=%24.ios_aarch64_bin&label=&style=for-the-badge&color=blue" alt="Bin" width="130" height="28"></td>
 <td align="center">-</td>
 <td align="center">-</td>
 <td align="center">-</td>
@@ -515,7 +532,7 @@ Position-Independent Runtime is designed around the following goals:
    Support for C++23 language features without requiring runtime initialization.
 
 6. **Multi-architecture and multi-platform support**
-   Compatibility across x86, x64, ARM, RISC-V, and MIPS64 architectures on Windows, Linux, macOS, Android, Solaris, FreeBSD, and UEFI. The platform abstraction layer cleanly separates OS-specific code, making it straightforward to add support for additional operating systems by implementing the appropriate low-level interfaces.
+   Compatibility across x86, x64, ARM, RISC-V, and MIPS64 architectures on Windows, Linux, macOS, iOS, Android, Solaris, FreeBSD, and UEFI. The platform abstraction layer cleanly separates OS-specific code, making it straightforward to add support for additional operating systems by implementing the appropriate low-level interfaces.
 
 7. **Full optimization support**
    Supports all LLVM optimization levels, allowing builds from unoptimized (`-O0`) to maximum optimization (`-O3`) or size optimization (`-Oz`).
@@ -547,6 +564,7 @@ Position-Independent Runtime is built on a clean three-layer abstraction that se
 - Windows: PEB walking, PE parsing, NTAPI-based operations
 - Linux: Direct syscall interface without libc
 - macOS: Direct BSD syscall interface without libc
+- iOS: Direct BSD syscall interface without libc (shared XNU kernel with macOS)
 - FreeBSD: Direct BSD syscall interface without libc
 - Android: Direct Linux kernel syscall interface without libc/Bionic
 - Console I/O, file system, networking, memory allocation
@@ -651,7 +669,6 @@ This project is still a work in progress. Below is a list of remaining tasks and
 ### Platforms
 - NetBSD
 - OpenBSD
-- iOS
 - HaikuOS
 - QNX
 
@@ -668,8 +685,8 @@ This project is still a work in progress. Below is a list of remaining tasks and
 
 ## Conclusion
 
-Position-Independent Runtime is not merely a library—it is a proof of concept that challenges long-held assumptions about C++, binary formats, and position-independent execution across multiple platforms. This project compiles into a PE file on Windows, an ELF file on Linux, Solaris, FreeBSD, and Android, a Mach-O file on macOS, or a UEFI application, supporting i386, x86_64, armv7a, aarch64, riscv32, riscv64, and mips64 architectures. The resulting binary can run both as a standalone executable and as shellcode after extracting the `.text` section. By eliminating `.rdata`, CRT dependencies, relocations, and static API references, Position-Independent Runtime enables a new class of C++ programs capable of running in environments where traditional C++ has never been viable.
+Position-Independent Runtime is not merely a library—it is a proof of concept that challenges long-held assumptions about C++, binary formats, and position-independent execution across multiple platforms. This project compiles into a PE file on Windows, an ELF file on Linux, Solaris, FreeBSD, and Android, a Mach-O file on macOS and iOS, or a UEFI application, supporting i386, x86_64, armv7a, aarch64, riscv32, riscv64, and mips64 architectures. The resulting binary can run both as a standalone executable and as shellcode after extracting the `.text` section. By eliminating `.rdata`, CRT dependencies, relocations, and static API references, Position-Independent Runtime enables a new class of C++ programs capable of running in environments where traditional C++ has never been viable.
 
-The platform abstraction layer demonstrates that the same high-level C++23 codebase can target fundamentally different operating systems—Windows with its PEB walking and NTAPI interfaces, Linux, Android, and Solaris with their direct syscall approaches, macOS and FreeBSD with their BSD syscall interfaces, and UEFI with its boot/runtime services—while maintaining identical position-independence guarantees. As demonstrated throughout this work, modern C++23 compile-time features and carefully selected compiler intrinsics play a key role in achieving these guarantees, allowing expressive high-level code while preserving strict low-level control.
+The platform abstraction layer demonstrates that the same high-level C++23 codebase can target fundamentally different operating systems—Windows with its PEB walking and NTAPI interfaces, Linux, Android, and Solaris with their direct syscall approaches, macOS, iOS, and FreeBSD with their BSD syscall interfaces, and UEFI with its boot/runtime services—while maintaining identical position-independence guarantees. As demonstrated throughout this work, modern C++23 compile-time features and carefully selected compiler intrinsics play a key role in achieving these guarantees, allowing expressive high-level code while preserving strict low-level control.
 
 This project is intended for researchers, systems programmers, and security engineers who are willing to work beneath high-level abstractions and take full control of the machine. Any unauthorized or malicious use of this software is strictly prohibited and falls outside the scope of the project's design goals.

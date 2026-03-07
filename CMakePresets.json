@@ -25,6 +25,7 @@
     { "name": "platform-solaris", "hidden": true, "cacheVariables": { "PLATFORM": "solaris" } },
     { "name": "platform-freebsd", "hidden": true, "cacheVariables": { "PLATFORM": "freebsd" } },
     { "name": "platform-android", "hidden": true, "cacheVariables": { "PLATFORM": "android" } },
+    { "name": "platform-ios",     "hidden": true, "cacheVariables": { "PLATFORM": "ios" } },
 
     { "name": "arch-i386",    "hidden": true, "cacheVariables": { "ARCHITECTURE": "i386" } },
     { "name": "arch-x86_64",  "hidden": true, "cacheVariables": { "ARCHITECTURE": "x86_64" } },
@@ -351,6 +352,19 @@
       "displayName": "Android AArch64 (Release)",
       "inherits": ["base", "platform-android", "arch-aarch64", "type-release"],
       "binaryDir": "${sourceDir}/build/release/android/aarch64/cmake"
+    },
+
+    {
+      "name": "ios-aarch64-debug",
+      "displayName": "iOS AArch64 (Debug)",
+      "inherits": ["base", "platform-ios", "arch-aarch64", "type-debug"],
+      "binaryDir": "${sourceDir}/build/debug/ios/aarch64/cmake"
+    },
+    {
+      "name": "ios-aarch64-release",
+      "displayName": "iOS AArch64 (Release)",
+      "inherits": ["base", "platform-ios", "arch-aarch64", "type-release"],
+      "binaryDir": "${sourceDir}/build/release/ios/aarch64/cmake"
     }
   ],
   "buildPresets": [
@@ -411,7 +425,10 @@
     { "name": "android-armv7a-debug",    "configurePreset": "android-armv7a-debug" },
     { "name": "android-armv7a-release",  "configurePreset": "android-armv7a-release" },
     { "name": "android-aarch64-debug",   "configurePreset": "android-aarch64-debug" },
-    { "name": "android-aarch64-release", "configurePreset": "android-aarch64-release" }
+    { "name": "android-aarch64-release", "configurePreset": "android-aarch64-release" },
+
+    { "name": "ios-aarch64-debug",       "configurePreset": "ios-aarch64-debug" },
+    { "name": "ios-aarch64-release",     "configurePreset": "ios-aarch64-release" }
   ],
   "testPresets": [
     {

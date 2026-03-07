@@ -34,6 +34,8 @@ set(_triple_android_x86_64  "x86_64-linux-android")
 set(_triple_android_armv7a  "armv7a-linux-androideabi")
 set(_triple_android_aarch64 "aarch64-linux-android")
 
+set(_triple_ios_aarch64     "arm64-apple-ios14.0")
+
 
 # Platform extensions
 set(_ext_windows ".exe")
@@ -43,6 +45,7 @@ set(_ext_uefi ".efi")
 set(_ext_solaris ".elf")
 set(_ext_freebsd ".elf")
 set(_ext_android ".elf")
+set(_ext_ios "")
 
 
 # =============================================================================

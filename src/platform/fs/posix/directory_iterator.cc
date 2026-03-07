@@ -10,6 +10,9 @@
 #elif defined(PLATFORM_MACOS)
 #include "platform/common/macos/syscall.h"
 #include "platform/common/macos/system.h"
+#elif defined(PLATFORM_IOS)
+#include "platform/common/ios/syscall.h"
+#include "platform/common/ios/system.h"
 #elif defined(PLATFORM_SOLARIS)
 #include "platform/common/solaris/syscall.h"
 #include "platform/common/solaris/system.h"
@@ -118,7 +121,7 @@ Result<void, Error> DirectoryIterator::Next()
 		bytesRead = (INT32)System::Call(SYS_GETDENTS, (USIZE)handle, (USIZE)buffer, sizeof(buffer));
 #elif defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID) || defined(PLATFORM_SOLARIS)
 		bytesRead = (INT32)System::Call(SYS_GETDENTS64, (USIZE)handle, (USIZE)buffer, sizeof(buffer));
-#elif defined(PLATFORM_MACOS)
+#elif defined(PLATFORM_MACOS) || defined(PLATFORM_IOS)
 		USIZE basep = 0;
 		bytesRead = (INT32)System::Call(SYS_GETDIRENTRIES64, (USIZE)handle, (USIZE)buffer, sizeof(buffer), (USIZE)&basep);
 #elif defined(PLATFORM_FREEBSD)
@@ -137,7 +140,7 @@ Result<void, Error> DirectoryIterator::Next()
 	LinuxDirent64 *d = (LinuxDirent64 *)(buffer + bufferPosition);
 #elif defined(PLATFORM_SOLARIS)
 	SolarisDirent64 *d = (SolarisDirent64 *)(buffer + bufferPosition);
-#elif defined(PLATFORM_MACOS)
+#elif defined(PLATFORM_MACOS) || defined(PLATFORM_IOS)
 	BsdDirent64 *d = (BsdDirent64 *)(buffer + bufferPosition);
 #elif defined(PLATFORM_FREEBSD)
 	FreeBsdDirent *d = (FreeBsdDirent *)(buffer + bufferPosition);

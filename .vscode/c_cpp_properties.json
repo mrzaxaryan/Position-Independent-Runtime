@@ -439,6 +439,25 @@
                 "${commonInclude}",
                 "${workspaceFolder}/src/platform/common/freebsd"
             ]
+        },
+        {
+            "name": "ios-aarch64",
+            "compilerPath": "C:/Program Files/LLVM/bin/clang.exe",
+            "intelliSenseMode": "macos-clang-arm64",
+            "cStandard": "c17",
+            "cppStandard": "c++23",
+
+            "defines": [
+                "ARCHITECTURE_AARCH64",
+                "PLATFORM_IOS",
+                "PLATFORM_IOS_AARCH64",
+                "ENABLE_LOGGING"
+            ],
+            "includePath": [
+                "${commonInclude}",
+                "${workspaceFolder}/src/platform/common/macos",
+                "${workspaceFolder}/src/platform/common/ios"
+            ]
         }
     ]
 }

@@ -8,6 +8,9 @@
 #elif defined(PLATFORM_MACOS)
 #include "platform/common/macos/syscall.h"
 #include "platform/common/macos/system.h"
+#elif defined(PLATFORM_IOS)
+#include "platform/common/ios/syscall.h"
+#include "platform/common/ios/system.h"
 #elif defined(PLATFORM_SOLARIS)
 #include "platform/common/solaris/syscall.h"
 #include "platform/common/solaris/system.h"
@@ -20,7 +23,7 @@ DateTime DateTime::Now()
 {
 	DateTime dt;
 
-#if defined(PLATFORM_MACOS)
+#if defined(PLATFORM_MACOS) || defined(PLATFORM_IOS)
 	Timeval tv;
 
 	// Get current time using gettimeofday syscall
@@ -68,7 +71,7 @@ DateTime DateTime::Now()
 
 UINT64 DateTime::GetMonotonicNanoseconds()
 {
-#if defined(PLATFORM_MACOS)
+#if defined(PLATFORM_MACOS) || defined(PLATFORM_IOS)
 	// macOS has no clock_gettime BSD syscall — it's userspace-only via commpage.
 	// Use gettimeofday instead (not truly monotonic, but functional).
 	Timeval tv;

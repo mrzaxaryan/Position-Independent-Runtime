@@ -11,6 +11,9 @@
 #elif defined(PLATFORM_MACOS)
 #include "platform/common/macos/syscall.h"
 #include "platform/common/macos/system.h"
+#elif defined(PLATFORM_IOS)
+#include "platform/common/ios/syscall.h"
+#include "platform/common/ios/system.h"
 #elif defined(PLATFORM_SOLARIS)
 #include "platform/common/solaris/syscall.h"
 #include "platform/common/solaris/system.h"
@@ -126,7 +129,7 @@ Result<void, Error> File::Exists(PCWCHAR path)
 
 #if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID) || defined(PLATFORM_FREEBSD)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32)) || defined(PLATFORM_SOLARIS)
 	SSIZE result = System::Call(SYS_FSTATAT, AT_FDCWD, (USIZE)utf8Path, (USIZE)statbuf, 0);
-#elif defined(PLATFORM_MACOS)
+#elif defined(PLATFORM_MACOS) || defined(PLATFORM_IOS)
 	SSIZE result = System::Call(SYS_STAT64, (USIZE)utf8Path, (USIZE)statbuf);
 #else
 	SSIZE result = System::Call(SYS_STAT, (USIZE)utf8Path, (USIZE)statbuf);

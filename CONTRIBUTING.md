@@ -34,7 +34,7 @@ cmake --build --preset {platform}-{arch}-{build_type}
 ./build/{build_type}/{platform}/{arch}/output.{exe|elf|efi}
 ```
 
-Presets: `windows|linux|macos|freebsd|uefi` x `i386|x86_64|armv7a|aarch64` x `debug|release`
+Presets: `windows|linux|macos|ios|freebsd|uefi` x `i386|x86_64|armv7a|aarch64` x `debug|release`
 
 ---
 
@@ -146,6 +146,7 @@ src/                        # Source layers
       windows/              # PEB, PE, NTDLL, System, Kernel32, types
       linux/                # Syscall numbers, System::Call, result conversion
       macos/                # Syscall numbers, System::Call, result conversion
+      ios/                  # iOS wrappers (reuses macOS XNU syscall interface)
       solaris/              # Syscall numbers, System::Call, result conversion
       freebsd/              # Syscall numbers, System::Call, result conversion
       uefi/                 # EFI types, protocols, boot/runtime services
@@ -164,7 +165,7 @@ src/                        # Source layers
     network/                # Socket
       windows/              # AFD (Auxiliary Function Driver)
       linux/                # Direct socket syscalls
-      macos/                # Direct socket syscalls
+      macos/                # Direct socket syscalls (shared with iOS)
       solaris/              # Direct socket syscalls
       freebsd/              # Direct socket syscalls
       uefi/                 # EFI_TCP4/TCP6_PROTOCOL
@@ -173,6 +174,7 @@ src/                        # Source layers
       posix/                # Shared POSIX date_time, process
       linux/                # Linux-specific environment, platform, process
       macos/                # macOS-specific environment, platform, process
+      ios/                  # iOS-specific platform (ExitProcess, dyld_stub_binder)
       solaris/              # Solaris-specific environment, platform, process
       freebsd/              # FreeBSD-specific environment, platform, process
       uefi/                 # UEFI-specific system operations

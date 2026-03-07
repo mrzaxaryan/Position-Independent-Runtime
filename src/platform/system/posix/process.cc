@@ -20,6 +20,9 @@
 #elif defined(PLATFORM_MACOS)
 #include "platform/common/macos/syscall.h"
 #include "platform/common/macos/system.h"
+#elif defined(PLATFORM_IOS)
+#include "platform/common/ios/syscall.h"
+#include "platform/common/ios/system.h"
 #elif defined(PLATFORM_SOLARIS)
 #include "platform/common/solaris/syscall.h"
 #include "platform/common/solaris/system.h"

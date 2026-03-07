@@ -5,7 +5,7 @@
 include_guard(GLOBAL)
 
 pir_get_target_info()
-pir_filter_sources(windows linux macos uefi solaris freebsd)
+pir_filter_sources(windows linux macos uefi solaris freebsd ios)
 
 # Android reuses Linux kernel syscalls — re-add the Linux common include path
 # that pir_filter_sources(linux) removed.
