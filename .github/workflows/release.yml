@@ -12,7 +12,7 @@ on:
         type: string
 
 env:
-  LLVM_VERSION: "21.1.0"
+  LLVM_VERSION: "22.1.0"
 
 jobs:
   build:
