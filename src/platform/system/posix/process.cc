@@ -14,6 +14,9 @@
 #if defined(PLATFORM_LINUX)
 #include "platform/common/linux/syscall.h"
 #include "platform/common/linux/system.h"
+#elif defined(PLATFORM_ANDROID)
+#include "platform/common/android/syscall.h"
+#include "platform/common/android/system.h"
 #elif defined(PLATFORM_MACOS)
 #include "platform/common/macos/syscall.h"
 #include "platform/common/macos/system.h"
@@ -32,7 +35,7 @@
 // Fork syscall wrapper
 Result<SSIZE, Error> Process::Fork() noexcept
 {
-#if defined(PLATFORM_LINUX) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))
 	// aarch64/riscv uses clone with SIGCHLD flag for fork-like behavior
 	constexpr USIZE SIGCHLD = 17;
 	SSIZE result = System::Call(SYS_CLONE, SIGCHLD, 0, 0, 0, 0);
@@ -52,7 +55,7 @@ Result<SSIZE, Error> Process::Fork() noexcept
 // Dup2 syscall wrapper
 Result<SSIZE, Error> Process::Dup2(SSIZE oldfd, SSIZE newfd) noexcept
 {
-#if defined(PLATFORM_LINUX) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))
 	// aarch64/riscv uses dup3 with flags=0 instead of dup2
 	SSIZE result = System::Call(SYS_DUP3, (USIZE)oldfd, (USIZE)newfd, 0);
 #elif defined(PLATFORM_SOLARIS)

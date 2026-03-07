@@ -2,6 +2,9 @@
 #if defined(PLATFORM_LINUX)
 #include "platform/common/linux/syscall.h"
 #include "platform/common/linux/system.h"
+#elif defined(PLATFORM_ANDROID)
+#include "platform/common/android/syscall.h"
+#include "platform/common/android/system.h"
 #elif defined(PLATFORM_MACOS)
 #include "platform/common/macos/syscall.h"
 #include "platform/common/macos/system.h"

@@ -29,6 +29,10 @@ set(_triple_freebsd_x86_64  "x86_64-unknown-freebsd14.0")
 set(_triple_freebsd_aarch64 "aarch64-unknown-freebsd14.0")
 set(_triple_freebsd_riscv64 "riscv64-unknown-freebsd14.0")
 
+set(_triple_android_x86_64  "x86_64-linux-android")
+set(_triple_android_armv7a  "armv7a-linux-androideabi")
+set(_triple_android_aarch64 "aarch64-linux-android")
+
 
 # Platform extensions
 set(_ext_windows ".exe")
@@ -37,6 +41,7 @@ set(_ext_macos "")
 set(_ext_uefi ".efi")
 set(_ext_solaris ".elf")
 set(_ext_freebsd ".elf")
+set(_ext_android ".elf")
 
 
 # =============================================================================

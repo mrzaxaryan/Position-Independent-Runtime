@@ -14,10 +14,15 @@
 
 #include "platform/system/environment.h"
 
-#if defined(PLATFORM_LINUX)
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
 
+#if defined(PLATFORM_ANDROID)
+#include "platform/common/android/syscall.h"
+#include "platform/common/android/system.h"
+#else
 #include "platform/common/linux/syscall.h"
 #include "platform/common/linux/system.h"
+#endif
 #include "core/memory/memory.h"
 
 // Helper to compare strings (case-sensitive for Linux)

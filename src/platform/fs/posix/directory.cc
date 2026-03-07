@@ -5,6 +5,9 @@
 #if defined(PLATFORM_LINUX)
 #include "platform/common/linux/syscall.h"
 #include "platform/common/linux/system.h"
+#elif defined(PLATFORM_ANDROID)
+#include "platform/common/android/syscall.h"
+#include "platform/common/android/system.h"
 #elif defined(PLATFORM_MACOS)
 #include "platform/common/macos/syscall.h"
 #include "platform/common/macos/system.h"
@@ -28,7 +31,7 @@ Result<void, Error> Directory::Create(PCWCHAR path)
 	// Mode 0755 (rwxr-xr-x)
 	INT32 mode = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
 
-#if (defined(PLATFORM_LINUX) || defined(PLATFORM_FREEBSD)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32)) || defined(PLATFORM_SOLARIS)
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID) || defined(PLATFORM_FREEBSD)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32)) || defined(PLATFORM_SOLARIS)
 	SSIZE result = System::Call(SYS_MKDIRAT, AT_FDCWD, (USIZE)utf8Path, mode);
 #else
 	SSIZE result = System::Call(SYS_MKDIR, (USIZE)utf8Path, mode);
@@ -43,7 +46,7 @@ Result<void, Error> Directory::Delete(PCWCHAR path)
 	CHAR utf8Path[1024];
 	NormalizePathToUtf8(path, Span<CHAR>(utf8Path));
 
-#if (defined(PLATFORM_LINUX) || defined(PLATFORM_FREEBSD)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32)) || defined(PLATFORM_SOLARIS)
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID) || defined(PLATFORM_FREEBSD)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32)) || defined(PLATFORM_SOLARIS)
 	SSIZE result = System::Call(SYS_UNLINKAT, AT_FDCWD, (USIZE)utf8Path, AT_REMOVEDIR);
 #else
 	SSIZE result = System::Call(SYS_RMDIR, (USIZE)utf8Path);

@@ -4,6 +4,9 @@
 #if defined(PLATFORM_LINUX)
 #include "platform/common/linux/syscall.h"
 #include "platform/common/linux/system.h"
+#elif defined(PLATFORM_ANDROID)
+#include "platform/common/android/syscall.h"
+#include "platform/common/android/system.h"
 #elif defined(PLATFORM_MACOS)
 #include "platform/common/macos/syscall.h"
 #include "platform/common/macos/system.h"
@@ -42,7 +45,7 @@ Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 	}
 
 	SSIZE fd;
-#if (defined(PLATFORM_LINUX) || defined(PLATFORM_FREEBSD)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID) || defined(PLATFORM_FREEBSD)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))
 	// RISC-V: omit O_DIRECTORY — QEMU user-mode does not translate the
 	// asm-generic O_DIRECTORY (0x4000) to the host value, so the flag is
 	// mis-interpreted as O_DIRECT on x86_64 hosts.  Safety is preserved
@@ -113,7 +116,7 @@ Result<void, Error> DirectoryIterator::Next()
 		// LP64 Solaris: getdents64 triggers SIGSYS for 64-bit processes.
 		// Use getdents (81) which natively returns 64-bit dirent on LP64.
 		bytesRead = (INT32)System::Call(SYS_GETDENTS, (USIZE)handle, (USIZE)buffer, sizeof(buffer));
-#elif defined(PLATFORM_LINUX) || defined(PLATFORM_SOLARIS)
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID) || defined(PLATFORM_SOLARIS)
 		bytesRead = (INT32)System::Call(SYS_GETDENTS64, (USIZE)handle, (USIZE)buffer, sizeof(buffer));
 #elif defined(PLATFORM_MACOS)
 		USIZE basep = 0;
@@ -130,7 +133,7 @@ Result<void, Error> DirectoryIterator::Next()
 		bufferPosition = 0;
 	}
 
-#if defined(PLATFORM_LINUX)
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
 	LinuxDirent64 *d = (LinuxDirent64 *)(buffer + bufferPosition);
 #elif defined(PLATFORM_SOLARIS)
 	SolarisDirent64 *d = (SolarisDirent64 *)(buffer + bufferPosition);

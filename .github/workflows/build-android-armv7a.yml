@@ -1,4 +1,4 @@
-name: Solaris x86_64
+name: Android armv7a
 
 on:
   pull_request:
@@ -16,8 +16,7 @@ env:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,8 +52,8 @@ jobs:
           for opt in O0 O1 O2 O3 Os Oz Og; do
             echo "=== Building -${opt} ==="
             rm -rf build
-            cmake --preset solaris-x86_64-release -DOPTIMIZATION_LEVEL=${opt}
-            cmake --build --preset solaris-x86_64-release
+            cmake --preset android-armv7a-release -DOPTIMIZATION_LEVEL=${opt}
+            cmake --build --preset android-armv7a-release
             mkdir -p "release/${opt}"
             find build/release -type f -not -path "*/cmake/*" -exec cp {} "release/${opt}/" \;
           done
@@ -63,17 +62,16 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-solaris-x86_64
+          name: build-android-armv7a
           retention-days: 1
           path: release/
 
-      - name: Clean build artifacts before VM sync
-        run: rm -rf build
-
       - name: Test all optimization levels
-        uses: vmactions/solaris-vm@v1
+        uses: uraimo/run-on-arch-action@v2
         with:
-          usesh: true
+          arch: armv7
+          distro: ubuntu22.04
+          install: apt-get update && apt-get install -y python3
           run: |
             for dir in release/*/; do
               opt=$(basename "$dir")
@@ -81,7 +79,7 @@ jobs:
               for bin in "$dir"*.bin; do
                 [ -f "$bin" ] || continue
                 echo "=== Testing PIC -${opt} ==="
-                if python3 scripts/loader.py --arch x86_64 "$bin"; then
+                if python3 scripts/loader.py --arch armv7a "$bin"; then
                   echo "=== PIC PASSED -${opt} ==="
                 else
                   echo "=== PIC FAILED -${opt} ==="

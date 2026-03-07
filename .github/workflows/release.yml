@@ -48,6 +48,10 @@ jobs:
           - { platform: solaris, arch: i386,    ext: elf }
           - { platform: solaris, arch: x86_64,  ext: elf }
           - { platform: solaris, arch: aarch64, ext: elf }
+          # Android
+          - { platform: android, arch: x86_64,  ext: elf }
+          - { platform: android, arch: armv7a,  ext: elf }
+          - { platform: android, arch: aarch64, ext: elf }
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -88,7 +92,7 @@ jobs:
         shell: pwsh
         run: |
           $ext = "${{ matrix.ext }}"
-          $name = "pir-${{ matrix.platform }}-${{ matrix.arch }}"
+          $name = "${{ matrix.platform }}-${{ matrix.arch }}"
           New-Item -ItemType Directory -Force -Path artifacts | Out-Null
 
           # Find and rename the main executable

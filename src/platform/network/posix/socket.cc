@@ -15,6 +15,9 @@
 #if defined(PLATFORM_LINUX)
 #include "platform/common/linux/syscall.h"
 #include "platform/common/linux/system.h"
+#elif defined(PLATFORM_ANDROID)
+#include "platform/common/android/syscall.h"
+#include "platform/common/android/system.h"
 #elif defined(PLATFORM_MACOS)
 #include "platform/common/macos/syscall.h"
 #include "platform/common/macos/system.h"
@@ -35,7 +38,7 @@
 // --- Socket creation ---
 static SSIZE PosixSocket(INT32 domain, INT32 type, INT32 protocol)
 {
-#if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_I386)
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && defined(ARCHITECTURE_I386)
 	USIZE args[3] = {(USIZE)domain, (USIZE)type, (USIZE)protocol};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_SOCKET, (USIZE)args);
 #elif defined(PLATFORM_SOLARIS)
@@ -50,7 +53,7 @@ static SSIZE PosixSocket(INT32 domain, INT32 type, INT32 protocol)
 // --- Bind ---
 static SSIZE PosixBind(SSIZE sockfd, const VOID *addr, UINT32 addrlen)
 {
-#if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_I386)
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && defined(ARCHITECTURE_I386)
 	USIZE args[3] = {(USIZE)sockfd, (USIZE)addr, addrlen};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_BIND, (USIZE)args);
 #else
@@ -61,7 +64,7 @@ static SSIZE PosixBind(SSIZE sockfd, const VOID *addr, UINT32 addrlen)
 // --- Connect ---
 static SSIZE PosixConnect(SSIZE sockfd, const VOID *addr, UINT32 addrlen)
 {
-#if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_I386)
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && defined(ARCHITECTURE_I386)
 	USIZE args[3] = {(USIZE)sockfd, (USIZE)addr, addrlen};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_CONNECT, (USIZE)args);
 #else
@@ -72,7 +75,7 @@ static SSIZE PosixConnect(SSIZE sockfd, const VOID *addr, UINT32 addrlen)
 // --- Send ---
 static SSIZE PosixSend(SSIZE sockfd, const VOID *buf, USIZE len, INT32 flags)
 {
-#if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_I386)
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && defined(ARCHITECTURE_I386)
 	USIZE args[4] = {(USIZE)sockfd, (USIZE)buf, len, (USIZE)flags};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_SEND, (USIZE)args);
 #else
@@ -83,7 +86,7 @@ static SSIZE PosixSend(SSIZE sockfd, const VOID *buf, USIZE len, INT32 flags)
 // --- Recv ---
 static SSIZE PosixRecv(SSIZE sockfd, VOID *buf, USIZE len, INT32 flags)
 {
-#if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_I386)
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && defined(ARCHITECTURE_I386)
 	USIZE args[4] = {(USIZE)sockfd, (USIZE)buf, len, (USIZE)flags};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_RECV, (USIZE)args);
 #else
@@ -94,7 +97,7 @@ static SSIZE PosixRecv(SSIZE sockfd, VOID *buf, USIZE len, INT32 flags)
 // --- Getsockopt ---
 static SSIZE PosixGetsockopt(SSIZE sockfd, INT32 level, INT32 optname, PVOID optval, UINT32 *optlen)
 {
-#if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_I386)
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && defined(ARCHITECTURE_I386)
 	USIZE args[5] = {(USIZE)sockfd, (USIZE)level, (USIZE)optname, (USIZE)optval, (USIZE)optlen};
 	return System::Call(SYS_SOCKETCALL, SOCKOP_GETSOCKOPT, (USIZE)args);
 #else
@@ -105,7 +108,7 @@ static SSIZE PosixGetsockopt(SSIZE sockfd, INT32 level, INT32 optname, PVOID opt
 // --- Fcntl ---
 static SSIZE PosixFcntl(SSIZE fd, INT32 cmd, SSIZE arg = 0)
 {
-#if defined(PLATFORM_LINUX) && (defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A))
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && (defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A))
 	return System::Call(SYS_FCNTL64, (USIZE)fd, (USIZE)cmd, (USIZE)arg);
 #else
 	return System::Call(SYS_FCNTL, (USIZE)fd, (USIZE)cmd, (USIZE)arg);
@@ -115,7 +118,7 @@ static SSIZE PosixFcntl(SSIZE fd, INT32 cmd, SSIZE arg = 0)
 // --- Poll for connection readiness ---
 static SSIZE PosixPoll(Pollfd *pfd, USIZE nfds, SSIZE timeoutSec)
 {
-#if defined(PLATFORM_LINUX)
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)
 	Timespec timeout;
 	timeout.Sec = timeoutSec;
 	timeout.Nsec = 0;

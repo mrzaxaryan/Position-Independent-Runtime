@@ -10,6 +10,9 @@
 #if defined(PLATFORM_LINUX)
 #include "platform/common/linux/syscall.h"
 #include "platform/common/linux/system.h"
+#elif defined(PLATFORM_ANDROID)
+#include "platform/common/android/syscall.h"
+#include "platform/common/android/system.h"
 #elif defined(PLATFORM_MACOS)
 #include "platform/common/macos/syscall.h"
 #include "platform/common/macos/system.h"
@@ -43,7 +46,7 @@ PVOID Allocator::AllocateMemory(USIZE size)
 	INT32 prot = PROT_READ | PROT_WRITE;
 	INT32 flags = MAP_PRIVATE | MAP_ANONYMOUS;
 
-#if defined(PLATFORM_LINUX) && (defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A) || defined(ARCHITECTURE_RISCV32))
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && (defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A) || defined(ARCHITECTURE_RISCV32))
 	// 32-bit Linux architectures use mmap2 with page-shifted offset
 	USIZE offset = 0;
 	SSIZE result = System::Call(SYS_MMAP2, (USIZE)addr, totalSize, prot, flags, -1, offset);

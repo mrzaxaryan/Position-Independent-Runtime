@@ -67,6 +67,9 @@ jobs:
           retention-days: 1
           path: release/
 
+      - name: Clean build artifacts before VM sync
+        run: rm -rf build
+
       - name: Test all optimization levels
         uses: vmactions/freebsd-vm@v1
         with:

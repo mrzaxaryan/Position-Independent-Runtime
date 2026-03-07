@@ -573,6 +573,84 @@
         "BUILD_TYPE": "release",
         "OPTIMIZATION_LEVEL": "Oz"
       }
+    },
+    {
+      "name": "android-x86_64-debug",
+      "displayName": "Android x86_64 (Debug)",
+      "description": "Android 64-bit x86 debug build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/debug/android/x86_64/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "x86_64",
+        "PLATFORM": "android",
+        "BUILD_TYPE": "debug",
+        "OPTIMIZATION_LEVEL": "O0"
+      }
+    },
+    {
+      "name": "android-x86_64-release",
+      "displayName": "Android x86_64 (Release)",
+      "description": "Android 64-bit x86 release build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/release/android/x86_64/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "x86_64",
+        "PLATFORM": "android",
+        "BUILD_TYPE": "release",
+        "OPTIMIZATION_LEVEL": "Oz"
+      }
+    },
+    {
+      "name": "android-armv7a-debug",
+      "displayName": "Android ARMv7a (Debug)",
+      "description": "Android 32-bit ARM debug build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/debug/android/armv7a/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "armv7a",
+        "PLATFORM": "android",
+        "BUILD_TYPE": "debug",
+        "OPTIMIZATION_LEVEL": "O0"
+      }
+    },
+    {
+      "name": "android-armv7a-release",
+      "displayName": "Android ARMv7a (Release)",
+      "description": "Android 32-bit ARM release build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/release/android/armv7a/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "armv7a",
+        "PLATFORM": "android",
+        "BUILD_TYPE": "release",
+        "OPTIMIZATION_LEVEL": "Oz"
+      }
+    },
+    {
+      "name": "android-aarch64-debug",
+      "displayName": "Android AArch64 (Debug)",
+      "description": "Android 64-bit ARM debug build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/debug/android/aarch64/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "aarch64",
+        "PLATFORM": "android",
+        "BUILD_TYPE": "debug",
+        "OPTIMIZATION_LEVEL": "O0"
+      }
+    },
+    {
+      "name": "android-aarch64-release",
+      "displayName": "Android AArch64 (Release)",
+      "description": "Android 64-bit ARM release build",
+      "inherits": "base",
+      "binaryDir": "${sourceDir}/build/release/android/aarch64/cmake",
+      "cacheVariables": {
+        "ARCHITECTURE": "aarch64",
+        "PLATFORM": "android",
+        "BUILD_TYPE": "release",
+        "OPTIMIZATION_LEVEL": "Oz"
+      }
     }
   ],
   "buildPresets": [
@@ -747,6 +825,30 @@
     {
       "name": "freebsd-riscv64-release",
       "configurePreset": "freebsd-riscv64-release"
+    },
+    {
+      "name": "android-x86_64-debug",
+      "configurePreset": "android-x86_64-debug"
+    },
+    {
+      "name": "android-x86_64-release",
+      "configurePreset": "android-x86_64-release"
+    },
+    {
+      "name": "android-armv7a-debug",
+      "configurePreset": "android-armv7a-debug"
+    },
+    {
+      "name": "android-armv7a-release",
+      "configurePreset": "android-armv7a-release"
+    },
+    {
+      "name": "android-aarch64-debug",
+      "configurePreset": "android-aarch64-debug"
+    },
+    {
+      "name": "android-aarch64-release",
+      "configurePreset": "android-aarch64-release"
     }
   ],
   "testPresets": [
