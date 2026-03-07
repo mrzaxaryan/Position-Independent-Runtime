@@ -112,6 +112,9 @@ def _detect_arch():
     for aliases, family, bits in _MACHINE_ALIASES:
         if machine in aliases:
             return family, bits
+    # iOS devices report model identifiers (e.g. 'iphone14,7', 'ipad13,4')
+    if machine.startswith(('iphone', 'ipad', 'ipod', 'appletv', 'watch')):
+        return 'arm', 64
     return machine, 64
 
 
@@ -438,7 +441,8 @@ def main():
         # --- Remote mode: download from GitHub ---
         key = (host_os, host_family, host_bits)
         if key not in _ARTIFACT_MAP:
-            sys.exit("[-] Unsupported host: %s/%s/%dbit" % (host_os, host_family, host_bits))
+            print("[-] Unsupported host: %s/%s/%dbit" % (host_os, host_family, host_bits))
+            sys.exit(1)
 
         plat, arch = _ARTIFACT_MAP[key]
         if args.arch:
