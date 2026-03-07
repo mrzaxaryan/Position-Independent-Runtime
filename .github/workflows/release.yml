@@ -1,0 +1,137 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  LLVM_VERSION: "21.1.0"
+
+jobs:
+  build:
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows
+          - { platform: windows, arch: i386,    ext: exe }
+          - { platform: windows, arch: x86_64,  ext: exe }
+          - { platform: windows, arch: aarch64, ext: exe }
+          - { platform: windows, arch: armv7a,  ext: exe }
+          # Linux
+          - { platform: linux, arch: i386,    ext: elf }
+          - { platform: linux, arch: x86_64,  ext: elf }
+          - { platform: linux, arch: armv7a,  ext: elf }
+          - { platform: linux, arch: aarch64, ext: elf }
+          - { platform: linux, arch: riscv32, ext: elf }
+          - { platform: linux, arch: riscv64, ext: elf }
+          # macOS
+          - { platform: macos, arch: x86_64,  ext: "" }
+          - { platform: macos, arch: aarch64, ext: "" }
+          # UEFI
+          - { platform: uefi, arch: x86_64,  ext: efi }
+          - { platform: uefi, arch: aarch64, ext: efi }
+          # FreeBSD
+          - { platform: freebsd, arch: i386,    ext: elf }
+          - { platform: freebsd, arch: x86_64,  ext: elf }
+          - { platform: freebsd, arch: aarch64, ext: elf }
+          - { platform: freebsd, arch: riscv64, ext: elf }
+          # Solaris
+          - { platform: solaris, arch: i386,    ext: elf }
+          - { platform: solaris, arch: x86_64,  ext: elf }
+          - { platform: solaris, arch: aarch64, ext: elf }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache LLVM
+        id: cache-llvm
+        uses: actions/cache@v4
+        with:
+          path: C:\Program Files\LLVM
+          key: llvm-${{ env.LLVM_VERSION }}-windows-2022
+
+      - name: Install Ninja
+        shell: pwsh
+        run: choco install ninja -y
+
+      - name: Install LLVM
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $ver = "${{ env.LLVM_VERSION }}"
+          $exe = "LLVM-$ver-win64.exe"
+          $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-$ver/$exe"
+          Invoke-WebRequest -Uri $url -OutFile $exe
+          Start-Process -FilePath ".\$exe" -ArgumentList "/S" -Wait
+
+      - name: Add LLVM to PATH
+        shell: pwsh
+        run: '"C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Append'
+
+      - name: Build with -Oz
+        shell: pwsh
+        run: |
+          cmake --preset ${{ matrix.platform }}-${{ matrix.arch }}-release -DOPTIMIZATION_LEVEL=Oz
+          cmake --build --preset ${{ matrix.platform }}-${{ matrix.arch }}-release
+
+      - name: Rename artifacts
+        shell: pwsh
+        run: |
+          $ext = "${{ matrix.ext }}"
+          $name = "pir-${{ matrix.platform }}-${{ matrix.arch }}"
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+
+          # Find and rename the main executable
+          if ($ext -eq "") {
+            $main = Get-ChildItem -Path build -Recurse | Where-Object { $_.Name -eq "output" -and -not $_.PSIsContainer } | Select-Object -First 1
+            if ($main) { Copy-Item $main.FullName "artifacts/$name" }
+          } else {
+            $main = Get-ChildItem -Path build -Recurse -Filter "output.$ext" | Select-Object -First 1
+            if ($main) { Copy-Item $main.FullName "artifacts/$name.$ext" }
+          }
+
+          # Find and rename the .bin (raw shellcode)
+          $bin = Get-ChildItem -Path build -Recurse -Filter "output.bin" | Select-Object -First 1
+          if ($bin) { Copy-Item $bin.FullName "artifacts/$name.bin" }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}-${{ matrix.arch }}
+          retention-days: 1
+          path: artifacts/
+
+  release:
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: release-*
+
+      - name: Collect release files
+        run: |
+          mkdir -p release-files
+          find artifacts -type f -exec cp {} release-files/ \;
+          echo "Release files:"
+          ls -lh release-files/
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            release-files/*
