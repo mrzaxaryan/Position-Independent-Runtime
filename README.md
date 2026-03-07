@@ -86,9 +86,9 @@
 <td align="center">7</td>
 <td>Android</td>
 <td align="center">-</td>
-<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-android-x86_64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-android-x86_64.yml?branch=main&label=COMP&style=for-the-badge&logo=" alt="Build"></a></td>
-<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-android-armv7a.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-android-armv7a.yml?branch=main&label=COMP&style=for-the-badge&logo=" alt="Build"></a></td>
-<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-android-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-android-aarch64.yml?branch=main&label=COMP&style=for-the-badge&logo=" alt="Build"></a></td>
+<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-android-x86_64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-android-x86_64.yml?branch=main&label=PIC&style=for-the-badge&logo=" alt="Build"></a></td>
+<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-android-armv7a.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-android-armv7a.yml?branch=main&label=PIC&style=for-the-badge&logo=" alt="Build"></a></td>
+<td align="center"><a href="https://github.com/mrzaxaryan/Position-Independent-Runtime/actions/workflows/build-android-aarch64.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/mrzaxaryan/Position-Independent-Runtime/build-android-aarch64.yml?branch=main&label=PIC&style=for-the-badge&logo=" alt="Build"></a></td>
 <td align="center">-</td>
 <td align="center">-</td>
 </tr>

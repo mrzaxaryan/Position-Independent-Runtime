@@ -49,6 +49,10 @@ jobs:
           - { platform: solaris, arch: i386,    ext: elf }
           - { platform: solaris, arch: x86_64,  ext: elf }
           - { platform: solaris, arch: aarch64, ext: elf }
+          # Android
+          - { platform: android, arch: x86_64,  ext: elf }
+          - { platform: android, arch: armv7a,  ext: elf }
+          - { platform: android, arch: aarch64, ext: elf }
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -315,6 +319,11 @@ jobs:
                   ("x86_64", "freebsd_x86_64"),
                   ("aarch64", "freebsd_aarch64"),
                   ("riscv64", "freebsd_riscv64"),
+              ]),
+              ("Android", [
+                  ("x86_64", "android_x86_64"),
+                  ("armv7a", "android_armv7a"),
+                  ("aarch64", "android_aarch64"),
               ]),
           ]
 
