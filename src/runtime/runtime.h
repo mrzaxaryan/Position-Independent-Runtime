@@ -32,6 +32,7 @@
 /// @name Image
 /// @{
 #include "runtime/image/jpeg.h"
+#include "runtime/image/image.h"
 /// @}
 
 /// @name TLS 1.3
