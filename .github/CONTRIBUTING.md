@@ -65,6 +65,7 @@ clang --version && clang++ --version && lld-link --version && cmake --version &&
 ### Linux (Ubuntu/Debian)
 
 ```bash
+
 # Install all dependencies (LLVM 21)
 LLVM_VER=21 && sudo apt-get update && sudo apt-get install -y wget lsb-release ca-certificates gnupg cmake ninja-build && sudo mkdir -p /etc/apt/keyrings && wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/apt.llvm.org.gpg >/dev/null && echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.gpg] http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-${LLVM_VER} main" | sudo tee /etc/apt/sources.list.d/llvm.list && sudo apt-get update && sudo apt-get install -y clang-${LLVM_VER} clang++-${LLVM_VER} lld-${LLVM_VER} llvm-${LLVM_VER} lldb-${LLVM_VER} && sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${LLVM_VER} 100 && sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${LLVM_VER} 100 && sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-${LLVM_VER} 100 && sudo update-alternatives --install /usr/bin/llvm-objdump llvm-objdump /usr/bin/llvm-objdump-${LLVM_VER} 100 && sudo update-alternatives --install /usr/bin/llvm-objcopy llvm-objcopy /usr/bin/llvm-objcopy-${LLVM_VER} 100 && sudo update-alternatives --install /usr/bin/llvm-strings llvm-strings /usr/bin/llvm-strings-${LLVM_VER} 100 && sudo update-alternatives --install /usr/bin/lldb-dap lldb-dap /usr/bin/lldb-dap-${LLVM_VER} 100 && sudo update-alternatives --set clang "/usr/bin/clang-${LLVM_VER}" && sudo update-alternatives --set clang++ "/usr/bin/clang++-${LLVM_VER}" && sudo update-alternatives --set lld "/usr/bin/lld-${LLVM_VER}" && sudo update-alternatives --set llvm-objdump "/usr/bin/llvm-objdump-${LLVM_VER}" && sudo update-alternatives --set llvm-objcopy "/usr/bin/llvm-objcopy-${LLVM_VER}" && sudo update-alternatives --set llvm-strings "/usr/bin/llvm-strings-${LLVM_VER}" && sudo update-alternatives --set lldb-dap "/usr/bin/lldb-dap-${LLVM_VER}"
 ```
@@ -205,7 +206,7 @@ The binary must contain **only** a `.text` section. No `.rdata`, `.rodata`, `.da
 | `3.14` float literals | `3.14_embed` |
 | `&MyFunc` function pointers | `EMBED_FUNC(MyFunc)` |
 | Global/static variables | Stack-local variables |
-| `const` arrays at file scope | `MakeEmbedArray(...)` |
+| `const`/`constexpr` arrays | `MakeEmbedArray<T>(vals...)` |
 | STL containers/algorithms | Custom PIR implementations |
 | Exceptions (`throw`/`try`/`catch`) | `Result<T, Error>` |
 | Raw `BOOL`/`NTSTATUS`/`SSIZE` for fallible returns | `Result<T, Error>` or `Result<void, Error>` |
@@ -410,8 +411,10 @@ Delete heap allocation operators (`operator new`/`operator delete = delete`).
 |------|---------|--------|
 | `EMBEDDED_STRING` | `"text"_embed` / `L"text"_embed` | Characters packed into machine words |
 | `DOUBLE` | `3.14_embed` | IEEE-754 bits as `UINT64` immediate |
-| `EMBEDDED_ARRAY` | `MakeEmbedArray(arr)` | Elements packed into machine words |
+| `EMBEDDED_ARRAY` | `MakeEmbedArray<T>(vals...)` | Elements packed into machine words |
 | `EMBEDDED_FUNCTION_POINTER` | `EMBED_FUNC(Fn)` | PC-relative offset, no relocation |
+
+**Variadic `MakeEmbedArray<T>(vals...)`** -- Pass values directly as arguments instead of through a named `constexpr` array. Named `constexpr` arrays leak to `.rdata` at `-O0` on some compilers (e.g., Clang cross-compiling from Linux). The variadic overload constructs the array inside a `consteval` function where it cannot leak. For compound literal callers, `MakeEmbedArray((const T[]){...})` also works.
 
 A **register barrier** (`__asm__ volatile("" : "+r"(word))`) prevents the compiler from coalescing values back into `.rdata`.
 
