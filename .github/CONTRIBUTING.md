@@ -123,7 +123,7 @@ If developing on Windows with WSL, navigate to the project directory inside WSL 
   sudo apt-get update && sudo apt-get install -y qemu-user-static qemu-system-x86 qemu-system-arm ovmf qemu-efi-aarch64 dosfstools mtools
   ```
 
-For more information, see the [VSCode WSL documentation](https://code.visualstudio.com/docs/remote/wsl) and [.vscode/README.md](.vscode/README.md).
+For more information, see the [VSCode WSL documentation](https://code.visualstudio.com/docs/remote/wsl) and [.vscode/README.md](../.vscode/README.md).
 
 ---
 
@@ -190,7 +190,7 @@ tests/                      # pir_tests.h (master), tests.h (helpers), *_tests.h
 cmake/                      # CMake modules, linker scripts, function.order
 ```
 
-Three-layer architecture (RUNTIME > PLATFORM > CORE) -- upper layers depend on lower, never the reverse. See [README.md](README.md) for an overview.
+Three-layer architecture (RUNTIME > PLATFORM > CORE) -- upper layers depend on lower, never the reverse. See [README.md](../README.md) for an overview.
 
 ---
 
@@ -495,7 +495,7 @@ Two strategies: **conditional compilation** (`#if defined(PLATFORM_*)`) for smal
 
 ### Pull Request Requirements
 
-- Use the [pull request template](.github/pull_request_template.md)
+- Use the [pull request template](pull_request_template.md)
 - **Report the binary size diff** -- build the same preset before and after your change, then include the `.text` section size (exe and bin) in the PR description. Size regressions require justification; prefer `-Oz` builds for the comparison:
 
    ```bash

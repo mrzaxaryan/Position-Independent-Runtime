@@ -289,7 +289,7 @@ PIR is built on a clean three-layer abstraction that separates concerns and enab
 - Cryptography: SHA-256/384/512, HMAC, ChaCha20-Poly1305, ECC
 - Networking: DNS resolution, HTTP client, WebSocket, TLS 1.3
 
-Upper layers depend on lower layers, never the reverse. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full project structure and source tree layout.
+Upper layers depend on lower layers, never the reverse. See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for the full project structure and source tree layout.
 
 ---
 
@@ -429,7 +429,7 @@ cmake --build --preset {platform}-{arch}-{build_type}
 
 Presets: `windows|linux|macos|ios|android|freebsd|solaris|uefi` x `i386|x86_64|armv7a|aarch64|riscv32|riscv64|mips64` x `debug|release`
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for toolchain installation instructions per platform.
+See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for toolchain installation instructions per platform.
 
 ### Critical Compiler Flags
 
@@ -487,7 +487,7 @@ PIR is designed for execution environments where traditional runtime assumptions
 
 ## Roadmap
 
-This project is a work in progress. Contributions are welcome -- see [CONTRIBUTING.md](CONTRIBUTING.md).
+This project is a work in progress. Contributions are welcome -- see [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ### Planned Platforms
 - NetBSD, OpenBSD, HaikuOS, QNX
@@ -505,9 +505,9 @@ This project is a work in progress. Contributions are welcome -- see [CONTRIBUTI
 
 We welcome contributions of all kinds. Please read:
 
-- [Contributing Guide](CONTRIBUTING.md) -- build instructions, code style, project structure
-- [Code of Conduct](CODE_OF_CONDUCT.md) -- community standards
-- [Security Policy](SECURITY.md) -- reporting vulnerabilities
+- [Contributing Guide](.github/CONTRIBUTING.md) -- build instructions, code style, project structure
+- [Code of Conduct](.github/CODE_OF_CONDUCT.md) -- community standards
+- [Security Policy](.github/SECURITY.md) -- reporting vulnerabilities
 
 ---
 
