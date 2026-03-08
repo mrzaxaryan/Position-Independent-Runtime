@@ -68,6 +68,7 @@
 #include "uuid_tests.h"
 #include "jpeg_tests.h"
 #include "screen_tests.h"
+#include "image_tests.h"
 #include "size_report_tests.h"
 
 static BOOL RunPIRTests()
@@ -110,6 +111,7 @@ static BOOL RunPIRTests()
 
 	// RUNTIME - Image
 	RunTestSuite<JpegTests>(allPassed);
+	RunTestSuite<ImageTests>(allPassed);
 
 	// RUNTIME - Display
 	RunTestSuite<ScreenTests>(allPassed);
