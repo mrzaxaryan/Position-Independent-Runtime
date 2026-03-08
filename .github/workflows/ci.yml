@@ -7,6 +7,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   CI:
     runs-on: ubuntu-22.04
@@ -20,61 +24,50 @@ jobs:
             const sha = context.event_name === 'pull_request'
               ? context.payload.pull_request.head.sha
               : context.sha;
-            const selfName = 'CI';
+            const selfWorkflow = 'CI';
 
             const maxWait = 45 * 60 * 1000;
             const poll = 30 * 1000;
             const start = Date.now();
 
-            // Wait 60s initially for other workflows to register their check runs
             core.info(`Commit SHA: ${sha}`);
             core.info('Waiting 60s for other workflows to start...');
             await new Promise(r => setTimeout(r, 60000));
 
-            async function getAllCheckRuns() {
-              let all = [];
-              let page = 1;
-              while (true) {
-                const { data } = await github.rest.checks.listForRef({
-                  owner, repo, ref: sha, per_page: 100, page
-                });
-                all = all.concat(data.check_runs);
-                if (all.length >= data.total_count) break;
-                page++;
-              }
-              return all;
-            }
-
             while (Date.now() - start < maxWait) {
-              const checkRuns = await getAllCheckRuns();
-              const others = checkRuns.filter(cr => cr.name !== selfName);
+              // Use workflow runs API instead of checks API
+              const { data: { workflow_runs } } = await github.rest.actions.listWorkflowRunsForRepo({
+                owner, repo, head_sha: sha, per_page: 100
+              });
 
-              core.info(`Found ${others.length} check(s) (total API: ${checkRuns.length})`);
+              const others = workflow_runs.filter(wr => wr.name !== selfWorkflow);
+
+              core.info(`Found ${others.length} workflow run(s) for SHA ${sha.substring(0, 7)}`);
 
               if (others.length === 0) {
-                core.info('No other checks found yet, waiting...');
+                core.info('No other workflow runs found yet, waiting...');
                 await new Promise(r => setTimeout(r, poll));
                 continue;
               }
 
-              const pending = others.filter(cr => cr.status !== 'completed');
+              const pending = others.filter(wr => wr.status !== 'completed');
               if (pending.length > 0) {
-                core.info(`Waiting for ${pending.length}/${others.length} check(s): ${pending.map(c => c.name).join(', ')}`);
+                core.info(`Waiting for ${pending.length}/${others.length} workflow(s): ${pending.map(w => `${w.name} (${w.status})`).join(', ')}`);
                 await new Promise(r => setTimeout(r, poll));
                 continue;
               }
 
               // All completed
-              const failed = others.filter(cr =>
-                cr.conclusion !== 'success' && cr.conclusion !== 'skipped' && cr.conclusion !== 'neutral'
+              const failed = others.filter(wr =>
+                wr.conclusion !== 'success' && wr.conclusion !== 'skipped' && wr.conclusion !== 'neutral'
               );
               if (failed.length > 0) {
-                core.setFailed(`${failed.length} check(s) failed:\n${failed.map(c => `  - ${c.name}: ${c.conclusion}`).join('\n')}`);
+                core.setFailed(`${failed.length} workflow(s) failed:\n${failed.map(w => `  - ${w.name}: ${w.conclusion}`).join('\n')}`);
                 return;
               }
 
-              core.info(`All ${others.length} checks passed.`);
+              core.info(`All ${others.length} workflows passed.`);
               return;
             }
 
-            core.setFailed('Timed out waiting for checks to complete.');
+            core.setFailed('Timed out waiting for workflows to complete.');
