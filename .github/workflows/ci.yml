@@ -22,16 +22,34 @@ jobs:
               : context.sha;
             const selfName = 'CI';
 
-            const maxWait = 45 * 60 * 1000; // 45 minutes
-            const poll = 30 * 1000;          // 30 seconds
+            const maxWait = 45 * 60 * 1000;
+            const poll = 30 * 1000;
             const start = Date.now();
 
-            while (Date.now() - start < maxWait) {
-              const { data: { check_runs } } = await github.rest.checks.listForRef({
-                owner, repo, ref: sha, per_page: 100
-              });
+            // Wait 60s initially for other workflows to register their check runs
+            core.info(`Commit SHA: ${sha}`);
+            core.info('Waiting 60s for other workflows to start...');
+            await new Promise(r => setTimeout(r, 60000));
 
-              const others = check_runs.filter(cr => cr.name !== selfName);
+            async function getAllCheckRuns() {
+              let all = [];
+              let page = 1;
+              while (true) {
+                const { data } = await github.rest.checks.listForRef({
+                  owner, repo, ref: sha, per_page: 100, page
+                });
+                all = all.concat(data.check_runs);
+                if (all.length >= data.total_count) break;
+                page++;
+              }
+              return all;
+            }
+
+            while (Date.now() - start < maxWait) {
+              const checkRuns = await getAllCheckRuns();
+              const others = checkRuns.filter(cr => cr.name !== selfName);
+
+              core.info(`Found ${others.length} check(s) (total API: ${checkRuns.length})`);
 
               if (others.length === 0) {
                 core.info('No other checks found yet, waiting...');
@@ -41,15 +59,17 @@ jobs:
 
               const pending = others.filter(cr => cr.status !== 'completed');
               if (pending.length > 0) {
-                core.info(`Waiting for ${pending.length} check(s): ${pending.map(c => c.name).join(', ')}`);
+                core.info(`Waiting for ${pending.length}/${others.length} check(s): ${pending.map(c => c.name).join(', ')}`);
                 await new Promise(r => setTimeout(r, poll));
                 continue;
               }
 
               // All completed
-              const failed = others.filter(cr => cr.conclusion !== 'success' && cr.conclusion !== 'skipped');
+              const failed = others.filter(cr =>
+                cr.conclusion !== 'success' && cr.conclusion !== 'skipped' && cr.conclusion !== 'neutral'
+              );
               if (failed.length > 0) {
-                core.setFailed(`${failed.length} check(s) failed: ${failed.map(c => `${c.name} (${c.conclusion})`).join(', ')}`);
+                core.setFailed(`${failed.length} check(s) failed:\n${failed.map(c => `  - ${c.name}: ${c.conclusion}`).join('\n')}`);
                 return;
               }
 
