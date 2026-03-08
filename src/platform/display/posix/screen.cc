@@ -2,27 +2,34 @@
  * @file screen.cc
  * @brief POSIX Screen Implementation (Linux/Android/FreeBSD/Solaris)
  *
- * @details Implements screen device enumeration and capture via the Linux
- * framebuffer device interface (/dev/fb0..fb7). Uses ioctl with
- * FBIOGET_VSCREENINFO and FBIOGET_FSCREENINFO to query display
- * parameters, and mmap with MAP_SHARED to read pixel data directly
- * from the framebuffer memory.
+ * @details Implements screen device enumeration and capture via two backends:
  *
- * The framebuffer API is shared between Linux, Android (same kernel),
- * and FreeBSD (via the linuxkpi DRM compatibility layer on FreeBSD 13+).
+ * 1. DRM dumb buffers (/dev/dri/card0..card7): The preferred backend on
+ *    modern Linux, Android, and FreeBSD. Enumerates connectors, encoders,
+ *    and CRTCs via DRM mode-setting ioctls. Capture maps the active
+ *    framebuffer via DRM_IOCTL_MODE_MAP_DUMB. Requires DRM master or
+ *    CAP_SYS_ADMIN for framebuffer mapping. DRM devices are encoded in
+ *    ScreenDevice as Left = -(cardIndex + 1), Top = crtcId.
+ *
+ * 2. Linux framebuffer (/dev/fb0..fb7): Legacy fallback when DRM is
+ *    unavailable. Uses FBIOGET_VSCREENINFO and FBIOGET_FSCREENINFO ioctls
+ *    with mmap to read pixel data. Shared between Linux, Android, and
+ *    FreeBSD (via linuxkpi compatibility). ScreenDevice::Left stores the
+ *    framebuffer index.
+ *
+ * GetDevices() tries DRM first; if no displays are found, falls back to
+ * framebuffer. Capture() dispatches based on the Left field encoding.
  *
  * Solaris uses the SunOS framebuffer API (sys/fbio.h) with FBIOGTYPE
  * ioctl to query /dev/fb device parameters and mmap to read pixel data.
  * Only a single console framebuffer is supported.
  *
- * macOS and iOS are handled by separate platform-specific files:
- * macos/screen.cc (CoreGraphics via dyld) and ios/screen.cc (stub).
+ * macOS and iOS require CoreGraphics framework for screen capture,
+ * which is not available in a position-independent runtime context.
+ * Both platforms return Screen_GetDevicesFailed / Screen_CaptureFailed.
  *
- * @note Framebuffer devices are limited to one display per /dev/fbN.
- * Multi-monitor setups with separate framebuffers are enumerated as
- * separate devices. Virtual desktop position is not available;
- * ScreenDevice::Left stores the framebuffer index for Capture().
- *
+ * @see DRM KMS userspace API
+ *      https://www.kernel.org/doc/html/latest/gpu/drm-uapi.html
  * @see Linux framebuffer API (linux/fb.h)
  *      https://www.kernel.org/doc/html/latest/fb/api.html
  * @see Solaris fbio(4I)
@@ -351,7 +358,135 @@ struct FbFixScreeninfo
 };
 
 // =============================================================================
-// Internal helpers
+// DRM ioctl constants and structures (/dev/dri/card*)
+// =============================================================================
+
+/// @brief DRM mode information (matches kernel struct drm_mode_modeinfo, 68 bytes)
+/// @see https://www.kernel.org/doc/html/latest/gpu/drm-uapi.html
+struct DrmModeModeinfo
+{
+	UINT32 Clock;
+	UINT16 Hdisplay;
+	UINT16 HsyncStart;
+	UINT16 HsyncEnd;
+	UINT16 Htotal;
+	UINT16 Hskew;
+	UINT16 Vdisplay;
+	UINT16 VsyncStart;
+	UINT16 VsyncEnd;
+	UINT16 Vtotal;
+	UINT16 Vscan;
+	UINT32 Vrefresh;
+	UINT32 Flags;
+	UINT32 Type;
+	CHAR Name[32];
+};
+
+/// @brief DRM mode card resources (drm_mode_card_res, 64 bytes)
+struct DrmModeCardRes
+{
+	UINT64 FbIdPtr;
+	UINT64 CrtcIdPtr;
+	UINT64 ConnectorIdPtr;
+	UINT64 EncoderIdPtr;
+	UINT32 CountFbs;
+	UINT32 CountCrtcs;
+	UINT32 CountConnectors;
+	UINT32 CountEncoders;
+	UINT32 MinWidth;
+	UINT32 MaxWidth;
+	UINT32 MinHeight;
+	UINT32 MaxHeight;
+};
+
+/// @brief DRM connector information (drm_mode_get_connector, 80 bytes)
+struct DrmModeGetConnector
+{
+	UINT64 EncodersPtr;
+	UINT64 ModesPtr;
+	UINT64 PropsPtr;
+	UINT64 PropValuesPtr;
+	UINT32 CountModes;
+	UINT32 CountProps;
+	UINT32 CountEncoders;
+	UINT32 EncoderId;
+	UINT32 ConnectorId;
+	UINT32 ConnectorType;
+	UINT32 ConnectorTypeId;
+	UINT32 Connection;
+	UINT32 MmWidth;
+	UINT32 MmHeight;
+	UINT32 Subpixel;
+	UINT32 Pad;
+};
+
+/// @brief DRM encoder information (drm_mode_get_encoder, 20 bytes)
+struct DrmModeGetEncoder
+{
+	UINT32 EncoderId;
+	UINT32 EncoderType;
+	UINT32 CrtcId;
+	UINT32 PossibleCrtcs;
+	UINT32 PossibleClones;
+};
+
+/// @brief DRM CRTC information (drm_mode_crtc, 104 bytes)
+struct DrmModeCrtc
+{
+	UINT64 SetConnectorsPtr;
+	UINT32 CountConnectors;
+	UINT32 CrtcId;
+	UINT32 FbId;
+	UINT32 X;
+	UINT32 Y;
+	UINT32 GammaSize;
+	UINT32 ModeValid;
+	DrmModeModeinfo Mode;
+};
+
+/// @brief DRM framebuffer command (drm_mode_fb_cmd, 28 bytes)
+struct DrmModeFbCmd
+{
+	UINT32 FbId;
+	UINT32 Width;
+	UINT32 Height;
+	UINT32 Pitch;
+	UINT32 Bpp;
+	UINT32 Depth;
+	UINT32 Handle;
+};
+
+/// @brief DRM map dumb buffer request (drm_mode_map_dumb, 16 bytes)
+struct DrmModeMapDumb
+{
+	UINT32 Handle;
+	UINT32 Pad;
+	UINT64 Offset;
+};
+
+/// @brief DRM GEM close request (drm_gem_close, 8 bytes)
+struct DrmGemClose
+{
+	UINT32 Handle;
+	UINT32 Pad;
+};
+
+/// @brief DRM connector is attached and active
+constexpr UINT32 DRM_MODE_CONNECTED = 1;
+
+/// DRM ioctl numbers: _IOWR('d', nr, struct) = (3<<30)|(sizeof<<16)|(0x64<<8)|nr
+constexpr USIZE DRM_IOCTL_MODE_GETRESOURCES = 0xC04064A0;
+constexpr USIZE DRM_IOCTL_MODE_GETCRTC      = 0xC06864A1;
+constexpr USIZE DRM_IOCTL_MODE_GETENCODER   = 0xC01464A6;
+constexpr USIZE DRM_IOCTL_MODE_GETCONNECTOR = 0xC05064A7;
+constexpr USIZE DRM_IOCTL_MODE_GETFB        = 0xC01C64AD;
+constexpr USIZE DRM_IOCTL_MODE_MAP_DUMB     = 0xC01064B3;
+
+/// DRM GEM close: _IOW('d', 0x09, drm_gem_close) = (1<<30)|(8<<16)|(0x64<<8)|0x09
+constexpr USIZE DRM_IOCTL_GEM_CLOSE         = 0x40086409;
+
+// =============================================================================
+// Internal helpers — shared
 // =============================================================================
 
 /// @brief Open a framebuffer device by index (/dev/fb0../dev/fb7)
@@ -370,6 +505,25 @@ static SSIZE OpenFramebuffer(UINT32 index)
 	return System::Call(SYS_OPENAT, (USIZE)AT_FDCWD, (USIZE)path, (USIZE)O_RDONLY);
 #else
 	return System::Call(SYS_OPEN, (USIZE)path, (USIZE)O_RDONLY);
+#endif
+}
+
+/// @brief Open a DRM card device by index (/dev/dri/card0../dev/dri/card7)
+/// @param index DRM card number (0-7)
+/// @return File descriptor on success, negative errno on failure
+static SSIZE OpenDrmCard(UINT32 index)
+{
+	auto devDri = "/dev/dri/card"_embed;
+	CHAR path[16];
+	Memory::Copy(path, (const CHAR *)devDri, 14);
+	path[13] = '0' + (CHAR)index;
+	path[14] = '\0';
+
+#if ((defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))) || \
+	(defined(PLATFORM_FREEBSD) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64)))
+	return System::Call(SYS_OPENAT, (USIZE)AT_FDCWD, (USIZE)path, (USIZE)O_RDWR);
+#else
+	return System::Call(SYS_OPEN, (USIZE)path, (USIZE)O_RDWR);
 #endif
 }
 
@@ -434,6 +588,63 @@ static PVOID MmapFramebuffer(USIZE size, SSIZE fd)
 	return (PVOID)result;
 }
 
+/// @brief Map DRM dumb buffer memory for reading
+/// @param size Number of bytes to map
+/// @param fd DRM device file descriptor
+/// @param offset Offset from DRM_IOCTL_MODE_MAP_DUMB
+/// @return Mapped address, or nullptr on failure
+static PVOID DrmMmapBuffer(USIZE size, SSIZE fd, UINT64 offset)
+{
+	INT32 prot = PROT_READ;
+	INT32 flags = MAP_SHARED;
+
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && (defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A) || defined(ARCHITECTURE_RISCV32))
+	// 32-bit Linux/Android uses mmap2 with page-shifted offset
+	SSIZE result = System::Call(SYS_MMAP2, (USIZE)0, size,
+		(USIZE)prot, (USIZE)flags, (USIZE)fd, (USIZE)(UINT32)(offset >> 12));
+#elif defined(PLATFORM_FREEBSD) && defined(ARCHITECTURE_I386)
+	// FreeBSD i386: mmap takes 64-bit off_t split across two 32-bit stack
+	// slots. Use inline asm to push all 7 argument slots + dummy return address.
+	SSIZE result;
+	UINT32 offLo = (UINT32)offset;
+	UINT32 offHi = (UINT32)(offset >> 32);
+	register USIZE r1 __asm__("ebx") = 0;              // addr
+	register USIZE r2 __asm__("ecx") = size;            // len
+	register USIZE r3 __asm__("edx") = (USIZE)prot;    // prot
+	register USIZE r4 __asm__("esi") = (USIZE)flags;   // flags
+	register USIZE r5 __asm__("edi") = (USIZE)fd;      // fd
+	__asm__ volatile(
+		"movl %[offLo], %%eax\n"  // load offLo before any push
+		"pushl %[offHi]\n"        // off_t high (first push, ESP unchanged when read)
+		"pushl %%eax\n"           // off_t low (from register)
+		"pushl %%edi\n"           // fd
+		"pushl %%esi\n"           // flags
+		"pushl %%edx\n"           // prot
+		"pushl %%ecx\n"           // len
+		"pushl %%ebx\n"           // addr
+		"pushl $0\n"              // dummy return address
+		"movl %[sysno], %%eax\n"  // reload syscall number
+		"int $0x80\n"
+		"jnc 1f\n"
+		"negl %%eax\n"
+		"1:\n"
+		"addl $32, %%esp\n"
+		: "=&a"(result)
+		: "r"(r1), "r"(r2), "r"(r3), "r"(r4), "r"(r5),
+		  [offLo] "g"(offLo), [offHi] "g"(offHi), [sysno] "i"((int)SYS_MMAP)
+		: "memory", "cc"
+	);
+#else
+	SSIZE result = System::Call(SYS_MMAP, (USIZE)0, size,
+		(USIZE)prot, (USIZE)flags, (USIZE)fd, (USIZE)offset);
+#endif
+
+	if (result < 0 && result >= -4095)
+		return nullptr;
+
+	return (PVOID)result;
+}
+
 /// @brief Extract an N-bit color component from a pixel value
 /// @param pixel Raw pixel value
 /// @param field Bitfield descriptor for the component
@@ -455,7 +666,231 @@ static UINT8 ExtractComponent(UINT32 pixel, const FbBitfield &field)
 }
 
 // =============================================================================
-// Screen::GetDevices
+// Internal helpers — DRM enumeration and capture
+// =============================================================================
+
+/// @brief Enumerate displays via DRM (/dev/dri/card*)
+/// @details Walks card devices, connectors, encoders, and CRTCs to find
+/// active displays. DRM devices are encoded in ScreenDevice as:
+/// Left = -(cardIndex + 1), Top = crtcId.
+/// @param tempDevices Output array for discovered devices
+/// @param deviceCount [in/out] Current device count, incremented per device
+/// @param maxDevices Maximum capacity of tempDevices
+static VOID DrmGetDevices(ScreenDevice *tempDevices, UINT32 &deviceCount, UINT32 maxDevices)
+{
+	constexpr UINT32 maxCards = 8;
+	constexpr UINT32 maxConnectors = 16;
+
+	for (UINT32 cardIdx = 0; cardIdx < maxCards && deviceCount < maxDevices; cardIdx++)
+	{
+		SSIZE fd = OpenDrmCard(cardIdx);
+		if (fd < 0)
+			continue;
+
+		// First call: get connector count
+		DrmModeCardRes res;
+		Memory::Zero(&res, sizeof(res));
+
+		if (Ioctl(fd, DRM_IOCTL_MODE_GETRESOURCES, &res) < 0 ||
+			res.CountConnectors == 0)
+		{
+			System::Call(SYS_CLOSE, (USIZE)fd);
+			continue;
+		}
+
+		// Second call: retrieve connector IDs
+		UINT32 connCount = res.CountConnectors;
+		if (connCount > maxConnectors)
+			connCount = maxConnectors;
+
+		UINT32 connectorIds[maxConnectors];
+		Memory::Zero(connectorIds, sizeof(connectorIds));
+
+		DrmModeCardRes res2;
+		Memory::Zero(&res2, sizeof(res2));
+		res2.ConnectorIdPtr = (UINT64)(USIZE)connectorIds;
+		res2.CountConnectors = connCount;
+
+		if (Ioctl(fd, DRM_IOCTL_MODE_GETRESOURCES, &res2) < 0)
+		{
+			System::Call(SYS_CLOSE, (USIZE)fd);
+			continue;
+		}
+
+		// Walk connectors to find active displays
+		for (UINT32 c = 0; c < connCount && deviceCount < maxDevices; c++)
+		{
+			DrmModeGetConnector conn;
+			Memory::Zero(&conn, sizeof(conn));
+			conn.ConnectorId = connectorIds[c];
+
+			if (Ioctl(fd, DRM_IOCTL_MODE_GETCONNECTOR, &conn) < 0)
+				continue;
+
+			if (conn.Connection != DRM_MODE_CONNECTED || conn.EncoderId == 0)
+				continue;
+
+			// Get encoder to find the CRTC
+			DrmModeGetEncoder enc;
+			Memory::Zero(&enc, sizeof(enc));
+			enc.EncoderId = conn.EncoderId;
+
+			if (Ioctl(fd, DRM_IOCTL_MODE_GETENCODER, &enc) < 0 || enc.CrtcId == 0)
+				continue;
+
+			// Get CRTC to read the active mode
+			DrmModeCrtc crtc;
+			Memory::Zero(&crtc, sizeof(crtc));
+			crtc.CrtcId = enc.CrtcId;
+
+			if (Ioctl(fd, DRM_IOCTL_MODE_GETCRTC, &crtc) < 0)
+				continue;
+
+			if (!crtc.ModeValid || crtc.Mode.Hdisplay == 0 || crtc.Mode.Vdisplay == 0)
+				continue;
+
+			tempDevices[deviceCount].Left = -(INT32)(cardIdx + 1);
+			tempDevices[deviceCount].Top = (INT32)crtc.CrtcId;
+			tempDevices[deviceCount].Width = (UINT32)crtc.Mode.Hdisplay;
+			tempDevices[deviceCount].Height = (UINT32)crtc.Mode.Vdisplay;
+			tempDevices[deviceCount].Primary = (deviceCount == 0);
+			deviceCount++;
+		}
+
+		System::Call(SYS_CLOSE, (USIZE)fd);
+	}
+}
+
+/// @brief Capture screen via DRM dumb buffer mapping
+/// @details Opens the DRM card, queries the CRTC framebuffer, maps it via
+/// DRM_IOCTL_MODE_MAP_DUMB, and converts pixels to RGB.
+/// @param device Display device with Left = -(cardIndex+1), Top = crtcId
+/// @param buffer Output RGB pixel buffer
+/// @return Ok on success, Err on failure
+static Result<void, Error> DrmCapture(const ScreenDevice &device, Span<RGB> buffer)
+{
+	UINT32 cardIdx = (UINT32)(-(device.Left + 1));
+	UINT32 crtcId = (UINT32)device.Top;
+
+	SSIZE fd = OpenDrmCard(cardIdx);
+	if (fd < 0)
+		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+
+	// Get CRTC to find the active framebuffer
+	DrmModeCrtc crtc;
+	Memory::Zero(&crtc, sizeof(crtc));
+	crtc.CrtcId = crtcId;
+
+	if (Ioctl(fd, DRM_IOCTL_MODE_GETCRTC, &crtc) < 0 || crtc.FbId == 0)
+	{
+		System::Call(SYS_CLOSE, (USIZE)fd);
+		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+	}
+
+	// Get framebuffer info (returns GEM handle)
+	DrmModeFbCmd fb;
+	Memory::Zero(&fb, sizeof(fb));
+	fb.FbId = crtc.FbId;
+
+	if (Ioctl(fd, DRM_IOCTL_MODE_GETFB, &fb) < 0 || fb.Handle == 0)
+	{
+		System::Call(SYS_CLOSE, (USIZE)fd);
+		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+	}
+
+	// Validate dimensions
+	if (fb.Width != device.Width || fb.Height != device.Height)
+	{
+		DrmGemClose gc;
+		gc.Handle = fb.Handle;
+		gc.Pad = 0;
+		Ioctl(fd, DRM_IOCTL_GEM_CLOSE, &gc);
+		System::Call(SYS_CLOSE, (USIZE)fd);
+		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+	}
+
+	// Map the dumb buffer
+	DrmModeMapDumb mapReq;
+	Memory::Zero(&mapReq, sizeof(mapReq));
+	mapReq.Handle = fb.Handle;
+
+	if (Ioctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &mapReq) < 0)
+	{
+		DrmGemClose gc;
+		gc.Handle = fb.Handle;
+		gc.Pad = 0;
+		Ioctl(fd, DRM_IOCTL_GEM_CLOSE, &gc);
+		System::Call(SYS_CLOSE, (USIZE)fd);
+		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+	}
+
+	USIZE mapSize = (USIZE)fb.Pitch * (USIZE)fb.Height;
+	PVOID mapped = DrmMmapBuffer(mapSize, fd, mapReq.Offset);
+
+	if (mapped == nullptr)
+	{
+		DrmGemClose gc;
+		gc.Handle = fb.Handle;
+		gc.Pad = 0;
+		Ioctl(fd, DRM_IOCTL_GEM_CLOSE, &gc);
+		System::Call(SYS_CLOSE, (USIZE)fd);
+		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+	}
+
+	// Convert framebuffer pixels to RGB
+	UINT8 *fbBase = (UINT8 *)mapped;
+	PRGB rgbBuf = buffer.Data();
+	UINT32 width = fb.Width;
+	UINT32 height = fb.Height;
+	UINT32 bytesPerPixel = fb.Bpp / 8;
+
+	for (UINT32 y = 0; y < height; y++)
+	{
+		UINT8 *row = fbBase + (USIZE)y * fb.Pitch;
+
+		for (UINT32 x = 0; x < width; x++)
+		{
+			UINT8 *src = row + (USIZE)x * bytesPerPixel;
+
+			if (bytesPerPixel == 4)
+			{
+				// 32bpp XRGB8888: bytes are B, G, R, X (little-endian)
+				rgbBuf[y * width + x].Red = src[2];
+				rgbBuf[y * width + x].Green = src[1];
+				rgbBuf[y * width + x].Blue = src[0];
+			}
+			else if (bytesPerPixel == 3)
+			{
+				// 24bpp BGR888
+				rgbBuf[y * width + x].Red = src[2];
+				rgbBuf[y * width + x].Green = src[1];
+				rgbBuf[y * width + x].Blue = src[0];
+			}
+			else if (bytesPerPixel == 2)
+			{
+				// 16bpp RGB565
+				UINT16 pixel = (UINT16)src[0] | ((UINT16)src[1] << 8);
+				rgbBuf[y * width + x].Red = (UINT8)(((pixel >> 11) & 0x1F) * 255 / 31);
+				rgbBuf[y * width + x].Green = (UINT8)(((pixel >> 5) & 0x3F) * 255 / 63);
+				rgbBuf[y * width + x].Blue = (UINT8)((pixel & 0x1F) * 255 / 31);
+			}
+		}
+	}
+
+	// Cleanup: unmap, close GEM handle, close fd
+	System::Call(SYS_MUNMAP, (USIZE)mapped, mapSize);
+
+	DrmGemClose gc;
+	gc.Handle = fb.Handle;
+	gc.Pad = 0;
+	Ioctl(fd, DRM_IOCTL_GEM_CLOSE, &gc);
+	System::Call(SYS_CLOSE, (USIZE)fd);
+
+	return Result<void, Error>::Ok();
+}
+
+// =============================================================================
+// Screen::GetDevices (DRM first, framebuffer fallback)
 // =============================================================================
 
 Result<ScreenDeviceList, Error> Screen::GetDevices()
@@ -464,30 +899,37 @@ Result<ScreenDeviceList, Error> Screen::GetDevices()
 	ScreenDevice tempDevices[maxDevices];
 	UINT32 deviceCount = 0;
 
-	for (UINT32 i = 0; i < maxDevices; i++)
+	// Try DRM first (/dev/dri/card*)
+	DrmGetDevices(tempDevices, deviceCount, maxDevices);
+
+	// Fall back to framebuffer (/dev/fb*)
+	if (deviceCount == 0)
 	{
-		SSIZE fd = OpenFramebuffer(i);
-		if (fd < 0)
-			continue;
+		for (UINT32 i = 0; i < maxDevices; i++)
+		{
+			SSIZE fd = OpenFramebuffer(i);
+			if (fd < 0)
+				continue;
 
-		FbVarScreeninfo vinfo;
-		Memory::Zero(&vinfo, sizeof(vinfo));
+			FbVarScreeninfo vinfo;
+			Memory::Zero(&vinfo, sizeof(vinfo));
 
-		SSIZE ret = Ioctl(fd, FBIOGET_VSCREENINFO, &vinfo);
-		System::Call(SYS_CLOSE, (USIZE)fd);
+			SSIZE ret = Ioctl(fd, FBIOGET_VSCREENINFO, &vinfo);
+			System::Call(SYS_CLOSE, (USIZE)fd);
 
-		if (ret < 0)
-			continue;
+			if (ret < 0)
+				continue;
 
-		if (vinfo.Xres == 0 || vinfo.Yres == 0)
-			continue;
+			if (vinfo.Xres == 0 || vinfo.Yres == 0)
+				continue;
 
-		tempDevices[deviceCount].Left = (INT32)i; // framebuffer index
-		tempDevices[deviceCount].Top = 0;
-		tempDevices[deviceCount].Width = vinfo.Xres;
-		tempDevices[deviceCount].Height = vinfo.Yres;
-		tempDevices[deviceCount].Primary = (deviceCount == 0);
-		deviceCount++;
+			tempDevices[deviceCount].Left = (INT32)i;  // framebuffer index
+			tempDevices[deviceCount].Top = 0;
+			tempDevices[deviceCount].Width = vinfo.Xres;
+			tempDevices[deviceCount].Height = vinfo.Yres;
+			tempDevices[deviceCount].Primary = (deviceCount == 0);
+			deviceCount++;
+		}
 	}
 
 	if (deviceCount == 0)
@@ -506,12 +948,16 @@ Result<ScreenDeviceList, Error> Screen::GetDevices()
 }
 
 // =============================================================================
-// Screen::Capture
+// Screen::Capture (DRM or framebuffer dispatch)
 // =============================================================================
 
 Result<void, Error> Screen::Capture(const ScreenDevice &device, Span<RGB> buffer)
 {
-	// Use Left field as framebuffer device index
+	// DRM device: Left < 0 encodes -(cardIndex + 1)
+	if (device.Left < 0)
+		return DrmCapture(device, buffer);
+
+	// Framebuffer device: Left encodes /dev/fb index
 	UINT32 fbIndex = (UINT32)device.Left;
 	if (fbIndex > 7)
 		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
