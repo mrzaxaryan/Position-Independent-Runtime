@@ -11,6 +11,7 @@
  */
 
 #include "runtime/image/image.h"
+#include "runtime/vector.h"
 
 // ============================================================
 //  Constants
@@ -18,186 +19,21 @@
 
 static constexpr INT32 HoleBorder = 1;
 static constexpr INT32 OuterBorder = 2;
-static constexpr INT32 InitialVectorCapacity = 10;
-
-// ============================================================
-//  Internal dynamic vector types
-// ============================================================
-
-struct PointVector
-{
-	PPoint data;
-	INT32 capacity;
-	INT32 count;
-};
-
-struct NodeVector
-{
-	PContourNode data;
-	INT32 capacity;
-	INT32 count;
-};
-
-struct IntVector
-{
-	PINT32 data;
-	INT32 capacity;
-	INT32 count;
-};
-
-struct Point2dVector
-{
-	PPPoint data;
-	INT32 capacity;
-	INT32 count;
-};
-
-// ============================================================
-//  Vector operations
-// ============================================================
-
-static VOID InitPointVector(PointVector *pv)
-{
-	pv->capacity = InitialVectorCapacity;
-	pv->count = 0;
-	pv->data = new Point[pv->capacity];
-}
-
-static VOID InitNodeVector(NodeVector *nv)
-{
-	nv->capacity = InitialVectorCapacity;
-	nv->count = 0;
-	nv->data = new ContourNode[nv->capacity];
-}
-
-static VOID InitIntVector(IntVector *iv)
-{
-	iv->capacity = InitialVectorCapacity;
-	iv->count = 0;
-	iv->data = new INT32[iv->capacity];
-}
-
-static VOID InitPoint2dVector(Point2dVector *p2v)
-{
-	p2v->capacity = InitialVectorCapacity;
-	p2v->count = 0;
-	p2v->data = new PPoint[p2v->capacity];
-}
-
-static VOID GrowPointVector(PointVector *pv)
-{
-	INT32 newCapacity = pv->capacity * 2;
-	PPoint newData = new Point[newCapacity];
-	Memory::Copy(newData, pv->data, sizeof(Point) * (USIZE)pv->count);
-	delete[] pv->data;
-	pv->data = newData;
-	pv->capacity = newCapacity;
-}
-
-static VOID GrowNodeVector(NodeVector *nv)
-{
-	INT32 newCapacity = nv->capacity * 2;
-	PContourNode newData = new ContourNode[newCapacity];
-	Memory::Copy(newData, nv->data, sizeof(ContourNode) * (USIZE)nv->count);
-	delete[] nv->data;
-	nv->data = newData;
-	nv->capacity = newCapacity;
-}
-
-static VOID GrowIntVector(IntVector *iv)
-{
-	INT32 newCapacity = iv->capacity * 2;
-	PINT32 newData = new INT32[newCapacity];
-	Memory::Copy(newData, iv->data, sizeof(INT32) * (USIZE)iv->count);
-	delete[] iv->data;
-	iv->data = newData;
-	iv->capacity = newCapacity;
-}
-
-static VOID GrowPoint2dVector(Point2dVector *p2v)
-{
-	INT32 newCapacity = p2v->capacity * 2;
-	PPPoint newData = new PPoint[newCapacity];
-	Memory::Copy(newData, p2v->data, sizeof(PPoint) * (USIZE)p2v->count);
-	delete[] p2v->data;
-	p2v->data = newData;
-	p2v->capacity = newCapacity;
-}
-
-static VOID AddPointVector(PointVector *pv, Point point)
-{
-	if (pv->count + 1 >= pv->capacity)
-		GrowPointVector(pv);
-	pv->data[pv->count] = point;
-	pv->count += 1;
-}
-
-static VOID AddNodeVector(NodeVector *nv, ContourNode node)
-{
-	if (nv->count + 1 >= nv->capacity)
-		GrowNodeVector(nv);
-	nv->data[nv->count] = node;
-	nv->count += 1;
-}
-
-static VOID AddIntVector(IntVector *iv, INT32 value)
-{
-	if (iv->count + 1 >= iv->capacity)
-		GrowIntVector(iv);
-	iv->data[iv->count] = value;
-	iv->count += 1;
-}
-
-static VOID AddPoint2dVector(Point2dVector *p2v, PPoint pointArray)
-{
-	if (p2v->count + 1 >= p2v->capacity)
-		GrowPoint2dVector(p2v);
-	p2v->data[p2v->count] = pointArray;
-	p2v->count += 1;
-}
-
-static VOID FreePointVector(PointVector *pv)
-{
-	if (pv->data)
-	{
-		delete[] pv->data;
-		pv->data = nullptr;
-	}
-}
-
-static VOID FreeNodeVector(NodeVector *nv)
-{
-	if (nv->data)
-	{
-		delete[] nv->data;
-		nv->data = nullptr;
-	}
-}
-
-static VOID FreeIntVector(IntVector *iv)
-{
-	if (iv->data)
-	{
-		delete[] iv->data;
-		iv->data = nullptr;
-	}
-}
-
 
 static VOID ResetNode(ContourNode *n)
 {
-	n->parent = -1;
-	n->firstChild = -1;
-	n->nextSibling = -1;
+	n->Parent = -1;
+	n->FirstChild = -1;
+	n->NextSibling = -1;
 }
 
 // ============================================================
 //  Geometry helpers
 // ============================================================
 
-static BOOL SamePoint(Point a, Point b)
+[[nodiscard]] static BOOL SamePoint(Point a, Point b)
 {
-	return a.row == b.row && a.col == b.col;
+	return a.Row == b.Row && a.Col == b.Col;
 }
 
 /// @brief Mark which cardinal direction around center has been examined
@@ -207,13 +43,13 @@ static VOID MarkExamined(Point mark, Point center, BOOL checked[4])
 	//  2 x 0
 	//    1
 	INT32 loc = -1;
-	if (mark.col > center.col)
+	if (mark.Col > center.Col)
 		loc = 0;
-	else if (mark.col < center.col)
+	else if (mark.Col < center.Col)
 		loc = 2;
-	else if (mark.row > center.row)
+	else if (mark.Row > center.Row)
 		loc = 1;
-	else if (mark.row < center.row)
+	else if (mark.Row < center.Row)
 		loc = 3;
 
 	if (loc == -1)
@@ -225,50 +61,50 @@ static VOID MarkExamined(Point mark, Point center, BOOL checked[4])
 /// @brief Step clockwise around a pivot point
 static VOID StepCW(Point *current, Point pivot)
 {
-	if (current->col > pivot.col)
+	if (current->Col > pivot.Col)
 	{
-		current->col = pivot.col;
-		current->row = pivot.row + 1;
+		current->Col = pivot.Col;
+		current->Row = pivot.Row + 1;
 	}
-	else if (current->col < pivot.col)
+	else if (current->Col < pivot.Col)
 	{
-		current->col = pivot.col;
-		current->row = pivot.row - 1;
+		current->Col = pivot.Col;
+		current->Row = pivot.Row - 1;
 	}
-	else if (current->row > pivot.row)
+	else if (current->Row > pivot.Row)
 	{
-		current->col = pivot.col - 1;
-		current->row = pivot.row;
+		current->Col = pivot.Col - 1;
+		current->Row = pivot.Row;
 	}
-	else if (current->row < pivot.row)
+	else if (current->Row < pivot.Row)
 	{
-		current->col = pivot.col + 1;
-		current->row = pivot.row;
+		current->Col = pivot.Col + 1;
+		current->Row = pivot.Row;
 	}
 }
 
 /// @brief Step counter-clockwise around a pivot point
 static VOID StepCCW(Point *current, Point pivot)
 {
-	if (current->col > pivot.col)
+	if (current->Col > pivot.Col)
 	{
-		current->col = pivot.col;
-		current->row = pivot.row - 1;
+		current->Col = pivot.Col;
+		current->Row = pivot.Row - 1;
 	}
-	else if (current->col < pivot.col)
+	else if (current->Col < pivot.Col)
 	{
-		current->col = pivot.col;
-		current->row = pivot.row + 1;
+		current->Col = pivot.Col;
+		current->Row = pivot.Row + 1;
 	}
-	else if (current->row > pivot.row)
+	else if (current->Row > pivot.Row)
 	{
-		current->col = pivot.col + 1;
-		current->row = pivot.row;
+		current->Col = pivot.Col + 1;
+		current->Row = pivot.Row;
 	}
-	else if (current->row < pivot.row)
+	else if (current->Row < pivot.Row)
 	{
-		current->col = pivot.col - 1;
-		current->row = pivot.row;
+		current->Col = pivot.Col - 1;
+		current->Row = pivot.Row;
 	}
 }
 
@@ -282,7 +118,7 @@ static VOID StepCCW(Point *current, Point pivot)
  * @details Implements step 3 of the Suzuki-Abe algorithm: traces the border
  * of a connected component, recording each boundary pixel.
  *
- * @param image Binary image (modified in-place with border labels)
+ * @param image Binary image span (modified in-place with border labels)
  * @param numRows Number of image rows
  * @param numCols Number of image columns
  * @param row Starting row of the border
@@ -291,25 +127,26 @@ static VOID StepCCW(Point *current, Point pivot)
  * @param nbd Current border sequential number and type
  * @param contourVector Output vector of contour point arrays
  * @param contourCounter Output vector of contour point counts
+ * @return true on success, false on allocation failure
  */
-static VOID FollowBorder(
-	CHAR *image,
+[[nodiscard]] static BOOL FollowBorder(
+	Span<CHAR> image,
 	INT32 numRows,
 	INT32 numCols,
 	INT32 row,
 	INT32 col,
 	Point p2,
 	Border nbd,
-	Point2dVector *contourVector,
-	IntVector *contourCounter)
+	Vector<PPoint> *contourVector,
+	Vector<INT32> *contourCounter)
 {
 	Point current;
-	current.row = p2.row;
-	current.col = p2.col;
+	current.Row = p2.Row;
+	current.Col = p2.Col;
 
 	Point start;
-	start.row = row;
-	start.col = col;
+	start.Row = row;
+	start.Col = col;
 
 	// (3.1) Starting from p2, look CW around start for a nonzero pixel.
 	// If none found, assign -NBD to the pixel and return.
@@ -318,19 +155,25 @@ static VOID FollowBorder(
 		StepCW(&current, start);
 		if (SamePoint(current, p2))
 		{
-			image[start.row * numCols + start.col] = (CHAR)(-nbd.seqNum);
+			image[start.Row * numCols + start.Col] = (CHAR)(-nbd.SeqNum);
 			PPoint temp = new Point[1];
+			if (temp == nullptr)
+				return false;
 			temp[0] = start;
-			AddPoint2dVector(contourVector, temp);
-			AddIntVector(contourCounter, 1);
-			return;
+			if (!contourVector->Add(temp))
+			{
+				delete[] temp;
+				return false;
+			}
+			return contourCounter->Add(1);
 		}
-	} while ((current.col >= numCols || current.row >= numRows ||
-			  current.col < 0 || current.row < 0) ||
-			 image[current.row * numCols + current.col] == 0);
+	} while ((current.Col >= numCols || current.Row >= numRows ||
+			  current.Col < 0 || current.Row < 0) ||
+			 image[current.Row * numCols + current.Col] == 0);
 
-	PointVector pointStorage;
-	InitPointVector(&pointStorage);
+	Vector<Point> pointStorage;
+	if (!pointStorage.Init())
+		return false;
 
 	Point p1 = current;
 
@@ -353,34 +196,39 @@ static VOID FollowBorder(
 		{
 			MarkExamined(current, p3, checked);
 			StepCCW(&current, p3);
-		} while ((current.col >= numCols || current.row >= numRows ||
-				  current.col < 0 || current.row < 0) ||
-				 image[current.row * numCols + current.col] == 0);
+		} while ((current.Col >= numCols || current.Row >= numRows ||
+				  current.Col < 0 || current.Row < 0) ||
+				 image[current.Row * numCols + current.Col] == 0);
 
 		p4 = current;
 
 		// (3.4) Update pixel value at p3
-		if ((p3.col + 1 >= numCols || image[p3.row * numCols + p3.col + 1] == 0) && checked[0])
+		if ((p3.Col + 1 >= numCols || image[p3.Row * numCols + p3.Col + 1] == 0) && checked[0])
 		{
-			image[p3.row * numCols + p3.col] = (CHAR)(-nbd.seqNum);
+			image[p3.Row * numCols + p3.Col] = (CHAR)(-nbd.SeqNum);
 		}
-		else if (p3.col + 1 < numCols && image[p3.row * numCols + p3.col] == 1)
+		else if (p3.Col + 1 < numCols && image[p3.Row * numCols + p3.Col] == 1)
 		{
-			image[p3.row * numCols + p3.col] = (CHAR)nbd.seqNum;
+			image[p3.Row * numCols + p3.Col] = (CHAR)nbd.SeqNum;
 		}
 
-		AddPointVector(&pointStorage, p3);
+		if (!pointStorage.Add(p3))
+			return false;
 
 		// (3.5) If p4 == start and p3 == p1, we have completed the border.
 		if (SamePoint(start, p4) && SamePoint(p1, p3))
 		{
 			// Transfer ownership of point data to contour vector
-			PPoint contourPoints = new Point[(USIZE)pointStorage.count];
-			Memory::Copy(contourPoints, pointStorage.data, sizeof(Point) * (USIZE)pointStorage.count);
-			AddPoint2dVector(contourVector, contourPoints);
-			AddIntVector(contourCounter, pointStorage.count);
-			FreePointVector(&pointStorage);
-			return;
+			PPoint contourPoints = new Point[(USIZE)pointStorage.Count];
+			if (contourPoints == nullptr)
+				return false;
+			Memory::Copy(contourPoints, pointStorage.Data, sizeof(Point) * (USIZE)pointStorage.Count);
+			if (!contourVector->Add(contourPoints))
+			{
+				delete[] contourPoints;
+				return false;
+			}
+			return contourCounter->Add(pointStorage.Count);
 		}
 
 		p2 = p3;
@@ -392,7 +240,7 @@ static VOID FollowBorder(
 //  Absolute value helper (no CRT dependency)
 // ============================================================
 
-static constexpr INT32 AbsInt(INT32 x)
+[[nodiscard]] static constexpr INT32 AbsInt(INT32 x)
 {
 	return x < 0 ? -x : x;
 }
@@ -401,47 +249,64 @@ static constexpr INT32 AbsInt(INT32 x)
 //  Public API
 // ============================================================
 
-[[nodiscard]] Result<void, Error> ImageProcessor::FindContours(
-	CHAR *image,
+[[nodiscard]] Result<ContourResult, Error> ImageProcessor::FindContours(
+	Span<CHAR> image,
 	INT32 numRows,
-	INT32 numCols,
-	PPContour contours,
-	PINT32 contourCount,
-	PPContourNode hierarchy,
-	PINT32 hierarchyCount)
+	INT32 numCols)
 {
 	Border nbd;
 	Border lnbd;
 
-	lnbd.borderType = HoleBorder;
-	nbd.borderType = HoleBorder;
-	nbd.seqNum = 1;
+	lnbd.BorderType = HoleBorder;
+	nbd.BorderType = HoleBorder;
+	nbd.SeqNum = 1;
 
-	NodeVector hierarchyVector;
-	InitNodeVector(&hierarchyVector);
+	Vector<ContourNode> hierarchyVector;
+	if (!hierarchyVector.Init())
+		return Result<ContourResult, Error>::Err(Error::Image_AllocationFailed);
+
 	ContourNode tempNode;
 	ResetNode(&tempNode);
-	tempNode.border = nbd;
-	AddNodeVector(&hierarchyVector, tempNode);
+	tempNode.NodeBorder = nbd;
+	if (!hierarchyVector.Add(tempNode))
+		return Result<ContourResult, Error>::Err(Error::Image_AllocationFailed);
 
 	// Add padding so contour and hierarchy have the same offset
-	Point2dVector contourVector;
-	InitPoint2dVector(&contourVector);
-	PPoint padding = new Point[1];
-	padding[0] = {0, -1};
-	AddPoint2dVector(&contourVector, padding);
+	Vector<PPoint> contourVector;
+	if (!contourVector.Init())
+		return Result<ContourResult, Error>::Err(Error::Image_AllocationFailed);
 
-	IntVector contourCounter;
-	InitIntVector(&contourCounter);
-	AddIntVector(&contourCounter, 1);
+	PPoint padding = new Point[1];
+	if (padding == nullptr)
+		return Result<ContourResult, Error>::Err(Error::Image_AllocationFailed);
+	padding[0] = {0, -1};
+	if (!contourVector.Add(padding))
+	{
+		delete[] padding;
+		return Result<ContourResult, Error>::Err(Error::Image_AllocationFailed);
+	}
+
+	Vector<INT32> contourCounter;
+	if (!contourCounter.Init())
+	{
+		for (INT32 i = 0; i < contourVector.Count; i++)
+			delete[] contourVector.Data[i];
+		return Result<ContourResult, Error>::Err(Error::Image_AllocationFailed);
+	}
+	if (!contourCounter.Add(1))
+	{
+		for (INT32 i = 0; i < contourVector.Count; i++)
+			delete[] contourVector.Data[i];
+		return Result<ContourResult, Error>::Err(Error::Image_AllocationFailed);
+	}
 
 	Point p2;
 	BOOL borderStartFound;
 
 	for (INT32 r = 0; r < numRows; r++)
 	{
-		lnbd.seqNum = 1;
-		lnbd.borderType = HoleBorder;
+		lnbd.SeqNum = 1;
+		lnbd.BorderType = HoleBorder;
 		for (INT32 c = 0; c < numCols; c++)
 		{
 			borderStartFound = false;
@@ -451,25 +316,25 @@ static constexpr INT32 AbsInt(INT32 x)
 			if ((image[r * numCols + c] == 1 && c - 1 < 0) ||
 				(image[r * numCols + c] == 1 && image[r * numCols + c - 1] == 0))
 			{
-				nbd.borderType = OuterBorder;
-				nbd.seqNum += 1;
-				p2.row = r;
-				p2.col = c - 1;
+				nbd.BorderType = OuterBorder;
+				nbd.SeqNum += 1;
+				p2.Row = r;
+				p2.Col = c - 1;
 				borderStartFound = true;
 			}
 			// If f(i,j)>=1 and f(i,j+1)==0, hole border starting point
 			else if (c + 1 < numCols &&
 					 (image[r * numCols + c] >= 1 && image[r * numCols + c + 1] == 0))
 			{
-				nbd.borderType = HoleBorder;
-				nbd.seqNum += 1;
+				nbd.BorderType = HoleBorder;
+				nbd.SeqNum += 1;
 				if (image[r * numCols + c] > 1)
 				{
-					lnbd.seqNum = image[r * numCols + c];
-					lnbd.borderType = hierarchyVector.data[lnbd.seqNum - 1].border.borderType;
+					lnbd.SeqNum = image[r * numCols + c];
+					lnbd.BorderType = hierarchyVector.Data[lnbd.SeqNum - 1].NodeBorder.BorderType;
 				}
-				p2.row = r;
-				p2.col = c + 1;
+				p2.Row = r;
+				p2.Col = c + 1;
 				borderStartFound = true;
 			}
 
@@ -477,72 +342,102 @@ static constexpr INT32 AbsInt(INT32 x)
 			{
 				// Phase 2: Store parent
 				ResetNode(&tempNode);
-				if (nbd.borderType == lnbd.borderType)
+				if (nbd.BorderType == lnbd.BorderType)
 				{
-					tempNode.parent = hierarchyVector.data[lnbd.seqNum - 1].parent;
-					tempNode.nextSibling = hierarchyVector.data[tempNode.parent - 1].firstChild;
-					hierarchyVector.data[tempNode.parent - 1].firstChild = nbd.seqNum;
-					tempNode.border = nbd;
-					AddNodeVector(&hierarchyVector, tempNode);
+					tempNode.Parent = hierarchyVector.Data[lnbd.SeqNum - 1].Parent;
+					tempNode.NextSibling = hierarchyVector.Data[tempNode.Parent - 1].FirstChild;
+					hierarchyVector.Data[tempNode.Parent - 1].FirstChild = nbd.SeqNum;
+					tempNode.NodeBorder = nbd;
+					if (!hierarchyVector.Add(tempNode))
+					{
+						for (INT32 i = 0; i < contourVector.Count; i++)
+							delete[] contourVector.Data[i];
+						return Result<ContourResult, Error>::Err(Error::Image_AllocationFailed);
+					}
 				}
 				else
 				{
-					if (hierarchyVector.data[lnbd.seqNum - 1].firstChild != -1)
+					if (hierarchyVector.Data[lnbd.SeqNum - 1].FirstChild != -1)
 					{
-						tempNode.nextSibling = hierarchyVector.data[lnbd.seqNum - 1].firstChild;
+						tempNode.NextSibling = hierarchyVector.Data[lnbd.SeqNum - 1].FirstChild;
 					}
-					tempNode.parent = lnbd.seqNum;
-					hierarchyVector.data[lnbd.seqNum - 1].firstChild = nbd.seqNum;
-					tempNode.border = nbd;
-					AddNodeVector(&hierarchyVector, tempNode);
+					tempNode.Parent = lnbd.SeqNum;
+					hierarchyVector.Data[lnbd.SeqNum - 1].FirstChild = nbd.SeqNum;
+					tempNode.NodeBorder = nbd;
+					if (!hierarchyVector.Add(tempNode))
+					{
+						for (INT32 i = 0; i < contourVector.Count; i++)
+							delete[] contourVector.Data[i];
+						return Result<ContourResult, Error>::Err(Error::Image_AllocationFailed);
+					}
 				}
 
 				// Phase 3: Follow border
-				FollowBorder(image, numRows, numCols, r, c, p2, nbd,
-							 &contourVector, &contourCounter);
+				if (!FollowBorder(image, numRows, numCols, r, c, p2, nbd,
+								  &contourVector, &contourCounter))
+				{
+					for (INT32 i = 0; i < contourVector.Count; i++)
+						delete[] contourVector.Data[i];
+					return Result<ContourResult, Error>::Err(Error::Image_AllocationFailed);
+				}
 			}
 
 			// Phase 4: Continue to next border
 			if (AbsInt(image[r * numCols + c]) > 1)
 			{
-				lnbd.seqNum = AbsInt(image[r * numCols + c]);
-				lnbd.borderType = hierarchyVector.data[lnbd.seqNum - 1].border.borderType;
+				lnbd.SeqNum = AbsInt(image[r * numCols + c]);
+				lnbd.BorderType = hierarchyVector.Data[lnbd.SeqNum - 1].NodeBorder.BorderType;
 			}
 		}
 	}
 
 	// Build output arrays
-	INT32 totalContours = contourVector.count;
+	INT32 totalContours = contourVector.Count;
 
-	*contourCount = totalContours;
-	*contours = new Contour[(USIZE)totalContours];
+	PContour outContours = new Contour[(USIZE)totalContours];
+	if (outContours == nullptr)
+	{
+		for (INT32 i = 0; i < contourVector.Count; i++)
+			delete[] contourVector.Data[i];
+		return Result<ContourResult, Error>::Err(Error::Image_AllocationFailed);
+	}
 
 	for (INT32 i = 0; i < totalContours; i++)
 	{
-		(*contours)[i].points = contourVector.data[i];
-		(*contours)[i].count = contourCounter.data[i];
+		outContours[i].Points = contourVector.Data[i];
+		outContours[i].Count = contourCounter.Data[i];
 	}
 
 	// Transfer hierarchy ownership
-	*hierarchyCount = hierarchyVector.count;
-	*hierarchy = new ContourNode[(USIZE)hierarchyVector.count];
-	Memory::Copy(*hierarchy, hierarchyVector.data, sizeof(ContourNode) * (USIZE)hierarchyVector.count);
+	PContourNode outHierarchy = new ContourNode[(USIZE)hierarchyVector.Count];
+	if (outHierarchy == nullptr)
+	{
+		for (INT32 i = 0; i < totalContours; i++)
+			delete[] outContours[i].Points;
+		delete[] outContours;
+		return Result<ContourResult, Error>::Err(Error::Image_AllocationFailed);
+	}
+	Memory::Copy(outHierarchy, hierarchyVector.Data, sizeof(ContourNode) * (USIZE)hierarchyVector.Count);
 
-	// Free internal vectors (not the contour point arrays — ownership transferred)
-	FreeNodeVector(&hierarchyVector);
-	FreeIntVector(&contourCounter);
-	// Free only the pointer array, not the pointed-to point arrays
-	delete[] contourVector.data;
+	ContourResult result;
+	result.Contours = outContours;
+	result.ContourCount = totalContours;
+	result.Hierarchy = outHierarchy;
+	result.HierarchyCount = hierarchyVector.Count;
 
-	return Result<void, Error>::Ok();
+	// Release the pointer array without deleting the pointed-to point arrays
+	// (ownership transferred to outContours)
+	(void)contourVector.Release();
+
+	return Result<ContourResult, Error>::Ok(result);
 }
 
 VOID ImageProcessor::CalculateBiDifference(
-	PCRGB image1,
-	PCRGB image2,
+	Span<const RGB> image1,
+	Span<const RGB> image2,
 	UINT32 width,
 	UINT32 height,
-	PUINT8 biDiff)
+	Span<UINT8> biDiff)
 {
 	for (UINT32 i = 0; i < height; ++i)
 	{
@@ -564,7 +459,7 @@ VOID ImageProcessor::CalculateBiDifference(
 }
 
 VOID ImageProcessor::RemoveNoise(
-	PUINT8 biDiff,
+	Span<UINT8> biDiff,
 	UINT32 width,
 	UINT32 height)
 {

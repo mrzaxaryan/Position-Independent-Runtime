@@ -38,24 +38,6 @@ public:
 	}
 
 private:
-	// ---- Helper: free contour results ----
-	static VOID FreeContourResults(PContour contours, INT32 contourCount,
-								   PContourNode hierarchy, INT32 hierarchyCount)
-	{
-		if (contours)
-		{
-			for (INT32 i = 0; i < contourCount; i++)
-			{
-				if (contours[i].points)
-					delete[] contours[i].points;
-			}
-			delete[] contours;
-		}
-		if (hierarchy)
-			delete[] hierarchy;
-		(void)hierarchyCount;
-	}
-
 	// ---- BiDifference tests ----
 
 	static BOOL TestBiDiff_IdenticalImages()
@@ -230,29 +212,24 @@ private:
 		CHAR image[16];
 		Memory::Zero(image, sizeof(image));
 
-		PContour contours = nullptr;
-		INT32 contourCount = 0;
-		PContourNode hierarchy = nullptr;
-		INT32 hierarchyCount = 0;
-
-		auto r = ImageProcessor::FindContours(image, 4, 4,
-											  &contours, &contourCount,
-											  &hierarchy, &hierarchyCount);
+		auto r = ImageProcessor::FindContours(image, 4, 4);
 		if (!r)
 		{
 			LOG_ERROR("FindContours failed: %e", r.Error());
 			return false;
 		}
 
+		auto result = r.Value();
+
 		// Only padding entry expected
-		if (contourCount != 1)
+		if (result.ContourCount != 1)
 		{
-			LOG_ERROR("Expected 1 (padding), got %d contours", contourCount);
-			FreeContourResults(contours, contourCount, hierarchy, hierarchyCount);
+			LOG_ERROR("Expected 1 (padding), got %d contours", result.ContourCount);
+			result.Free();
 			return false;
 		}
 
-		FreeContourResults(contours, contourCount, hierarchy, hierarchyCount);
+		result.Free();
 		return true;
 	}
 
@@ -264,37 +241,32 @@ private:
 		Memory::Zero(image, sizeof(image));
 		image[1 * 3 + 1] = 1; // center pixel
 
-		PContour contours = nullptr;
-		INT32 contourCount = 0;
-		PContourNode hierarchy = nullptr;
-		INT32 hierarchyCount = 0;
-
-		auto r = ImageProcessor::FindContours(image, 3, 3,
-											  &contours, &contourCount,
-											  &hierarchy, &hierarchyCount);
+		auto r = ImageProcessor::FindContours(image, 3, 3);
 		if (!r)
 		{
 			LOG_ERROR("FindContours failed: %e", r.Error());
 			return false;
 		}
 
+		auto result = r.Value();
+
 		// Should find padding + 1 contour = 2
-		if (contourCount < 2)
+		if (result.ContourCount < 2)
 		{
-			LOG_ERROR("Expected >= 2, got %d contours", contourCount);
-			FreeContourResults(contours, contourCount, hierarchy, hierarchyCount);
+			LOG_ERROR("Expected >= 2, got %d contours", result.ContourCount);
+			result.Free();
 			return false;
 		}
 
 		// The real contour (index 1) should have at least 1 point
-		if (contours[1].count < 1)
+		if (result.Contours[1].Count < 1)
 		{
-			LOG_ERROR("Contour 1 has %d points, expected >= 1", contours[1].count);
-			FreeContourResults(contours, contourCount, hierarchy, hierarchyCount);
+			LOG_ERROR("Contour 1 has %d points, expected >= 1", result.Contours[1].Count);
+			result.Free();
 			return false;
 		}
 
-		FreeContourResults(contours, contourCount, hierarchy, hierarchyCount);
+		result.Free();
 		return true;
 	}
 
@@ -313,45 +285,40 @@ private:
 			for (INT32 c = 1; c <= 4; c++)
 				image[r * 6 + c] = 1;
 
-		PContour contours = nullptr;
-		INT32 contourCount = 0;
-		PContourNode hierarchy = nullptr;
-		INT32 hierarchyCount = 0;
-
-		auto result = ImageProcessor::FindContours(image, 6, 6,
-												   &contours, &contourCount,
-												   &hierarchy, &hierarchyCount);
-		if (!result)
+		auto res = ImageProcessor::FindContours(image, 6, 6);
+		if (!res)
 		{
-			LOG_ERROR("FindContours failed: %e", result.Error());
+			LOG_ERROR("FindContours failed: %e", res.Error());
 			return false;
 		}
 
+		auto result = res.Value();
+
 		// padding + 1 outer contour = 2
-		if (contourCount < 2)
+		if (result.ContourCount < 2)
 		{
-			LOG_ERROR("Expected >= 2 contours, got %d", contourCount);
-			FreeContourResults(contours, contourCount, hierarchy, hierarchyCount);
+			LOG_ERROR("Expected >= 2 contours, got %d", result.ContourCount);
+			result.Free();
 			return false;
 		}
 
 		// The rectangle contour should trace the border (8 boundary pixels)
-		if (contours[1].count < 4)
+		if (result.Contours[1].Count < 4)
 		{
-			LOG_ERROR("Rectangle contour has %d points, expected >= 4", contours[1].count);
-			FreeContourResults(contours, contourCount, hierarchy, hierarchyCount);
+			LOG_ERROR("Rectangle contour has %d points, expected >= 4", result.Contours[1].Count);
+			result.Free();
 			return false;
 		}
 
 		// Hierarchy should have at least 2 nodes (root + rectangle)
-		if (hierarchyCount < 2)
+		if (result.HierarchyCount < 2)
 		{
-			LOG_ERROR("Expected >= 2 hierarchy nodes, got %d", hierarchyCount);
-			FreeContourResults(contours, contourCount, hierarchy, hierarchyCount);
+			LOG_ERROR("Expected >= 2 hierarchy nodes, got %d", result.HierarchyCount);
+			result.Free();
 			return false;
 		}
 
-		FreeContourResults(contours, contourCount, hierarchy, hierarchyCount);
+		result.Free();
 		return true;
 	}
 
@@ -367,29 +334,24 @@ private:
 		image[1 * 8 + 1] = 1; // object 1
 		image[1 * 8 + 5] = 1; // object 2
 
-		PContour contours = nullptr;
-		INT32 contourCount = 0;
-		PContourNode hierarchy = nullptr;
-		INT32 hierarchyCount = 0;
-
-		auto r = ImageProcessor::FindContours(image, 4, 8,
-											  &contours, &contourCount,
-											  &hierarchy, &hierarchyCount);
+		auto r = ImageProcessor::FindContours(image, 4, 8);
 		if (!r)
 		{
 			LOG_ERROR("FindContours failed: %e", r.Error());
 			return false;
 		}
 
+		auto result = r.Value();
+
 		// padding + 2 contours = 3
-		if (contourCount < 3)
+		if (result.ContourCount < 3)
 		{
-			LOG_ERROR("Expected >= 3 contours for two objects, got %d", contourCount);
-			FreeContourResults(contours, contourCount, hierarchy, hierarchyCount);
+			LOG_ERROR("Expected >= 3 contours for two objects, got %d", result.ContourCount);
+			result.Free();
 			return false;
 		}
 
-		FreeContourResults(contours, contourCount, hierarchy, hierarchyCount);
+		result.Free();
 		return true;
 	}
 };

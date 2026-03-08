@@ -14,6 +14,11 @@
 
 #include "platform/platform.h"
 
+/// @name Containers
+/// @{
+#include "runtime/vector.h"
+/// @}
+
 /// @name Cryptography
 /// @{
 #include "runtime/crypto/sha2.h"

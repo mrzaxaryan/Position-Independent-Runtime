@@ -35,8 +35,8 @@ using PCRGB = const RGB *;
 /// @brief 2D point with row/column indices
 struct Point
 {
-	INT32 row;
-	INT32 col;
+	INT32 Row;
+	INT32 Col;
 };
 
 using PPoint = Point *;
@@ -45,8 +45,8 @@ using PPPoint = Point **;
 /// @brief Contour: array of points and its size
 struct Contour
 {
-	PPoint points;
-	INT32 count;
+	PPoint Points;
+	INT32 Count;
 };
 
 using PContour = Contour *;
@@ -55,21 +55,47 @@ using PPContour = Contour **;
 /// @brief Border descriptor used during contour tracing
 struct Border
 {
-	INT32 seqNum;
-	INT32 borderType;
+	INT32 SeqNum;
+	INT32 BorderType;
 };
 
 /// @brief Hierarchy node for contour parent-child relationships
 struct ContourNode
 {
-	Border border;
-	INT32 parent;
-	INT32 firstChild;
-	INT32 nextSibling;
+	Border NodeBorder;
+	INT32 Parent;
+	INT32 FirstChild;
+	INT32 NextSibling;
 };
 
 using PContourNode = ContourNode *;
 using PPContourNode = ContourNode **;
+
+/// @brief Result of contour detection containing contours and hierarchy
+struct ContourResult
+{
+	PContour Contours;
+	INT32 ContourCount;
+	PContourNode Hierarchy;
+	INT32 HierarchyCount;
+
+	/// @brief Free all allocated memory owned by this result
+	VOID Free()
+	{
+		if (Contours)
+		{
+			for (INT32 i = 0; i < ContourCount; i++)
+				delete[] Contours[i].Points;
+			delete[] Contours;
+			Contours = nullptr;
+		}
+		if (Hierarchy)
+		{
+			delete[] Hierarchy;
+			Hierarchy = nullptr;
+		}
+	}
+};
 
 /**
  * @class ImageProcessor
@@ -96,22 +122,14 @@ public:
 	 * @param image Binary image buffer (signed, modified in-place)
 	 * @param numRows Number of rows in the image
 	 * @param numCols Number of columns in the image
-	 * @param contours Output: array of contours (caller must free)
-	 * @param contourCount Output: number of contours found
-	 * @param hierarchy Output: array of hierarchy nodes (caller must free)
-	 * @param hierarchyCount Output: number of hierarchy nodes
-	 * @return Ok on success, or error on allocation failure
+	 * @return Ok(ContourResult) on success, or error on allocation failure
 	 *
 	 * @see Suzuki & Abe, CVGIP 30(1), 1985
 	 */
-	[[nodiscard]] static Result<void, Error> FindContours(
-		CHAR *image,
+	[[nodiscard]] static Result<ContourResult, Error> FindContours(
+		Span<CHAR> image,
 		INT32 numRows,
-		INT32 numCols,
-		PPContour contours,
-		PINT32 contourCount,
-		PPContourNode hierarchy,
-		PINT32 hierarchyCount);
+		INT32 numCols);
 
 	/**
 	 * @brief Calculate per-pixel binary difference between two RGB images
@@ -123,11 +141,11 @@ public:
 	 * @param biDiff Output: 1 where pixels differ, 0 where identical
 	 */
 	static VOID CalculateBiDifference(
-		PCRGB image1,
-		PCRGB image2,
+		Span<const RGB> image1,
+		Span<const RGB> image2,
 		UINT32 width,
 		UINT32 height,
-		PUINT8 biDiff);
+		Span<UINT8> biDiff);
 
 	/**
 	 * @brief Remove noise from a binary difference image using block averaging
@@ -140,7 +158,7 @@ public:
 	 * @param height Image height in pixels
 	 */
 	static VOID RemoveNoise(
-		PUINT8 biDiff,
+		Span<UINT8> biDiff,
 		UINT32 width,
 		UINT32 height);
 };
