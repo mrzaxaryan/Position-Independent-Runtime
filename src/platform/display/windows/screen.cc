@@ -17,7 +17,7 @@
  *      https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-getdibits
  */
 
-#include "runtime/display/screen.h"
+#include "platform/display/screen.h"
 #include "platform/common/windows/user32.h"
 #include "platform/common/windows/gdi32.h"
 

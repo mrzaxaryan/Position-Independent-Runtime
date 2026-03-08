@@ -14,10 +14,10 @@
  * - Solaris: Framebuffer device (/dev/fb) with FBIOGTYPE ioctl + mmap
  * - macOS/iOS: Stub (CoreGraphics requires framework loading)
  *
- * @ingroup runtime
+ * @ingroup platform
  *
  * @defgroup display Display
- * @ingroup runtime
+ * @ingroup platform
  * @{
  */
 

@@ -30,7 +30,7 @@
  *      https://docs.oracle.com/cd/E36784_01/html/E36884/fbio-7i.html
  */
 
-#include "runtime/display/screen.h"
+#include "platform/display/screen.h"
 #include "core/memory/memory.h"
 
 #if defined(PLATFORM_LINUX)

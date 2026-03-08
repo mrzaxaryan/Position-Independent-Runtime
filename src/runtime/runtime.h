@@ -40,11 +40,6 @@
 #include "runtime/image/image_processor.h"
 /// @}
 
-/// @name Display
-/// @{
-#include "runtime/display/screen.h"
-/// @}
-
 /// @name TLS 1.3
 /// @{
 #include "runtime/network/tls/tls_client.h"

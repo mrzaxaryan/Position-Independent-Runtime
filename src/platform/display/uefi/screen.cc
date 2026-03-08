@@ -12,7 +12,7 @@
  *      https://uefi.org/specs/UEFI/2.10/12_Protocols_Console_Support.html#efi-graphics-output-protocol
  */
 
-#include "runtime/display/screen.h"
+#include "platform/display/screen.h"
 #include "platform/common/uefi/efi_context.h"
 #include "platform/common/uefi/efi_graphics_output_protocol.h"
 
