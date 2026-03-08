@@ -11,9 +11,9 @@
  * The framebuffer API is shared between Linux, Android (same kernel),
  * and FreeBSD (via the linuxkpi DRM compatibility layer on FreeBSD 13+).
  *
- * Solaris uses a different framebuffer API (Visual I/O via vis_io.h)
- * that is not yet implemented. Both methods return
- * Screen_GetDevicesFailed / Screen_CaptureFailed on Solaris.
+ * Solaris uses the SunOS framebuffer API (sys/fbio.h) with FBIOGTYPE
+ * ioctl to query /dev/fb device parameters and mmap to read pixel data.
+ * Only a single console framebuffer is supported.
  *
  * macOS and iOS require CoreGraphics framework for screen capture,
  * which is not available in a position-independent runtime context.
@@ -26,6 +26,8 @@
  *
  * @see Linux framebuffer API (linux/fb.h)
  *      https://www.kernel.org/doc/html/latest/fb/api.html
+ * @see Solaris fbio(4I)
+ *      https://docs.oracle.com/cd/E36784_01/html/E36884/fbio-7i.html
  */
 
 #include "runtime/display/screen.h"
@@ -52,10 +54,10 @@
 #endif
 
 // =============================================================================
-// Stubs — Solaris (vis_io), macOS/iOS (CoreGraphics) not yet implemented
+// Stubs — macOS/iOS (CoreGraphics requires framework loading)
 // =============================================================================
 
-#if defined(PLATFORM_SOLARIS) || defined(PLATFORM_MACOS) || defined(PLATFORM_IOS)
+#if defined(PLATFORM_MACOS) || defined(PLATFORM_IOS)
 
 Result<ScreenDeviceList, Error> Screen::GetDevices()
 {
@@ -67,6 +69,227 @@ Result<void, Error> Screen::Capture(const ScreenDevice &device, Span<RGB> buffer
 	(void)device;
 	(void)buffer;
 	return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+}
+
+#elif defined(PLATFORM_SOLARIS)
+
+// =============================================================================
+// Solaris framebuffer — FBIOGTYPE ioctl + mmap (/dev/fb)
+// =============================================================================
+
+/// @brief SunOS framebuffer type information (sys/fbio.h)
+/// @see fbio(4I)
+///      https://docs.oracle.com/cd/E36784_01/html/E36884/fbio-7i.html
+struct FbType
+{
+	INT32 Type;    ///< Frame buffer type (FBTYPE_* constant)
+	INT32 Height;  ///< Height in pixels
+	INT32 Width;   ///< Width in pixels
+	INT32 Depth;   ///< Bits per pixel
+	INT32 CmSize;  ///< Size of color map (entries)
+	INT32 Size;    ///< Total framebuffer memory in bytes
+};
+
+/// @brief Get framebuffer type information
+/// @details FBIOGTYPE = (FIOC | 0) where FIOC = ('F' << 8)
+constexpr USIZE FBIOGTYPE = 0x4600;
+
+/// @brief Open the Solaris console framebuffer device (/dev/fb)
+/// @return File descriptor on success, negative errno on failure
+static SSIZE OpenFramebuffer()
+{
+	auto devFb = "/dev/fb"_embed;
+	CHAR path[8];
+	Memory::Copy(path, (const CHAR *)devFb, 8);
+
+	return System::Call(SYS_OPENAT, (USIZE)AT_FDCWD, (USIZE)path, (USIZE)O_RDONLY);
+}
+
+/// @brief Perform an ioctl syscall on a file descriptor
+/// @param fd File descriptor
+/// @param request Ioctl request code
+/// @param arg Pointer to request-specific data
+/// @return 0 on success, negative errno on failure
+static SSIZE Ioctl(SSIZE fd, USIZE request, PVOID arg)
+{
+	return System::Call(SYS_IOCTL, (USIZE)fd, request, (USIZE)arg);
+}
+
+/// @brief Map framebuffer memory for reading
+/// @param size Number of bytes to map
+/// @param fd Framebuffer file descriptor
+/// @return Mapped address, or nullptr on failure
+static PVOID MmapFramebuffer(USIZE size, SSIZE fd)
+{
+	INT32 prot = PROT_READ;
+	INT32 flags = MAP_SHARED;
+
+#if defined(ARCHITECTURE_I386)
+	// Solaris i386: mmap takes 64-bit off_t split across two 32-bit stack
+	// slots. The 6-arg System::Call only pushes one slot for the offset.
+	// Use inline asm to push all 7 argument slots + dummy return address.
+	SSIZE result;
+	register USIZE r1 __asm__("ebx") = 0;              // addr
+	register USIZE r2 __asm__("ecx") = size;            // len
+	register USIZE r3 __asm__("edx") = (USIZE)prot;    // prot
+	register USIZE r4 __asm__("esi") = (USIZE)flags;   // flags
+	register USIZE r5 __asm__("edi") = (USIZE)fd;      // fd
+	__asm__ volatile(
+		"pushl $0\n"          // off_t pos high 32 bits = 0
+		"pushl $0\n"          // off_t pos low 32 bits = 0
+		"pushl %%edi\n"       // fd
+		"pushl %%esi\n"       // flags
+		"pushl %%edx\n"       // prot
+		"pushl %%ecx\n"       // len
+		"pushl %%ebx\n"       // addr
+		"pushl $0\n"          // dummy return address
+		"int $0x91\n"
+		"jnc 1f\n"
+		"negl %%eax\n"
+		"1:\n"
+		"addl $32, %%esp\n"
+		: "=a"(result)
+		: "a"((USIZE)SYS_MMAP), "r"(r1), "r"(r2), "r"(r3), "r"(r4), "r"(r5)
+		: "memory", "cc"
+	);
+#else
+	SSIZE result = System::Call(SYS_MMAP, (USIZE)0, size,
+		(USIZE)prot, (USIZE)flags, (USIZE)fd, (USIZE)0);
+#endif
+
+	if (result < 0 && result >= -4095)
+		return nullptr;
+
+	return (PVOID)result;
+}
+
+// =============================================================================
+// Screen::GetDevices (Solaris)
+// =============================================================================
+
+Result<ScreenDeviceList, Error> Screen::GetDevices()
+{
+	SSIZE fd = OpenFramebuffer();
+	if (fd < 0)
+		return Result<ScreenDeviceList, Error>::Err(Error(Error::Screen_GetDevicesFailed));
+
+	FbType fbt;
+	Memory::Zero(&fbt, sizeof(fbt));
+
+	SSIZE ret = Ioctl(fd, FBIOGTYPE, &fbt);
+	System::Call(SYS_CLOSE, (USIZE)fd);
+
+	if (ret < 0)
+		return Result<ScreenDeviceList, Error>::Err(Error(Error::Screen_GetDevicesFailed));
+
+	if (fbt.Width <= 0 || fbt.Height <= 0)
+		return Result<ScreenDeviceList, Error>::Err(Error(Error::Screen_GetDevicesFailed));
+
+	ScreenDevice *devices = new ScreenDevice[1];
+	if (devices == nullptr)
+		return Result<ScreenDeviceList, Error>::Err(Error(Error::Screen_AllocFailed));
+
+	devices[0].Left = 0;
+	devices[0].Top = 0;
+	devices[0].Width = (UINT32)fbt.Width;
+	devices[0].Height = (UINT32)fbt.Height;
+	devices[0].Primary = true;
+
+	ScreenDeviceList list;
+	list.Devices = devices;
+	list.Count = 1;
+	return Result<ScreenDeviceList, Error>::Ok(list);
+}
+
+// =============================================================================
+// Screen::Capture (Solaris)
+// =============================================================================
+
+Result<void, Error> Screen::Capture(const ScreenDevice &device, Span<RGB> buffer)
+{
+	SSIZE fd = OpenFramebuffer();
+	if (fd < 0)
+		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+
+	FbType fbt;
+	Memory::Zero(&fbt, sizeof(fbt));
+
+	SSIZE ret = Ioctl(fd, FBIOGTYPE, &fbt);
+	if (ret < 0 || fbt.Width <= 0 || fbt.Height <= 0)
+	{
+		System::Call(SYS_CLOSE, (USIZE)fd);
+		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+	}
+
+	// Validate dimensions match the device
+	if ((UINT32)fbt.Width != device.Width || (UINT32)fbt.Height != device.Height)
+	{
+		System::Call(SYS_CLOSE, (USIZE)fd);
+		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+	}
+
+	UINT32 bytesPerPixel = (UINT32)fbt.Depth / 8;
+	if (bytesPerPixel == 0 || bytesPerPixel > 4)
+	{
+		System::Call(SYS_CLOSE, (USIZE)fd);
+		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+	}
+
+	// Use fb_size from FBIOGTYPE, fall back to computed size
+	USIZE mapSize = (fbt.Size > 0) ? (USIZE)fbt.Size
+		: (USIZE)fbt.Width * (USIZE)fbt.Height * bytesPerPixel;
+
+	PVOID mapped = MmapFramebuffer(mapSize, fd);
+	System::Call(SYS_CLOSE, (USIZE)fd);
+
+	if (mapped == nullptr)
+		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+
+	// Convert framebuffer pixels to RGB
+	// FBIOGTYPE does not report per-component bitfield offsets or line stride,
+	// so assume standard little-endian layouts for common depths.
+	UINT8 *fbBase = (UINT8 *)mapped;
+	PRGB rgbBuf = buffer.Data();
+	UINT32 width = device.Width;
+	UINT32 height = device.Height;
+	USIZE lineLength = (USIZE)width * bytesPerPixel;
+
+	for (UINT32 y = 0; y < height; y++)
+	{
+		UINT8 *row = fbBase + (USIZE)y * lineLength;
+
+		for (UINT32 x = 0; x < width; x++)
+		{
+			UINT8 *src = row + (USIZE)x * bytesPerPixel;
+
+			if (bytesPerPixel == 4)
+			{
+				// 32bpp BGRA (standard x86/aarch64 framebuffer layout)
+				rgbBuf[y * width + x].Red = src[2];
+				rgbBuf[y * width + x].Green = src[1];
+				rgbBuf[y * width + x].Blue = src[0];
+			}
+			else if (bytesPerPixel == 3)
+			{
+				// 24bpp BGR
+				rgbBuf[y * width + x].Red = src[2];
+				rgbBuf[y * width + x].Green = src[1];
+				rgbBuf[y * width + x].Blue = src[0];
+			}
+			else if (bytesPerPixel == 2)
+			{
+				// 16bpp RGB565
+				UINT16 pixel = (UINT16)src[0] | ((UINT16)src[1] << 8);
+				rgbBuf[y * width + x].Red = (UINT8)(((pixel >> 11) & 0x1F) * 255 / 31);
+				rgbBuf[y * width + x].Green = (UINT8)(((pixel >> 5) & 0x3F) * 255 / 63);
+				rgbBuf[y * width + x].Blue = (UINT8)((pixel & 0x1F) * 255 / 31);
+			}
+		}
+	}
+
+	System::Call(SYS_MUNMAP, (USIZE)mapped, mapSize);
+
+	return Result<void, Error>::Ok();
 }
 
 #else // Linux, Android, FreeBSD — framebuffer implementation
@@ -388,4 +611,4 @@ Result<void, Error> Screen::Capture(const ScreenDevice &device, Span<RGB> buffer
 	return Result<void, Error>::Ok();
 }
 
-#endif // PLATFORM_SOLARIS
+#endif // platform selection

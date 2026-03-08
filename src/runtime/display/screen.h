@@ -11,8 +11,8 @@
  * - Windows: User32 EnumDisplayDevicesW/EnumDisplaySettingsW, GDI BitBlt/GetDIBits
  * - Linux/Android/FreeBSD: Framebuffer device (/dev/fb0..fb7) with ioctl + mmap
  * - UEFI: Graphics Output Protocol (GOP) QueryMode/Blt
+ * - Solaris: Framebuffer device (/dev/fb) with FBIOGTYPE ioctl + mmap
  * - macOS/iOS: Stub (CoreGraphics requires framework loading)
- * - Solaris: Stub (Visual I/O not yet implemented)
  *
  * @ingroup runtime
  *
