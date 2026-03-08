@@ -205,7 +205,7 @@ The binary must contain **only** a `.text` section. No `.rdata`, `.rodata`, `.da
 | `3.14` float literals | `3.14_embed` |
 | `&MyFunc` function pointers | `EMBED_FUNC(MyFunc)` |
 | Global/static variables | Stack-local variables |
-| `const` arrays at file scope | `MakeEmbedArray(...)` |
+| `const`/`constexpr` arrays | `MakeEmbedArray<T>(vals...)` |
 | STL containers/algorithms | Custom PIR implementations |
 | Exceptions (`throw`/`try`/`catch`) | `Result<T, Error>` |
 | Raw `BOOL`/`NTSTATUS`/`SSIZE` for fallible returns | `Result<T, Error>` or `Result<void, Error>` |
@@ -410,8 +410,10 @@ Delete heap allocation operators (`operator new`/`operator delete = delete`).
 |------|---------|--------|
 | `EMBEDDED_STRING` | `"text"_embed` / `L"text"_embed` | Characters packed into machine words |
 | `DOUBLE` | `3.14_embed` | IEEE-754 bits as `UINT64` immediate |
-| `EMBEDDED_ARRAY` | `MakeEmbedArray(arr)` | Elements packed into machine words |
+| `EMBEDDED_ARRAY` | `MakeEmbedArray<T>(vals...)` | Elements packed into machine words |
 | `EMBEDDED_FUNCTION_POINTER` | `EMBED_FUNC(Fn)` | PC-relative offset, no relocation |
+
+**Variadic `MakeEmbedArray<T>(vals...)`** -- Pass values directly as arguments instead of through a named `constexpr` array. Named `constexpr` arrays leak to `.rdata` at `-O0` on some compilers (e.g., Clang cross-compiling from Linux). The variadic overload constructs the array inside a `consteval` function where it cannot leak. For compound literal callers, `MakeEmbedArray((const T[]){...})` also works.
 
 A **register barrier** (`__asm__ volatile("" : "+r"(word))`) prevents the compiler from coalescing values back into `.rdata`.
 

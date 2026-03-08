@@ -337,11 +337,10 @@ movabsq $0x57202C6F6C6C6548, (%rsp)   ; "Hello, W" packed into a single immediat
 movabsq $0x00000021646C726F, 8(%rsp)   ; "orld!\0"
 ```
 
-The same technique applies to constant arrays via `MakeEmbedArray()`:
+The same technique applies to constant arrays via `MakeEmbedArray<T>(vals...)`:
 
 ```cpp
-constexpr UINT32 lookup[] = {0x12345678, 0xABCDEF00};
-auto embedded = MakeEmbedArray(lookup);
+auto embedded = MakeEmbedArray<UINT32>(0x12345678, 0xABCDEF00);
 UINT32 value = embedded[0]; // Unpacked at runtime
 ```
 
