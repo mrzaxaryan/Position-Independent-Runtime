@@ -9,7 +9,7 @@
  *
  * @par Platform Implementations
  * - Windows: User32 EnumDisplayDevicesW/EnumDisplaySettingsW, GDI BitBlt/GetDIBits
- * - Linux/FreeBSD: Framebuffer device (/dev/fb0..fb7) with ioctl + mmap
+ * - Linux/Android/FreeBSD: Framebuffer device (/dev/fb0..fb7) with ioctl + mmap
  * - UEFI: Graphics Output Protocol (GOP) QueryMode/Blt
  *
  * @ingroup runtime

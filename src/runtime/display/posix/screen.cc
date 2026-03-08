@@ -1,6 +1,6 @@
 /**
  * @file screen.cc
- * @brief POSIX Screen Implementation (Linux/FreeBSD)
+ * @brief POSIX Screen Implementation (Linux/Android/FreeBSD)
  *
  * @details Implements screen device enumeration and capture via the Linux
  * framebuffer device interface (/dev/fb0..fb7). Uses ioctl with
@@ -8,8 +8,8 @@
  * parameters, and mmap with MAP_SHARED to read pixel data directly
  * from the framebuffer memory.
  *
- * The framebuffer API is shared between Linux and FreeBSD (via the
- * linuxkpi DRM compatibility layer on FreeBSD 13+).
+ * The framebuffer API is shared between Linux, Android (same kernel),
+ * and FreeBSD (via the linuxkpi DRM compatibility layer on FreeBSD 13+).
  *
  * @note Framebuffer devices are limited to one display per /dev/fbN.
  * Multi-monitor setups with separate framebuffers are enumerated as
@@ -26,6 +26,9 @@
 #if defined(PLATFORM_LINUX)
 #include "platform/common/linux/syscall.h"
 #include "platform/common/linux/system.h"
+#elif defined(PLATFORM_ANDROID)
+#include "platform/common/android/syscall.h"
+#include "platform/common/android/system.h"
 #elif defined(PLATFORM_FREEBSD)
 #include "platform/common/freebsd/syscall.h"
 #include "platform/common/freebsd/system.h"
@@ -122,7 +125,7 @@ static SSIZE OpenFramebuffer(UINT32 index)
 	path[7] = '0' + (CHAR)index;
 	path[8] = '\0';
 
-#if (defined(PLATFORM_LINUX) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))) || \
+#if ((defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))) || \
 	(defined(PLATFORM_FREEBSD) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64)))
 	return System::Call(SYS_OPENAT, (USIZE)AT_FDCWD, (USIZE)path, (USIZE)O_RDONLY);
 #else
@@ -149,8 +152,8 @@ static PVOID MmapFramebuffer(USIZE size, SSIZE fd)
 	INT32 prot = PROT_READ;
 	INT32 flags = MAP_SHARED;
 
-#if defined(PLATFORM_LINUX) && (defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A) || defined(ARCHITECTURE_RISCV32))
-	// 32-bit Linux uses mmap2 with page-shifted offset
+#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && (defined(ARCHITECTURE_I386) || defined(ARCHITECTURE_ARMV7A) || defined(ARCHITECTURE_RISCV32))
+	// 32-bit Linux/Android uses mmap2 with page-shifted offset
 	SSIZE result = System::Call(SYS_MMAP2, (USIZE)0, size,
 		(USIZE)prot, (USIZE)flags, (USIZE)fd, (USIZE)0);
 #elif defined(PLATFORM_FREEBSD) && defined(ARCHITECTURE_I386)
