@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+jobs:
+  CI:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Wait for all checks to complete
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const sha = context.event_name === 'pull_request'
+              ? context.payload.pull_request.head.sha
+              : context.sha;
+            const selfName = 'CI';
+
+            const maxWait = 45 * 60 * 1000; // 45 minutes
+            const poll = 30 * 1000;          // 30 seconds
+            const start = Date.now();
+
+            while (Date.now() - start < maxWait) {
+              const { data: { check_runs } } = await github.rest.checks.listForRef({
+                owner, repo, ref: sha, per_page: 100
+              });
+
+              const others = check_runs.filter(cr => cr.name !== selfName);
+
+              if (others.length === 0) {
+                core.info('No other checks found yet, waiting...');
+                await new Promise(r => setTimeout(r, poll));
+                continue;
+              }
+
+              const pending = others.filter(cr => cr.status !== 'completed');
+              if (pending.length > 0) {
+                core.info(`Waiting for ${pending.length} check(s): ${pending.map(c => c.name).join(', ')}`);
+                await new Promise(r => setTimeout(r, poll));
+                continue;
+              }
+
+              // All completed
+              const failed = others.filter(cr => cr.conclusion !== 'success' && cr.conclusion !== 'skipped');
+              if (failed.length > 0) {
+                core.setFailed(`${failed.length} check(s) failed: ${failed.map(c => `${c.name} (${c.conclusion})`).join(', ')}`);
+                return;
+              }
+
+              core.info(`All ${others.length} checks passed.`);
+              return;
+            }
+
+            core.setFailed('Timed out waiting for checks to complete.');
