@@ -190,6 +190,9 @@ struct Error
 		Process_SetsidFailed    = 93, // setsid() syscall failed
 		Process_BindShellFailed = 94, // shell binding failed
 
+		Pipe_ReadFailed = 109, // pipe read failed
+		Pipe_WriteFailed = 110, // pipe write failed
+		Pipe_CreateFailed = 111, // pipe creation failed
 		// -------------------------
 		// Misc errors (95–101)
 		// -------------------------
@@ -203,6 +206,7 @@ struct Error
 		Kernel32_CreateProcessFailed  = 99,  // CreateProcessW failed
 		Kernel32_SetHandleInfoFailed  = 100, // SetHandleInformation failed
 		Ntdll_RtlPathResolveFailed    = 101, // RtlDosPathNameToNtPathName_U failed
+		Kernel32_CreatePipeFailed     = 108, // CreatePipe failed
 
 		// -------------------------
 		// Factory creation errors (102–104)
