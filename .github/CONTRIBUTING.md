@@ -253,7 +253,7 @@ This is automatically verified by `cmake/VerifyPICMode.cmake`.
 - **Include guard:** `#pragma once` in every header
 - **No STL, no exceptions, no RTTI**
 
-### Function Attributes 
+### Function Attributes
 - Use `FORCE_INLINE` for functions that must always be inlined  
 - Use `NOINLINE` when inlining must be prevented  
 
