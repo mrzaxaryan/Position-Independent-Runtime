@@ -5,9 +5,13 @@
  * @details Cross-platform process creation via fork+execve with optional I/O
  * redirection, plus wait4/kill for lifecycle management. Platform differences:
  * - Linux aarch64/riscv: clone(SIGCHLD) for fork, dup3 for dup2
+ * - Linux riscv32: waitid instead of wait4 (wait4 returns ENOSYS)
  * - Solaris: SYS_forksys for fork, fcntl(F_DUP2FD) for dup2,
  *   SYS_pgrpsys for setsid, waitid instead of wait4
- * - macOS/FreeBSD: standard POSIX syscalls
+ * - macOS/iOS/Solaris x86: custom fork asm to handle BSD rval[1] convention
+ *   (raw fork syscall returns parent PID in rax/x0 for child; rdx/x1 = 1
+ *   distinguishes child from parent)
+ * - FreeBSD: kernel sets rval[0] = 0 for child in fork_exit, no fixup needed
  */
 
 #include "platform/system/process.h"
@@ -37,13 +41,120 @@
 // Local POSIX helpers (not exposed in header)
 // ============================================================================
 
-static SSIZE PosixFork() noexcept
+/**
+ * PosixFork - Fork the current process
+ *
+ * @details On macOS/iOS and Solaris x86, the raw fork syscall follows the BSD
+ * convention: both parent and child receive a non-zero PID in rax/x0 (child PID
+ * for parent, parent PID for child). The secondary return value (rdx/x1) is 0
+ * for the parent and 1 for the child. Standard System::Call only returns rax/x0,
+ * so we use custom inline asm to check rdx/x1 and return 0 for the child.
+ *
+ * FreeBSD's kernel explicitly sets rval[0] = 0 for the child in fork_exit(),
+ * so no fixup is needed there. Linux always returns 0 for the child.
+ *
+ * @return Child PID in parent, 0 in child, negative errno on error
+ */
+static NOINLINE SSIZE PosixFork() noexcept
 {
-#if (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))
+#if defined(PLATFORM_MACOS) || defined(PLATFORM_IOS)
+	// macOS/iOS: raw fork returns parent PID in x0/rax for child;
+	// x1/rdx = 1 for child, 0 for parent. Must check secondary return value.
+#if defined(ARCHITECTURE_AARCH64)
+	register USIZE x0 __asm__("x0");
+	register USIZE x1 __asm__("x1");
+	register USIZE x16 __asm__("x16") = SYS_FORK;
+	__asm__ volatile(
+		"svc #0x80\n"
+		"b.cs 2f\n"
+		"cbz x1, 1f\n"
+		"mov x0, #0\n"
+		"1:\n"
+		"b 3f\n"
+		"2:\n"
+		"neg x0, x0\n"
+		"3:\n"
+		: "=r"(x0), "=r"(x1)
+		: "r"(x16)
+		: "memory", "cc"
+	);
+	return (SSIZE)x0;
+#elif defined(ARCHITECTURE_X86_64)
+	register USIZE r_rax __asm__("rax") = SYS_FORK;
+	register USIZE r_rdx __asm__("rdx");
+	__asm__ volatile(
+		"syscall\n"
+		"jc 2f\n"
+		"testq %%rdx, %%rdx\n"
+		"jz 1f\n"
+		"xorq %%rax, %%rax\n"
+		"1:\n"
+		"jmp 3f\n"
+		"2:\n"
+		"negq %%rax\n"
+		"3:\n"
+		: "+r"(r_rax), "=r"(r_rdx)
+		:
+		: "rcx", "r11", "memory", "cc"
+	);
+	return (SSIZE)r_rax;
+#endif
+
+#elif defined(PLATFORM_SOLARIS)
+	// Solaris: forksys(FORKSYS_FORK, 0) follows the same BSD rval[1] convention.
+#if defined(ARCHITECTURE_X86_64)
+	register USIZE r_rdi __asm__("rdi") = FORKSYS_FORK;
+	register USIZE r_rsi __asm__("rsi") = 0;
+	register USIZE r_rax __asm__("rax") = SYS_FORKSYS;
+	register USIZE r_rdx __asm__("rdx");
+	__asm__ volatile(
+		"syscall\n"
+		"jc 2f\n"
+		"testq %%rdx, %%rdx\n"
+		"jz 1f\n"
+		"xorq %%rax, %%rax\n"
+		"1:\n"
+		"jmp 3f\n"
+		"2:\n"
+		"negq %%rax\n"
+		"3:\n"
+		: "+r"(r_rax), "=r"(r_rdx)
+		: "r"(r_rdi), "r"(r_rsi)
+		: "rcx", "r11", "memory", "cc"
+	);
+	return (SSIZE)r_rax;
+#elif defined(ARCHITECTURE_I386)
+	SSIZE ret;
+	register USIZE r_ebx __asm__("ebx") = FORKSYS_FORK;
+	register USIZE r_ecx __asm__("ecx") = 0;
+	__asm__ volatile(
+		"pushl %%ecx\n"
+		"pushl %%ebx\n"
+		"pushl $0\n"
+		"int $0x91\n"
+		"jc 2f\n"
+		"testl %%edx, %%edx\n"
+		"jz 1f\n"
+		"xorl %%eax, %%eax\n"
+		"1:\n"
+		"jmp 3f\n"
+		"2:\n"
+		"negl %%eax\n"
+		"3:\n"
+		"addl $12, %%esp\n"
+		: "=a"(ret)
+		: "a"(SYS_FORKSYS), "r"(r_ebx), "r"(r_ecx)
+		: "edx", "memory", "cc"
+	);
+	return ret;
+#elif defined(ARCHITECTURE_AARCH64)
+	// Solaris aarch64 is compile-only (no runner); use standard System::Call
+	return System::Call(SYS_FORKSYS, FORKSYS_FORK, 0);
+#endif
+
+#elif (defined(PLATFORM_LINUX) || defined(PLATFORM_ANDROID)) && (defined(ARCHITECTURE_AARCH64) || defined(ARCHITECTURE_RISCV64) || defined(ARCHITECTURE_RISCV32))
 	constexpr USIZE SIGCHLD_VAL = 17;
 	return System::Call(SYS_CLONE, SIGCHLD_VAL, 0, 0, 0, 0);
-#elif defined(PLATFORM_SOLARIS)
-	return System::Call(SYS_FORKSYS, FORKSYS_FORK, 0);
 #else
 	return System::Call(SYS_FORK);
 #endif
@@ -68,6 +179,16 @@ static SSIZE PosixSetsid() noexcept
 	return System::Call(SYS_SETSID);
 #endif
 }
+
+// Use waitid instead of wait4 on platforms where wait4 is unavailable or
+// the native wait interface uses waitid (Solaris, Linux riscv32)
+#define USE_WAITID (defined(PLATFORM_SOLARIS) || (defined(PLATFORM_LINUX) && defined(ARCHITECTURE_RISCV32)))
+
+// Linux riscv32 waitid constants (different values from Solaris)
+#if defined(PLATFORM_LINUX) && defined(ARCHITECTURE_RISCV32)
+constexpr INT32 LINUX_P_PID = 1;
+constexpr INT32 LINUX_WEXITED = 4;
+#endif
 
 // ============================================================================
 // Process::Create
@@ -157,19 +278,23 @@ Result<SSIZE, Error> Process::Wait() noexcept
 	if (!IsValid())
 		return Result<SSIZE, Error>::Err(Error::Process_WaitFailed);
 
-#if defined(PLATFORM_SOLARIS)
-	// Solaris uses waitid(P_PID, pid, &siginfo, WEXITED)
+#if USE_WAITID
+	// Solaris and Linux riscv32 use waitid(P_PID, pid, &siginfo, WEXITED)
 	UINT8 siginfo[256];
 	Memory::Zero(siginfo, sizeof(siginfo));
+#if defined(PLATFORM_SOLARIS)
 	SSIZE result = System::Call(SYS_WAITID, (USIZE)P_PID, (USIZE)id, (USIZE)siginfo, (USIZE)WEXITED);
+#else
+	SSIZE result = System::Call(SYS_WAITID, (USIZE)LINUX_P_PID, (USIZE)id, (USIZE)siginfo, (USIZE)LINUX_WEXITED, 0);
+#endif
 	if (result < 0)
 	{
 		return Result<SSIZE, Error>::Err(
 			Error::Posix((UINT32)(-result)), Error::Process_WaitFailed);
 	}
 	// Extract si_status from siginfo_t
-	// LP64: offset 24 (3 ints + pad + pid + pad + utime(8) = 24 for status)
-	// ILP32: offset 20 (3 ints + pid + utime(4) = 20 for status)
+	// LP64: offset 24 (3 ints + pad + pid + pad = 24 for status)
+	// ILP32: offset 20 (3 ints + pid + uid = 20 for status)
 #if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_AARCH64)
 	INT32 exitCode = *(INT32 *)(siginfo + 24);
 #else
@@ -235,10 +360,14 @@ Result<void, Error> Process::Close() noexcept
 		return Result<void, Error>::Ok();
 
 	// Try to reap zombie (non-blocking) to avoid resource leak
-#if defined(PLATFORM_SOLARIS)
+#if USE_WAITID
 	UINT8 siginfo[256];
 	Memory::Zero(siginfo, sizeof(siginfo));
+#if defined(PLATFORM_SOLARIS)
 	(void)System::Call(SYS_WAITID, (USIZE)P_PID, (USIZE)id, (USIZE)siginfo, (USIZE)(WEXITED | WNOHANG));
+#else
+	(void)System::Call(SYS_WAITID, (USIZE)LINUX_P_PID, (USIZE)id, (USIZE)siginfo, (USIZE)(LINUX_WEXITED | WNOHANG), 0);
+#endif
 #else
 	INT32 status = 0;
 	(void)System::Call(SYS_WAIT4, (USIZE)id, (USIZE)&status, (USIZE)WNOHANG, 0);
