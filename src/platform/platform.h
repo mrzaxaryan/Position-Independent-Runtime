@@ -73,6 +73,7 @@ NO_RETURN VOID ExitProcess(USIZE code);
 
 /// @name Process Management
 /// @{
+#include "platform/system/pipe.h"
 #include "platform/system/process.h"
 /// @}
 

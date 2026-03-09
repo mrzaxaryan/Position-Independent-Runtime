@@ -25,3 +25,14 @@ Result<void, Error> Kernel32::SetHandleInformation(PVOID hObject, UINT32 dwMask,
 	}
 	return Result<void, Error>::Ok();
 }
+
+// CreatePipe
+Result<void, Error> Kernel32::CreatePipe(PPVOID hReadPipe, PPVOID hWritePipe, PVOID lpPipeAttributes, UINT32 nSize)
+{
+	BOOL result = ((BOOL(STDCALL *)(PPVOID hReadPipe, PPVOID hWritePipe, PVOID lpPipeAttributes, UINT32 nSize))ResolveKernel32ExportAddress("CreatePipe"))(hReadPipe, hWritePipe, lpPipeAttributes, nSize);
+	if (!result)
+	{
+		return Result<void, Error>::Err(Error(Error::Kernel32_CreatePipeFailed));
+	}
+	return Result<void, Error>::Ok();
+}
