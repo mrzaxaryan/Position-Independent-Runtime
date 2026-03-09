@@ -425,22 +425,35 @@ The `-fno-jump-tables` flag is particularly critical - without it, `switch` stat
 The build system automatically verifies that the final binary contains no data sections (`.rdata`, `.rodata`, `.data`, `.bss`, `.got`, `.plt`). This check runs after every build via `cmake/VerifyPICMode.cmake`.
 
 ---
+## Platform Implementations
 
-## Windows Implementation
+### Runtime Architecture
 
-### Low-Level Native Interfaces
+PIR interacts with operating systems through **low-level native system interfaces** instead of standard runtime libraries. The runtime does not depend on libc, glibc, MSVCRT, or other OS-provided runtime layers.
 
-PIR builds directly on the NT Native API. On x86_64 and i386, Zw* wrappers use indirect syscalls - resolving System Service Numbers (SSNs) at runtime and executing through `syscall`/`sysenter` gadgets found in ntdll. On ARM64, where the kernel validates that the `svc` instruction originates from within ntdll, wrappers call the ntdll export directly.
+Core functionality is implemented using **direct system calls or native kernel APIs**, depending on the platform. Required system interfaces are resolved internally using **hash-based symbol resolution**, avoiding static import tables and dynamic symbol lookup mechanisms.
 
-By eliminating static import tables and bypassing `GetProcAddress`, PIR removes all dependencies on the OS runtime initialization and dynamic linking. Function addresses are resolved internally using hash-based lookups of exported symbols.
+This approach removes dependencies on runtime initialization, dynamic linking, and standard library implementations.
 
 ### Capabilities
-
 - **File system:** File creation, reading, writing, deletion; directory operations; path management - all via NTAPI
 - **Console output:** Printf-style output implemented natively within the runtime
 - **Cryptography:** SHA-256/512, HMAC, ChaCha20, ECC, Base64
 - **Networking:** DNS resolution, HTTP client, WebSocket, TLS 1.3 with certificate verification
 
+### Platform-Specific Behavior
+
+Each platform provides its own implementation using its native kernel interface:
+
+- **Windows**
+  - Uses the **NT Native API**
+  - System calls performed through `ntdll`
+
+- **Linux**
+  - Uses **direct Linux system calls**
+
+- **macOS**
+  - Uses **BSD system calls**
 ---
 
 ## Use Cases
