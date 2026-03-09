@@ -513,7 +513,7 @@ Examples: `SHA256Traits`/`SHA384Traits`, `UINT_OF_SIZE`, `VOID_TO_TAG`.
 
 Variadic templates at the API surface are type-erased into a fixed `Argument` array before calling a `NOINLINE` implementation. This prevents code bloat from template instantiation.
 
- Examples: `Logger::Info/Error/Warning/Debug`, `Console::WriteFormatted`, `StringFormatter::Format`.
+Examples: `Logger::Info/Error/Warning/Debug`, `Console::WriteFormatted`, `StringFormatter::Format`.
 
 ### Concepts and Constraints
 
