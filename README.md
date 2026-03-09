@@ -226,7 +226,7 @@
 - [Architecture](#architecture)
 - [Common Problems and Solutions](#common-problems-and-solutions)
 - [Build System](#build-system)
-- [Platform Implementations](#platform-implementation)
+- [Platform Implementations](#platform-implementations)
 - [Use Cases](#use-cases)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
