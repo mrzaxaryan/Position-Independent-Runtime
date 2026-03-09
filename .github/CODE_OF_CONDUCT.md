@@ -2,7 +2,7 @@
 
 ## Our Pledge
 
-We as members, contributors, and maintainers pledge to make participation in Position-Independent Runtime a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation.
+We, as members, contributors, and maintainers, pledge to make participation in **Position-Independent Runtime (PIR)** a harassment-free experience for everyone interested in the project. 
 
 ## Our Standards
 
