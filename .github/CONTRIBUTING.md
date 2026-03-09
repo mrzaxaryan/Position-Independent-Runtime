@@ -14,7 +14,7 @@ Thank you for your interest in contributing to PIR! This guide covers everything
 - [Naming Conventions](#naming-conventions)
 - [Parameters & Returns](#parameters--returns)
 - [Error Handling](#error-handling)
-- [Memory & Resources](#memory-resources)
+- [Memory & Resources](#memory--resources)
 - [Patterns](#patterns)
 - [Windows API Wrappers](#windows-api-wrappers)
 - [Writing Tests](#writing-tests)
