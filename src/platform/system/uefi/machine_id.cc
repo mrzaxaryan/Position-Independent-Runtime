@@ -126,9 +126,24 @@ Result<UUID, Error> GetMachineUUID()
 	EFI_CONTEXT *ctx = GetEfiContext();
 	EFI_SYSTEM_TABLE *st = ctx->SystemTable;
 
-	// Try SMBIOS 3.0 first, then fall back to SMBIOS 2.x
-	EFI_GUID smbios3Guid = SMBIOS3_TABLE_GUID;
-	EFI_GUID smbiosGuid = SMBIOS_TABLE_GUID;
+	// Build GUIDs on the stack to avoid .rdata (position-independence).
+	EFI_GUID smbios3Guid;
+	smbios3Guid.Data1 = 0xf2fd1544;
+	smbios3Guid.Data2 = 0x9794;
+	smbios3Guid.Data3 = 0x4a2c;
+	smbios3Guid.Data4[0] = 0x99; smbios3Guid.Data4[1] = 0x2e;
+	smbios3Guid.Data4[2] = 0xe5; smbios3Guid.Data4[3] = 0xbb;
+	smbios3Guid.Data4[4] = 0xcf; smbios3Guid.Data4[5] = 0x20;
+	smbios3Guid.Data4[6] = 0xe3; smbios3Guid.Data4[7] = 0x94;
+
+	EFI_GUID smbiosGuid;
+	smbiosGuid.Data1 = 0xeb9d2d31;
+	smbiosGuid.Data2 = 0x2d88;
+	smbiosGuid.Data3 = 0x11d3;
+	smbiosGuid.Data4[0] = 0x9a; smbiosGuid.Data4[1] = 0x16;
+	smbiosGuid.Data4[2] = 0x00; smbiosGuid.Data4[3] = 0x90;
+	smbiosGuid.Data4[4] = 0x27; smbiosGuid.Data4[5] = 0x3f;
+	smbiosGuid.Data4[6] = 0xc1; smbiosGuid.Data4[7] = 0x4d;
 
 	for (USIZE i = 0; i < st->NumberOfTableEntries; i++)
 	{
