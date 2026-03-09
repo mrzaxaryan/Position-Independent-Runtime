@@ -380,19 +380,13 @@ Function pointer addresses are resolved by the loader. Without the loader, indir
 
 **PIR Solution:** The `EMBED_FUNC` macro uses inline assembly to compute pure PC-relative offsets, eliminating relocation dependencies entirely. See [embedded_function_pointer.h](src/core/types/embedded/embedded_function_pointer.h).
 
-### Problem 4: 64-bit Arithmetic on 32-bit Systems
-
-64-bit arithmetic on 32-bit systems causes the compiler to emit helper routines that may not be present.
-
-**PIR Solution:** Custom `UINT64` and `INT64` classes store values as two 32-bit words. All operations (multiplication via 16-bit partial products, division via bit-by-bit long division, shifts with carry handling) are decomposed into 32-bit arithmetic with manual carry propagation.
-
-### Problem 5: CRT and Runtime Dependencies
+### Problem 4: CRT and Runtime Dependencies
 
 Standard programs depend on the CRT for initialization, memory management, and helper functions.
 
 **PIR Solution:** Complete independence from the CRT by providing custom implementations for memory management, string manipulation, formatted output, and runtime initialization. A custom entry point eliminates loader-managed startup. On Windows, the PEB is traversed to locate modules and PE export tables are parsed using hash-based lookup -- no import tables, no `GetProcAddress`.
 
-### Problem 6: Type Conversions
+### Problem 5: Type Conversions
 
 Integer-to-float conversions can cause the compiler to emit hidden constants or helper routines.
 
@@ -474,14 +468,14 @@ By eliminating static import tables and bypassing `GetProcAddress`, PIR removes 
 
 PIR is designed for execution environments where traditional runtime assumptions do not apply:
 
-- **Authorized penetration testing** with written scope and client approval
-- **Security research** with proper disclosure practices
+- Authorized penetration testing with written scope and client approval
+- Security research with proper disclosure practices
 - Shellcode and loaderless code execution
 - Embedded and low-level system programming
 - Cross-architecture C++ development
 - Environments without standard C runtime support
 
-> **Disclaimer:** Any unauthorized or malicious use of this software is strictly prohibited and falls outside the scope of the project's design goals.
+ **Disclaimer:** Any unauthorized or malicious use of this software is strictly prohibited and falls outside the scope of the project's design goals.
 
 ---
 
