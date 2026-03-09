@@ -289,9 +289,9 @@ Result<SSIZE, Error> Process::Wait() noexcept
 			Error::Posix((UINT32)(-result)), Error::Process_WaitFailed);
 	}
 	// Extract si_status from siginfo_t
-	// LP64: offset 24 (3 ints + pad + pid + pad = 24 for status)
-	// ILP32: offset 20 (3 ints + pid + uid = 20 for status)
-#if defined(ARCHITECTURE_X86_64) || defined(ARCHITECTURE_AARCH64)
+	// Solaris (all archs): offset 24 (si_signo + si_code + si_errno + pid + uid + utime = 24)
+	// Linux riscv32: offset 20 (si_signo + si_errno + si_code + pid + uid = 20)
+#if defined(PLATFORM_SOLARIS)
 	INT32 exitCode = *(INT32 *)(siginfo + 24);
 #else
 	INT32 exitCode = *(INT32 *)(siginfo + 20);
