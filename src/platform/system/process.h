@@ -1,8 +1,8 @@
 /**
  * @file process.h
- * @brief Process execution and I/O redirection functions
- * @details Provides process creation and I/O redirection for bind/reverse shell
- * functionality. Position-independent with no data section dependencies.
+ * @brief Process execution functions
+ * @details Provides process creation via fork/exec.
+ * Position-independent with no data section dependencies.
  * Part of the PLATFORM layer of the Position-Independent Runtime (PIR).
  */
 
@@ -13,25 +13,11 @@
 /**
  * Process - Static class for process management operations
  *
- * Provides fork/exec functionality with I/O redirection for shell binding.
+ * Provides fork/exec functionality for process creation.
  */
 class Process
 {
 public:
-	/**
-	 * BindSocketToShell - Spawn a process and redirect socket to its stdin/stdout/stderr
-	 *
-	 * @param socketFd Socket file descriptor to redirect
-	 * @param processPath Full path to executable (e.g., "/bin/sh" or "C:\Windows\System32\cmd.exe")
-	 * @return Result with child PID/handle on success, Error on failure
-	 *
-	 * NOTE: Caller must provide the full path to the executable.
-	 *       Use environment variables to get correct paths:
-	 *       - Linux: SHELL (e.g., "/bin/bash")
-	 *       - Windows: COMSPEC (e.g., "C:\Windows\System32\cmd.exe")
-	 */
-	[[nodiscard]] static Result<SSIZE, Error> BindSocketToShell(SSIZE socketFd, const CHAR *processPath) noexcept;
-
 	/**
 	 * Fork - Create a child process
 	 *

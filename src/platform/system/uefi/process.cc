@@ -35,10 +35,3 @@ Result<SSIZE, Error> Process::Setsid() noexcept
 	return Result<SSIZE, Error>::Err(Error::Process_SetsidFailed);
 }
 
-// UEFI doesn't support process creation
-Result<SSIZE, Error> Process::BindSocketToShell(SSIZE socketFd, const CHAR* cmd) noexcept
-{
-	(void)socketFd;
-	(void)cmd;
-	return Result<SSIZE, Error>::Err(Error::Process_BindShellFailed);
-}
