@@ -188,6 +188,9 @@ struct Error
 		Process_WaitFailed      = 91, // waiting for process failed
 		Process_TerminateFailed = 92, // process termination failed
 
+		Pipe_ReadFailed = 109, // pipe read failed
+		Pipe_WriteFailed = 110, // pipe write failed
+		Pipe_CreateFailed = 111, // pipe creation failed
 		// -------------------------
 		// Misc errors (95–101)
 		// -------------------------
@@ -201,6 +204,7 @@ struct Error
 		Kernel32_CreateProcessFailed  = 99,  // CreateProcessW failed
 		Kernel32_SetHandleInfoFailed  = 100, // SetHandleInformation failed
 		Ntdll_RtlPathResolveFailed    = 101, // RtlDosPathNameToNtPathName_U failed
+		Kernel32_CreatePipeFailed     = 108, // CreatePipe failed
 
 		// -------------------------
 		// Factory creation errors (102–104)

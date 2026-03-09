@@ -144,4 +144,27 @@ public:
 	 *      https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-sethandleinformation
 	 */
 	[[nodiscard]] static Result<void, Error> SetHandleInformation(PVOID hObject, UINT32 dwMask, UINT32 dwFlags);
+
+	/**
+	 * @brief Creates an anonymous pipe and returns handles to the read and write ends.
+	 *
+	 * @details Creates a pipe for inter-process communication. The read handle is used
+	 * to read from the pipe, and the write handle is used to write to it. Handles can
+	 * be passed to child processes via STARTUPINFOW for I/O redirection.
+	 *
+	 * @param hReadPipe Pointer to receive the read end handle.
+	 * @param hWritePipe Pointer to receive the write end handle.
+	 * @param lpPipeAttributes Security attributes (NULL for default, non-inheritable).
+	 * @param nSize Suggested buffer size (0 for system default).
+	 *
+	 * @return Result<void, Error> Ok() on success, Err(Kernel32_CreatePipeFailed) on failure.
+	 *
+	 * @par Requirements
+	 * Minimum supported client: Windows 2000 Professional [desktop apps | UWP apps]
+	 * Minimum supported server: Windows 2000 Server
+	 *
+	 * @see Microsoft Learn -- CreatePipe function
+	 *      https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-createpipe
+	 */
+	[[nodiscard]] static Result<void, Error> CreatePipe(PPVOID hReadPipe, PPVOID hWritePipe, PVOID lpPipeAttributes, UINT32 nSize);
 };
