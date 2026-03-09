@@ -68,6 +68,7 @@ typedef PVOID (*CGDataProviderCopyDataFn)(PVOID provider);
 typedef const UINT8 *(*CFDataGetBytePtrFn)(PVOID data);
 typedef SSIZE (*CFDataGetLengthFn)(PVOID data);
 typedef VOID (*CFReleaseFn)(PVOID cf);
+typedef CGDisplayID (*CGMainDisplayIDFn)();
 
 // =============================================================================
 // Internal: Resolve CoreGraphics/CoreFoundation functions
@@ -76,6 +77,7 @@ typedef VOID (*CFReleaseFn)(PVOID cf);
 /// @brief Resolved CoreGraphics function pointers
 struct CGFunctions
 {
+	CGMainDisplayIDFn MainDisplayID;
 	CGGetActiveDisplayListFn GetActiveDisplayList;
 	CGDisplayBoundsFn DisplayBounds;
 	CGDisplayIsMainFn DisplayIsMain;
@@ -113,6 +115,7 @@ static PVOID ResolveCF(const CHAR *name)
 /// @return true if all functions resolved successfully
 static BOOL LoadCGFunctions(CGFunctions &cg)
 {
+	auto n0 = "CGMainDisplayID"_embed;
 	auto n1 = "CGGetActiveDisplayList"_embed;
 	auto n2 = "CGDisplayBounds"_embed;
 	auto n3 = "CGDisplayIsMain"_embed;
@@ -128,6 +131,7 @@ static BOOL LoadCGFunctions(CGFunctions &cg)
 	auto n13 = "CFDataGetLength"_embed;
 	auto n14 = "CFRelease"_embed;
 
+	cg.MainDisplayID = (CGMainDisplayIDFn)ResolveCG((const CHAR *)n0);
 	cg.GetActiveDisplayList = (CGGetActiveDisplayListFn)ResolveCG((const CHAR *)n1);
 	cg.DisplayBounds = (CGDisplayBoundsFn)ResolveCG((const CHAR *)n2);
 	cg.DisplayIsMain = (CGDisplayIsMainFn)ResolveCG((const CHAR *)n3);
@@ -143,7 +147,8 @@ static BOOL LoadCGFunctions(CGFunctions &cg)
 	cg.DataGetLength = (CFDataGetLengthFn)ResolveCF((const CHAR *)n13);
 	cg.Release = (CFReleaseFn)ResolveCF((const CHAR *)n14);
 
-	return cg.GetActiveDisplayList != nullptr &&
+	return cg.MainDisplayID != nullptr &&
+		cg.GetActiveDisplayList != nullptr &&
 		cg.DisplayBounds != nullptr &&
 		cg.DisplayIsMain != nullptr &&
 		cg.DisplayCreateImage != nullptr &&
@@ -169,6 +174,12 @@ Result<ScreenDeviceList, Error> Screen::GetDevices()
 	Memory::Zero(&cg, sizeof(cg));
 
 	if (!LoadCGFunctions(cg))
+		return Result<ScreenDeviceList, Error>::Err(Error(Error::Screen_GetDevicesFailed));
+
+	// Check if a display is available before calling functions that may
+	// crash on headless systems (CI runners without a WindowServer).
+	// CGMainDisplayID returns 0 (kCGNullDirectDisplay) when no display exists.
+	if (cg.MainDisplayID() == 0)
 		return Result<ScreenDeviceList, Error>::Err(Error(Error::Screen_GetDevicesFailed));
 
 	// Enumerate active displays (up to 16)
@@ -211,6 +222,9 @@ Result<void, Error> Screen::Capture(const ScreenDevice &device, Span<RGB> buffer
 	Memory::Zero(&cg, sizeof(cg));
 
 	if (!LoadCGFunctions(cg))
+		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
+
+	if (cg.MainDisplayID() == 0)
 		return Result<void, Error>::Err(Error(Error::Screen_CaptureFailed));
 
 	// Find the matching display ID
