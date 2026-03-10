@@ -43,7 +43,7 @@ Result<DirectoryIterator, Error> DirectoryIterator::Create(PCWCHAR path)
 	}
 	else
 	{
-		utf8Path[0] = '.';
+		utf8Path[0] = '/';
 		utf8Path[1] = '\0';
 	}
 
