@@ -20,9 +20,20 @@ Result<Pipe, Error> Pipe::Create() noexcept
 	PVOID readHandle = nullptr;
 	PVOID writeHandle = nullptr;
 
+	auto bufferSize = (32 * 1024 * 1024);
+
 	auto result = Kernel32::CreatePipe(&readHandle, &writeHandle, nullptr, 0);
 	if (result.IsErr())
 	{
+		return Result<Pipe, Error>::Err(result, Error::Pipe_CreateFailed);
+	}
+
+	result = Kernel32::SetHandleInformation(readHandle, HANDLE_FLAG_INHERIT, bufferSize);
+
+	if (result.IsErr())
+	{
+		(void)NTDLL::ZwClose(readHandle);
+		(void)NTDLL::ZwClose(writeHandle);
 		return Result<Pipe, Error>::Err(result, Error::Pipe_CreateFailed);
 	}
 
