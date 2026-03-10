@@ -49,6 +49,17 @@ Result<USIZE, Error> Pipe::Read(Span<UINT8> buffer) noexcept
 	if (readFd == INVALID_FD)
 		return Result<USIZE, Error>::Err(Error::Pipe_ReadFailed);
 
+	UINT32 bytesAvailable = 0;
+
+	// Check if there is data without "consuming" it
+	if (Kernel32::PeekNamedPipe(readFd, nullptr, 0, nullptr, &bytesAvailable, nullptr))
+	{
+		if (bytesAvailable == 0)
+		{
+			return Result<USIZE, Error>::Ok(0);
+		}
+	}
+
 	IO_STATUS_BLOCK iosb;
 	Memory::Zero(&iosb, sizeof(IO_STATUS_BLOCK));
 	auto result = NTDLL::ZwReadFile(
