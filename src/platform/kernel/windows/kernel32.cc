@@ -33,3 +33,13 @@ Result<void, Error> Kernel32::CreatePipe(PPVOID hReadPipe, PPVOID hWritePipe, PV
 	}
 	return Result<void, Error>::Ok();
 }
+
+Result<void, Error> Kernel32::PeekNamedPipe(SSIZE hNamedPipe, PVOID lpBuffer, UINT32 nBufferSize, PUINT32 lpBytesRead, PUINT32 lpTotalBytesAvail, PUINT32 lpBytesLeftThisMessage)
+{
+	BOOL result = ((BOOL(STDCALL *)(SSIZE hNamedPipe, PVOID lpBuffer, UINT32 nBufferSize, PUINT32 lpBytesRead, PUINT32 lpTotalBytesAvail, PUINT32 lpBytesLeftThisMessage))ResolveKernel32ExportAddress("PeekNamedPipe"))(hNamedPipe, lpBuffer, nBufferSize, lpBytesRead, lpTotalBytesAvail, lpBytesLeftThisMessage);
+	if (!result)
+	{
+		return Result<void, Error>::Err(Error(Error::Kernel32_PeekNamedPipeFailed));
+	}
+	return Result<void, Error>::Ok();
+}
