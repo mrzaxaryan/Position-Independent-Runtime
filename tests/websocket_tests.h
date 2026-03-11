@@ -16,8 +16,8 @@ private:
 	{
 		LOG_INFO("Test: Secure WebSocket Connection (wss://)");
 
-		auto wssUrl = "wss://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create(wssUrl);
+		const CHAR wssUrl[] = "wss://echo.websocket.org/";
+		auto createResult = WebSocketClient::Create(Span<const CHAR>(wssUrl, sizeof(wssUrl) - 1));
 		if (!createResult)
 		{
 			LOG_ERROR("Secure WebSocket connection failed (error: %e)", createResult.Error());
@@ -34,8 +34,8 @@ private:
 	{
 		LOG_INFO("Test: WebSocket Text Echo");
 
-		auto wssUrl = "wss://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create(wssUrl);
+		const CHAR wssUrl[] = "wss://echo.websocket.org/";
+		auto createResult = WebSocketClient::Create(Span<const CHAR>(wssUrl, sizeof(wssUrl) - 1));
 		if (!createResult)
 		{
 			LOG_ERROR("WebSocket connection failed (error: %e)", createResult.Error());
@@ -50,8 +50,8 @@ private:
 			LOG_INFO("Received initial server message (%d bytes), discarding", initialMsg.Value().Length);
 
 		// Send text message
-		auto testMessage = "Hello, WebSocket!"_embed;
-		auto writeResult = wsClient.Write(Span<const CHAR>((PCCHAR)testMessage, testMessage.Length()), WebSocketOpcode::Text);
+		const CHAR testMessage[] = "Hello, WebSocket!";
+		auto writeResult = wsClient.Write(Span<const CHAR>(testMessage, sizeof(testMessage) - 1), WebSocketOpcode::Text);
 
 		if (!writeResult)
 		{
@@ -80,8 +80,8 @@ private:
 		}
 
 		// Verify echo matches sent message
-		BOOL matches = (response.Length == testMessage.Length()) &&
-					   (Memory::Compare(response.Data, (PCVOID)(PCCHAR)testMessage, testMessage.Length()) == 0);
+		BOOL matches = (response.Length == sizeof(testMessage) - 1) &&
+					   (Memory::Compare(response.Data, (PCVOID)testMessage, sizeof(testMessage) - 1) == 0);
 
 		(void)wsClient.Close();
 
@@ -100,8 +100,8 @@ private:
 	{
 		LOG_INFO("Test: WebSocket Binary Echo");
 
-		auto wssUrl = "wss://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create(wssUrl);
+		const CHAR wssUrl[] = "wss://echo.websocket.org/";
+		auto createResult = WebSocketClient::Create(Span<const CHAR>(wssUrl, sizeof(wssUrl) - 1));
 		if (!createResult)
 		{
 			LOG_ERROR("WebSocket connection failed (error: %e)", createResult.Error());
@@ -177,8 +177,8 @@ private:
 	{
 		LOG_INFO("Test: Multiple Sequential Messages");
 
-		auto wssUrl = "wss://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create(wssUrl);
+		const CHAR wssUrl[] = "wss://echo.websocket.org/";
+		auto createResult = WebSocketClient::Create(Span<const CHAR>(wssUrl, sizeof(wssUrl) - 1));
 		if (!createResult)
 		{
 			LOG_ERROR("WebSocket connection failed (error: %e)", createResult.Error());
@@ -190,12 +190,12 @@ private:
 		(void)wsClient.Read();
 
 		// Test messages
-		auto msg1 = "First message"_embed;
-		auto msg2 = "Second message"_embed;
-		auto msg3 = "Third message"_embed;
+		const CHAR msg1[] = "First message";
+		const CHAR msg2[] = "Second message";
+		const CHAR msg3[] = "Third message";
 
 		// Send and receive message 1
-		auto write1 = wsClient.Write(Span<const CHAR>((PCCHAR)msg1, msg1.Length()), WebSocketOpcode::Text);
+		auto write1 = wsClient.Write(Span<const CHAR>(msg1, sizeof(msg1) - 1), WebSocketOpcode::Text);
 		if (!write1)
 		{
 			LOG_ERROR("Failed to send message 1 (error: %e)", write1.Error());
@@ -210,15 +210,15 @@ private:
 			(void)wsClient.Close();
 			return false;
 		}
-		if (read1.Value().Length != msg1.Length())
+		if (read1.Value().Length != sizeof(msg1) - 1)
 		{
-			LOG_ERROR("Echo length mismatch for message 1: expected %d, got %d", msg1.Length(), read1.Value().Length);
+			LOG_ERROR("Echo length mismatch for message 1: expected %d, got %d", sizeof(msg1) - 1, read1.Value().Length);
 			(void)wsClient.Close();
 			return false;
 		}
 
 		// Send and receive message 2
-		auto write2 = wsClient.Write(Span<const CHAR>((PCCHAR)msg2, msg2.Length()), WebSocketOpcode::Text);
+		auto write2 = wsClient.Write(Span<const CHAR>(msg2, sizeof(msg2) - 1), WebSocketOpcode::Text);
 		if (!write2)
 		{
 			LOG_ERROR("Failed to send message 2 (error: %e)", write2.Error());
@@ -233,15 +233,15 @@ private:
 			(void)wsClient.Close();
 			return false;
 		}
-		if (read2.Value().Length != msg2.Length())
+		if (read2.Value().Length != sizeof(msg2) - 1)
 		{
-			LOG_ERROR("Echo length mismatch for message 2: expected %d, got %d", msg2.Length(), read2.Value().Length);
+			LOG_ERROR("Echo length mismatch for message 2: expected %d, got %d", sizeof(msg2) - 1, read2.Value().Length);
 			(void)wsClient.Close();
 			return false;
 		}
 
 		// Send and receive message 3
-		auto write3 = wsClient.Write(Span<const CHAR>((PCCHAR)msg3, msg3.Length()), WebSocketOpcode::Text);
+		auto write3 = wsClient.Write(Span<const CHAR>(msg3, sizeof(msg3) - 1), WebSocketOpcode::Text);
 		if (!write3)
 		{
 			LOG_ERROR("Failed to send message 3 (error: %e)", write3.Error());
@@ -256,9 +256,9 @@ private:
 			(void)wsClient.Close();
 			return false;
 		}
-		if (read3.Value().Length != msg3.Length())
+		if (read3.Value().Length != sizeof(msg3) - 1)
 		{
-			LOG_ERROR("Echo length mismatch for message 3: expected %d, got %d", msg3.Length(), read3.Value().Length);
+			LOG_ERROR("Echo length mismatch for message 3: expected %d, got %d", sizeof(msg3) - 1, read3.Value().Length);
 			(void)wsClient.Close();
 			return false;
 		}
@@ -273,8 +273,8 @@ private:
 	{
 		LOG_INFO("Test: Large Message Handling");
 
-		auto wssUrl = "wss://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create(wssUrl);
+		const CHAR wssUrl[] = "wss://echo.websocket.org/";
+		auto createResult = WebSocketClient::Create(Span<const CHAR>(wssUrl, sizeof(wssUrl) - 1));
 		if (!createResult)
 		{
 			LOG_ERROR("WebSocket connection failed (error: %e)", createResult.Error());
@@ -352,8 +352,8 @@ private:
 	{
 		LOG_INFO("Test: WebSocket Close Handshake");
 
-		auto wssUrl = "wss://echo.websocket.org/"_embed;
-		auto createResult = WebSocketClient::Create(wssUrl);
+		const CHAR wssUrl[] = "wss://echo.websocket.org/";
+		auto createResult = WebSocketClient::Create(Span<const CHAR>(wssUrl, sizeof(wssUrl) - 1));
 		if (!createResult)
 		{
 			LOG_ERROR("WebSocket connection failed (error: %e)", createResult.Error());
@@ -382,12 +382,12 @@ public:
 		LOG_INFO("Running WebSocket Tests...");
 		LOG_INFO("  Test Server: echo.websocket.org (wss://)");
 
-		RunTest(allPassed, EMBED_FUNC(TestSecureWebSocketConnection), "Secure WebSocket connection (wss://)"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWebSocketTextEcho), "WebSocket text echo"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWebSocketBinaryEcho), "WebSocket binary echo"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestMultipleMessages), "Multiple messages"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestLargeMessage), "Large message"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWebSocketClose), "WebSocket close"_embed);
+		RunTest(allPassed, &TestSecureWebSocketConnection, "Secure WebSocket connection (wss://)");
+		RunTest(allPassed, &TestWebSocketTextEcho, "WebSocket text echo");
+		RunTest(allPassed, &TestWebSocketBinaryEcho, "WebSocket binary echo");
+		RunTest(allPassed, &TestMultipleMessages, "Multiple messages");
+		RunTest(allPassed, &TestLargeMessage, "Large message");
+		RunTest(allPassed, &TestWebSocketClose, "WebSocket close");
 
 		if (allPassed)
 			LOG_INFO("All WebSocket tests passed!");

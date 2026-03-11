@@ -49,6 +49,34 @@ target_compile_definitions(${PIR_TRIPLE} PRIVATE ${PIR_DEFINES})
 target_compile_options(${PIR_TRIPLE} PRIVATE ${PIR_BASE_FLAGS})
 target_link_options(${PIR_TRIPLE} PRIVATE ${PIR_BASE_LINK_FLAGS})
 
+# ── pic-transform integration ────────────────────────────────────────────────
+# Use -fpass-plugin= (if plugin available) or compile-to-bitcode + standalone
+# tool + bitcode-to-object pipeline.
+if(PIC_TRANSFORM_PLUGIN)
+    target_compile_options(${PIR_TRIPLE} PRIVATE
+        "SHELL:-fpass-plugin=${PIC_TRANSFORM_PLUGIN}")
+    message(STATUS "pic-transform: using plugin ${PIC_TRANSFORM_PLUGIN}")
+elseif(PIC_TRANSFORM_EXECUTABLE)
+    # Standalone mode: emit LLVM bitcode, transform, then compile to object.
+    # Override the compile rule with a 3-step pipeline.
+    # Use cmd /C on Windows for && chaining; Unix shells handle it natively.
+    if(CMAKE_HOST_WIN32)
+        set(CMAKE_CXX_COMPILE_OBJECT
+            "cmd /C \"<CMAKE_CXX_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -emit-llvm -c <SOURCE> -o <OBJECT>.bc && ${PIC_TRANSFORM_EXECUTABLE} <OBJECT>.bc -o <OBJECT>.transformed.bc && <CMAKE_CXX_COMPILER> -Wno-unused-command-line-argument <FLAGS> -c <OBJECT>.transformed.bc -o <OBJECT>\""
+        )
+    else()
+        set(CMAKE_CXX_COMPILE_OBJECT
+            "<CMAKE_CXX_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -emit-llvm -c <SOURCE> -o <OBJECT>.bc && ${PIC_TRANSFORM_EXECUTABLE} <OBJECT>.bc -o <OBJECT>.transformed.bc && <CMAKE_CXX_COMPILER> -Wno-unused-command-line-argument <FLAGS> -c <OBJECT>.transformed.bc -o <OBJECT>"
+        )
+    endif()
+    message(STATUS "pic-transform: using bitcode pipeline (${PIC_TRANSFORM_EXECUTABLE})")
+endif()
+
+# Ensure pic-transform is built before the main target
+if(PIC_TRANSFORM_TARGET)
+    add_dependencies(${PIR_TRIPLE} ${PIC_TRANSFORM_TARGET})
+endif()
+
 # =============================================================================
 # Post-Build
 # =============================================================================

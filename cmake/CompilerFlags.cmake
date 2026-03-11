@@ -10,7 +10,6 @@ include_guard(GLOBAL)
 set(PIR_BASE_FLAGS
     -std=c++23
     -Werror -Wall -Wextra
-    -Wno-gnu-string-literal-operator-template
     -nostdlib
     -fno-ident
     -fno-exceptions
@@ -19,7 +18,6 @@ set(PIR_BASE_FLAGS
     -fno-stack-check
     -fno-jump-tables
     -ffunction-sections
-    -fdata-sections
 )
 
 # Architecture-specific
@@ -48,12 +46,11 @@ else()
         -fomit-frame-pointer
         -fno-asynchronous-unwind-tables
         -fno-unwind-tables
-        -flto=full
         -fvisibility=hidden
         -fno-threadsafe-statics
-        -fmerge-all-constants
         -fno-math-errno
         -${PIR_OPT_LEVEL}
+        -flto=full
     )
 endif()
 

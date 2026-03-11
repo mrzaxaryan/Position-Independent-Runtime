@@ -21,11 +21,6 @@ list(APPEND PIR_INCLUDE_PATHS
 # iOS-specific compiler flags
 list(APPEND PIR_BASE_FLAGS -fno-stack-protector)
 
-# Prevent GOT indirection. Same rationale as macOS — iOS enforces PIC and
-# the compiler may emit GOT-relative relocations. This flag forces direct
-# PC-relative access for all data symbols.
-list(APPEND PIR_BASE_FLAGS -fdirect-access-external-data)
-
 # Force hidden visibility to eliminate lazy-binding stubs and __DATA sections.
 list(APPEND PIR_BASE_FLAGS -fvisibility=hidden)
 
@@ -54,7 +49,7 @@ endif()
 # as macOS ARM64 — Apple's ld places non-LTO input sections before LTO ones.
 if(PIR_BUILD_TYPE STREQUAL "release")
     set_source_files_properties(
-        "${PIR_ROOT_DIR}/src/runtime/entry_point.cc"
+        "${PIR_ROOT_DIR}/src/entry_point.cc"
         PROPERTIES
         COMPILE_FLAGS "-fno-lto"
     )
