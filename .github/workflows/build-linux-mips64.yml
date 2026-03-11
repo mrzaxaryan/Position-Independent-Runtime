@@ -50,7 +50,10 @@ jobs:
 
       - name: Build all optimization levels
         run: |
-          for opt in O0 O1 O2 O3 Os Oz Og; do
+          # Og is excluded: LLVM 22.1.0 MIPS64 backend crashes with
+          # "Unsupported instruction: <MCInst 44>" in MipsAsmPrinter at -Og,
+          # in both LTO and non-LTO (pic-transform) codegen paths.
+          for opt in O0 O1 O2 O3 Os Oz; do
             echo "=== Building -${opt} ==="
             rm -rf build
             cmake --preset linux-mips64-release -DOPTIMIZATION_LEVEL=${opt}
