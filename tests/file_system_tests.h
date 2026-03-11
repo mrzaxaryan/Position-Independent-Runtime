@@ -35,17 +35,18 @@ private:
 
 	static NOINLINE USIZE BuildTestPath(PCWCHAR suffix, Span<WCHAR> out)
 	{
-		auto root = L"test_io_root";
+		const WCHAR root[] = L"test_io_root";
+		constexpr USIZE rootLen = sizeof(root) / sizeof(WCHAR) - 1;
 
 		if (suffix == nullptr || suffix[0] == L'\0')
 		{
-			StringUtils::Copy(out, (Span<const WCHAR>)root);
-			return StringUtils::Length((PCWCHAR)root);
+			StringUtils::Copy(out, Span<const WCHAR>(root, rootLen));
+			return rootLen;
 		}
 
 		USIZE suffixLen = StringUtils::Length(suffix);
 		return Path::Combine(
-			(Span<const WCHAR>)root,
+			Span<const WCHAR>(root, rootLen),
 			Span<const WCHAR>(suffix, suffixLen),
 			out);
 	}

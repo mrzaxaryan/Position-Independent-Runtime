@@ -498,16 +498,16 @@ private:
 		}
 
 		// Test formatting output (this also tests that the values are properly passed through varargs)
-		if (testArray[0] == 1.1 &&
-			testArray[1] == 2.2 &&
-			testArray[2] == 3.3 &&
-			testArray[3] == 4.4 &&
-			testArray[4] == 5.5 &&
-			testArray[5] == 6.6 &&
-			testArray[6] == 7.7 &&
-			testArray[7] == 8.8 &&
-			testArray[8] == 9.9 &&
-			testArray[9] == 10.1)
+		if (testArray[0] == DOUBLE(1.1) &&
+			testArray[1] == DOUBLE(2.2) &&
+			testArray[2] == DOUBLE(3.3) &&
+			testArray[3] == DOUBLE(4.4) &&
+			testArray[4] == DOUBLE(5.5) &&
+			testArray[5] == DOUBLE(6.6) &&
+			testArray[6] == DOUBLE(7.7) &&
+			testArray[7] == DOUBLE(8.8) &&
+			testArray[8] == DOUBLE(9.9) &&
+			testArray[9] == DOUBLE(10.1))
 		{
 			return true;
 		}

@@ -126,6 +126,8 @@ public:
 		Argument(INT32 v) : Kind(Type::INT32), I32(v) {}
 		Argument(UINT32 v) : Kind(Type::UINT32), U32(v) {}
 		Argument(DOUBLE v) : Kind(Type::DOUBLE), Dbl(v) {}
+		Argument(double v) : Kind(Type::DOUBLE), Dbl(DOUBLE(v)) {}
+		Argument(float v) : Kind(Type::DOUBLE), Dbl(DOUBLE(static_cast<double>(v))) {}
 		Argument(const CHAR *v) : Kind(Type::CSTR), Cstr(v) {}
 		Argument(CHAR *v) : Kind(Type::CSTR), Cstr(v) {}
 		Argument(const WCHAR *v) : Kind(Type::WSTR), Wstr(v) {}

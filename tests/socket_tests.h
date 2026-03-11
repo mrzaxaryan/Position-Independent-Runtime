@@ -78,8 +78,9 @@ private:
 			return false;
 		}
 
-		auto request = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n";
-		auto writeResult = sock.Write(Span<const CHAR>((PCCHAR)request, request.Length()));
+		const CHAR request[] = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n";
+		constexpr USIZE requestLen = sizeof(request) - 1;
+		auto writeResult = sock.Write(Span<const CHAR>(request, requestLen));
 
 		if (!writeResult)
 		{
@@ -87,9 +88,9 @@ private:
 			(void)sock.Close();
 			return false;
 		}
-		if (writeResult.Value() != request.Length())
+		if (writeResult.Value() != requestLen)
 		{
-			LOG_ERROR("Incomplete HTTP request (sent %d/%d bytes)", writeResult.Value(), request.Length());
+			LOG_ERROR("Incomplete HTTP request (sent %d/%d bytes)", writeResult.Value(), requestLen);
 			(void)sock.Close();
 			return false;
 		}
@@ -134,8 +135,9 @@ private:
 				return false;
 			}
 
-			auto request = "GET / HTTP/1.0\r\n\r\n";
-			auto writeResult = sock.Write(Span<const CHAR>((PCCHAR)request, request.Length()));
+			const CHAR request[] = "GET / HTTP/1.0\r\n\r\n";
+			constexpr USIZE requestLen = sizeof(request) - 1;
+			auto writeResult = sock.Write(Span<const CHAR>(request, requestLen));
 
 			if (!writeResult)
 			{
@@ -143,9 +145,9 @@ private:
 				(void)sock.Close();
 				return false;
 			}
-			if (writeResult.Value() != request.Length())
+			if (writeResult.Value() != requestLen)
 			{
-				LOG_ERROR("Connection %d: incomplete send (%d/%d bytes)", i + 1, writeResult.Value(), request.Length());
+				LOG_ERROR("Connection %d: incomplete send (%d/%d bytes)", i + 1, writeResult.Value(), requestLen);
 				(void)sock.Close();
 				return false;
 			}
@@ -280,8 +282,9 @@ private:
 
 		LOG_INFO("IPv6 socket connected successfully to %s:80", (PCCHAR)ipv6Str);
 
-		auto request = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n";
-		auto writeResult = sock.Write(Span<const CHAR>((PCCHAR)request, request.Length()));
+		const CHAR request[] = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n";
+		constexpr USIZE requestLen = sizeof(request) - 1;
+		auto writeResult = sock.Write(Span<const CHAR>(request, requestLen));
 
 		if (!writeResult)
 		{
@@ -289,9 +292,9 @@ private:
 			(void)sock.Close();
 			return false;
 		}
-		if (writeResult.Value() != request.Length())
+		if (writeResult.Value() != requestLen)
 		{
-			LOG_ERROR("Incomplete HTTP request over IPv6 (sent %d/%d bytes)", writeResult.Value(), request.Length());
+			LOG_ERROR("Incomplete HTTP request over IPv6 (sent %d/%d bytes)", writeResult.Value(), requestLen);
 			(void)sock.Close();
 			return false;
 		}
@@ -341,17 +344,17 @@ private:
 			return false;
 		}
 
-		auto request = "GET /get HTTP/1.1\r\nHost: httpbin.org\r\nConnection: close\r\n\r\n";
-		auto writeResult = sock.Write(Span<const CHAR>((PCCHAR)request, request.Length()));
+		const CHAR request[] = "GET /get HTTP/1.1\r\nHost: httpbin.org\r\nConnection: close\r\n\r\n";
+		auto writeResult = sock.Write(Span<const CHAR>(request, sizeof(request) - 1));
 		if (!writeResult)
 		{
 			LOG_ERROR("Failed to send HTTP request to httpbin.org (error: %e)", writeResult.Error());
 			(void)sock.Close();
 			return false;
 		}
-		if (writeResult.Value() != request.Length())
+		if (writeResult.Value() != sizeof(request) - 1)
 		{
-			LOG_ERROR("Incomplete HTTP request to httpbin.org (sent %d/%d bytes)", writeResult.Value(), request.Length());
+			LOG_ERROR("Incomplete HTTP request to httpbin.org (sent %d/%d bytes)", writeResult.Value(), sizeof(request) - 1);
 			(void)sock.Close();
 			return false;
 		}

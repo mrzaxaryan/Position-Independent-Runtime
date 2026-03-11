@@ -512,8 +512,7 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
 Result<IPAddress, Error> DnsClient::ResolveOverHttp(Span<const CHAR> host, const IPAddress &dnsServerIp, Span<const CHAR> dnsServerName, DnsRecordType dnstype)
 {
 	// Short-circuit for "localhost" — return loopback without network I/O (RFC 6761 Section 6.3)
-	auto localhost = "localhost";
-	if (StringUtils::Equals<CHAR>(host, localhost))
+	if (StringUtils::Equals<CHAR>(host.Data(), "localhost"))
 		return Result<IPAddress, Error>::Ok(IPAddress::LocalHost(dnstype == DnsRecordType::AAAA));
 
 	auto tlsResult = TlsClient::Create(dnsServerName.Data(), dnsServerIp, 443);
@@ -622,9 +621,9 @@ Result<IPAddress, Error> DnsClient::ResolveOverHttp(Span<const CHAR> host, const
  */
 Result<IPAddress, Error> DnsClient::CloudflareResolve(Span<const CHAR> host, DnsRecordType dnstype)
 {
-	auto serverName = "one.one.one.one";
+	const CHAR serverName[] = "one.one.one.one";
 	const IPAddress ips[] = {IPAddress::FromIPv4(0x01010101), IPAddress::FromIPv4(0x01000001)};
-	return ResolveWithFallback(host, Span(ips), serverName, dnstype);
+	return ResolveWithFallback(host, Span(ips), Span<const CHAR>(serverName, sizeof(serverName) - 1), dnstype);
 }
 
 /**
@@ -643,9 +642,9 @@ Result<IPAddress, Error> DnsClient::CloudflareResolve(Span<const CHAR> host, Dns
  */
 Result<IPAddress, Error> DnsClient::GoogleResolve(Span<const CHAR> host, DnsRecordType dnstype)
 {
-	auto serverName = "dns.google";
+	const CHAR serverName[] = "dns.google";
 	const IPAddress ips[] = {IPAddress::FromIPv4(0x08080808), IPAddress::FromIPv4(0x08080404)};
-	return ResolveWithFallback(host, Span(ips), serverName, dnstype);
+	return ResolveWithFallback(host, Span(ips), Span<const CHAR>(serverName, sizeof(serverName) - 1), dnstype);
 }
 
 /**

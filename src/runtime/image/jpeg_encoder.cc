@@ -694,8 +694,8 @@ static VOID EncodeImageData(EncoderState *state, const UINT8 *srcData,
 		header.APP0 = ByteOrder::Swap16(0xFFE0);
 		UINT16 jfifLen = sizeof(JFIFHeader) - 4; // exclude SOI & APP0 markers
 		header.jfifLen = ByteOrder::Swap16(jfifLen);
-		auto jfifId = "JFIF\0";
-		Memory::Copy(header.jfifId, (PCVOID)jfifId, jfifId.Length() + 1);
+		const CHAR jfifId[] = "JFIF\0";
+		Memory::Copy(header.jfifId, (PCVOID)jfifId, sizeof(jfifId));
 		header.version = ByteOrder::Swap16(0x0102);
 		header.units = 0x01;						// dots-per-inch
 		UINT16 density = ByteOrder::Swap16(0x0060); // 96 DPI
