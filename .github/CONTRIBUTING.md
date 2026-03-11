@@ -139,7 +139,7 @@ src/                        # Source layers
     math/                   # Math utilities, bit operations, byte order
     binary/                 # Binary reader/writer
     types/                  # Primitives, Span, Result, Error, Double, IP address
-      embedded/             # EMBEDDED_STRING, EMBEDDED_DOUBLE, EMBEDDED_ARRAY, EMBEDDED_FUNCTION_POINTER
+      embedded/             # EMBEDDED_FUNCTION_POINTER
     string/                 # String utilities and formatting
     algorithms/             # DJB2 hashing, Base64
     encoding/               # UTF-16
@@ -196,14 +196,12 @@ Three-layer architecture (RUNTIME > PLATFORM > CORE) - upper layers depend on lo
 
 The binary must contain **only** a `.text` section. No `.rdata`, `.rodata`, `.data`, or `.bss`. Verified automatically by `cmake/VerifyPICMode.cmake`.
 
+The [pic-transform](https://github.com/mrzaxaryan/pic-transform) LLVM pass runs automatically during compilation and eliminates data sections by converting global constants (strings, floats, arrays) into stack-local immediate stores. This means you can write normal C++ string literals, float constants, and const arrays -- they are transformed automatically. The tool is downloaded from GitHub releases during the CMake configure step.
+
 | Forbidden | Use Instead |
 |-----------|-------------|
-| `"hello"` string literals | `"hello"_embed` |
-| `L"hello"` wide strings | `L"hello"_embed` |
-| `3.14` float literals | `3.14_embed` |
 | `&MyFunc` function pointers | `EMBED_FUNC(MyFunc)` |
 | Global/static variables | Stack-local variables |
-| `const`/`constexpr` arrays | `MakeEmbedArray<T>(vals...)` |
 | STL containers/algorithms | Custom PIR implementations |
 | Exceptions (`throw`/`try`/`catch`) | `Result<T, Error>` |
 | Raw `BOOL`/`NTSTATUS`/`SSIZE` for fallible returns | `Result<T, Error>` or `Result<void, Error>` |
@@ -287,7 +285,7 @@ Platform-specific OS API wrappers must include `@see` links to the official Micr
 | Pointer typedefs | `P` prefix (`PP` double, `PC` const) | `PCHAR`, `PWCHAR`, `PPVOID`, `PCCHAR` |
 | Classes | `PascalCase`; all-caps for acronym names | `Socket`, `HttpClient`, `TlsBuffer`, `NTDLL`, `ECC`, `DNS` |
 | Structs (Windows-style) | `_NAME` with typedef | `typedef struct _OBJECT_ATTRIBUTES { ... } OBJECT_ATTRIBUTES;` |
-| Template utility types | `UPPER_CASE` | `EMBEDDED_STRING<...>`, `EMBEDDED_ARRAY<...>`, `VOID_TO_TAG<T>` |
+| Template utility types | `UPPER_CASE` | `VOID_TO_TAG<T>` |
 | Template classes | `PascalCase` | `Result<T, E>`, `Span<T>`, `SHABase<Traits>` |
 | Enum names | `PascalCase` | `ErrorCodes`, `PlatformKind`, `IPVersion`, `CmpOp` |
 | Enum values (scoped `enum class`) | `PascalCase` | `PlatformKind::Runtime`, `IPVersion::IPv4` |
@@ -399,7 +397,6 @@ Use `%e` with `result.Error()` in log macros. Output format: runtime codes print
 - **Avoid heap** unless no alternative. Prefer stack-local variables and fixed-size buffers.
 - **`new`/`new[]`/`delete`/`delete[]` are safe** - globally overloaded to route through the custom `Allocator` (see `src/platform/allocator.cc`).
 - **Embed by value**, not by pointer: `IPAddress ipAddress;` not `IPAddress *ipAddress;`
-- **Watch stack size**: `EMBEDDED_STRING` temporaries materialize words on stack; avoid deep recursion.
 
 ### Constructor Rules
 
@@ -418,20 +415,16 @@ Delete heap allocation operators (`operator new`/`operator delete = delete`).
 
 ## Patterns
 
-### Compile-Time Embedding
+### Data Section Elimination (pic-transform)
 
-| Type | Literal | Result |
-|------|---------|--------|
-| `EMBEDDED_STRING` | `"text"_embed` / `L"text"_embed` | Characters packed into machine words |
-| `DOUBLE` | `3.14_embed` | IEEE-754 bits as `UINT64` immediate |
-| `EMBEDDED_ARRAY` | `MakeEmbedArray<T>(vals...)` | Elements packed into machine words |
+The [pic-transform](https://github.com/mrzaxaryan/pic-transform) LLVM pass automatically converts string literals, float constants, and const arrays into stack-local immediate stores during compilation. No special syntax or macros are needed for these -- write standard C++.
+
+What still requires manual handling:
+
+| Type | Syntax | Result |
+|------|--------|--------|
 | `EMBEDDED_FUNCTION_POINTER` | `EMBED_FUNC(Fn)` | PC-relative offset, no relocation |
-
-**Variadic `MakeEmbedArray<T>(vals...)`** - Pass values directly as arguments instead of through a named `constexpr` array. Named `constexpr` arrays leak to `.rdata` at `-O0` on some compilers (e.g., Clang cross-compiling from Linux). The variadic overload constructs the array inside a `consteval` function where it cannot leak. For compound literal callers, `MakeEmbedArray((const T[]){...})` also works.
-
-A **register barrier** (`__asm__ volatile("" : "+r"(word))`) prevents the compiler from coalescing values back into `.rdata`.
-
-**LOG macros auto-embed** - `LOG_INFO`, `LOG_ERROR`, `LOG_WARNING`, and `LOG_DEBUG` automatically apply `_embed` to their format string. Write `LOG_INFO("msg")` not `LOG_INFO("msg"_embed)`.
+| `DOUBLE` arithmetic | `DOUBLE` class | IEEE-754 via integer math (no FPU dependency) |
 
 ### Traits-Based Dispatch
 
@@ -485,7 +478,7 @@ Two strategies: **conditional compilation** (`#if defined(PLATFORM_*)`) for smal
 ## Writing Tests
 
 - Each test suite is a class in `tests/<name>_tests.h`
-- The class has a `static BOOL RunAll()` method that calls `RunTest(allPassed, EMBED_FUNC(TestName), L"description"_embed)` for each test
+- The class has a `static BOOL RunAll()` method that calls `RunTest(allPassed, EMBED_FUNC(TestName), L"description")` for each test
 - Individual test methods are `static BOOL` functions returning `true` for pass, `false` for fail
 - Register by adding `#include "my_feature_tests.h"` and `RunTestSuite<MyFeatureTests>(allPassed);` in `tests/pir_tests.h` under the appropriate layer comment (CORE, PLATFORM, or RUNTIME)
 - See existing test files for reference
@@ -496,7 +489,6 @@ Two strategies: **conditional compilation** (`#if defined(PLATFORM_*)`) for smal
 
 1. **Inline asm register clobbers** - On x86_64, declare all volatile registers (RAX, RCX, RDX, R8-R11) as outputs or clobbers
 2. **Memory operands with RSP modification** - Never use `"m"` constraints in asm blocks that modify RSP; under `-Oz` the compiler uses RSP-relative addressing
-3. **i386 `EMBEDDED_STRING` indexing** - Cast indices to `USIZE` to avoid ambiguous overload between `operator[]` and pointer decay
 
 ---
 

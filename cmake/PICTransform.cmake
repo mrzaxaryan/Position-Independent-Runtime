@@ -57,12 +57,13 @@ endif()
 # =============================================================================
 # Strategy 2: Download prebuilt from GitHub releases
 # =============================================================================
-# Use a native filesystem path on WSL (NTFS doesn't support chmod +x properly)
+# Download into source tree so the binary is shared across all build presets.
+# On WSL with an NTFS mount, use /tmp instead (NTFS doesn't support chmod +x).
 if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows"
    AND CMAKE_BINARY_DIR MATCHES "^/mnt/[a-z]/")
     set(_PT_DOWNLOAD_DIR "/tmp/pir-pic-transform-${PIC_TRANSFORM_VERSION}")
 else()
-    set(_PT_DOWNLOAD_DIR "${CMAKE_BINARY_DIR}/pic-transform-download")
+    set(_PT_DOWNLOAD_DIR "${CMAKE_SOURCE_DIR}/build/pic-transform/${_PT_PLATFORM}")
 endif()
 set(_PT_DOWNLOADED_BIN "${_PT_DOWNLOAD_DIR}/${_PT_BIN_NAME}")
 

@@ -271,7 +271,6 @@ PIR is built on a clean three-layer abstraction that separates concerns and enab
 
 **CORE** provides:
 - Platform-independent primitives
-- Embedded types (`EMBEDDED_STRING`, `EMBEDDED_DOUBLE`, `EMBEDDED_ARRAY`)
 - Numeric types (`UINT64`, `INT64`, `DOUBLE`)
 - Memory operations, string utilities, and formatting
 - Algorithms (DJB2 hashing, Base64, random number generation)
@@ -324,26 +323,23 @@ CHAR *relocatedString = string + (SSIZE)startAddress;
 **Why they fail:** Modern compilers are sophisticated enough to recognize stack string patterns; with optimizations enabled, the compiler may consolidate individual character assignments, place the string data in `.rdata`, and replace the code with a `memcpy` call. This defeats the technique and reintroduces the `.rdata` dependency. Manual relocation approaches are fragile, increase binary size, and rely on compiler-specific behavior.
 </details>
 
-**PIR Solution: Compile-Time Embedding**
+**PIR Solution: Automatic Data Section Elimination via LLVM Pass**
 
-By eliminating all `.rdata` dependencies through compile-time embedding, PIR produces code that requires no relocations. String characters are packed into 64-bit words at compile time and written as immediate values in the instruction stream:
+PIR integrates [pic-transform](https://github.com/mrzaxaryan/pic-transform), a custom LLVM pass that automatically eliminates all `.rdata`/`.rodata`/`.data`/`.bss` sections during compilation. The pass converts global constants (strings, floats, arrays) into stack-local immediate stores -- the same transformation that was previously done manually with `_embed` helpers, but now fully automated.
+
+Developers write standard C++:
 
 ```cpp
-auto msg = "Hello, World!"_embed; // Embedded in code, not .rdata
+const char *msg = "Hello, World!"; // Normal string literal -- no special syntax needed
 ```
 
-Assembly output:
+The LLVM pass transforms this during compilation so that string characters are packed into 64-bit words and written as immediate values in the instruction stream:
 ```asm
 movabsq $0x57202C6F6C6C6548, (%rsp)   ; "Hello, W" packed into a single immediate
 movabsq $0x00000021646C726F, 8(%rsp)   ; "orld!\0"
 ```
 
-The same technique applies to constant arrays via `MakeEmbedArray<T>(vals...)`:
-
-```cpp
-auto embedded = MakeEmbedArray<UINT32>(0x12345678, 0xABCDEF00);
-UINT32 value = embedded[0]; // Unpacked at runtime
-```
+The same applies to constant arrays and floating-point constants -- no special macros or suffixes required.
 
 ### Problem 2: Floating-Point Constants
 
@@ -362,17 +358,19 @@ double d = *((double*)&f);
 This avoids embedding float literals but increases code size and complexity.
 </details>
 
-**PIR Solution: Floating-Point Constant Embedding**
+**PIR Solution: Automatic Floating-Point Transformation**
 
-Values are converted at compile time into IEEE-754 bit patterns and injected as immediate operands:
+The pic-transform LLVM pass handles floating-point constants automatically. Developers write standard C++ float/double literals, and the pass converts them into immediate operands during compilation:
 
 ```cpp
-auto pi = 3.14159_embed; // IEEE-754 as immediate value
+double pi = 3.14159; // Normal literal -- transformed automatically
 ```
 
 ```asm
 movabsq $0x400921f9f01b866e, %rax ; Pi as 64-bit immediate
 ```
+
+For arithmetic operations on floating-point values without FPU dependency, PIR provides the `DOUBLE` class which implements IEEE-754 operations using pure integer math.
 
 ### Problem 3: Function Pointers
 
@@ -404,9 +402,13 @@ INT64 d_to_i64(const DOUBLE& d)
 
 ---
 
-### Critical Compiler Flags
+### Build Pipeline
 
-Achieving true position-independence requires specific compiler flags:
+PIR uses a two-stage approach to guarantee position-independence:
+
+**1. LLVM Pass (pic-transform):** The [pic-transform](https://github.com/mrzaxaryan/pic-transform) tool runs as part of the build pipeline, transforming LLVM bitcode to eliminate all data sections. It converts global constants, string literals, and floating-point values into stack-local immediate stores. The tool is automatically downloaded from GitHub releases during the CMake configure step.
+
+**2. Critical Compiler Flags:**
 
 ```bash
 -fno-jump-tables      # Prevents switch statement jump tables in .rdata
@@ -420,9 +422,7 @@ Achieving true position-independence requires specific compiler flags:
 
 The `-fno-jump-tables` flag is particularly critical - without it, `switch` statements generate jump tables stored in `.rdata`, breaking position-independence.
 
-### Post-Build Verification
-
-The build system automatically verifies that the final binary contains no data sections (`.rdata`, `.rodata`, `.data`, `.bss`, `.got`, `.plt`). This check runs after every build via `cmake/VerifyPICMode.cmake`.
+**3. Post-Build Verification:** The build system automatically verifies that the final binary contains no data sections (`.rdata`, `.rodata`, `.data`, `.bss`, `.got`, `.plt`). This check runs after every build via `cmake/VerifyPICMode.cmake`.
 
 ---
 ## Platform Implementations
