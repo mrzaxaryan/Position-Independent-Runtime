@@ -12,7 +12,7 @@ private:
 	{
 		LOG_INFO("Test: Localhost Resolution");
 
-		auto result = DnsClient::CloudflareResolve("localhost"_embed, DnsRecordType::A);
+		auto result = DnsClient::CloudflareResolve("localhost", DnsRecordType::A);
 		if (!result)
 		{
 			LOG_ERROR("Localhost A resolution failed (error: %e)", result.Error());
@@ -27,7 +27,7 @@ private:
 			return false;
 		}
 
-		auto result6 = DnsClient::CloudflareResolve("localhost"_embed, DnsRecordType::AAAA);
+		auto result6 = DnsClient::CloudflareResolve("localhost", DnsRecordType::AAAA);
 		if (!result6)
 		{
 			LOG_ERROR("Localhost AAAA resolution failed (error: %e)", result6.Error());
@@ -53,7 +53,7 @@ private:
 	{
 		LOG_INFO("Test: Cloudflare DNS Resolution (dns.google)");
 
-		auto result = DnsClient::CloudflareResolve("dns.google"_embed, DnsRecordType::A);
+		auto result = DnsClient::CloudflareResolve("dns.google", DnsRecordType::A);
 		if (!result)
 		{
 			LOG_ERROR("Cloudflare DNS resolution failed (error: %e)", result.Error());
@@ -79,7 +79,7 @@ private:
 	{
 		LOG_INFO("Test: Google DNS Resolution (one.one.one.one)");
 
-		auto result = DnsClient::GoogleResolve("one.one.one.one"_embed, DnsRecordType::A);
+		auto result = DnsClient::GoogleResolve("one.one.one.one", DnsRecordType::A);
 		if (!result)
 		{
 			LOG_ERROR("Google DNS resolution failed (error: %e)", result.Error());
@@ -105,7 +105,7 @@ private:
 	{
 		LOG_INFO("Test: Main DNS Resolve Function");
 
-		auto result = DnsClient::Resolve("example.com"_embed);
+		auto result = DnsClient::Resolve("example.com");
 		if (!result)
 		{
 			LOG_ERROR("Main DNS resolution failed (error: %e)", result.Error());
@@ -122,7 +122,7 @@ private:
 	{
 		LOG_INFO("Test: Known IP Resolution (dns.google)");
 
-		auto result = DnsClient::Resolve("dns.google"_embed);
+		auto result = DnsClient::Resolve("dns.google");
 		if (!result)
 		{
 			LOG_ERROR("DNS resolution for dns.google failed (error: %e)", result.Error());
@@ -143,11 +143,11 @@ public:
 		LOG_INFO("Running DNS Tests...");
 		LOG_INFO("  Testing DNS resolution via DoH (binary wireformat)");
 
-		RunTest(allPassed, EMBED_FUNC(TestLocalhostResolution), "Localhost resolution"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestCloudflareResolve), "Cloudflare DNS resolution"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestGoogleResolve), "Google DNS resolution"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestMainResolve), "Main DNS resolve function"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestKnownIpResolution), "Known IP resolution"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestLocalhostResolution), "Localhost resolution");
+		RunTest(allPassed, EMBED_FUNC(TestCloudflareResolve), "Cloudflare DNS resolution");
+		RunTest(allPassed, EMBED_FUNC(TestGoogleResolve), "Google DNS resolution");
+		RunTest(allPassed, EMBED_FUNC(TestMainResolve), "Main DNS resolve function");
+		RunTest(allPassed, EMBED_FUNC(TestKnownIpResolution), "Known IP resolution");
 
 		if (allPassed)
 			LOG_INFO("All DNS tests passed!");

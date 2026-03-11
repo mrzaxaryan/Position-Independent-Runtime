@@ -13,26 +13,26 @@ public:
 		LOG_INFO("Running Vector Tests...");
 
 		// Construction and initialization
-		RunTest(allPassed, EMBED_FUNC(TestDefaultConstruction), "Default construction"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestInit), "Init allocates backing array"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestDefaultConstruction), "Default construction");
+		RunTest(allPassed, EMBED_FUNC(TestInit), "Init allocates backing array");
 
 		// Add elements
-		RunTest(allPassed, EMBED_FUNC(TestAddSingle), "Add single element"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestAddMultiple), "Add multiple elements"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestAddGrow), "Add beyond initial capacity triggers growth"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestAddSingle), "Add single element");
+		RunTest(allPassed, EMBED_FUNC(TestAddMultiple), "Add multiple elements");
+		RunTest(allPassed, EMBED_FUNC(TestAddGrow), "Add beyond initial capacity triggers growth");
 
 		// Move semantics
-		RunTest(allPassed, EMBED_FUNC(TestMoveConstruct), "Move construction transfers ownership"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestMoveAssign), "Move assignment transfers ownership"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestMoveAssignSelf), "Move self-assignment is safe"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestMoveConstruct), "Move construction transfers ownership");
+		RunTest(allPassed, EMBED_FUNC(TestMoveAssign), "Move assignment transfers ownership");
+		RunTest(allPassed, EMBED_FUNC(TestMoveAssignSelf), "Move self-assignment is safe");
 
 		// Release
-		RunTest(allPassed, EMBED_FUNC(TestRelease), "Release returns pointer and resets"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestRelease), "Release returns pointer and resets");
 
 		// Edge cases
-		RunTest(allPassed, EMBED_FUNC(TestAddAfterGrowPreservesData), "Growth preserves existing data"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestMultipleGrowths), "Multiple capacity doublings"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestMoveAssignNonEmpty), "Move assign into non-empty vector"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestAddAfterGrowPreservesData), "Growth preserves existing data");
+		RunTest(allPassed, EMBED_FUNC(TestMultipleGrowths), "Multiple capacity doublings");
+		RunTest(allPassed, EMBED_FUNC(TestMoveAssignNonEmpty), "Move assign into non-empty vector");
 
 		if (allPassed)
 			LOG_INFO("All Vector tests passed!");

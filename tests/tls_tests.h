@@ -14,7 +14,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Handshake (ip: %x, port %d)", TEST_SERVER_IP, TLS_PORT);
 
-		auto createResult = TlsClient::Create("one.one.one.one"_embed, IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
+		auto createResult = TlsClient::Create("one.one.one.one", IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
 		if (!createResult)
 		{
 			LOG_ERROR("TLS client creation failed (error: %e)", createResult.Error());
@@ -39,7 +39,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Echo - Single Message (ip: %x, port %d)", TEST_SERVER_IP, TLS_PORT);
 
-		auto createResult = TlsClient::Create("www.one.one.one.one"_embed, IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
+		auto createResult = TlsClient::Create("www.one.one.one.one", IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
 		if (!createResult)
 		{
 			LOG_ERROR("TLS client creation failed (error: %e)", createResult.Error());
@@ -55,10 +55,10 @@ private:
 		}
 
 		// Send test message
-		auto message = "GET / HTTP/1.1\r\n"_embed
-					   "Host: one.one.one.one\r\n"_embed
-					   "Connection: close\r\n"_embed
-					   "\r\n"_embed;
+		auto message = "GET / HTTP/1.1\r\n"
+					   "Host: one.one.one.one\r\n"
+					   "Connection: close\r\n"
+					   "\r\n";
 		auto writeResult = tlsClient.Write(Span<const CHAR>((PCCHAR)message, message.Length()));
 
 		if (!writeResult)
@@ -102,7 +102,7 @@ private:
 	{
 		LOG_INFO("Test: TLS Echo - Multiple Messages (port %d)", TLS_PORT);
 
-		auto createResult = TlsClient::Create("www.one.one.one.one"_embed, IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
+		auto createResult = TlsClient::Create("www.one.one.one.one", IPAddress::FromIPv4(TEST_SERVER_IP), TLS_PORT);
 		if (!createResult)
 		{
 			LOG_ERROR("TLS client creation failed (error: %e)", createResult.Error());
@@ -118,16 +118,16 @@ private:
 		}
 
 		// Test messages
-		auto msg1 = "GET / HTTP/1.1\r\n"_embed
-					"Host: one.one.one.one\r\n"_embed
-					"\r\n"_embed;
-		auto msg2 = "GET / HTTP/1.1\r\n"_embed
-					"Host: one.one.one.one\r\n"_embed
-					"\r\n"_embed;
-		auto msg3 = "GET / HTTP/1.1\r\n"_embed
-					"Host: one.one.one.one\r\n"_embed
-					"Connection: close\r\n"_embed
-					"\r\n"_embed;
+		auto msg1 = "GET / HTTP/1.1\r\n"
+					"Host: one.one.one.one\r\n"
+					"\r\n";
+		auto msg2 = "GET / HTTP/1.1\r\n"
+					"Host: one.one.one.one\r\n"
+					"\r\n";
+		auto msg3 = "GET / HTTP/1.1\r\n"
+					"Host: one.one.one.one\r\n"
+					"Connection: close\r\n"
+					"\r\n";
 
 		// Send and receive message 1
 		auto send1 = tlsClient.Write(Span<const CHAR>((PCCHAR)msg1, msg1.Length()));
@@ -236,9 +236,9 @@ public:
 		LOG_INFO("Running TLS Tests...");
 		LOG_INFO("  Test Server: one.one.one.one (1.1.1.1:443)");
 
-		RunTest(allPassed, EMBED_FUNC(TestTlsHandshake), "TLS handshake"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestTlsEchoSingle), "TLS echo - single message"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestTlsEchoMultiple), "TLS echo - multiple messages"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestTlsHandshake), "TLS handshake");
+		RunTest(allPassed, EMBED_FUNC(TestTlsEchoSingle), "TLS echo - single message");
+		RunTest(allPassed, EMBED_FUNC(TestTlsEchoMultiple), "TLS echo - multiple messages");
 
 		if (allPassed)
 			LOG_INFO("All TLS tests passed!");

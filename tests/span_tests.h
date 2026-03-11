@@ -13,46 +13,46 @@ public:
 		LOG_INFO("Running Span Tests...");
 
 		// Dynamic extent
-		RunTest(allPassed, EMBED_FUNC(TestDynamicDefault), "Dynamic default construction"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestDynamicPtrSize), "Dynamic pointer+size construction"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestDynamicArray), "Dynamic array construction"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestDynamicAccessors), "Dynamic accessors"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestDynamicSubspan), "Dynamic Subspan"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestDynamicFirstLast), "Dynamic First/Last"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestDynamicIteration), "Dynamic range-for iteration"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestDynamicConstConversion), "Dynamic Span<T> to Span<const T>"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestDynamicDefault), "Dynamic default construction");
+		RunTest(allPassed, EMBED_FUNC(TestDynamicPtrSize), "Dynamic pointer+size construction");
+		RunTest(allPassed, EMBED_FUNC(TestDynamicArray), "Dynamic array construction");
+		RunTest(allPassed, EMBED_FUNC(TestDynamicAccessors), "Dynamic accessors");
+		RunTest(allPassed, EMBED_FUNC(TestDynamicSubspan), "Dynamic Subspan");
+		RunTest(allPassed, EMBED_FUNC(TestDynamicFirstLast), "Dynamic First/Last");
+		RunTest(allPassed, EMBED_FUNC(TestDynamicIteration), "Dynamic range-for iteration");
+		RunTest(allPassed, EMBED_FUNC(TestDynamicConstConversion), "Dynamic Span<T> to Span<const T>");
 
 		// Static extent
-		RunTest(allPassed, EMBED_FUNC(TestStaticArray), "Static array construction"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestStaticAccessors), "Static accessors"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestStaticSubspan), "Static Subspan returns dynamic"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestStaticFirstLast), "Static First/Last return dynamic"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestStaticIteration), "Static range-for iteration"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestStaticConstConversion), "Static Span<T,N> to Span<const T,N>"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestStaticArray), "Static array construction");
+		RunTest(allPassed, EMBED_FUNC(TestStaticAccessors), "Static accessors");
+		RunTest(allPassed, EMBED_FUNC(TestStaticSubspan), "Static Subspan returns dynamic");
+		RunTest(allPassed, EMBED_FUNC(TestStaticFirstLast), "Static First/Last return dynamic");
+		RunTest(allPassed, EMBED_FUNC(TestStaticIteration), "Static range-for iteration");
+		RunTest(allPassed, EMBED_FUNC(TestStaticConstConversion), "Static Span<T,N> to Span<const T,N>");
 
 		// Cross-conversion
-		RunTest(allPassed, EMBED_FUNC(TestStaticToDynamic), "Span<T,N> to Span<T> conversion"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestStaticToDynamicConst), "Span<T,N> to Span<const T> conversion"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestStaticPassToFunction), "Pass Span<T,N> to function taking Span<T>"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestStaticToDynamic), "Span<T,N> to Span<T> conversion");
+		RunTest(allPassed, EMBED_FUNC(TestStaticToDynamicConst), "Span<T,N> to Span<const T> conversion");
+		RunTest(allPassed, EMBED_FUNC(TestStaticPassToFunction), "Pass Span<T,N> to function taking Span<T>");
 
 		// Size optimization
-		RunTest(allPassed, EMBED_FUNC(TestSizeOptimization), "Static extent eliminates size member"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestSizeOptimization), "Static extent eliminates size member");
 
 		// Compile-time slicing — static extent
-		RunTest(allPassed, EMBED_FUNC(TestStaticPtrConstruction), "Static explicit pointer construction"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestStaticCompileTimeFirst), "Static First<N>() returns Span<T,N>"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestStaticCompileTimeLast), "Static Last<N>() returns Span<T,N>"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestStaticCompileTimeSubspanOffsetCount), "Static Subspan<O,N>() returns Span<T,N>"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestStaticCompileTimeSubspanOffset), "Static Subspan<O>() deduces count from type"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestStaticPtrConstruction), "Static explicit pointer construction");
+		RunTest(allPassed, EMBED_FUNC(TestStaticCompileTimeFirst), "Static First<N>() returns Span<T,N>");
+		RunTest(allPassed, EMBED_FUNC(TestStaticCompileTimeLast), "Static Last<N>() returns Span<T,N>");
+		RunTest(allPassed, EMBED_FUNC(TestStaticCompileTimeSubspanOffsetCount), "Static Subspan<O,N>() returns Span<T,N>");
+		RunTest(allPassed, EMBED_FUNC(TestStaticCompileTimeSubspanOffset), "Static Subspan<O>() deduces count from type");
 
 		// Compile-time slicing — dynamic extent
-		RunTest(allPassed, EMBED_FUNC(TestDynamicCompileTimeFirst), "Dynamic First<N>() returns Span<T,N>"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestDynamicCompileTimeLast), "Dynamic Last<N>() returns Span<T,N>"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestDynamicCompileTimeSubspan), "Dynamic Subspan<O,N>() returns Span<T,N>"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestDynamicCompileTimeFirst), "Dynamic First<N>() returns Span<T,N>");
+		RunTest(allPassed, EMBED_FUNC(TestDynamicCompileTimeLast), "Dynamic Last<N>() returns Span<T,N>");
+		RunTest(allPassed, EMBED_FUNC(TestDynamicCompileTimeSubspan), "Dynamic Subspan<O,N>() returns Span<T,N>");
 
 		// Edge cases
-		RunTest(allPassed, EMBED_FUNC(TestEmptyDynamic), "Empty dynamic span"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestSingleElement), "Single element static span"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestEmptyDynamic), "Empty dynamic span");
+		RunTest(allPassed, EMBED_FUNC(TestSingleElement), "Single element static span");
 
 		if (allPassed)
 			LOG_INFO("All Span tests passed!");

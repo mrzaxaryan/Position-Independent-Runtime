@@ -101,8 +101,8 @@ public:
 	 * @return Number of characters written
 	 *
 	 * USAGE:
-	 *   Console::Write<WCHAR>(L"Hello"_embed);    // Wide string
-	 *   Console::Write<CHAR>("Hello"_embed);      // Narrow string
+	 *   Console::Write<WCHAR>(L"Hello");    // Wide string
+	 *   Console::Write<CHAR>("Hello");      // Narrow string
 	 *
 	 * PERFORMANCE NOTE:
 	 *   Calls StringUtils::Length() to find null terminator - O(n) operation.
@@ -135,9 +135,9 @@ public:
 	 *
 	 * USAGE:
 	 *   Console::WriteFormatted<WCHAR>(
-	 *       L"Value: %d, Pi: %.5f\n"_embed,
+	 *       L"Value: %d, Pi: %.5f\n",
 	 *       42,
-	 *       3.14159_embed  // Pass DOUBLE directly - no casting needed!
+	 *       3.14159  // Pass DOUBLE directly - no casting needed!
 	 *   );
 	 *
 	 * POSITION-INDEPENDENT IMPLEMENTATION:

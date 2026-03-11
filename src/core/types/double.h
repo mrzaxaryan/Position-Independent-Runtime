@@ -28,9 +28,9 @@
  *
  * @par Example Usage:
  * @code
- * // Use _embed suffix for compile-time literals (no .rdata)
- * DOUBLE pi = 3.14159_embed;
- * DOUBLE half = 0.5_embed;
+ * // Compile-time literals (no .rdata)
+ * DOUBLE pi = 3.14159;
+ * DOUBLE half = 0.5;
  *
  * // Arithmetic operations
  * DOUBLE result = pi * half;

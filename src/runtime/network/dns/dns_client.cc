@@ -513,7 +513,7 @@ static_assert(sizeof(DNS_REQUEST_QUESTION) == 4, "DNS question must be 4 bytes (
 Result<IPAddress, Error> DnsClient::ResolveOverHttp(Span<const CHAR> host, const IPAddress &dnsServerIp, Span<const CHAR> dnsServerName, DnsRecordType dnstype)
 {
 	// Short-circuit for "localhost" — return loopback without network I/O (RFC 6761 Section 6.3)
-	auto localhost = "localhost"_embed;
+	auto localhost = "localhost";
 	if (StringUtils::Equals<CHAR>(host, localhost))
 		return Result<IPAddress, Error>::Ok(IPAddress::LocalHost(dnstype == DnsRecordType::AAAA));
 
@@ -553,11 +553,11 @@ Result<IPAddress, Error> DnsClient::ResolveOverHttp(Span<const CHAR> host, const
 	StringUtils::UIntToStr(querySize, Span<CHAR>(sizeBuf));
 
 	// Send HTTP/1.1 POST request per RFC 8484 Section 4.1
-	if (!writeSpan("POST /dns-query HTTP/1.1\r\nHost: "_embed) ||
+	if (!writeSpan("POST /dns-query HTTP/1.1\r\nHost: ") ||
 		!writeSpan(dnsServerName) ||
-		!writeSpan("\r\nContent-Type: application/dns-message\r\nAccept: application/dns-message\r\nContent-Length: "_embed) ||
+		!writeSpan("\r\nContent-Type: application/dns-message\r\nAccept: application/dns-message\r\nContent-Length: ") ||
 		!writeSpan(Span<const CHAR>(sizeBuf, StringUtils::Length(sizeBuf))) ||
-		!writeSpan("\r\n\r\n"_embed))
+		!writeSpan("\r\n\r\n"))
 	{
 		LOG_WARNING("Failed to send DNS query");
 		return Result<IPAddress, Error>::Err(Error::Dns_SendFailed);
@@ -623,7 +623,7 @@ Result<IPAddress, Error> DnsClient::ResolveOverHttp(Span<const CHAR> host, const
  */
 Result<IPAddress, Error> DnsClient::CloudflareResolve(Span<const CHAR> host, DnsRecordType dnstype)
 {
-	auto serverName = "one.one.one.one"_embed;
+	auto serverName = "one.one.one.one";
 	const IPAddress ips[] = {IPAddress::FromIPv4(0x01010101), IPAddress::FromIPv4(0x01000001)};
 	return ResolveWithFallback(host, Span(ips), serverName, dnstype);
 }
@@ -644,7 +644,7 @@ Result<IPAddress, Error> DnsClient::CloudflareResolve(Span<const CHAR> host, Dns
  */
 Result<IPAddress, Error> DnsClient::GoogleResolve(Span<const CHAR> host, DnsRecordType dnstype)
 {
-	auto serverName = "dns.google"_embed;
+	auto serverName = "dns.google";
 	const IPAddress ips[] = {IPAddress::FromIPv4(0x08080808), IPAddress::FromIPv4(0x08080404)};
 	return ResolveWithFallback(host, Span(ips), serverName, dnstype);
 }

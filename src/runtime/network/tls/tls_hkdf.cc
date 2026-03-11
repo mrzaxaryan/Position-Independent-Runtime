@@ -16,7 +16,7 @@
 
 INT32 TlsHKDF::Label(Span<const CHAR> label, Span<const UCHAR> data, PUCHAR hkdflabel, UINT16 length)
 {
-	auto prefix = "tls13 "_embed;
+	auto prefix = "tls13 ";
 	UCHAR labelLen = (UCHAR)label.Size();
 	UCHAR dataLen = (UCHAR)data.Size();
 	INT32 prefixLen = prefix.Length();

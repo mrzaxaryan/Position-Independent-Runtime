@@ -78,7 +78,7 @@ private:
 			return false;
 		}
 
-		auto request = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n"_embed;
+		auto request = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n";
 		auto writeResult = sock.Write(Span<const CHAR>((PCCHAR)request, request.Length()));
 
 		if (!writeResult)
@@ -134,7 +134,7 @@ private:
 				return false;
 			}
 
-			auto request = "GET / HTTP/1.0\r\n\r\n"_embed;
+			auto request = "GET / HTTP/1.0\r\n\r\n";
 			auto writeResult = sock.Write(Span<const CHAR>((PCCHAR)request, request.Length()));
 
 			if (!writeResult)
@@ -179,7 +179,7 @@ private:
 	{
 		LOG_INFO("Test: IP Address Conversion");
 
-		auto ipStr = "1.1.1.1"_embed;
+		auto ipStr = "1.1.1.1";
 		auto convertedResult = IPAddress::FromString((PCCHAR)ipStr);
 
 		if (!convertedResult)
@@ -198,7 +198,7 @@ private:
 		LOG_INFO("IP conversion successful: %s -> 0x%08X", (PCCHAR)ipStr, convertedIp.ToIPv4());
 
 		LOG_INFO("  [D1] Testing invalid IP: 256.1.1.1");
-		auto invalidIp1 = "256.1.1.1"_embed;
+		auto invalidIp1 = "256.1.1.1";
 		auto parseResult1 = IPAddress::FromString((PCCHAR)invalidIp1);
 		if (parseResult1)
 		{
@@ -207,7 +207,7 @@ private:
 		}
 
 		LOG_INFO("  [D2] Testing invalid IP: 192.168.1");
-		auto invalidIp2 = "192.168.1"_embed;
+		auto invalidIp2 = "192.168.1";
 		auto parseResult2 = IPAddress::FromString((PCCHAR)invalidIp2);
 		if (parseResult2)
 		{
@@ -216,7 +216,7 @@ private:
 		}
 
 		LOG_INFO("  [D3] Testing invalid IP: abc.def.ghi.jkl");
-		auto invalidIp3 = "abc.def.ghi.jkl"_embed;
+		auto invalidIp3 = "abc.def.ghi.jkl";
 		auto parseResult3 = IPAddress::FromString((PCCHAR)invalidIp3);
 		if (parseResult3)
 		{
@@ -225,7 +225,7 @@ private:
 		}
 
 		LOG_INFO("  [D4] Testing IPv6: 2001:db8::1");
-		auto ipv6Str = "2001:db8::1"_embed;
+		auto ipv6Str = "2001:db8::1";
 		LOG_INFO("  [D5] Calling FromString");
 		auto ipv6Result = IPAddress::FromString((PCCHAR)ipv6Str);
 		LOG_INFO("  [D6] FromString done: ok=%d", (INT32)(BOOL)ipv6Result);
@@ -252,7 +252,7 @@ private:
 	{
 		LOG_INFO("Test: IPv6 Socket Connection (HTTP:80)");
 
-		auto ipv6Str = "2606:4700:4700::1111"_embed;
+		auto ipv6Str = "2606:4700:4700::1111";
 		auto ipv6Result = IPAddress::FromString((PCCHAR)ipv6Str);
 
 		if (!ipv6Result || !ipv6Result.Value().IsIPv6())
@@ -280,7 +280,7 @@ private:
 
 		LOG_INFO("IPv6 socket connected successfully to %s:80", (PCCHAR)ipv6Str);
 
-		auto request = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n"_embed;
+		auto request = "GET / HTTP/1.1\r\nHost: one.one.one.one\r\nConnection: close\r\n\r\n";
 		auto writeResult = sock.Write(Span<const CHAR>((PCCHAR)request, request.Length()));
 
 		if (!writeResult)
@@ -320,7 +320,7 @@ private:
 	// Test 7: HTTP GET request to httpbin.org
 	static BOOL TestHttpBin()
 	{
-		auto dnsResult = DnsClient::Resolve("httpbin.org"_embed, DnsRecordType::A);
+		auto dnsResult = DnsClient::Resolve("httpbin.org", DnsRecordType::A);
 		if (!dnsResult)
 		{
 			LOG_ERROR("Failed to resolve httpbin.org (error: %e)", dnsResult.Error());
@@ -341,7 +341,7 @@ private:
 			return false;
 		}
 
-		auto request = "GET /get HTTP/1.1\r\nHost: httpbin.org\r\nConnection: close\r\n\r\n"_embed;
+		auto request = "GET /get HTTP/1.1\r\nHost: httpbin.org\r\nConnection: close\r\n\r\n";
 		auto writeResult = sock.Write(Span<const CHAR>((PCCHAR)request, request.Length()));
 		if (!writeResult)
 		{
@@ -385,13 +385,13 @@ public:
 		LOG_INFO("Running Socket Tests...");
 		LOG_INFO("  Test Server: one.one.one.one (1.1.1.1 / 2606:4700:4700::1111)");
 
-		RunTest(allPassed, EMBED_FUNC(TestSocketCreation), "Socket creation"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestSocketConnection), "Socket connection (HTTP:80)"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestHttpRequest), "HTTP GET request"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestMultipleConnections), "Multiple sequential connections"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestIpConversion), "IP address conversion"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestIPv6Connection), "IPv6 connection"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestHttpBin), "HTTP GET request to httpbin.org"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestSocketCreation), "Socket creation");
+		RunTest(allPassed, EMBED_FUNC(TestSocketConnection), "Socket connection (HTTP:80)");
+		RunTest(allPassed, EMBED_FUNC(TestHttpRequest), "HTTP GET request");
+		RunTest(allPassed, EMBED_FUNC(TestMultipleConnections), "Multiple sequential connections");
+		RunTest(allPassed, EMBED_FUNC(TestIpConversion), "IP address conversion");
+		RunTest(allPassed, EMBED_FUNC(TestIPv6Connection), "IPv6 connection");
+		RunTest(allPassed, EMBED_FUNC(TestHttpBin), "HTTP GET request to httpbin.org");
 
 		if (allPassed)
 			LOG_INFO("All Socket tests passed!");

@@ -18,7 +18,7 @@
  *
  * USAGE:
  *   BOOL allPassed = true;
- *   RunTest(allPassed, TestFunction, "Test description"_embed);
+ *   RunTest(allPassed, TestFunction, "Test description");
  *
  * @param allPassedVar - Boolean variable to track overall test status
  * @param testFunc     - Test function to execute (must return BOOL)

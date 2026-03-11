@@ -16,7 +16,7 @@ private:
 	{
 		LOG_INFO("Test: Secure WebSocket Connection (wss://)");
 
-		auto wssUrl = "wss://echo.websocket.org/"_embed;
+		auto wssUrl = "wss://echo.websocket.org/";
 		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
@@ -34,7 +34,7 @@ private:
 	{
 		LOG_INFO("Test: WebSocket Text Echo");
 
-		auto wssUrl = "wss://echo.websocket.org/"_embed;
+		auto wssUrl = "wss://echo.websocket.org/";
 		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
@@ -50,7 +50,7 @@ private:
 			LOG_INFO("Received initial server message (%d bytes), discarding", initialMsg.Value().Length);
 
 		// Send text message
-		auto testMessage = "Hello, WebSocket!"_embed;
+		auto testMessage = "Hello, WebSocket!";
 		auto writeResult = wsClient.Write(Span<const CHAR>((PCCHAR)testMessage, testMessage.Length()), WebSocketOpcode::Text);
 
 		if (!writeResult)
@@ -100,7 +100,7 @@ private:
 	{
 		LOG_INFO("Test: WebSocket Binary Echo");
 
-		auto wssUrl = "wss://echo.websocket.org/"_embed;
+		auto wssUrl = "wss://echo.websocket.org/";
 		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
@@ -177,7 +177,7 @@ private:
 	{
 		LOG_INFO("Test: Multiple Sequential Messages");
 
-		auto wssUrl = "wss://echo.websocket.org/"_embed;
+		auto wssUrl = "wss://echo.websocket.org/";
 		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
@@ -190,9 +190,9 @@ private:
 		(void)wsClient.Read();
 
 		// Test messages
-		auto msg1 = "First message"_embed;
-		auto msg2 = "Second message"_embed;
-		auto msg3 = "Third message"_embed;
+		auto msg1 = "First message";
+		auto msg2 = "Second message";
+		auto msg3 = "Third message";
 
 		// Send and receive message 1
 		auto write1 = wsClient.Write(Span<const CHAR>((PCCHAR)msg1, msg1.Length()), WebSocketOpcode::Text);
@@ -273,7 +273,7 @@ private:
 	{
 		LOG_INFO("Test: Large Message Handling");
 
-		auto wssUrl = "wss://echo.websocket.org/"_embed;
+		auto wssUrl = "wss://echo.websocket.org/";
 		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
@@ -352,7 +352,7 @@ private:
 	{
 		LOG_INFO("Test: WebSocket Close Handshake");
 
-		auto wssUrl = "wss://echo.websocket.org/"_embed;
+		auto wssUrl = "wss://echo.websocket.org/";
 		auto createResult = WebSocketClient::Create(wssUrl);
 		if (!createResult)
 		{
@@ -382,12 +382,12 @@ public:
 		LOG_INFO("Running WebSocket Tests...");
 		LOG_INFO("  Test Server: echo.websocket.org (wss://)");
 
-		RunTest(allPassed, EMBED_FUNC(TestSecureWebSocketConnection), "Secure WebSocket connection (wss://)"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWebSocketTextEcho), "WebSocket text echo"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWebSocketBinaryEcho), "WebSocket binary echo"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestMultipleMessages), "Multiple messages"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestLargeMessage), "Large message"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestWebSocketClose), "WebSocket close"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestSecureWebSocketConnection), "Secure WebSocket connection (wss://)");
+		RunTest(allPassed, EMBED_FUNC(TestWebSocketTextEcho), "WebSocket text echo");
+		RunTest(allPassed, EMBED_FUNC(TestWebSocketBinaryEcho), "WebSocket binary echo");
+		RunTest(allPassed, EMBED_FUNC(TestMultipleMessages), "Multiple messages");
+		RunTest(allPassed, EMBED_FUNC(TestLargeMessage), "Large message");
+		RunTest(allPassed, EMBED_FUNC(TestWebSocketClose), "WebSocket close");
 
 		if (allPassed)
 			LOG_INFO("All WebSocket tests passed!");

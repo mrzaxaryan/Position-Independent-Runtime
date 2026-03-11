@@ -140,7 +140,7 @@ public:
 			return Result<void, Error>::Err(Error::Uuid_ToStringFailed);
 
 		INT32 index = 0;
-		auto hex = "0123456789abcdef"_embed;
+		auto hex = "0123456789abcdef";
 
 		for (INT32 i = 0; i < 16; i++)
 		{

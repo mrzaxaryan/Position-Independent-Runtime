@@ -503,7 +503,7 @@ INT32 StringFormatter::FormatDouble(
 	INT32 width,
 	INT32 zeroPad)
 {
-	DOUBLE d0_5 = 0.5_embed;
+	DOUBLE d0_5 = 0.5;
 	// Clamp precision to something safe for a small stack buffer
 	if (precision < 0)
 		precision = 0;
@@ -544,9 +544,9 @@ INT32 StringFormatter::FormatDouble(
 	// Rounding: num += 0.5 / 10^precision
 	if (precision > 0)
 	{
-		DOUBLE scale = 1.0_embed;
+		DOUBLE scale = 1.0;
 		for (INT32 i = 0; i < precision; ++i)
-			scale *= (DOUBLE)10.0_embed;
+			scale *= (DOUBLE)10.0;
 		num += (d0_5 / scale);
 	}
 	else
@@ -595,7 +595,7 @@ INT32 StringFormatter::FormatDouble(
 		tmp[len++] = (TChar)'.';
 		for (INT32 i = 0; i < precision; ++i)
 		{
-			fracPart *= (DOUBLE)10.0_embed;
+			fracPart *= (DOUBLE)10.0;
 			INT32 d = (INT32)fracPart;
 			if (d < 0)
 				d = 0;

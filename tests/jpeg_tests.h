@@ -13,22 +13,22 @@ public:
 		LOG_INFO("Running JPEG Encoder Tests...");
 
 		// Validation tests
-		RunTest(allPassed, EMBED_FUNC(TestInvalidComponents_Returns_Error), "JPEG reject invalid component count"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestZeroWidth_Returns_Error), "JPEG reject zero width"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestZeroHeight_Returns_Error), "JPEG reject zero height"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestNegativeWidth_Returns_Error), "JPEG reject negative width"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestNegativeHeight_Returns_Error), "JPEG reject negative height"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestOversizedWidth_Returns_Error), "JPEG reject oversized width"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestOversizedHeight_Returns_Error), "JPEG reject oversized height"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestInvalidComponents_Returns_Error), "JPEG reject invalid component count");
+		RunTest(allPassed, EMBED_FUNC(TestZeroWidth_Returns_Error), "JPEG reject zero width");
+		RunTest(allPassed, EMBED_FUNC(TestZeroHeight_Returns_Error), "JPEG reject zero height");
+		RunTest(allPassed, EMBED_FUNC(TestNegativeWidth_Returns_Error), "JPEG reject negative width");
+		RunTest(allPassed, EMBED_FUNC(TestNegativeHeight_Returns_Error), "JPEG reject negative height");
+		RunTest(allPassed, EMBED_FUNC(TestOversizedWidth_Returns_Error), "JPEG reject oversized width");
+		RunTest(allPassed, EMBED_FUNC(TestOversizedHeight_Returns_Error), "JPEG reject oversized height");
 
 		// Encoding tests
-		RunTest(allPassed, EMBED_FUNC(TestEncode1x1_RGB), "JPEG encode 1x1 RGB"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestEncode1x1_RGBA), "JPEG encode 1x1 RGBA"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestEncode8x8_RGB), "JPEG encode 8x8 RGB"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestEncodeNonMultipleOf8), "JPEG encode non-multiple-of-8 dimensions"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestEncodeQualityBounds), "JPEG encode with clamped quality"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestEncodeAllBlack), "JPEG encode all-black image"_embed);
-		RunTest(allPassed, EMBED_FUNC(TestEncodeAllWhite), "JPEG encode all-white image"_embed);
+		RunTest(allPassed, EMBED_FUNC(TestEncode1x1_RGB), "JPEG encode 1x1 RGB");
+		RunTest(allPassed, EMBED_FUNC(TestEncode1x1_RGBA), "JPEG encode 1x1 RGBA");
+		RunTest(allPassed, EMBED_FUNC(TestEncode8x8_RGB), "JPEG encode 8x8 RGB");
+		RunTest(allPassed, EMBED_FUNC(TestEncodeNonMultipleOf8), "JPEG encode non-multiple-of-8 dimensions");
+		RunTest(allPassed, EMBED_FUNC(TestEncodeQualityBounds), "JPEG encode with clamped quality");
+		RunTest(allPassed, EMBED_FUNC(TestEncodeAllBlack), "JPEG encode all-black image");
+		RunTest(allPassed, EMBED_FUNC(TestEncodeAllWhite), "JPEG encode all-white image");
 
 		if (allPassed)
 			LOG_INFO("All JPEG tests passed!");
