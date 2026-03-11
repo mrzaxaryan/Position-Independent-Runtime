@@ -33,6 +33,7 @@ endif()
 # direct addressing without GOT/PLT sections.
 if(PIR_ARCH STREQUAL "mips64")
     list(APPEND PIR_BASE_FLAGS -mno-abicalls -fno-pic)
+    pir_log_debug("MIPS64: -mno-abicalls -fno-pic (disable GOT-relative addressing)")
 endif()
 
 # Build-type-specific
@@ -41,6 +42,7 @@ if(PIR_BUILD_TYPE STREQUAL "debug")
         -fno-omit-frame-pointer
         -g3 -ferror-limit=200 -${PIR_OPT_LEVEL}
     )
+    pir_log_debug("Debug flags: -g3 -fno-omit-frame-pointer -${PIR_OPT_LEVEL}")
 else()
     list(APPEND PIR_BASE_FLAGS
         -fomit-frame-pointer
@@ -52,6 +54,7 @@ else()
         -${PIR_OPT_LEVEL}
         -flto=full
     )
+    pir_log_debug("Release flags: -${PIR_OPT_LEVEL} -flto=full -fvisibility=hidden")
 endif()
 
 # =============================================================================
@@ -79,3 +82,7 @@ macro(pir_add_link_flags)
         list(APPEND PIR_BASE_LINK_FLAGS "SHELL:-Wl,${_flag}")
     endforeach()
 endmacro()
+
+# Log assembled flags at verbose level
+pir_log_verbose("Base compile flags: ${PIR_BASE_FLAGS}")
+pir_log_verbose("Base link flags: ${PIR_BASE_LINK_FLAGS}")

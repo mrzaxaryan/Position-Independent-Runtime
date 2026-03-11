@@ -41,8 +41,10 @@ if(PIR_ARCH STREQUAL "x86_64")
     # (where interrupts clobber the red zone) and is standard practice for
     # freestanding / position-independent code that makes direct syscalls.
     list(APPEND PIR_BASE_FLAGS -mno-red-zone)
+    pir_log_debug_at("macos" "x86_64: -mno-red-zone, static linking")
 elseif(PIR_ARCH STREQUAL "aarch64")
     list(APPEND PIR_BASE_FLAGS -mstack-probe-size=0)
+    pir_log_debug_at("macos" "aarch64: -mstack-probe-size=0, dynamic (dyld required)")
 endif()
 
 # On non-macOS hosts (e.g. Linux/WSL cross-compilation), use LLD explicitly.
@@ -51,6 +53,9 @@ endif()
 # ld64.lld so -fuse-ld=lld is invalid there.
 if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND PIR_BASE_LINK_FLAGS -fuse-ld=lld)
+    pir_log_verbose_at("macos" "Cross-compiling: using LLD")
+else()
+    pir_log_verbose_at("macos" "Native build: using Apple ld")
 endif()
 
 # Linker configuration (Mach-O)
@@ -106,6 +111,7 @@ if(PIR_BUILD_TYPE STREQUAL "release")
         PROPERTIES
         COMPILE_FLAGS "-fno-lto"
     )
+    pir_log_debug_at("macos" "entry_point.cc: -fno-lto (entry-point ordering fix)")
 endif()
 
 # On ARM64, the linker adds dyld_stub_binder to the initial undefined symbols

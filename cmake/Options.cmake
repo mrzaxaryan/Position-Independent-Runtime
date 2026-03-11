@@ -52,6 +52,7 @@ if(APP_DIR)
             message(FATAL_ERROR "[pir] APP_DIR entry '${_dir}' does not exist")
         endif()
         list(APPEND PIR_APP_DIR "${_dir}")
+        pir_log_debug("APP_DIR resolved: ${_dir}")
     endforeach()
 endif()
 
@@ -64,10 +65,13 @@ set(PIR_IS_DEBUG $<STREQUAL:${PIR_BUILD_TYPE},debug>)
 
 if(OPTIMIZATION_LEVEL)
     set(PIR_OPT_LEVEL "${OPTIMIZATION_LEVEL}")
+    pir_log_debug("Optimization: user override -${PIR_OPT_LEVEL}")
 elseif(PIR_BUILD_TYPE STREQUAL "debug")
     set(PIR_OPT_LEVEL "Og")
+    pir_log_debug("Optimization: debug default -Og")
 else()
     set(PIR_OPT_LEVEL "Oz")
+    pir_log_debug("Optimization: release default -Oz")
 endif()
 
 # =============================================================================
@@ -84,3 +88,8 @@ endif()
 if(ENABLE_LOGGING)
     list(APPEND PIR_DEFINES ENABLE_LOGGING)
 endif()
+
+# Log resolved options at verbose level
+pir_log_verbose("Options resolved: ${PIR_PLATFORM}/${PIR_ARCH} ${PIR_BUILD_TYPE} -${PIR_OPT_LEVEL}")
+pir_log_debug("Defines: ${PIR_DEFINES}")
+pir_log_debug("Output dir: ${PIR_OUTPUT_DIR}")

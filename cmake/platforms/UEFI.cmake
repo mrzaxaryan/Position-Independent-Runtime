@@ -18,8 +18,10 @@ list(APPEND PIR_INCLUDE_PATHS
 # Architecture-specific compiler flags
 if(PIR_ARCH STREQUAL "x86_64")
     list(APPEND PIR_BASE_FLAGS -mno-red-zone)
+    pir_log_debug_at("uefi" "x86_64: -mno-red-zone")
 elseif(PIR_ARCH STREQUAL "aarch64")
     list(APPEND PIR_BASE_FLAGS -mstack-probe-size=0)
+    pir_log_debug_at("uefi" "aarch64: -mstack-probe-size=0")
 endif()
 
 # Linker configuration (PE/COFF)
@@ -49,6 +51,7 @@ function(pir_add_uefi_boot target_name)
     else()
         set(_boot_name "BOOTAA64.EFI")
     endif()
+    pir_log_verbose_at("uefi" "Boot image: ${_boot_dir}/${_boot_name}")
 
     add_custom_command(TARGET ${target_name} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "${_boot_dir}"

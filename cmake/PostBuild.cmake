@@ -10,9 +10,16 @@ include_guard(GLOBAL)
 function(pir_add_postbuild target_name)
     set(_out "${PIR_OUTPUT_DIR}/output")
 
+    pir_log_verbose("Post-build pipeline for ${target_name}:")
+    pir_log_verbose("  1. Extract .text section -> .bin")
+    pir_log_verbose("  2. Base64 encode -> .b64.txt")
+    pir_log_verbose("  3. Verify PIC mode (no data sections)")
+    pir_log_debug("Post-build input: ${_out}${PIR_EXT}")
+
     # Patch ELF EI_OSABI when required (e.g. Solaris needs ELFOSABI_SOLARIS)
     set(_osabi_cmd)
     if(DEFINED PIR_ELF_OSABI)
+        pir_log_verbose("Post-build: ELF OSABI patch (value=${PIR_ELF_OSABI})")
         set(_osabi_cmd
             COMMAND ${CMAKE_COMMAND}
                 -DELF_FILE="${_out}${PIR_EXT}"

@@ -19,6 +19,7 @@ list(APPEND PIR_INCLUDE_PATHS
 if(PIR_ARCH STREQUAL "x86_64")
     # Disable the red zone for x86_64 (same rationale as Linux/macOS/Solaris)
     list(APPEND PIR_BASE_FLAGS -mno-red-zone)
+    pir_log_debug_at("freebsd" "x86_64: -mno-red-zone")
 endif()
 
 # Force hidden visibility in all build types (release already gets this from
@@ -52,6 +53,7 @@ pir_add_link_flags(
 # unaffected because those ISAs always use PC-relative addressing.
 if(PIR_ARCH MATCHES "^(i386|x86_64)$")
     pir_add_link_flags(--pie)
+    pir_log_debug_at("freebsd" "x86: --pie for LTO position-independent codegen")
 endif()
 
 if(PIR_BUILD_TYPE STREQUAL "release")
@@ -69,6 +71,7 @@ endif()
 if(PIR_ARCH STREQUAL "riscv64")
     list(APPEND PIR_BASE_FLAGS -mno-relax)
     pir_add_link_flags(-T,${PIR_ROOT_DIR}/cmake/data/linker.freebsd.riscv64.ld --no-relax)
+    pir_log_debug_at("freebsd" "riscv64: custom linker script + no-relax")
 endif()
 
 list(APPEND PIR_BASE_LINK_FLAGS -fuse-ld=lld)
@@ -76,3 +79,5 @@ list(APPEND PIR_BASE_LINK_FLAGS -fuse-ld=lld)
 # ELFOSABI patch — LLD produces ELFOSABI_NONE; FreeBSD requires
 # ELFOSABI_FREEBSD (9). PostBuild.cmake patches this after linking.
 set(PIR_ELF_OSABI 9)
+
+pir_log_verbose_at("freebsd" "ELFOSABI patch: ${PIR_ELF_OSABI} (ELFOSABI_FREEBSD)")

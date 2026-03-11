@@ -552,8 +552,18 @@ namespace
     if (Uses.empty())
       return false;
 
-    errs() << "pic-transform: transforming " << Uses.size()
+    errs() << "pic-transform: [phase 1] transforming " << Uses.size()
            << " function pointer reference(s) to PC-relative asm\n";
+
+    // Log unique functions referenced
+    SmallPtrSet<Function *, 8> UniqueFuncs;
+    for (auto &U : Uses)
+      UniqueFuncs.insert(U.Func);
+    errs() << "pic-transform: [phase 1] " << UniqueFuncs.size()
+           << " unique function(s) referenced as values:";
+    for (Function *F : UniqueFuncs)
+      errs() << " " << F->getName();
+    errs() << "\n";
 
     for (auto &U : Uses)
     {
@@ -586,7 +596,12 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
   Triple TT(M.getTargetTriple());
   bool Changed = false;
 
-  // Collect all transformable globals
+  errs() << "pic-transform: running on module '" << M.getName() << "'\n";
+  errs() << "pic-transform: target triple: " << M.getTargetTriple() << "\n";
+  errs() << "pic-transform: pointer size: " << DL.getPointerSizeInBits()
+         << " bits\n";
+
+  // ── Collect transformable globals ─────────────────────────────────────
   struct GlobalInfo
   {
     GlobalVariable *GV;
@@ -594,8 +609,13 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
   };
   std::vector<GlobalInfo> Globals;
 
+  unsigned TotalGlobals = 0;
+  unsigned SkippedGlobals = 0;
+  uint64_t TotalBytes = 0;
+
   for (GlobalVariable &GV : M.globals())
   {
+    ++TotalGlobals;
     if (!isTransformableConstant(GV))
       continue;
 
@@ -604,11 +624,18 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
     if (!extractConstantBytes(DL, GV.getInitializer(), Info.Bytes))
     {
       errs() << "pic-transform: warning: cannot serialize '"
-             << GV.getName() << "' -- skipping\n";
+             << GV.getName() << "' (" << *GV.getValueType()
+             << ") -- skipping\n";
+      ++SkippedGlobals;
       continue;
     }
+    TotalBytes += Info.Bytes.size();
     Globals.push_back(std::move(Info));
   }
+
+  errs() << "pic-transform: scanned " << TotalGlobals << " global(s), "
+         << Globals.size() << " transformable, "
+         << SkippedGlobals << " skipped (" << TotalBytes << " bytes total)\n";
 
   // ── Phase 0: Replace inline ConstantFP uses with integer bitcasts ──────
   // The x86/ARM backends emit floating-point constants as loads from constant
@@ -625,6 +652,10 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
   // the constant into two 32-bit halves, barrier each half, store both to
   // a stack slot, and load back as double.
   unsigned PtrSize = DL.getPointerSizeInBits();
+  unsigned FPConstCount = 0;
+  unsigned FPNarrowCount = 0;
+  unsigned FPWideCount = 0;
+
   for (Function &F : M)
   {
     if (F.isDeclaration())
@@ -692,6 +723,7 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
 
             FPVal = B.CreateAlignedLoad(
                 FPTy, Alloca, Align(BitWidth / 8), "fp.imm");
+            ++FPWideCount;
           }
           else
           {
@@ -700,13 +732,27 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
             Value *IntVal = emitRegisterBarrier(
                 B, ConstantInt::get(IntTy, Bits));
             FPVal = B.CreateBitCast(IntVal, FPTy, "fp.imm");
+            ++FPNarrowCount;
           }
 
           I->setOperand(OpIdx, FPVal);
+          ++FPConstCount;
           Changed = true;
         }
       }
     }
+  }
+
+  if (FPConstCount > 0)
+  {
+    errs() << "pic-transform: [phase 0] replaced " << FPConstCount
+           << " floating-point constant(s) ("
+           << FPNarrowCount << " register-width, "
+           << FPWideCount << " split-width)\n";
+  }
+  else
+  {
+    errs() << "pic-transform: [phase 0] no floating-point constants found\n";
   }
 
   // ── Phase 0b: Lower fneg, uitofp, and fptoui for double/i64 ─────────────
@@ -721,6 +767,9 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
   if (TT.isX86())
   {
     SmallVector<Instruction *, 32> ToReplace;
+    unsigned FNegCount = 0;
+    unsigned UIToFPCount = 0;
+    unsigned FPToUICount = 0;
 
     for (Function &F : M)
     {
@@ -734,19 +783,41 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
           {
             if (UN->getOpcode() == Instruction::FNeg &&
                 UN->getType()->isDoubleTy())
+            {
               ToReplace.push_back(&I);
+              ++FNegCount;
+            }
             continue;
           }
           if (isa<UIToFPInst>(&I) &&
               I.getType()->isDoubleTy() &&
               I.getOperand(0)->getType()->isIntegerTy(64))
+          {
             ToReplace.push_back(&I);
+            ++UIToFPCount;
+          }
           if (isa<FPToUIInst>(&I) &&
               I.getOperand(0)->getType()->isDoubleTy() &&
               I.getType()->isIntegerTy(64))
+          {
             ToReplace.push_back(&I);
+            ++FPToUICount;
+          }
         }
       }
+    }
+
+    if (!ToReplace.empty())
+    {
+      errs() << "pic-transform: [phase 0b] lowering " << ToReplace.size()
+             << " x86 constant-pool instruction(s): "
+             << FNegCount << " fneg, "
+             << UIToFPCount << " uitofp, "
+             << FPToUICount << " fptoui\n";
+    }
+    else
+    {
+      errs() << "pic-transform: [phase 0b] no x86 constant-pool instructions found\n";
     }
 
     Type *I32Ty = IntegerType::get(M.getContext(), 32);
@@ -841,6 +912,10 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
       }
     }
   }
+  else
+  {
+    errs() << "pic-transform: [phase 0b] skipped (non-x86 target)\n";
+  }
 
   // ── Phase 1: Replace function pointer values with PC-relative asm ───────
   // When a Function* is used as a value (passed as callback, stored, etc.)
@@ -849,14 +924,21 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
   // that computes the address PC-relatively.
   if (transformFunctionPointerUses(M, TT))
     Changed = true;
+  else
+    errs() << "pic-transform: [phase 1] no function pointer references found\n";
 
   if (Globals.empty() && !Changed)
+  {
+    errs() << "pic-transform: no transformations needed, module unchanged\n";
     return PreservedAnalyses::all();
+  }
 
-  errs() << "pic-transform: transforming " << Globals.size()
-         << " global constant(s) to stack immediates\n";
+  // ── Phase 2: Replace global constants with stack immediates ─────────────
+  errs() << "pic-transform: [phase 2] transforming " << Globals.size()
+         << " global constant(s) to stack immediates ("
+         << TotalBytes << " bytes)\n";
 
-  // Replace uses in each function
+  unsigned ReplacedUses = 0;
   for (Function &F : M)
   {
     if (F.isDeclaration())
@@ -864,12 +946,20 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
     for (auto &Info : Globals)
     {
       if (replaceGlobalInFunction(F, *Info.GV, Info.Bytes, DL))
+      {
+        ++ReplacedUses;
         Changed = true;
+      }
     }
   }
 
-  // Delete now-unused globals. Iterate until stable because erasing one
-  // global may release constant users that kept another alive.
+  errs() << "pic-transform: [phase 2] replaced uses in " << ReplacedUses
+         << " function-global pair(s)\n";
+
+  // ── Cleanup: delete now-unused globals ────────────────────────────────
+  // Iterate until stable because erasing one global may release constant
+  // users that kept another alive.
+  unsigned DeletedGlobals = 0;
   bool Progress = true;
   while (Progress)
   {
@@ -881,8 +971,11 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
       Info.GV->removeDeadConstantUsers();
       if (Info.GV->use_empty())
       {
+        errs() << "pic-transform: [cleanup] deleted global '"
+               << Info.GV->getName() << "'\n";
         Info.GV->eraseFromParent();
         Info.GV = nullptr;
+        ++DeletedGlobals;
         Changed = true;
         Progress = true;
       }
@@ -890,6 +983,7 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
   }
 
   // Warn about remaining globals
+  unsigned ResidualGlobals = 0;
   for (GlobalVariable &GV : M.globals())
   {
     if (GV.isDeclaration() || GV.hasSection())
@@ -901,9 +995,18 @@ PreservedAnalyses PICTransformPass::run(Module &M, ModuleAnalysisManager &MAM)
     if (!GV.use_empty())
     {
       errs() << "pic-transform: warning: '" << GV.getName()
-             << "' could not be eliminated -- may create data section\n";
+             << "' (" << *GV.getValueType()
+             << ") could not be eliminated -- may create data section\n";
+      ++ResidualGlobals;
     }
   }
+
+  // ── Summary ───────────────────────────────────────────────────────────
+  errs() << "pic-transform: summary: "
+         << FPConstCount << " FP constants, "
+         << Globals.size() << " globals (" << DeletedGlobals << " deleted, "
+         << (Globals.size() - DeletedGlobals) << " retained), "
+         << ResidualGlobals << " residual warning(s)\n";
 
   return Changed ? PreservedAnalyses::none() : PreservedAnalyses::all();
 }

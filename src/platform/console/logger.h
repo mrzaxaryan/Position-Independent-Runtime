@@ -35,27 +35,30 @@
  * Logger - Static logging utility class
  *
  * Public methods are variadic templates that type-erase arguments into
- * StringFormatter::Argument arrays, then forward everything to a single
- * NOINLINE helper (WriteLogLine).
+ * StringFormatter::Argument arrays, then format the message in the caller's
+ * inline scope.
  *
  * DESIGN NOTE (Windows aarch64 -Oz):
- *   Two separate code-gen hazards require care here:
+ *   Three separate code-gen hazards require care here:
  *
  *   1. Stack-slot colouring: LLVM can merge PIC-transformed string allocas
  *      whose lifetimes appear non-overlapping.  Combined with instruction
  *      reordering this makes the format-string pointer read stale
- *      colour-prefix data.
+ *      colour-prefix data.  Fix: no PIC string literals in prefix/reset;
+ *      they are assembled from register immediates inside the NOINLINE
+ *      helper.
  *
  *   2. Tail-call optimisation: a NOINLINE function whose last statement is
  *      Console::Write(Span) may be tail-called.  The epilogue tears down the
  *      frame *before* Console::Write dereferences the Span pointer, leaving
- *      the PIC data on a freed stack slot.
+ *      the PIC data on a freed stack slot.  Fix: the reset sequence is
+ *      written char-by-char in the inline caller, not in a NOINLINE helper.
  *
- *   Both are avoided by building the ANSI prefix and reset from register
- *   immediates (individual char stores, not string literals) inside a single
- *   NOINLINE function that also formats the message.  The only PIC string
- *   that remains is the caller's format string, which lives in the caller's
- *   frame and is always valid for the duration of the NOINLINE call.
+ *   3. PIC pointer escape: passing a PIC-stack pointer (format string) to a
+ *      NOINLINE function can fail under -Oz because the compiler may
+ *      optimise away the stack stores or reuse the slot.  Fix: FormatWithArgs
+ *      is called in the inline template scope, never across a NOINLINE
+ *      boundary.
  */
 class Logger
 {
@@ -70,21 +73,16 @@ private:
 	}
 
 	/**
-	 * WriteLogLine - single NOINLINE helper for all log levels.
+	 * WritePrefixAndTimestamp - NOINLINE helper that emits the coloured
+	 * level tag and [HH:MM:SS] timestamp.
 	 *
-	 * @param colorDigit  ANSI colour digit: '2' green, '1' red, '3' yellow
-	 * @param l1,l2,l3    Three-letter level tag, e.g. 'I','N','F'
-	 * @param format      Caller's PIC format string (lives in caller's frame)
-	 * @param args        Type-erased argument span
-	 *
-	 * Colour prefix and reset are assembled from immediate char stores
-	 * (no string literals ⇒ no PIC alloca ⇒ no stack-slot / tail-call hazard).
-	 * The timestamp format string "[%s] " is the only PIC literal inside this
-	 * frame, and it is consumed before the caller's format pointer is used,
-	 * so their allocas cannot collide.
+	 * The colour prefix is assembled from individual char stores (register
+	 * immediates, not a PIC string literal) so there is no stack-slot or
+	 * tail-call hazard.  The timestamp PIC string "[%s] " is the only
+	 * string literal in this frame and is consumed before the function
+	 * returns.
 	 */
-	static NOINLINE VOID WriteLogLine(CHAR colorDigit, CHAR l1, CHAR l2, CHAR l3,
-	                                  const CHAR *format, Span<const StringFormatter::Argument> args)
+	static NOINLINE VOID WritePrefixAndTimestamp(CHAR colorDigit, CHAR l1, CHAR l2, CHAR l3)
 	{
 		// ── colour prefix  "\033[0;3Xm[LVL] " ──────────────────────────
 		CHAR prefix[13];
@@ -107,13 +105,18 @@ private:
 		DateTime now = DateTime::Now();
 		TimeOnlyString<CHAR> timeStr = now.ToTimeOnlyString<CHAR>();
 		StringFormatter::Format<CHAR>(&ConsoleCallbackA, nullptr, "[%s] ", (const CHAR *)timeStr);
+	}
 
-		// ── caller's message ────────────────────────────────────────────
-		StringFormatter::FormatWithArgs<CHAR>(&ConsoleCallbackA, nullptr, format, args);
-
-		// ── reset "\033[0m\n" ───────────────────────────────────────────
-		// Written char-by-char so the last Console::Write cannot be
-		// tail-called with a dangling stack pointer.
+	/**
+	 * WriteReset - Emit ANSI reset "\033[0m\n" char-by-char.
+	 *
+	 * MUST be called in the inline caller scope, not across a NOINLINE
+	 * boundary.  A NOINLINE function whose last statement is Console::Write
+	 * may be tail-called — the epilogue tears down the frame before the
+	 * Span pointer is dereferenced.  Writing char-by-char avoids this.
+	 */
+	static VOID WriteReset()
+	{
 		ConsoleCallbackA(nullptr, '\033');
 		ConsoleCallbackA(nullptr, '[');
 		ConsoleCallbackA(nullptr, '0');
@@ -121,52 +124,55 @@ private:
 		ConsoleCallbackA(nullptr, '\n');
 	}
 
+	/**
+	 * FormatBody - Format the message body from type-erased arguments.
+	 *
+	 * MUST remain inline (no NOINLINE) — the format string is a PIC-stack
+	 * pointer that becomes invalid across a NOINLINE call boundary under
+	 * -Oz.  The if-constexpr avoids zero-length array when no args.
+	 */
+	template <TCHAR TChar, typename... Args>
+	static VOID FormatBody(const TChar *format, Args... args)
+	{
+		if constexpr (sizeof...(Args) == 0)
+			StringFormatter::FormatWithArgs<CHAR>(&ConsoleCallbackA, nullptr, format, Span<const StringFormatter::Argument>());
+		else
+		{
+			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
+			StringFormatter::FormatWithArgs<CHAR>(&ConsoleCallbackA, nullptr, format, Span<const StringFormatter::Argument>(argArray));
+		}
+	}
+
 public:
 	template <TCHAR TChar, typename... Args>
 	static VOID Info(const TChar *format, Args... args)
 	{
-		if constexpr (sizeof...(Args) == 0)
-			WriteLogLine('2', 'I', 'N', 'F', format, Span<const StringFormatter::Argument>());
-		else
-		{
-			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
-			WriteLogLine('2', 'I', 'N', 'F', format, Span<const StringFormatter::Argument>(argArray));
-		}
+		WritePrefixAndTimestamp('2', 'I', 'N', 'F');
+		FormatBody(format, args...);
+		WriteReset();
 	}
 
 	template <TCHAR TChar, typename... Args>
 	static VOID Error(const TChar *format, Args... args)
 	{
-		if constexpr (sizeof...(Args) == 0)
-			WriteLogLine('1', 'E', 'R', 'R', format, Span<const StringFormatter::Argument>());
-		else
-		{
-			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
-			WriteLogLine('1', 'E', 'R', 'R', format, Span<const StringFormatter::Argument>(argArray));
-		}
+		WritePrefixAndTimestamp('1', 'E', 'R', 'R');
+		FormatBody(format, args...);
+		WriteReset();
 	}
 
 	template <TCHAR TChar, typename... Args>
 	static VOID Warning(const TChar *format, Args... args)
 	{
-		if constexpr (sizeof...(Args) == 0)
-			WriteLogLine('3', 'W', 'R', 'N', format, Span<const StringFormatter::Argument>());
-		else
-		{
-			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
-			WriteLogLine('3', 'W', 'R', 'N', format, Span<const StringFormatter::Argument>(argArray));
-		}
+		WritePrefixAndTimestamp('3', 'W', 'R', 'N');
+		FormatBody(format, args...);
+		WriteReset();
 	}
 
 	template <TCHAR TChar, typename... Args>
 	static VOID Debug(const TChar *format, Args... args)
 	{
-		if constexpr (sizeof...(Args) == 0)
-			WriteLogLine('3', 'D', 'B', 'G', format, Span<const StringFormatter::Argument>());
-		else
-		{
-			StringFormatter::Argument argArray[] = {StringFormatter::Argument(args)...};
-			WriteLogLine('3', 'D', 'B', 'G', format, Span<const StringFormatter::Argument>(argArray));
-		}
+		WritePrefixAndTimestamp('3', 'D', 'B', 'G');
+		FormatBody(format, args...);
+		WriteReset();
 	}
 };
