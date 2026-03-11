@@ -70,34 +70,45 @@ if(NOT PIC_TRANSFORM_EXECUTABLE)
     set(_PIC_TRANSFORM_BUILD_DIR "${CMAKE_BINARY_DIR}/pic-transform-build")
     set(_PIC_TRANSFORM_BIN "${_PIC_TRANSFORM_BUILD_DIR}/pic-transform")
 
-    # Determine host compiler. Prefer system compilers (g++/cc) over LLVM-bundled
-    # clang++ which may lack libstdc++ and fail to link host tools.
-    # Search /usr/bin first to avoid picking up cross-compilation toolchains.
-    find_program(_HOST_CXX NAMES g++ c++ clang++
-        PATHS /usr/bin /usr/local/bin
-        NO_DEFAULT_PATH)
-    if(NOT _HOST_CXX)
-        find_program(_HOST_CXX NAMES g++ c++ clang++)
-    endif()
-    find_program(_HOST_CC NAMES gcc cc clang
-        PATHS /usr/bin /usr/local/bin
-        NO_DEFAULT_PATH)
-    if(NOT _HOST_CC)
-        find_program(_HOST_CC NAMES gcc cc clang)
+    # Determine host compiler. We must NOT use the LLVM-bundled clang++ from
+    # /opt/llvm-*/bin/ as it typically lacks libstdc++ and cannot link host tools.
+    # Strategy: find a working system C++ compiler by checking well-known paths.
+    set(PIC_TRANSFORM_HOST_CXX "" CACHE FILEPATH "Host C++ compiler for pic-transform (auto-detected if empty)")
+    set(PIC_TRANSFORM_HOST_CC "" CACHE FILEPATH "Host C compiler for pic-transform (auto-detected if empty)")
+
+    set(_pt_cmake_extra_args
+        -DLLVM_DIR=${PIC_TRANSFORM_LLVM_DIR}
+        -DCMAKE_BUILD_TYPE=Release
+    )
+
+    if(PIC_TRANSFORM_HOST_CXX)
+        list(APPEND _pt_cmake_extra_args -DCMAKE_CXX_COMPILER=${PIC_TRANSFORM_HOST_CXX})
+    else()
+        # Try to find a system g++ or c++ (not in /opt/llvm-* paths)
+        foreach(_candidate /usr/bin/g++ /usr/local/bin/g++ /usr/bin/c++)
+            if(EXISTS "${_candidate}")
+                list(APPEND _pt_cmake_extra_args -DCMAKE_CXX_COMPILER=${_candidate})
+                break()
+            endif()
+        endforeach()
+        # If none found, don't set CMAKE_CXX_COMPILER -- let CMake auto-detect
     endif()
 
-    # Allow user override
-    set(PIC_TRANSFORM_HOST_CXX "${_HOST_CXX}" CACHE FILEPATH "Host C++ compiler for pic-transform")
-    set(PIC_TRANSFORM_HOST_CC "${_HOST_CC}" CACHE FILEPATH "Host C compiler for pic-transform")
+    if(PIC_TRANSFORM_HOST_CC)
+        list(APPEND _pt_cmake_extra_args -DCMAKE_C_COMPILER=${PIC_TRANSFORM_HOST_CC})
+    else()
+        foreach(_candidate /usr/bin/gcc /usr/local/bin/gcc /usr/bin/cc)
+            if(EXISTS "${_candidate}")
+                list(APPEND _pt_cmake_extra_args -DCMAKE_C_COMPILER=${_candidate})
+                break()
+            endif()
+        endforeach()
+    endif()
 
     ExternalProject_Add(pic-transform-build
         SOURCE_DIR "${PIC_TRANSFORM_DIR}"
         BINARY_DIR "${_PIC_TRANSFORM_BUILD_DIR}"
-        CMAKE_ARGS
-            -DLLVM_DIR=${PIC_TRANSFORM_LLVM_DIR}
-            -DCMAKE_BUILD_TYPE=Release
-            -DCMAKE_CXX_COMPILER=${PIC_TRANSFORM_HOST_CXX}
-            -DCMAKE_C_COMPILER=${PIC_TRANSFORM_HOST_CC}
+        CMAKE_ARGS ${_pt_cmake_extra_args}
         BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR>
         INSTALL_COMMAND ""
         BUILD_BYPRODUCTS "${_PIC_TRANSFORM_BIN}"
