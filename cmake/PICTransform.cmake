@@ -51,7 +51,13 @@ endif()
 # =============================================================================
 # Strategy 2: Download prebuilt from GitHub releases
 # =============================================================================
-set(_PT_DOWNLOAD_DIR "${CMAKE_BINARY_DIR}/pic-transform-download")
+# Use a native filesystem path on WSL (NTFS doesn't support chmod +x properly)
+if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows"
+   AND CMAKE_BINARY_DIR MATCHES "^/mnt/[a-z]/")
+    set(_PT_DOWNLOAD_DIR "/tmp/pir-pic-transform-${PIC_TRANSFORM_VERSION}")
+else()
+    set(_PT_DOWNLOAD_DIR "${CMAKE_BINARY_DIR}/pic-transform-download")
+endif()
 set(_PT_DOWNLOADED_BIN "${_PT_DOWNLOAD_DIR}/${_PT_BIN_NAME}")
 
 if(_PT_PLATFORM AND NOT EXISTS "${_PT_DOWNLOADED_BIN}")
