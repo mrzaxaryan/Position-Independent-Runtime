@@ -37,6 +37,7 @@ if(NOT LLVM_ENABLE_PLUGINS)
 	llvm_map_components_to_libnames(LLVM_LIBS
 		core
 		support
+		option
 		irreader
 		bitwriter
 		passes
@@ -49,6 +50,9 @@ if(NOT LLVM_ENABLE_PLUGINS)
 	)
 	target_compile_features(pic-transform PRIVATE cxx_std_17)
 	target_compile_definitions(pic-transform PRIVATE PIC_TRANSFORM_STANDALONE)
+	if(NOT LLVM_ENABLE_RTTI)
+		target_compile_options(pic-transform PRIVATE -fno-rtti)
+	endif()
 	target_link_libraries(pic-transform PRIVATE ${LLVM_LIBS})
 
 	if(STATIC_LINK)

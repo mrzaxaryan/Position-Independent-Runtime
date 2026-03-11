@@ -4,7 +4,6 @@
 # Acquires pic-transform (in order of preference):
 #   1. Pre-installed on PATH
 #   2. Built from in-tree source (tools/pic-transform)
-#   3. Prebuilt binary downloaded from GitHub releases
 #
 # The pass eliminates .rodata/.rdata/.data/.bss sections by transforming global
 # constants into stack-local immediate values automatically during compilation.
@@ -122,12 +121,18 @@ if(EXISTS "${_pt_source_dir}/CMakeLists.txt")
         # Configure (skip if already configured)
         if(NOT EXISTS "${_pt_build_dir}/CMakeCache.txt")
             message(STATUS "pic-transform: configuring (LLVM_DIR=${PIC_TRANSFORM_LLVM_DIR})")
+            # Use the LLVM clang that matches the LLVM dev libraries
+            get_filename_component(_pt_compiler_dir "${_pt_clang_real}" DIRECTORY)
+            set(_pt_host_cc  "${_pt_compiler_dir}/clang")
+            set(_pt_host_cxx "${_pt_compiler_dir}/clang++")
             execute_process(
                 COMMAND ${CMAKE_COMMAND}
                     -S "${_pt_source_dir}"
                     -B "${_pt_build_dir}"
                     -DLLVM_DIR=${PIC_TRANSFORM_LLVM_DIR}
                     -DCMAKE_BUILD_TYPE=Release
+                    -DCMAKE_C_COMPILER=${_pt_host_cc}
+                    -DCMAKE_CXX_COMPILER=${_pt_host_cxx}
                     -DSTATIC_LINK=ON
                 RESULT_VARIABLE _pt_cfg_rc
                 OUTPUT_VARIABLE _pt_cfg_out
@@ -160,57 +165,17 @@ if(EXISTS "${_pt_source_dir}/CMakeLists.txt")
             endif()
         endif()
 
-        # Source build failed — log and fall through
-        message(STATUS "pic-transform: source build failed, falling back to download")
+        # Source build failed
         if(NOT _pt_cfg_rc EQUAL 0)
-            message(STATUS "  configure error: ${_pt_cfg_err}")
+            message(FATAL_ERROR "pic-transform: configure failed:\n${_pt_cfg_err}")
         elseif(NOT _pt_build_rc EQUAL 0)
-            message(STATUS "  build error: ${_pt_build_err}")
+            message(FATAL_ERROR "pic-transform: build failed:\n${_pt_build_err}")
+        else()
+            message(FATAL_ERROR "pic-transform: build succeeded but no artifact found")
         endif()
     else()
-        message(STATUS "pic-transform: LLVM dev files not found, skipping source build")
+        message(FATAL_ERROR "pic-transform: LLVM dev files not found (need LLVMConfig.cmake)")
     endif()
+else()
+    message(FATAL_ERROR "pic-transform: source not found at ${_pt_source_dir}")
 endif()
-
-# =============================================================================
-# Strategy 3: Download prebuilt from GitHub releases
-# =============================================================================
-set(_pt_dl_dir "${CMAKE_BINARY_DIR}/pic-transform")
-set(_pt_dl_bin "${_pt_dl_dir}/${_bin_name}")
-
-if(NOT EXISTS "${_pt_dl_bin}")
-    set(_pt_url "https://github.com/mrzaxaryan/pic-transform/releases/latest/download/pic-transform-${_platform_tag}${_archive_ext}")
-
-    message(STATUS "pic-transform: downloading from ${_pt_url}")
-    file(MAKE_DIRECTORY "${_pt_dl_dir}")
-
-    set(_pt_archive "${_pt_dl_dir}/pic-transform${_archive_ext}")
-    file(DOWNLOAD "${_pt_url}" "${_pt_archive}"
-        STATUS  _pt_dl_status
-        TIMEOUT 60)
-
-    list(GET _pt_dl_status 0 _pt_dl_rc)
-    if(NOT _pt_dl_rc EQUAL 0)
-        list(GET _pt_dl_status 1 _pt_dl_msg)
-        message(FATAL_ERROR "pic-transform: download failed: ${_pt_dl_msg}\n  URL: ${_pt_url}")
-    endif()
-
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E tar xf "${_pt_archive}"
-        WORKING_DIRECTORY "${_pt_dl_dir}"
-        RESULT_VARIABLE _pt_extract_rc)
-
-    if(NOT _pt_extract_rc EQUAL 0)
-        message(FATAL_ERROR "pic-transform: extraction failed")
-    endif()
-
-    if(NOT _host_os STREQUAL "Windows" AND EXISTS "${_pt_dl_bin}")
-        execute_process(COMMAND chmod +x "${_pt_dl_bin}")
-    endif()
-endif()
-
-if(NOT EXISTS "${_pt_dl_bin}")
-    message(FATAL_ERROR "pic-transform: binary not found at ${_pt_dl_bin} after download")
-endif()
-
-_pt_found(standalone "${_pt_dl_bin}" "using prebuilt binary")
