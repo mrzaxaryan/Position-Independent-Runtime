@@ -25,7 +25,9 @@ Thank you for your interest in contributing to PIR! This guide covers everything
 
 ## Quick Start
 
-**Requirements:** Clang/LLVM 21+, CMake 3.20+, Ninja 1.10+, C++23. See [Toolchain Installation](#toolchain-installation) below.
+**Requirements:** Clang/LLVM 22+, CMake 3.20+, Ninja 1.10+, C++23. See [Toolchain Installation](#toolchain-installation) below.
+
+> **Windows users:** This project must be built using WSL (Windows Subsystem for Linux). Install WSL, then follow the Linux instructions below to set up the toolchain inside your WSL distribution.
 
 ```bash
 # Build
@@ -42,35 +44,24 @@ Presets: `windows|linux|macos|ios|freebsd|uefi` x `i386|x86_64|armv7a|aarch64` x
 
 ## Toolchain Installation
 
-### Windows
+### Windows (via WSL)
 
-**Prerequisites:** [winget](https://github.com/microsoft/winget-cli) (pre-installed on Windows 11 and recent Windows 10).
+This project requires LLVM 22.1.1, which is not available as a native Windows package. **You must use WSL (Windows Subsystem for Linux) to build.**
 
-```powershell
-# Install all dependencies
-winget install --id Kitware.CMake && winget install --id Ninja-build.Ninja && winget install --id LLVM.LLVM
-
-# Optional: Install Doxygen for documentation generation
-winget install -e --id DimitriVanHeesch.Doxygen
-```
-
-**Important:** After installation, restart your terminal or log out and log back in for the PATH changes to take effect.
-
-Verify:
-
-```powershell
-clang --version && clang++ --version && lld-link --version && cmake --version && ninja --version
-```
+1. Install WSL if you haven't already:
+   ```powershell
+   wsl --install
+   ```
+2. Open your WSL terminal and follow the Linux instructions below.
 
 ### Linux (Ubuntu/Debian)
 
 ```bash
-
-# Install all dependencies (LLVM 21)
-LLVM_VER=21 && sudo apt-get update && sudo apt-get install -y wget lsb-release ca-certificates gnupg cmake ninja-build && sudo mkdir -p /etc/apt/keyrings && wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/apt.llvm.org.gpg >/dev/null && echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.gpg] http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-${LLVM_VER} main" | sudo tee /etc/apt/sources.list.d/llvm.list && sudo apt-get update && sudo apt-get install -y clang-${LLVM_VER} clang++-${LLVM_VER} lld-${LLVM_VER} llvm-${LLVM_VER} lldb-${LLVM_VER} && sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-${LLVM_VER} 100 && sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-${LLVM_VER} 100 && sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-${LLVM_VER} 100 && sudo update-alternatives --install /usr/bin/llvm-objdump llvm-objdump /usr/bin/llvm-objdump-${LLVM_VER} 100 && sudo update-alternatives --install /usr/bin/llvm-objcopy llvm-objcopy /usr/bin/llvm-objcopy-${LLVM_VER} 100 && sudo update-alternatives --install /usr/bin/llvm-strings llvm-strings /usr/bin/llvm-strings-${LLVM_VER} 100 && sudo update-alternatives --install /usr/bin/lldb-dap lldb-dap /usr/bin/lldb-dap-${LLVM_VER} 100 && sudo update-alternatives --set clang "/usr/bin/clang-${LLVM_VER}" && sudo update-alternatives --set clang++ "/usr/bin/clang++-${LLVM_VER}" && sudo update-alternatives --set lld "/usr/bin/lld-${LLVM_VER}" && sudo update-alternatives --set llvm-objdump "/usr/bin/llvm-objdump-${LLVM_VER}" && sudo update-alternatives --set llvm-objcopy "/usr/bin/llvm-objcopy-${LLVM_VER}" && sudo update-alternatives --set llvm-strings "/usr/bin/llvm-strings-${LLVM_VER}" && sudo update-alternatives --set lldb-dap "/usr/bin/lldb-dap-${LLVM_VER}"
+# Install build tools, download LLVM 22 from GitHub releases, and add to PATH
+sudo apt-get update && sudo apt-get install -y cmake ninja-build xz-utils && LLVM_VER=22.1.1 && LLVM_ARCH=$(uname -m | sed 's/aarch64/ARM64/;s/x86_64/X64/') && wget --show-progress -q "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VER}/LLVM-${LLVM_VER}-Linux-${LLVM_ARCH}.tar.xz" -O /tmp/llvm.tar.xz && sudo mkdir -p /usr/local/llvm && sudo tar -xf /tmp/llvm.tar.xz -C /usr/local/llvm --strip-components=1 && rm /tmp/llvm.tar.xz && echo 'export PATH="/usr/local/llvm/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
 ```
 
-**Note:** To install a different LLVM version, change `LLVM_VER=21` to your desired version (e.g., `LLVM_VER=22`).
+**Note:** To install a different LLVM version, change `LLVM_VER=22.1.1` to your desired version (e.g., `LLVM_VER=23.1.0`).
 
 Verify:
 
