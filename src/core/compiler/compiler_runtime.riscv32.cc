@@ -236,17 +236,17 @@ extern "C"
 	 * __floatdidf - Convert signed 64-bit integer to double
 	 *
 	 * GCC libgcc calling convention:
-	 *   Input:  value (64-bit signed integer)
-	 *   Output: double (IEEE-754 format, returned as 64-bit integer in registers)
+	 *   Input:  value (64-bit signed integer, in a0+a1)
+	 *   Output: double (in fa0 on ilp32d, or a0+a1 on ilp32)
 	 *
 	 * Called by compiler for: (double)int64_value (on 32-bit RISC-V)
 	 *
 	 * Algorithm: Manual IEEE-754 double construction (no FPU required)
 	 */
-	COMPILER_RUNTIME UINT64 __floatdidf(INT64 val)
+	COMPILER_RUNTIME double __floatdidf(INT64 val)
 	{
 		if (val == 0)
-			return 0ULL;
+			return __builtin_bit_cast(double, (UINT64)0ULL);
 
 		BOOL negative = val < 0;
 		UINT64 absVal;
@@ -270,7 +270,7 @@ extern "C"
 		UINT64 sign = negative ? 0x8000000000000000ULL : 0ULL;
 		UINT64 exp = (UINT64)exponent << 52;
 
-		return sign | exp | mantissa;
+		return __builtin_bit_cast(double, sign | exp | mantissa);
 	}
 
 	/**
@@ -278,10 +278,10 @@ extern "C"
 	 *
 	 * Called by compiler for: (double)uint64_value (on 32-bit RISC-V)
 	 */
-	COMPILER_RUNTIME UINT64 __floatundidf(UINT64 val)
+	COMPILER_RUNTIME double __floatundidf(UINT64 val)
 	{
 		if (val == 0)
-			return 0ULL;
+			return __builtin_bit_cast(double, (UINT64)0ULL);
 
 		const INT32 msb = 63 - __builtin_clzll(val);
 		const INT32 exponent = 1023 + msb;
@@ -295,7 +295,7 @@ extern "C"
 		mantissa = mantissa & 0x000FFFFFFFFFFFFFULL;
 		UINT64 exp = (UINT64)exponent << 52;
 
-		return exp | mantissa;
+		return __builtin_bit_cast(double, exp | mantissa);
 	}
 
 	/**
@@ -303,8 +303,9 @@ extern "C"
 	 *
 	 * Called by compiler for: (int64_t)double_value (on 32-bit RISC-V)
 	 */
-	COMPILER_RUNTIME INT64 __fixdfdi(UINT64 bits)
+	COMPILER_RUNTIME INT64 __fixdfdi(double val)
 	{
+		UINT64 bits = __builtin_bit_cast(UINT64, val);
 		UINT64 signBit = bits & 0x8000000000000000ULL;
 		UINT64 expBits = bits & 0x7FF0000000000000ULL;
 		UINT64 mantissaBits = bits & 0x000FFFFFFFFFFFFFULL;
@@ -342,8 +343,9 @@ extern "C"
 	 *
 	 * Called by compiler for: (uint64_t)double_value (on 32-bit RISC-V)
 	 */
-	COMPILER_RUNTIME UINT64 __fixunsdfdi(UINT64 bits)
+	COMPILER_RUNTIME UINT64 __fixunsdfdi(double val)
 	{
+		UINT64 bits = __builtin_bit_cast(UINT64, val);
 		UINT64 signBit = bits & 0x8000000000000000ULL;
 		UINT64 expBits = bits & 0x7FF0000000000000ULL;
 		UINT64 mantissaBits = bits & 0x000FFFFFFFFFFFFFULL;
