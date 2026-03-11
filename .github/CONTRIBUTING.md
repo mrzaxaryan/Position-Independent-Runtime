@@ -186,7 +186,7 @@ Three-layer architecture (RUNTIME > PLATFORM > CORE) - upper layers depend on lo
 
 The binary must contain **only** a `.text` section. No `.rdata`, `.rodata`, `.data`, or `.bss`. Verified automatically by `cmake/VerifyPICMode.cmake`.
 
-The [pic-transform](https://github.com/mrzaxaryan/pic-transform) LLVM pass runs automatically during compilation and eliminates data sections by converting global constants (strings, floats, arrays) into stack-local immediate stores. This means you can write normal C++ string literals, float constants, and const arrays -- they are transformed automatically. The tool is downloaded from GitHub releases during the CMake configure step.
+The [pic-transform](https://github.com/mrzaxaryan/pic-transform) LLVM pass runs automatically during compilation and eliminates data sections by converting global constants (strings, floats, arrays) into stack-local immediate stores. This means you can write normal C++ string literals, float constants, and const arrays -- they are transformed automatically. The tool is acquired automatically during the CMake configure step (in order of preference): from PATH, built from `tools/pic-transform` source if LLVM dev files are available, or downloaded from GitHub releases as a fallback.
 
 | Forbidden | Use Instead |
 |-----------|-------------|
