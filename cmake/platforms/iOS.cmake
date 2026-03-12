@@ -6,7 +6,7 @@ include_guard(GLOBAL)
 
 # Validate: iOS only supports aarch64
 if(NOT PIR_ARCH STREQUAL "aarch64")
-    message(FATAL_ERROR "iOS only supports aarch64 (got: ${PIR_ARCH})")
+    message(FATAL_ERROR "[pir:ios] Unsupported architecture '${PIR_ARCH}'. Valid: aarch64")
 endif()
 
 pir_get_target_info()
@@ -30,6 +30,9 @@ list(APPEND PIR_BASE_FLAGS -mstack-probe-size=0)
 # On non-Darwin hosts (e.g. Linux cross-compilation), use LLD explicitly.
 if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND PIR_BASE_LINK_FLAGS -fuse-ld=lld)
+    pir_log_verbose_at("ios" "Cross-compiling: using LLD")
+else()
+    pir_log_verbose_at("ios" "Native build: using Apple ld")
 endif()
 
 # Linker configuration (Mach-O)
@@ -53,6 +56,7 @@ if(PIR_BUILD_TYPE STREQUAL "release")
         PROPERTIES
         COMPILE_FLAGS "-fno-lto"
     )
+    pir_log_debug_at("ios" "entry_point.cc: -fno-lto (entry-point ordering fix)")
 endif()
 
 # iOS ARM64 requires dyld (same as macOS ARM64). Use -undefined dynamic_lookup

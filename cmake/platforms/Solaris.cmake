@@ -6,7 +6,7 @@ include_guard(GLOBAL)
 
 # Validate: Solaris supports i386, x86_64, and aarch64
 if(NOT PIR_ARCH MATCHES "^(i386|x86_64|aarch64)$")
-    message(FATAL_ERROR "Solaris only supports i386, x86_64, and aarch64 (got: ${PIR_ARCH})")
+    message(FATAL_ERROR "[pir:solaris] Unsupported architecture '${PIR_ARCH}'. Valid: i386, x86_64, aarch64")
 endif()
 
 pir_get_target_info()
@@ -23,12 +23,15 @@ if(PIR_ARCH STREQUAL "x86_64")
     list(APPEND PIR_BASE_FLAGS -mcmodel=small)
     # Force hidden visibility to prevent GOT/PLT entries for interposable symbols.
     list(APPEND PIR_BASE_FLAGS -fvisibility=hidden)
+    pir_log_debug_at("solaris" "x86_64: -mno-red-zone -mcmodel=small -fvisibility=hidden")
 elseif(PIR_ARCH STREQUAL "i386")
     # No red zone on i386. Force non-PIC for freestanding binary.
     list(APPEND PIR_BASE_FLAGS -fno-pic)
+    pir_log_debug_at("solaris" "i386: -fno-pic")
 elseif(PIR_ARCH STREQUAL "aarch64")
     # No red zone concept on AArch64 (no leaf function optimization zone).
     # No code model override needed for AArch64.
+    pir_log_debug_at("solaris" "aarch64: no special flags")
 endif()
 
 # Linker configuration (ELF via LLD — direct invocation)
@@ -51,6 +54,7 @@ get_filename_component(_llvm_bin_dir "${CMAKE_CXX_COMPILER}" REALPATH)
 get_filename_component(_llvm_bin_dir "${_llvm_bin_dir}" DIRECTORY)
 find_program(PIR_LLD_PATH ld.lld HINTS "${_llvm_bin_dir}" REQUIRED)
 set(PIR_DIRECT_LINKER TRUE)
+pir_log_verbose_at("solaris" "Direct linker: ${PIR_LLD_PATH}")
 
 # Select the LLD emulation for Solaris ELFs
 if(PIR_ARCH STREQUAL "x86_64")
@@ -60,6 +64,7 @@ elseif(PIR_ARCH STREQUAL "i386")
 elseif(PIR_ARCH STREQUAL "aarch64")
     set(_solaris_emulation "aarch64elf")
 endif()
+pir_log_debug_at("solaris" "LLD emulation: ${_solaris_emulation}")
 
 # Override the link command to call ld.lld directly, bypassing the clang
 # driver (and its unwanted -C injection).
@@ -117,3 +122,5 @@ endif()
 # ELFOSABI patch — LLD produces ELFOSABI_NONE; Solaris requires
 # ELFOSABI_SOLARIS (6). PostBuild.cmake patches this after linking.
 set(PIR_ELF_OSABI 6)
+
+pir_log_verbose_at("solaris" "ELFOSABI patch: ${PIR_ELF_OSABI} (ELFOSABI_SOLARIS)")
