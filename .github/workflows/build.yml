@@ -125,7 +125,7 @@ jobs:
             debug/
 
   # ═════════════════════════════════════════════════════════════════════════
-  # Test — native loader (python3 scripts/loader.py)
+  # Test — native loader (python3 tools/pyloader/loader.py)
   # ═════════════════════════════════════════════════════════════════════════
 
   test-linux-x86_64:
@@ -142,7 +142,7 @@ jobs:
             for bin in "$dir"*.bin; do
               [ -f "$bin" ] || continue
               echo "=== Testing PIC -${opt} ==="
-              python3 scripts/loader.py --arch x86_64 "$bin" || { echo "FAILED"; exit 1; }
+              python3 tools/pyloader/loader.py --arch x86_64 "$bin" || { echo "FAILED"; exit 1; }
             done
           done
 
@@ -160,7 +160,7 @@ jobs:
             for bin in "$dir"*.bin; do
               [ -f "$bin" ] || continue
               echo "=== Testing PIC -${opt} ==="
-              python3 scripts/loader.py --arch aarch64 "$bin" || { echo "FAILED"; exit 1; }
+              python3 tools/pyloader/loader.py --arch aarch64 "$bin" || { echo "FAILED"; exit 1; }
             done
           done
 
@@ -178,7 +178,7 @@ jobs:
             for bin in "$dir"*.bin; do
               [ -f "$bin" ] || continue
               echo "=== Testing PIC -${opt} ==="
-              python3 scripts/loader.py --arch x86_64 "$bin" || { echo "FAILED"; exit 1; }
+              python3 tools/pyloader/loader.py --arch x86_64 "$bin" || { echo "FAILED"; exit 1; }
             done
           done
 
@@ -196,7 +196,7 @@ jobs:
             for bin in "$dir"*.bin; do
               [ -f "$bin" ] || continue
               echo "=== Testing PIC -${opt} ==="
-              python3 scripts/loader.py --arch aarch64 "$bin" || { echo "FAILED"; exit 1; }
+              python3 tools/pyloader/loader.py --arch aarch64 "$bin" || { echo "FAILED"; exit 1; }
             done
           done
 
@@ -213,7 +213,7 @@ jobs:
           foreach ($dir in Get-ChildItem -Path release,debug -Directory -ErrorAction SilentlyContinue) {
             foreach ($bin in Get-ChildItem -Path $dir.FullName -Filter "*.bin") {
               Write-Host "=== Testing PIC -$($dir.Name) ==="
-              python scripts/loader.py --arch i386 $bin.FullName
+              python tools/pyloader/loader.py --arch i386 $bin.FullName
               if ($LASTEXITCODE -ne 0) { exit 1 }
             }
           }
@@ -231,7 +231,7 @@ jobs:
           foreach ($dir in Get-ChildItem -Path release,debug -Directory -ErrorAction SilentlyContinue) {
             foreach ($bin in Get-ChildItem -Path $dir.FullName -Filter "*.bin") {
               Write-Host "=== Testing PIC -$($dir.Name) ==="
-              python scripts/loader.py --arch x86_64 $bin.FullName
+              python tools/pyloader/loader.py --arch x86_64 $bin.FullName
               if ($LASTEXITCODE -ne 0) { exit 1 }
             }
           }
@@ -249,7 +249,7 @@ jobs:
           foreach ($dir in Get-ChildItem -Path release,debug -Directory -ErrorAction SilentlyContinue) {
             foreach ($bin in Get-ChildItem -Path $dir.FullName -Filter "*.bin") {
               Write-Host "=== Testing PIC -$($dir.Name) ==="
-              python scripts/loader.py --arch aarch64 $bin.FullName
+              python tools/pyloader/loader.py --arch aarch64 $bin.FullName
               if ($LASTEXITCODE -ne 0) { exit 1 }
             }
           }
@@ -268,7 +268,7 @@ jobs:
             for bin in "$dir"*.bin; do
               [ -f "$bin" ] || continue
               echo "=== Testing PIC -${opt} ==="
-              python3 scripts/loader.py --arch aarch64 "$bin" || { echo "FAILED"; exit 1; }
+              python3 tools/pyloader/loader.py --arch aarch64 "$bin" || { echo "FAILED"; exit 1; }
             done
           done
 
@@ -286,7 +286,7 @@ jobs:
             for bin in "$dir"*.bin; do
               [ -f "$bin" ] || continue
               echo "=== Testing PIC -${opt} ==="
-              python3 scripts/loader.py --arch x86_64 "$bin" || { echo "FAILED"; exit 1; }
+              python3 tools/pyloader/loader.py --arch x86_64 "$bin" || { echo "FAILED"; exit 1; }
             done
           done
 
@@ -304,7 +304,7 @@ jobs:
             for bin in "$dir"*.bin; do
               [ -f "$bin" ] || continue
               echo "=== Testing PIC -${opt} ==="
-              python3 scripts/loader.py --arch aarch64 "$bin" || { echo "FAILED"; exit 1; }
+              python3 tools/pyloader/loader.py --arch aarch64 "$bin" || { echo "FAILED"; exit 1; }
             done
           done
 
@@ -333,7 +333,7 @@ jobs:
                 for bin in "$dir"*.bin; do
                   [ -f "$bin" ] || continue
                   echo "=== Testing PIC -${opt} ==="
-                  python3 scripts/loader.py --arch i386 "$bin" || { echo "FAILED"; exit 1; }
+                  python3 tools/pyloader/loader.py --arch i386 "$bin" || { echo "FAILED"; exit 1; }
                 done
               done
             '
@@ -382,7 +382,7 @@ jobs:
               for bin in "$dir"*.bin; do
                 [ -f "$bin" ] || continue
                 echo "=== Testing PIC -${opt} ==="
-                python3 scripts/loader.py --arch armv7a "$bin" || { echo "FAILED"; exit 1; }
+                python3 tools/pyloader/loader.py --arch armv7a "$bin" || { echo "FAILED"; exit 1; }
               done
             done
 
@@ -405,7 +405,7 @@ jobs:
               for bin in "$dir"*.bin; do
                 [ -f "$bin" ] || continue
                 echo "=== Testing PIC -${opt} ==="
-                python3 scripts/loader.py --arch riscv64 "$bin" || { echo "FAILED"; exit 1; }
+                python3 tools/pyloader/loader.py --arch riscv64 "$bin" || { echo "FAILED"; exit 1; }
               done
             done
 
@@ -428,7 +428,7 @@ jobs:
               for bin in "$dir"*.bin; do
                 [ -f "$bin" ] || continue
                 echo "=== Testing PIC -${opt} ==="
-                python3 scripts/loader.py --arch armv7a "$bin" || { echo "FAILED"; exit 1; }
+                python3 tools/pyloader/loader.py --arch armv7a "$bin" || { echo "FAILED"; exit 1; }
               done
             done
 
@@ -456,7 +456,7 @@ jobs:
               for bin in "$dir"*.bin; do
                 [ -f "$bin" ] || continue
                 echo "=== Testing PIC -${opt} ==="
-                python3 scripts/loader.py --arch x86_64 "$bin" || { echo "FAILED"; exit 1; }
+                python3 tools/pyloader/loader.py --arch x86_64 "$bin" || { echo "FAILED"; exit 1; }
               done
             done
 
@@ -481,7 +481,7 @@ jobs:
               for bin in "$dir"*.bin; do
                 [ -f "$bin" ] || continue
                 echo "=== Testing PIC -${opt} ==="
-                python3 scripts/loader.py --arch aarch64 "$bin" || { echo "FAILED"; exit 1; }
+                python3 tools/pyloader/loader.py --arch aarch64 "$bin" || { echo "FAILED"; exit 1; }
               done
             done
 
@@ -581,7 +581,7 @@ jobs:
               for bin in "$dir"*.bin; do
                 [ -f "$bin" ] || continue
                 echo "=== Testing PIC -${opt} ==="
-                python3 scripts/loader.py --arch x86_64 "$bin" || { echo "FAILED"; exit 1; }
+                python3 tools/pyloader/loader.py --arch x86_64 "$bin" || { echo "FAILED"; exit 1; }
               done
             done
 
