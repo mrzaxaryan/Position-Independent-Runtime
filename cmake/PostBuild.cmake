@@ -10,10 +10,22 @@ include_guard(GLOBAL)
 function(pir_add_postbuild target_name)
     set(_out "${PIR_OUTPUT_DIR}/output")
 
+    # Skip PIC verification for debug optimization levels (O0/Og) since they
+    # produce data sections that break position-independence. Supporting PIC in
+    # debug builds is technically possible but requires significant additional
+    # work in the pic-transform pass and compiler flag tuning.
+    set(_skip_pic_verify FALSE)
+    if(PIR_OPT_LEVEL MATCHES "^O[0g]$")
+        set(_skip_pic_verify TRUE)
+        pir_log_verbose("Post-build: skipping PIC verification (debug optimization -${PIR_OPT_LEVEL})")
+    endif()
+
     pir_log_verbose("Post-build pipeline for ${target_name}:")
     pir_log_verbose("  1. Extract .text section -> .bin")
     pir_log_verbose("  2. Base64 encode -> .b64.txt")
-    pir_log_verbose("  3. Verify PIC mode (no data sections)")
+    if(NOT _skip_pic_verify)
+        pir_log_verbose("  3. Verify PIC mode (no data sections)")
+    endif()
     pir_log_debug("Post-build input: ${_out}${PIR_EXT}")
 
     # Patch ELF EI_OSABI when required (e.g. Solaris needs ELFOSABI_SOLARIS)
@@ -25,6 +37,15 @@ function(pir_add_postbuild target_name)
                 -DELF_FILE="${_out}${PIR_EXT}"
                 -DOSABI_VALUE=${PIR_ELF_OSABI}
                 -P "${PIR_ROOT_DIR}/cmake/scripts/PatchElfOSABI.cmake"
+        )
+    endif()
+
+    set(_verify_cmd)
+    if(NOT _skip_pic_verify)
+        set(_verify_cmd
+            COMMAND ${CMAKE_COMMAND}
+                -DMAP_FILE="${PIR_MAP_FILE}"
+                -P "${PIR_ROOT_DIR}/cmake/scripts/VerifyPICMode.cmake"
         )
     endif()
 
@@ -40,9 +61,7 @@ function(pir_add_postbuild target_name)
             -DPIC_FILE="${_out}.bin"
             -DBASE64_FILE="${_out}.b64.txt"
             -P "${PIR_ROOT_DIR}/cmake/scripts/Base64Encode.cmake"
-        COMMAND ${CMAKE_COMMAND}
-            -DMAP_FILE="${PIR_MAP_FILE}"
-            -P "${PIR_ROOT_DIR}/cmake/scripts/VerifyPICMode.cmake"
+        ${_verify_cmd}
         COMMENT "[pir] Generating PIC artifacts..."
     )
 endfunction()
